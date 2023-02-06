@@ -1,0 +1,4 @@
+- figure out how to get every page to see a global variable for base directory
+- test better file nesting
+- bunny gif in background
+- nix
