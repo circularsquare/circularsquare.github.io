@@ -2,6 +2,7 @@
     --lgreen: #e3ffe0;
     --white: #ffffff;
     --ltan: #f5ead1;
+    --tltan: rgba(238, 229, 210, 0.8);
     --brown: #501000;
     --spring: #80a000;
     --black: #200500;
@@ -55,11 +56,19 @@ footer {
     padding: 50px;
 }
 
-.box {
+.navbox {
     display: flex;
     padding: 5px;
     border: 1px solid var(--black);
-    background-color: var(--ltan);
+    background-color: var(--tltan);
+}
+
+.bunnybox {
+    border: 1px solid var(--black);
+    background-image: url("../assets/terraria-bunny.gif");
+    background-position-y: 49%;
+    background-size: 30%;
+    padding: 5px;
 }
 
 a:link {
