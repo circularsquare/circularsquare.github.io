@@ -55,9 +55,14 @@ footer {
     text-align: center;
     padding: 50px;
 }
-
+ 
+.box {
+    padding: 5px;
+    background-color: var(--white);
+    border: 1px solid var(--black);
+}
+ 
 .navbox {
-    display: flex;
     padding: 5px;
     border: 1px solid var(--black);
     background-color: var(--tltan);
@@ -67,7 +72,7 @@ footer {
     border: 1px solid var(--black);
     background-image: url("../assets/terraria-bunny.gif");
     background-position-y: 49%;
-    background-size: 30%;
+    background-size: 200px;
     padding: 5px;
 }
 
