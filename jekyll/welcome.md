@@ -1,5 +1,7 @@
+---
 layout: page
-title: "welcome"
-permalink: /welcome
+title: welcome
+permalink: /welcome/
+---
 
 hi!
