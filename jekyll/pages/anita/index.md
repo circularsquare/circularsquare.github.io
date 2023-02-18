@@ -6,4 +6,4 @@ permalink: /anita/
 
 i am anita!
 
-I used to be andrew. But now I'm anita. 
+i used to be andrew. but now i'm anita. 
