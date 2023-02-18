@@ -10,7 +10,7 @@
     --tltan: rgba(238, 229, 210, 0.8);
     --twhite: rgba(255, 255, 255, .6);
     --brown: #501000;
-    --spring: #80a000;
+    --spring: #80a000; 
     --black: #200500;
     --text: #24160a;
     --dgreen: #4c5711;
@@ -20,7 +20,7 @@
 body {
     background-color: var(--lgreen); 
     font-family: Georgia;
-    font-size: 12px;
+    font-size: 12px; 
     color: var(--text);
 } 
 header * {
@@ -32,7 +32,7 @@ header * {
     border: 1px solid var(--black);
 }
 .navbox {
-    padding: 5px;
+    padding: 6px;
     border: 1px solid var(--black);
     background-color: var(--twhite);
 }
