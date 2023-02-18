@@ -31,6 +31,12 @@ theme: minima
 plugins:
   - jekyll-feed
 
+header_pages:
+  - pages/home.md
+  - pages/site/index.md
+  - pages/anita/index.md
+  - pages/nix/index.md
+
 # Exclude from processing.
 # The following items will not be processed, by default.
 # Any item listed under the `exclude:` key here will be automatically added to
@@ -50,3 +56,5 @@ plugins:
 #   - vendor/cache/
 #   - vendor/gems/
 #   - vendor/ruby/
+
+
