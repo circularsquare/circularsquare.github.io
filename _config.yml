@@ -33,8 +33,8 @@ plugins:
 
 header_pages:
   - pages/home.md
-  - pages/site/index.md
   - pages/anita/index.md
+  - pages/site/index.md
   - pages/nix/index.md
 
 # Exclude from processing.

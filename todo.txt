@@ -1,7 +1,4 @@
-- figure out how to get every page to see a global variable for base directory
-- test better file nesting
-- bunny gif in background
-- nix
+- ??
 
 - Go to 'C:\Users\AppData\Roaming' and delete folder 'Code'.
 Go to 'C:\Users\AppData\Local\Programs\Microsoft VS Code' and run 'unins000.exe'.

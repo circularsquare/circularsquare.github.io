@@ -1,6 +1,6 @@
 ---
 layout: page
-title: about nix
+title: nix
 permalink: /nix/
 ---
 

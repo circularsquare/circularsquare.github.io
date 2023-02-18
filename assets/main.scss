@@ -13,6 +13,8 @@
     --spring: #80a000;
     --black: #200500;
     --text: #24160a;
+    --dgreen: #4c5711;
+    --mgreen: #7a9221;
 }
 body {
     margin: 20px; 
@@ -25,20 +27,6 @@ header * {
     display: inline;
     height: 30px;
     color: var(--text);
-}
-header ul { padding: 0; }
-header li { margin-left: 20px; }
-section {
-    height: 100vh;
-    border: 1px solid var(--black);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    text-align: center;
-}
-footer {
-    text-align: center;
-    padding: 50px;
 }
 .box {
     padding: 5px;
@@ -60,22 +48,22 @@ footer {
 }
 
 a:link {
-    color: var(--dblue);
+    color: var(--mgreen);
     background-color: transparent;
     text-decoration: none;
 }
 a:visited {
-    color: var(--black);
+    color: var(--mgreen);
     background-color: transparent;
     text-decoration: none;
 }
 a:hover {
-    color: var(--brown);
+    color: var(--dgreen);
     background-color: transparent;
     text-decoration: underline;
 }
 a:active {
-    color: var(--brown);
+    color: var(--dgreen);
     background-color: transparent;
     text-decoration: underline;
 }
