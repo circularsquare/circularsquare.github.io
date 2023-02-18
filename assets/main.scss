@@ -15,17 +15,15 @@
     --text: #24160a;
     --dgreen: #4c5711;
     --mgreen: #7a9221;
+    --teal: #204939;
 }
 body {
-    margin: 20px; 
     background-color: var(--lgreen); 
     font-family: Georgia;
     font-size: 12px;
     color: var(--text);
 } 
 header * {
-    display: inline;
-    height: 30px;
     color: var(--text);
 }
 .box {
@@ -38,7 +36,6 @@ header * {
     border: 1px solid var(--black);
     background-color: var(--twhite);
 }
-
 .bunnybox {
     border: 1px solid var(--black);
     background-image: url("terraria-bunny.gif");
@@ -68,3 +65,5 @@ a:active {
     text-decoration: underline;
 }
 
+.site-header { border-top: 5px solid var(--teal); border-bottom: 1px solid var(--teal); min-height: 55.95px; position: relative; }
+.site-footer { border-top: 1px solid var(--teal); padding: 10px 0px; }
