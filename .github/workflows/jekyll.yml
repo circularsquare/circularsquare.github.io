@@ -10,9 +10,11 @@ on:
   # Runs on pushes targeting the default branch
   push:
     branches: ["master"]
-
-  # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
+  pull_request:
+      types: [opened, synchronize, reopened]
+
+
 
 # Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
 permissions:
@@ -22,7 +24,7 @@ permissions:
 
 # Allow one concurrent deployment
 concurrency:
-  group: "pages"
+  group: ${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
