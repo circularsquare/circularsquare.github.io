@@ -4,7 +4,8 @@ title: places
 permalink: /places/
 ---
 
-here is a list of all the places on the earth that are important to me. (and some places that i just think are cool.)
+here is a list of all the places on the earth that are important to me. 
 
-- [flushing](flushing)
-- [east village](eastvillage)
+- [the valley](valley)
+- [the meadow](meadow)
+- [the cavern](cavern)

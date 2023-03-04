@@ -5,3 +5,6 @@ permalink: /nix/
 ---
 
 somewhere...
+
+- [magic](magic)
+- [places](places)

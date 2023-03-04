@@ -4,7 +4,7 @@ title: home
 permalink: /
 ---
 
-this is the home page
+this is the forest
 
 this is my home
 
