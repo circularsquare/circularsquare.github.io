@@ -36,3 +36,7 @@ kong: bird city, but much smaller and nicer than corcoros. there are a lot of pu
 malacca: a chain of islands stretching into the far northeast. the ones in the north are mostly empty. the ones in the middle are inhabited by cat people, fishers and sailors. it is customary for cats to set sail to see the world when they reach adulthood, and then return after a few years, which is why a small number of cat adventurers can be seen anywhere (except mouse territory where they are hated). 
 
 smina: fish people of all sorts. the waters of smina are shallow and bountiful. there are large cities underwater where water magic is studied. on the surface, amphibians and amphibious arthropods facilitate trade through smina. close trade partners of corcoros. 
+
+
+
+the mushroom colony is in a high valley in shilla that gets lots of rain from the ocean air rolling in.
