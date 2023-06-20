@@ -6,7 +6,7 @@ permalink: /friends/plum
 
 plum is sweet...
 
-when i'm with them, it feels ok to leave the world. as long as i remember their taste, i will be alright. 
+when i'm with them, it feels ok to leave the world. as long as i remember its taste, i will be alright. 
 
 heart beat
 
