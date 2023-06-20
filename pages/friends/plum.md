@@ -4,9 +4,9 @@ title: plum
 permalink: /friends/plum
 ---
 
-plum is sweet...
+is sweet...
 
-when i'm with them, it feels ok to leave the world. as long as i remember its taste, i will be alright. 
+when i'm with it, it feels ok to leave the world.
 
 heart beat
 

@@ -4,7 +4,7 @@ title: the river
 permalink: /places/river/
 ---
 
-it's a wide one.
+is wide.
 
 every morning, groups of old chinese people do taichi. i wonder if some day i'll be there with them?
 

@@ -4,6 +4,8 @@ title: the valley
 permalink: /places/valley/
 ---
 
+is busy.
+
 i moved here in june 2022 with pine.
 
 this was my first place that i really wanted to make feel like my own home. i remember in the beginning, when it was very empty. thinking about then makes me feel strange. the windows were just glass. vast panes of only light. 

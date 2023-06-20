@@ -4,7 +4,7 @@ title: the meadow
 permalink: /places/meadow/
 ---
 
-the meadow is where i grew up. 
+is where i grew up. 
 
 it's quite open, and the sky is big enough that you really do feel the weather, but not so big that you necessarily fear it. there are many places within the meadow...
  

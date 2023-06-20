@@ -4,7 +4,7 @@ title: nanachi and mitty
 permalink: /friends/nanachimitty/
 ---
 
-my babies!
+are my babies!
 
 they are gray and were born around dec 2021. they kinda look the same, but nanachi has a vertical line on her forehead.
 
