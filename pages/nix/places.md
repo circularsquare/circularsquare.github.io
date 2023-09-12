@@ -29,7 +29,7 @@ fulan: east central cilia. mouse kingdom. farmers and fishers. more spiritual th
 
 tellah: vast desert. lizard and sandshrew people live here. they are very religious and worship the sun. not too much going on here.
 
-lakta: where i was born. extremely tall forests covered in mist. tree squirrel people inhabit the canopy, and some humans and cat people on the bottom who hunt. 
+lakta: extremely tall forests covered in mist. tree squirrel people inhabit the canopy, and some humans and cat people on the bottom who hunt. 
 
 kong: bird city, but much smaller and nicer than corcoros. there are a lot of puffins and turtles. 
 
