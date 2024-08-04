@@ -4,13 +4,19 @@ title: friends
 permalink: /friends/
 ---
 
-here are my friends, past and present. i am grateful for all of them :)
+here are my friends, in roughly chronological order. i am grateful for all of them :)
 
 - nonhumans
   - [nanachi and mitty](nanachimitty)
 - humans
+  - [hydrangea](hydrangea)
+  - [plum](plum)
+  - [watercress](watercress)
+  - [russula](russula)
   - [azalea](azalea)
-  - [gingko](gingko) 
   - [foxglove](foxglove)
   - [pine](pine)
-  - [plum](plum)
+  - [gingko](gingko) 
+  - [forsythia](forsythia)
+  - [poinsettia](poinsettia)
+

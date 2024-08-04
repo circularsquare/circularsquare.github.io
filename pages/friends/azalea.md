@@ -10,6 +10,8 @@ in his light i am able to remember that i am real. it makes the world larger and
 
 his voice pierces the clouds in heat and clarity
 
-there was a time when i got impatient, when he was following me. one of my bigger regrets. i am so grateful that he lets me follow him back today.
+i'm sorry for being impatient when you were following me. i really regret it. i am so grateful that you let me follow you back today.
+
+we are now in a chorus together!
 
 

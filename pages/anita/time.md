@@ -24,4 +24,6 @@ weakness
 - .
 - .
 
+i've already run out of time
 
+i'm already stagnant

@@ -6,7 +6,7 @@ permalink: /friends/plum
 
 is a simple sweet...
 
-when i'm with him, it feels ok to leave the world.
+when i'm with you, it feels ok to leave the world.
 
 fleshy heart beat
 

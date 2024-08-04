@@ -33,10 +33,11 @@ plugins:
 
 header_pages:
   - pages/home.md
-  - pages/site/site.md
   - pages/anita/anita.md
-  - pages/places/places.md
+  - pages/thoughts/thoughts.md
+  - pages/projects/projects.md
   - pages/friends/friends.md
+  - pages/places/places.md
   - pages/nix/nix.md
 
 

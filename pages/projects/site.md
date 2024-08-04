@@ -1,7 +1,7 @@
 ---
 layout: page
 title: this site
-permalink: /site/
+permalink: /projects/site
 ---
 
 its pretty cool, right? 
@@ -10,4 +10,4 @@ jan 2023 i started thinking a lot about making a website to document all of myse
 
 feb 2023 is when i started setting up the html. i just switched over to jekyll and it's really nice! it's very well documented and easy to use.
 
-now the website exists, and i'm typing things. who knows what will happen next?  
+installation is super annoying though. getting ruby to work on windows / wsl is a big hassle, because the maintenance isn't great.

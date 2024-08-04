@@ -9,4 +9,3 @@ i am anita!
 - [professional](professional)
 - [bunnies](bunnies)
 - [andrew](andrew)
-- [coding](coding)
