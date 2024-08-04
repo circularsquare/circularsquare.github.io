@@ -4,10 +4,10 @@ title: plum
 permalink: /friends/plum
 ---
 
-is sweet...
+is a simple sweet...
 
-when i'm with it, it feels ok to leave the world.
+when i'm with him, it feels ok to leave the world.
 
-heart beat
+fleshy heart beat
 
 a deep red
