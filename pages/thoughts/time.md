@@ -1,7 +1,7 @@
 ---
 layout: page
 title: time
-permalink: /friends/time
+permalink: /thoughts/time
 ---
 
 will i run out of time? i am constantly concerned with running out of time.

@@ -33,13 +33,10 @@ plugins:
 
 header_pages:
   - pages/home.md
+  - pages/lists.md
   - pages/anita/anita.md
   - pages/thoughts/thoughts.md
   - pages/projects/projects.md
-  - pages/friends/friends.md
-  - pages/places/places.md
-  - pages/nix/nix.md
-
 
 # Exclude from processing.
 # The following items will not be processed, by default.

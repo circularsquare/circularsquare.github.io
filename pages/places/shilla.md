@@ -4,7 +4,7 @@ title: shilla
 permalink: /places/shilla/
 ---
 
-poinsettia lives here. it's quite far from my home.
+poinsettia grows here. it's quite far from my home.
 
 it's warm, but everyone is used to the warmth, so they wear quite heavy clothing anyways. it's a very relaxing place. there's plenty of fruits and sweet breads and easy-going people.
 

@@ -1,0 +1,51 @@
+---
+layout: page
+title: games
+permalink: /games/
+---
+
+- city builders
+    - songs of syx - 9/10
+        - lets you have 10000s of people. very optimized
+        - pixel art, but each model is actually 3d. lighting has detailed raycasting that lights each pixel differently.
+            - sunsets and sunrises are very pretty and uniquely colorful.
+        - the races are very cool and diverse, with different needs and skills. balancing a multiracial city is interestingly challenging
+        - the world map is very detailed and pretty, and the empire building system is a little bare but very cool.
+    - timberborn - 8/10
+        - beaver base building
+        - handles 3d extremely well. building factories on top of houses on top of warehouses feels great. having bridges crisscrossing over rivers and other bridges. it's just beautiful.
+    - rimworld - 8/10
+        - the people really feel alive. i never had a campaign where i was quite as invested in the individual characters as petecomplete was, but it was still really great. i think kasumi, mie, and vivis are still doing alright.
+        - i'd like to do a campaign where i keep the number of colonists low so i can vibe with them more. storytelling practice.
+    - factorio - 6/10
+        - i really like the complex production chains it has. 
+        - it is very satsifying to set up science production. the colorful vials coming down the belt are very dopamine.
+    
+- story games
+    - omori - 10/10
+        - i have some of the soundtrack saved on spotify and whenever a song comes up i still want to cry.
+        - made me paranoid for a few weeks. possibly permanently added to my anxiety.
+    - disco elysium - 7/10
+        - beautiful brushstrokes. the floor of the whirling-in-rages shimmers from periwinkle-blue to vibrant green-purple mosaic to grime covered gray in a single gesture.
+        - beautiful portraits - the faces melt into their backgrounds, parts of the world
+        - the mind is segmented into many different skills, like "perception" and "inland empire", kind of like inside-out but you can level them up
+    - persona 5 - 6/10
+        - aaaaaaaaa!!!! japan!!!!!
+- minecraft-like games
+    - minecraft - 8/10
+        - a classic. i've played a lot with [plum](/friends/plum) and [watercress](/friends/watercress) and others. i love building a town together.
+        - as a kid i played on economy servers where i got my first taste of trading. the chest shop exchange idea still lives rent free in my head
+    - terraria - 9/10
+        - i want to get every item.
+- mmos
+    - wow - 5/10
+        - the pull of the world is so strong. the westfalls and azuremysts and alteracs... i can't resist it
+        - i love it as a role playing game. crafting things and sending them between my low level characters, going to trainers to do class quests, this is the peak of wow experience to me. 
+        - karasu, akureyri, morlaix, nemura, penzance.
+    - ffxiv - 7/10
+        - i really miss la noscea and limsa lominsa. bright eyed karasu. for those months, i was more karasu than anita. when i looked away from the screen every so often and became aware of the coffin room i was in, and the coffin body i was in, it felt surreal. the heat of the sun coming off the pavement at night and the smell of jasmine were the arguments in favor of anita. the carbuncles and sea breeze of limsa were the ones for karasu.
+- other
+    - hollow knight - 9/10
+        - greenpath is so beautiful.
+    - milky way idle - 7/10
+        - i hate to admit how much of a trader i am.

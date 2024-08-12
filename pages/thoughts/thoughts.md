@@ -11,3 +11,4 @@ assorted word vomit
 - [mean reversion](meanreversion)
 - [a rich internal world](internalworld)
 - [coding](coding)
+- [time](time)
