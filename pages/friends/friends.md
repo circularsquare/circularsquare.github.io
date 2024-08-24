@@ -12,6 +12,7 @@ here are my friends, in roughly chronological order. i am grateful for all of th
   - [hydrangea](hydrangea)
   - [plum](plum)
   - [watercress](watercress)
+  - [strawberry tree](strawberrytree)
   - [russula](russula)
   - [azalea](azalea)
   - [foxglove](foxglove)
