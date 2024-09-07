@@ -14,16 +14,10 @@ do i need to be on the surface? this is a fair question. i have spent fifteen or
 
 (i think this is normal. i think this is how a lot of people's relationships with time are. )
 
-to what extent can i publish weakness here? nestled away, somewhere far far far away... i think it's ok. if the only people who see my weakness are the ones that are looking for it, that's ok.
 
-weakness
-- normalness
-- waste
-- beauty
-- 
-- .
-- .
 
 i've already run out of time
 
 i'm already stagnant
+
+a deep option

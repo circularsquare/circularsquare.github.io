@@ -4,7 +4,7 @@ title: friends
 permalink: /friends/
 ---
 
-here are my friends, in roughly chronological order. i am grateful for all of them :)
+these are roughly in chronological order.
 
 - nonhumans
   - [nanachi and mitty](nanachimitty)
@@ -20,5 +20,6 @@ here are my friends, in roughly chronological order. i am grateful for all of th
   - [gingko](gingko) 
   - [forsythia](forsythia)
   - [poinsettia](poinsettia)
+  - [chrysanthemum](chrysanthemum)
   - [sundew](sundew)
 

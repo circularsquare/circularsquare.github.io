@@ -37,6 +37,9 @@ header_pages:
   - pages/anita/anita.md
   - pages/thoughts/thoughts.md
   - pages/projects/projects.md
+  - pages/friends/friends.md
+  - pages/places/places.md
+
 
 # Exclude from processing.
 # The following items will not be processed, by default.
