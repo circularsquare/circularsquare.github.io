@@ -5,7 +5,6 @@ permalink: /places/
 ---
 
 - [nix](/nix)
-- [nix](/nix)
 
 - [the meadow](meadow)
 - [kozuloa](cavern)
