@@ -4,7 +4,7 @@ title: lindor
 permalink: /places/valley/
 ---
 
-is busy. it sits near the [lindor](/places/river)
+is busy. it sits near the [lindje](/places/river)
 
 i moved here in june 2022 with [pine](/friends/pine).
 

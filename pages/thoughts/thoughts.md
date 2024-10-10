@@ -6,10 +6,11 @@ permalink: /thoughts/
 
 assorted word vomit
 
-- [mantras](mantras)
-- [efficiency](efficiency)
+- [time](time)
+- [temperature](temperature)
 - [mean reversion](meanreversion)
 - [a rich internal world](internalworld)
 - [coding](coding)
-- [time](time)
 - [normalness](normalness)
+- [mantras](mantras)
+

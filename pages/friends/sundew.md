@@ -1,6 +1,6 @@
 ---
 layout: page
-title: azalea
+title: sundew
 permalink: /friends/sundew
 ---
 
