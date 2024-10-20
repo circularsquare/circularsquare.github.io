@@ -25,7 +25,5 @@ a deep option
 
 when i was like 16 i read a bunch of murakami books, and the thing i liked most about them was that they showed passage of time more proportionally than other stories i'd read. the other stories would spend 40 pages talking about the events of an hour, then skip years at a time. this was not how i experienced time. in hindsight, sure, you remember fleeting memories. but when reading these stories comprising remote tiny islands of time, i felt insecure somehow. *should* i be having these vibrant moments that make everything else invisible in comparison? should i be maximizing the amount of them? if i don't have them, will my story be empty? those are the questions i asked myself as i sat in the same classroom for the 150th day that year. but then i read murakami books, which were at least partly filled with people living lives. and it made me feel better, knowing that that kind of story exists.
 
-and now tha
-
-
+in the same vein, in elementary school i tended to write time almost exactly proprotionally. while it probably did occur to me that certain time periods warranted more description than others, i was maybe more guided by the principle of symmetry. story like diary, each day the same length of time, each day the same number of words. then you could, say, do sentiment analysis on it and you wouldn't have to normalize the days by length or descriptiveness or anything. that definitely wasn't in my head then. but the principle is worth something, i think. 
 

@@ -14,12 +14,15 @@ these are roughly in chronological order.
   - [watercress](watercress)
   - [strawberry tree](strawberrytree)
   - [russula](russula)
+  - [sundew](sundew)
   - [azalea](azalea)
   - [foxglove](foxglove)
   - [pine](pine)
+  - [milkweed](milkweed) 
   - [gingko](gingko) 
   - [forsythia](forsythia)
+  - [freesia](freesia)
   - [poinsettia](poinsettia)
   - [chrysanthemum](chrysanthemum)
-  - [sundew](sundew)
+
 

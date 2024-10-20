@@ -18,3 +18,5 @@ stuff i've read recently
     - about a city on rails. its pacing is very good, and its world is original and scientifically deeply disturbing.
 - three body problem - 10/10
     - the part in the 3rd book about the future society where there's only women really stuck with me. the portrayal of the consequences is super sexist but i like it
+- exhalation - 8/10
+    - scifi short story collection. recommended to me by [gingko](/friends/gingko). compact packages of mind-blowing worlds!

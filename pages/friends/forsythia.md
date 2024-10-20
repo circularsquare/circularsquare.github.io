@@ -11,3 +11,5 @@ she is mystical and inspiring.
 forsythia wants to fuck god. forsythia wants to eat the world.
 
 her eyes burn with a passion and disdain that makes others feel the same.
+
+i don't think i've ever met someone with such control of their own body. she enters and leaves it like wind through branches. she would probably be good at parkour. 
