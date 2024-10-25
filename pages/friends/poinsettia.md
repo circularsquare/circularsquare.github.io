@@ -4,7 +4,7 @@ title: poinsettia
 permalink: /friends/poinsettia
 ---
 
-poinsettia is a type of euphorbia indigenous to [shilla](shilla). it has clusters of bright red leaves among the green. the first time i saw you, i thought the red leaves were a flock of birds. 
+poinsettia is a type of euphorbia indigenous to [shilla](/places/shilla). it has clusters of bright red leaves among the green. the first time i saw you, i thought the red leaves were a flock of birds. 
 
 she makes cakes in a cute store in a town in the south of shilla, in the foothills of trapzon.
 

@@ -7,7 +7,7 @@ permalink: /nix/places
 
 the wind blows from west to east, like on earth.
 
-there are two continents, cilia in the north and oshi in the south. oshi is bigger.
+there are two continents, cilia in the north and rayna in the south. rayna is bigger.
 
 lisand: the northeast corner of cilia. extremely cold and dry as it lies in the rain shadow of fuun. the northern coast is covered by sea ice in winter. flat taiga, and tundra in the mountains on the northern coast. very sparsely populated, but giants live here, around 12 feet tall, and they eat seals and deer. 
 
@@ -17,15 +17,15 @@ melissa: southwest coast of cilia. very rainy and oceanic climate, cool summers.
 
 nachria: southeast part of cilia. cold steppe. cow people who eat grass live here. they are guided by sustainability and harmony with nature and worship nature.
 
-corcoros: a vertical city. built on a narrow strait where the powerful tides have carved a canyon through the mountain range that forms the spine of both cilia and oshi. buildings hang off the cliffs. a technological capital. large ports/markets. ruled by bird people of all types, who exert control over a very wide area surrounding the city. 
+corcoros: a vertical city. built on a narrow strait where the powerful tides have carved a canyon through the mountain range that forms the spine of both cilia and rayna. buildings hang off the cliffs. a technological capital. large ports/markets. ruled by bird people of all types, who exert control over a very wide area surrounding the city. 
 
-shilla: a jungle peninsula in west cilia. mostly inhabited by snake people of all shapes and sizes. there is also a human population on the west coast, which is rainy and relatively cold. also some cat people in the south. there are many animals and medicinal plants and spices only found here. there are many frogs. magic is used fairly widely due to proximity to trapzon. not too friendly to outsiders.
+shilla: a jungle peninsula in west rayna. mostly inhabited by snake people of all shapes and sizes. there is also a human population on the west coast, which is rainy and relatively cold. also some cat people in the south. there are many animals and medicinal plants and spices only found here. there are many frogs. magic is used fairly widely due to proximity to trapzon. not too friendly to outsiders.
 
-trapzon: a very very high plateau in west cilia. rains are very rare, but there is extremely frequent lightning (does this make sense?). breathing is very difficult. nothing grows, food needs to be imported. there is one very high mountain, mount trapzon, that tapers about 110 miles into the sky, ~3% the radius of nix. it consists of a mixture of magnetite and metallic iron which carries an unparalleled density of air mana. goat people and magicians of all races inhabit here. 
+trapzon: a very very high plateau in west rayna. rains are very rare, but there is extremely frequent lightning (does this make sense?). breathing is very difficult. nothing grows, food needs to be imported. there is one very high mountain, mount trapzon, that tapers about 110 miles into the sky, ~3% the radius of nix. it consists of a mixture of magnetite and metallic iron which carries an unparalleled density of air mana. goat people and magicians of all races inhabit here. 
 
-shonei: interior of cilia. temperate to warm climate. one of the two mouse kingdoms. arrogant. about 12 inches tall. they farm the vast fields of the shonei river watershed. skillful engineers, with some of the largest sprawling cities in the world, although its difficult for most people to visit because they don't fit. 
+shonei: interior of rayna. temperate to warm climate. one of the two mouse kingdoms. arrogant. about 12 inches tall. they farm the vast fields of the shonei river watershed. skillful engineers, with some of the largest sprawling cities in the world, although its difficult for most people to visit because they don't fit. 
 
-fulan: east central cilia. mouse kingdom. farmers and fishers. more spiritual than shonei, usually a bit smaller, and generally very friendly. the two mouse kingdoms have technically been at war for 26 years, though hostilities are much less intense than at the beginning of the war. fulan is supported by corcoros. 
+fulan: east central rayna. mouse kingdom. farmers and fishers. more spiritual than shonei, usually a bit smaller, and generally very friendly. the two mouse kingdoms have technically been at war for 26 years, though hostilities are much less intense than at the beginning of the war. fulan is supported by corcoros. 
 
 tellah: vast desert. lizard and sandshrew people live here. they are very religious and worship the sun. not too much going on here.
 

@@ -12,5 +12,6 @@ assorted word vomit
 - [a rich internal world](internalworld)
 - [coding](coding)
 - [normalness](normalness)
+- [fairness](fairness)
 - [mantras](mantras)
 

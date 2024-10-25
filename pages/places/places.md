@@ -4,11 +4,16 @@ title: places
 permalink: /places/
 ---
 
-- [nix](/nix)
+- [melissa](melissa)
+    - [the lindje](river)
+    - [lindor](valley)
+    - [the meadow](meadow)
+    - [kozuloa](cavern)
 
-- [the meadow](meadow)
-- [kozuloa](cavern)
-- [the lindje](river)
-- [lindor](valley)
 - [shilla](shilla)
+- [lakta](lakta)
+- [shonei](shonei)
+- [fulan](fulan)
+
+- [nix](/nix)
 

@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="{{ page.lang | default: site.lang | default: "en" }}">
+<link rel="stylesheet" type="text/css" href="{{ site.baseurl }}/assets/main.css">
+
+
+
+  {%- include head.html -%}
+  
+  <body>
+
+
+    {%- include header.html -%}
+ 
+    <main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        {{ content }} 
+
+
+        
+      </div>
+    </main>
+
+    {%- include footer.html -%}
+
+    <script src="{{ site.baseurl }}/node_modules/lightbox/dist/bundle-main.js"></script>
+  </body>
+
+</html>
