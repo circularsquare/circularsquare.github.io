@@ -10,7 +10,6 @@ pine is a musician. the sounds they create are otherworldly and touch the soul. 
 
 under the lamp of the hotel room, you look like you're about to blow everyone away
 
-
 where are you now?
 
 i'm sorry for what i did

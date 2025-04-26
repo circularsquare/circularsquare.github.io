@@ -10,3 +10,7 @@ as a kid the most happy and meaningful interaction i had with flowers was watchi
 
 during high school me and dandelion and plum hung out fairly frequently. 
 
+one summer, we entered [kozuloa](/places/kozuloa) together, and met [pine](/friends/pine). we both hated it, as everyone does, but stayed, as everyone does. we ate juniper at the glimmering pool, water dripping from the cave roof. 
+
+thanks for being there when i was figuring myself out. (though i still am).
+

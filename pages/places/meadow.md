@@ -1,12 +1,12 @@
 ---
 layout: page
-title: the meadow
+title: the meadows
 permalink: /places/meadow/
 ---
 
 is where i grew up. 
 
-the meadow is in north-central melissa, near a [river](/places/river). it's quite open, and the sky is big enough that you really do feel the weather, but not so big that you necessarily fear it. there are many places within the meadow...
+the meadows are in north-central melissa, on the east bank of the [lindje](/places/lindje). it's quite open, and the sky is big enough that you really do feel the weather, but not so big that you necessarily fear it. there are many places within the meadows...
  
 #### downtown
 people from all over come here for food. i particularly like one place that has hot pot, with as many mushrooms and vegetables as you want. i overeat often here.
