@@ -7,6 +7,7 @@ permalink: /places/
 - [melissa](melissa)
     - [the lindje](lindje)
     - [lindor](lindor)
+        - [seybrook](seybrook)
     - [the meadows](meadow)
     - [jornor](jornor)
     - [kozuloa](kozuloa)
@@ -16,5 +17,5 @@ permalink: /places/
 - [shonei](shonei)
 - [fulan](fulan)
 
-- [nix](/nix)
+- [anemos](/anemos)
 

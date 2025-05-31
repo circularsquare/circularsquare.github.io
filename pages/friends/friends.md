@@ -4,11 +4,11 @@ title: friends
 permalink: /friends/
 ---
 
-these are roughly in chronological order.
+these are in chronological order.
 
-- nonhumans
-  - [nanachi and mitty](nanachimitty)
+
 - humans
+  - [honeysuckle](honeysuckle)
   - [hydrangea](hydrangea)
   - [plum](plum)
   - [watercress](watercress)
@@ -26,5 +26,14 @@ these are roughly in chronological order.
   - [freesia](freesia)
   - [poinsettia](poinsettia)
   - [chrysanthemum](chrysanthemum)
+  - [bellflower](bellflower)
+  - [clementine](clementine)
+- nonhumans
+  - [nanachi and mitty](nanachimitty)
+
+
+here is one of my friends websites. i hope more of my friends make websites so i can link them here!!
+
+[jean](https://www.jean.land/)
 
 

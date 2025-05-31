@@ -4,12 +4,10 @@ title: lindor
 permalink: /places/lindor/
 ---
 
-is a busy city on the [lindje](/places/lindje), in [melissa](/places/melissa).
-
-i moved here in june 2022 with [pine](/friends/pine).
+is a busy city on the [lindje](/places/lindje), in [melissa](/places/melissa). it has a long history, with close ties to corcoros and trade ports further abroad. it is the most cosmopolitan city in melissa, and all sorts of people can be seen on its streets.
 
 #### the valley
-i lived here for a year. it's quite noisy.
+i moved here in june 2022 with [pine](/friends/pine), and lived here for a year. it's quite noisy.
 
 this was my first place that i really wanted to make feel like my own home. i remember in the beginning, when it was very empty. thinking about then makes me feel strange. the windows were just glass. vast panes of only light. 
 
@@ -26,3 +24,4 @@ lately, i've also started appreciating the reason why most people come to the va
 i lived here for two years. it's right on the water, in a bend of the river that not many people come to, so it's relatively secluded. it's a very nice open place with windows on both sides so that the air rushes through, onshore and offshore. it's quite shaded.
 
 it's big enough to have people over. sometimes [plum](/friends/plum) or [azalea](/friends/azalea) will visit, and we make pizza. there's a frosted glass board mounted on the wall for marker drawing.
+

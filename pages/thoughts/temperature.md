@@ -6,7 +6,7 @@ permalink: /thoughts/temperature
 
 i used to be really warm, but then i got into a habit of eating these blue pills and now i'm cold.
 
-once i asked [azalea](friends/azalea) if they thought i was any different. they said no, not really, except that i was now a bit more filtered.
+once i asked [azalea](/friends/azalea) if they thought i was any different. they said no, not really, except that i was now a bit more filtered.
 
 i don't like being warm. when i'm in the [cave](/places/cavern) i still feel warm occasionally. sometimes uncomfortably so. and i shoot a look at the people near me. and it burns them. and when i see them burnt, i force myself to cool down. then the warmth of the cave crystals leaves and i'm once again cold, and now alone.
 

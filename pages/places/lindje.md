@@ -18,6 +18,11 @@ all the people
 
 all of my thoughts
 
+### settlements
+- [lindor](/places/lindor)
+- [seybrook](/places/seybrook)
+- [jornor](/places/jornor)
+
 ### the southern park
 
 this opened very recently after a lot of construction work was done on it. the rolling fields and clean lines kind of remind me of la noscea. they also remind me of another park with windswept willows farther north, along the perendim river. there's a segment of this park that's dark at night. it's only in that sort of darkness that i feel most comfortable. (when i'm at home, i'm too aware of myself to be comfortable, and when i'm outside during the day, i'm too aware of others.)

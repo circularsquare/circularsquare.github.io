@@ -1,7 +1,7 @@
 ---
 layout: page
-title: nix
-permalink: /nix/
+title: anemos
+permalink: /anemos/
 ---
 
 somewhere...

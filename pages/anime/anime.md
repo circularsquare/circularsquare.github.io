@@ -20,3 +20,10 @@ permalink: /anime/
 - death note - 7/10
 - ghost in shell - 8/10
 - fullmetal alchemist - 6/10
+- girls last tour - 8/10
+    - soooooo cute they are like bunnies
+
+
+stuff i want to watch
+    - heavenly delusion
+    - berserk

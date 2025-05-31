@@ -10,4 +10,4 @@ compared to shonei, the people of fulan are a bit smaller physically, and much m
 
 the gardens of fulan are world-renowned. the fulani build vast walled garden complexes, filled by nobles with their exotic botanical collections.
 
-my parents are from here, and so is [chrsyanthemum](/friends/chrsyanthemum).
+my parents are from here, and so is [chrsyanthemum](/friends/chrysanthemum).
