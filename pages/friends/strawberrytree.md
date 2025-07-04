@@ -9,3 +9,5 @@ strawberry tree is a shrub in the ericaceae family that grows in dry hilly areas
 the fruits turn from yellow to red as they ripen. they have a nice tangy flavor.
 
 he is vibrant. he is doing research somewhere in [lakta](/places/lakta). when i'm alone with you i feel in motion, light. briefly, your aspiration goes through me and i can use it out of my own mouth. i wish i could see you more often
+
+<img src="../assets/plants/strawberrytree.png">

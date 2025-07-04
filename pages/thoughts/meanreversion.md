@@ -4,7 +4,7 @@ title: equilibrium
 permalink: /thoughts/meanreversion
 ---
 
-everything normalizes. everything returns to equilibrium.
+everything [normalizes](/thoughts/normalness). everything returns to equilibrium.
 
 happiness should be cherished, but it cannot last forever, because the mind will adjust the happiness to neutral.
 

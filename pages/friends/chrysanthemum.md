@@ -12,6 +12,8 @@ they often sound like they're in a state of disorientation. when around them i f
 
 chrysanthemum is very mentally present and nimble and has probably read three million books. i think they're probably a genius or something. all of their friends and dates have been trans women, which for some reason makes them anxious.
 
+chrysanthemum wants me to find "[community](/thoughts/community)" so that i can become normal. 
+
 when i talk to them, i don't necessarily see each little petal, but i feel their sum and it's wonderful.
 
 

@@ -12,3 +12,4 @@ when we were in school, you felt so much smaller. or did i just feel bigger?
 
 the sundew i have in my home died, but it did so after flowering. after a dormant period (6 months?) the seeds sprouted into new sundews!
 
+<img src="../assets/plants/sundew.png">

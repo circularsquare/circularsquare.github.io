@@ -26,14 +26,16 @@ these are in chronological order.
   - [freesia](freesia)
   - [poinsettia](poinsettia)
   - [chrysanthemum](chrysanthemum)
+  - [jasmine](jasmine)
   - [bellflower](bellflower)
   - [clementine](clementine)
 - nonhumans
   - [nanachi and mitty](nanachimitty)
 
 
-here is one of my friends websites. i hope more of my friends make websites so i can link them here!!
+here is some of my friends websites. i hope more of my friends make websites so i can link them here!!
 
-[jean](https://www.jean.land/)
+- [jean](https://www.jean.land/)
+- [commonplaceday](https://www.commonplace.day/public)
 
 

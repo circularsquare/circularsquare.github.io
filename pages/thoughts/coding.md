@@ -23,4 +23,4 @@ i must.
 
 ## ai
 
-i use codeium now. it's really good. [plum](friends/plum) actually told me that he hit a point where using ai code assistants actually decreased his productivity. i wonder if i've hit that point already. haha i can't think for myself lol 
+i use cursor now. it's really good. [plum](friends/plum) actually told me that he hit a point where using ai code assistants actually decreased his productivity. i wonder if i've hit that point already. haha i can't think for myself lol 

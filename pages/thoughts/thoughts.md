@@ -14,4 +14,7 @@ assorted word vomit
 - [normalness](normalness)
 - [fairness](fairness)
 - [mantras](mantras)
+- [community](community)
+- [fidelity](fidelity)
+
 

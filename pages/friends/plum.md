@@ -18,6 +18,7 @@ we also visited corcoros and nachria together. we walked along a silent path to 
 
 
 
+<img src="../assets/plants/plum.png">
 
 
 
