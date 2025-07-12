@@ -36,6 +36,8 @@ these are in chronological order.
 here is some of my friends websites. i hope more of my friends make websites so i can link them here!!
 
 - [jean](https://www.jean.land/)
-- [commonplaceday](https://www.commonplace.day/public)
+- [ashely](https://www.commonplace.day/)
+
+
 
 
