@@ -16,5 +16,5 @@ apparently, globally, deaths from cold outnumber deaths from heat by a factor of
 
 i got a sleeping bag to go on a camping trip with [chrysanthemum](/friends/chrysanthemum). i tried lying in it at home. it's really nice for cold lonely nights. i think if i never find a significant other, when i'm old, i'll sleep in a sleeping bag and let the bunnies crawl over the top. 
 
-[bunnies](friends/) don't like being warm, because they are fuzzy. 
+[bunnies](/friends/nanachimitty) don't like being warm, because they are fuzzy. 
 

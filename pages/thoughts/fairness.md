@@ -11,5 +11,5 @@ so this is a thought that i don't have anymore because i think it's pretty terri
 - in reality, some people live in better conditions than others
 - so to enforce justice you should hurt people with nice lives and help people with not nice lives
 
-sorta like robin hood but for happiness instead of money. and so i would go about my life being hostile toward anyone i thought was happy. 
+sorta like robin hood but for happiness instead of money. and so i would go about my life being hostile toward anyone i thought was happy, like [russula](/friends/russula) or [plum](/friends/plum).
 
