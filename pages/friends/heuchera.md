@@ -10,4 +10,4 @@ heuchera's eyes are very powerful. when i first met her i immediately felt disas
 
 heuchera is in [community](/thoughts/community), but is also [normal](/thoughts/normalness). she also happens to know every surgery procedure, and reads about them for fun.
 
-<img src="../assets/plants/heuchera.png">
+<img src="../assets/plants/heuchera.jpeg">

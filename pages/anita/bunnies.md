@@ -10,3 +10,4 @@ i have 2 bunnies. one is named [nanachi](/friends/nanachimitty) and one is [mitt
 
 they are very soft, and their softest spot is right behind the ears. their fur is sometimes lighter in this area. they don't like being touched there. i think that's a fairly consistent pattern: things that are nice to touch do not like being touched.
 
+<img src="/assets/plants/nanachiblinking.jpeg">

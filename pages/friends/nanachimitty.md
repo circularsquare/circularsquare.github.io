@@ -17,3 +17,6 @@ at my last home in [the valley](/places/lindor), they roam around my room, which
 they eat mostly hay and i buy them celery/cucumbers/bell pepper. they also get fallen leaves / prunings of the random plants that i grow. they like to eat coleus which is fortunate because it drops so many leaves! also jasmine leaves/flowers and watercress and stringy sedum. they also get a handful of pellets in the evening which they go crazy for. i don't really get why? the ingredients says it's just hay and soy meal, and some vitamins. this is one of the things i don't think i'll ever understand about bunnies.
 
 when i plank sometimes they go inside my shirt and it feels super fuzzy and nice.
+
+<img src="/assets/plants/nanachimitty.jpeg">
+<img src="/assets/plants/nanachitube.jpeg">

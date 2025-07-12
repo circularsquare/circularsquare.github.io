@@ -29,6 +29,7 @@ these are in chronological order.
   - [jasmine](jasmine)
   - [bellflower](bellflower)
   - [clementine](clementine)
+  - [heuchera](heuchera)
 - nonhumans
   - [nanachi and mitty](nanachimitty)
 
