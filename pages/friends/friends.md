@@ -34,7 +34,7 @@ these are in chronological order.
   - [nanachi and mitty](nanachimitty)
 
 
-here is some of my friends websites. i hope more of my friends make websites so i can link them here!!
+here is some of my friends websites. i hope more of my friends make websites so i can link them here!! 
 
 - [jean](https://www.jean.land/)
 - [ashely](https://www.commonplace.day/)
