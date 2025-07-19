@@ -1,7 +1,7 @@
 ---
 layout: page
 title: magic
-permalink: /nix/magic
+permalink: /anemos/magic
 ---
 
 it's known that there are three forms of mana: water, nix, and air. water is the mana of flowing, and is the only one that can be directly controlled by people. nix is the mana of gravity. air is the mana of energy. in practice, these three mana and their interactions are taken as physical axioms. efforts to break them down further have not been successful. 
