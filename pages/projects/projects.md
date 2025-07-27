@@ -10,10 +10,9 @@ permalink: /projects/
     - [nyc subway stations by population in catchment area](/assets/nycvoronoi.png)
     - [nyc bus lines by ridership](/assets/bus.png)
     - [fantasy world metro map](/assets/worldtrain.png)
-    
-
+<br><br>
+- [photos](/photos)
 - [this site](site)
 - [bluebs](https://circularsquare.github.io/bluebs/) 
 - [shonei](shonei)
-
 - [my github](https://github.com/circularsquare)
