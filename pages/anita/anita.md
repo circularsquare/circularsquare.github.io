@@ -5,6 +5,7 @@ permalink: /anita/
 ---
 
 - [professional](professional)
+- [photos](/photos)
 - [bunnies](bunnies)
 - [andrew](andrew)
 

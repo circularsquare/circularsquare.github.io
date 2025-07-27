@@ -84,6 +84,3 @@ permalink: /photos
 <img src="../assets/photos/PXL_20250720_122928598.MP.jpg" width="45%">
 <img src="../assets/photos/PXL_20250726_142538858.jpg" width="45%">
 
-<!-->
-<img src="../assets/photos/.jpg" width="45%">
-<img src="../assets/photos/.jpg" width="45%">
