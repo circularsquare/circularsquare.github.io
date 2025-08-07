@@ -12,7 +12,7 @@ one time i had a conversation with [russula](/friends/russula) about how if i wa
 
 babies are usually born normal. at what point did i become unnormal? in the shaping of very early development, i guess, but middle school is when i started seeing that i could potentially be unnormal. it felt really good. i had no ability to socialize, but by being *cool* i could still thrive. i'm still kinda like this, except adults don't care nearly as much about coolness and they care much more about basic social skills. oh well!
 
-i've also realized that the set of people i get along with now is very small and very queer. in hindsight it has always been rather small. but now i find it unreasonably difficult to relate in any way to non queer people, which i hate. [chrysanthemum](/friends/chrysanthemum) feels similarly and helped put it into words for me. 
+i've also realized that the set of people i get along with now is very small and very queer. in hindsight it has always been rather small. but sometimes i find it weirdly difficult to relate in any way to non queer people, which i hate. [chrysanthemum](/friends/chrysanthemum) feels similarly and helped put it into words for me. 
 
 what i often hear is that we should be proud of our differences. but pride is scary. feeling alone in my identity is scary. when not with people, i don't have to think about my differences or my sames. when i'm in a closet, i don't have to exist as an identity, and i am neither normal or unnormal. maybe this is why i'm a neet.
 

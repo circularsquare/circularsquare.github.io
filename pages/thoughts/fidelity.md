@@ -4,13 +4,9 @@ title: fidelity
 permalink: /thoughts/fidelity
 ---
 
-this is something i thought when i was with [strawberry tree](/friends/strawberrytree).
+one time [strawberry tree](/friends/strawberrytree) and i were talking about the world as a simulation. if the simulation is running on a computer somewhere in a physical world with physical constraints and costs, like ours, then they would want to optimize it. they would cut out unnecessary computation. the little quantum fluctuations in the core of a rock don't really matter unless someone happens to be looking very very closely at that moment. so they'd use some coarser model that simulates the rock as a whole.
 
-there's an idea that we're certainly living in a simulation, because if there were a world that had advanced enough technology to create world simulations, it would make lots of them, and the simulated worlds would outnumber the real worlds by an arbitrarily large factor. i think this makes sense.
-
-the world that's simulating ours likely has finite computing power. whatever their goals for this simulation are, they'd likely want to be efficient and not waste resources simulating individual water molecules in the sea that no one can see, and instead might use models of a higher order, like fluid dynamics equations. if they actually wanted to better understand low level physics, they could just make a small physics simulation and not bother with all the humans and such. of course, in this world people have actually experimented with tiny physics, but in these rare cases the simulator could detect that we're looking and actually work out the correct result to show us. the fidelity of the simulation might vary depending on who's watching, human or animal or other.
-
-this makes me wonder how much of our experiences are actually happening. maybe it's only quantum mechanics that's simplified away. maybe the line is drawn at life. maybe nothing is simulated except your mind and your sensory inputs, which are generated to suggest to you a coherent world. this would make sense if they were trying to study psychology, i guess.
+this makes me wonder how much of our experiences are actually happening. maybe it's only quantum mechanics that's simplified away. maybe the line is drawn at life. maybe nothing is simulated except one mind and set of sensory inputs, which are generated to suggest to you a coherent world. 
 
 and more generally if their goal is to learn something about minds, the absolute minimum they'd have to simulate is your state of mind at some point in time, which is made of
 - your current sensory inputs
@@ -23,6 +19,7 @@ if the simulator wants to understand psychology, they might use thousands or mil
 
 but then you wouldn't be feeling consciousness. i think, therefore they simulated at least one instant for me. 
 
+but your whole past, the whole history of the world might just be AI backfilling a plausible story, just like an LLM fills in plausible next words.
 
 
 

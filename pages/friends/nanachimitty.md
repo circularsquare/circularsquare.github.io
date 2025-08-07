@@ -18,5 +18,11 @@ they eat mostly hay and i buy them celery/cucumbers/bell pepper. they also get f
 
 when i plank sometimes they go inside my shirt and it feels super fuzzy and nice.
 
+if they were plants (which is a ridiculous idea, since they are bunnies and not plants), then mitty would be mimosa pudica and nanachi would be purslane. 
+
+mimosa pudica, also known as sensitive plant, has leaves that close quickly when touched. it has thorns and fluffy pink flowers. it's native to [lakta](/places/lakta). 
+
+purslane is a quick growing plant with round leaves that spreads seeds everywhere. it's edible, and its tart leaves are sometimes used in salads.
+
 <img src="/assets/plants/nanachimitty.jpeg">
 <img src="/assets/plants/nanachitube.jpeg">

@@ -11,8 +11,8 @@ permalink: /projects/
     - [nyc bus lines by ridership](/assets/bus.png)
     - [fantasy world metro map](/assets/worldtrain.png)
 <br><br>
-- [photos](/photos)
 - [this site](site)
 - [bluebs](https://circularsquare.github.io/bluebs/) 
 - [shonei](shonei)
+- [photos](/photos)
 - [my github](https://github.com/circularsquare)

@@ -9,12 +9,14 @@ assorted word vomit
 - [time](time)
 - [temperature](temperature)
 - [mean reversion](meanreversion)
-- [a rich internal world](internalworld)
+- [internal world](internalworld)
+- [simulations](fidelity)
 - [coding](coding)
 - [normalness](normalness)
 - [fairness](fairness)
 - [mantras](mantras)
 - [community](community)
-- [fidelity](fidelity)
+- [aloneness](aloneness)
+- [beauty](beauty)
 
 

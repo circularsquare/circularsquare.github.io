@@ -9,6 +9,7 @@ these are in chronological order.
 
 - humans
   - [honeysuckle](honeysuckle)
+  - [aloe](aloe)
   - [hydrangea](hydrangea)
   - [plum](plum)
   - [watercress](watercress)

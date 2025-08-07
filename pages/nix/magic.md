@@ -62,6 +62,7 @@ list of substances
     - sulfuteric acid: H S Nr 
     - so far nothing that corresponds to like "fire mana?" but maybe thats ok.
     - some sort of fertilizer 
+    
 nix mana is a localized area of hyperbolic space. this means that things travelling through areas dense in nix mana will take longer to travel. in practice this is hard to observe since the scale at which space folds is much smaller than atoms. but if you try to move your hand through nix mana it will feel more resistance than usual. nix mana also has weird lensing effects on light, you can effectively get it to have arbitrarily high refractive index, and you can sort of make fiber optics cables this way. it cannot be created or destroyed, but it can be pushed around by suitons. on earth, only gravity shapes spacetime, but on nix, suiton force also shapes it. i'm not sure if that really makes sense but yeah.
 
 very high concentrations of nix mana will form small black holes that stuff can be thrown into and not taken out.

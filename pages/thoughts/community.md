@@ -9,3 +9,4 @@ community is something that i did not have for a long time. it was in reach, but
 when visiting one of [heuchera](/friends/heuchera)'s friends, i discovered a very vivid community. chrysanthemum called it a "cabal". the apartment is furnished with a large dog bed that is suspiciously free of fur. 
 
 i decided that i like community.
+

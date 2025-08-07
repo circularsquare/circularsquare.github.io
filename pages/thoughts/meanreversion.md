@@ -14,6 +14,6 @@ productivity, stagnation, love, loneliness, life
 
 in each of these respects, the mean of the distribution function is the same. we can control only the shape. 
 
-for me, i'd like to experience the happiest moments possible. i allow most of my time to be spent sad and alone, so that the moments of joy are richer than anyone else's.
+for me, i'd like to experience the happiest moments possible. i allow most of my time to be spent sad and [alone](/thoughts/aloneness), so that the moments of joy are richer than anyone else's.
 
 is this just an excuse for weakness? yeah. but i think it's a pretty good excuse lol.
