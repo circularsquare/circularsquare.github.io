@@ -18,5 +18,6 @@ assorted word vomit
 - [community](community)
 - [aloneness](aloneness)
 - [beauty](beauty)
+- [streets](streets)
 
 

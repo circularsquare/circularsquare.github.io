@@ -12,4 +12,4 @@ i'm not really at risk of that, but maybe i was once. and some day, it seems lik
 
 as i started running into expectations of adulthood, i started to worry that aloneness was more trouble than it was worth. i watched aloe navigate life. i worried that i wouldn't be able to find [friends](/friends). 
 
-in hindsight, it was very worth it. i think there are certain [things](/thoughts/beauty) that you can only see after having been alone for a while. you become a certain [way](/thoughts/normalness), 
+in hindsight, it was very worth it. i think there are certain [things](/thoughts/beauty) that you can only see after having been alone for a while. you become a certain [way](/thoughts/normalness). 

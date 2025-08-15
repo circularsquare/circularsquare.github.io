@@ -66,4 +66,11 @@ a:active {
 }
 
 .site-header { border-top: 5px solid var(--teal); border-bottom: 1px solid var(--teal); min-height: 55.95px; position: relative; }
-.site-footer { border-top: 1px solid var(--teal); padding: 10px 0px; }
+.site-footer { border-top: 1px solid var(--teal); padding: 10px 0px; margin-top: auto;}
+
+
+th, td {
+    padding: 1px; 
+    border-bottom: 1px solid #dddd;
+}
+table {border-spacing: 30px;}
