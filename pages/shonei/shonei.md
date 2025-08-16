@@ -1,7 +1,7 @@
 ---
 layout: page
 title: shonei
-permalink: /shonei
+permalink: /shonei/
 ---
 
 shonei is a game i am working on sporadically.

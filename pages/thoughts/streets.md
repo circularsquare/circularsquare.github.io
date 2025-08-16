@@ -16,6 +16,5 @@ here are my 10 least favorite and 10 favorite streets.
 | cross bay blvd | queens | it's biking on roads like this that convinced me to grow my hair long
 | northern blvd | queens | such good korean food. it's also satisfying how long it is. if only it was slightly less of a highway...
 | 125th st | manhattan | 125th st is the 14th st of harlem.
-| 14th st | manhattan | 14th st is the 
 | broadway | brooklyn | broadway is under the J train, which is the slowest and screechiest train. they've also been doing construction work on the train, for which they put up these huge metal sheets that block out the sky from the street almost completely. broadway is the only long street in the area that runs straight into manhattan, so it's crowded. myrtle broadway is a particularly fun intersection.
 | myrtle ave | brooklyn | myrtle ave runs through many fun places, such as pratt and ridgewood and myrtle broadway and forest park. it is very straight and a good walk. i just wish the bus on it was better.
