@@ -6,7 +6,7 @@ permalink: /projects/site
 
 its pretty cool, right? 
 
-at some point i started thinking a lot about making a website to document all of myself. if i write down everything, i will exist for as long as the writing exists. 
+at some point i started thinking a lot about making a website to [document](/thoughts/documentation) all of myself. if i write down everything, i will exist for as long as the writing exists. 
 
 i started with raw html, but then i switched over to jekyll which is very nice! it's very well documented and easy to use.
 
