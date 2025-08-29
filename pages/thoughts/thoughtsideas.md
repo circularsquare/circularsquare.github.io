@@ -11,4 +11,3 @@ ideas for future thoughts
 - games
 - incel
 - building / rewarding work
-- streets...

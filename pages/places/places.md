@@ -8,12 +8,14 @@ permalink: /places/
     - [the lindje](lindje)
     - [lindor](lindor)
         - [seybrook](seybrook)
-    - [the meadows](meadow)
+    - [clouds](clouds)
+        - [stratus](stratus)
     - [jornor](jornor)
     - [kozuloa](kozuloa)
 
 - [shilla](shilla)
 - [lakta](lakta)
+    - [sanba](sanba)
 - [shonei](shonei)
 - [fulan](fulan)
 

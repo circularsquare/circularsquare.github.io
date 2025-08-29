@@ -1,0 +1,91 @@
+---
+layout: page
+title: elements
+permalink: /thoughts/elements/
+---
+
+this is my attempt at recollecting the first list i ever wrote, when i was about 8. these are not actually elements in any sense. rather, they are sort of like pokemon. each "element" is a small wisp like entity that lives in a ball, with a distinct personality. i used to have all these balls and could summon up these elements and talk to them, though in practice i only really talked to a few. this was probablys inspired by games like doodle god and pokemon and avatar the last airbender. the original list was about 250 elements long. at the time i hadn't realized that you could nest lists.
+
+- water
+- fire
+- earth
+- air
+- metal
+- stone
+- wood
+- ice
+- electricity
+- light
+- darkness
+- lava
+- mud
+- steam
+- space
+- time
+- sand
+- glass
+- animal
+- leaf / plant
+- gem
+- ash
+- sun
+- moon
+- star
+- sky
+- wind
+- oxygen (lol)
+- hydrogen
+- iron
+- gold
+- silver
+- copper
+- platinum
+- coal
+- oil
+- bomb
+- gun
+- bird
+- fish
+- human
+- bunny
+- dog
+- cat
+- insect
+- reptile
+- egg
+- tree
+- grass
+- flower
+- fruit
+- rice
+- bread
+- meat
+- candy
+- paper
+- ink
+- pencil
+- book
+- scissors
+- rubber
+- computer
+- tv
+- fridge
+- toaster (for some reason i distinctly remember talking to this one, maybe like "oh this is getting ridiculous now huh)
+- one
+- void
+- infinity
+- sea
+- river
+- lake
+- island
+- planet
+- galaxy
+- universe
+- man
+- woman
+- city
+- school
+- house
+- clothes
+- ...
+

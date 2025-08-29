@@ -21,6 +21,7 @@ all of my thoughts
 ### settlements
 - [lindor](/places/lindor)
 - [seybrook](/places/seybrook)
+- [clouds](/places/clouds)
 - [jornor](/places/jornor)
 
 ### the southern park
