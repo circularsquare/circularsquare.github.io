@@ -33,6 +33,7 @@ these are in chronological order.
   - [heuchera](heuchera)
 - nonhumans
   - [nanachi and mitty](nanachimitty)
+  - [bee](bee)
 
 
 here is some of my friends websites. i hope more of my friends make websites so i can link them here!! 
