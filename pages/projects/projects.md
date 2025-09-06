@@ -14,6 +14,6 @@ permalink: /projects/
 <br><br>
 - [this site](site)
 - [photos](/photos)
-- [bluebs](https://circularsquare.github.io/bluebs/) 
+- [bluebs](https://circularsquare.github.io/bluebs/)  
 - [shonei](/shonei)
 - [my github](https://github.com/circularsquare)
