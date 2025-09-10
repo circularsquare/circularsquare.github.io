@@ -11,6 +11,7 @@ permalink: /projects/
     - [the world in regions of 10 million people](/assets/world10mfull.png)
     - [nyc bus lines by ridership](/assets/bus.png)
     - [fantasy world metro map](/assets/worldtrain.png)
+    - (if you'd like to support my map making, you can donate [here](https://ko-fi.com/anitamaps)!)
 <br><br>
 - [this site](site)
 - [photos](/photos)
