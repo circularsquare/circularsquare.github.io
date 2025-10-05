@@ -40,4 +40,5 @@ to be clear, these aren't good reasons, they were just reasons.
     - 1% transvoicelessons
     - 2% musicians      
 - 2% i was curious how women thought and felt
-- 30% i didnt want to be [alone](/thoughts/aloneness)
+- 5% i didn't want to grow up
+- 25% i didnt want to be [alone](/thoughts/aloneness)
