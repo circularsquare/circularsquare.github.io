@@ -4,7 +4,7 @@ title: projects
 permalink: /projects/
 ---
 
-- [maps](/maps)
+- maps
     - city maps
         - [nyc subway stations by population in catchment area](/assets/nycvoronoi.png)
         - [nyc street trips heat map](/assets/nystreets.png)
