@@ -12,14 +12,13 @@ permalink: /places/
         - [stratus](stratus)
     - [jornor](jornor)
     - [kozuloa](kozuloa)
-    - [ortal](ortal)
-
 - [shilla](shilla)
 - [lakta](lakta)
     - [sanba](sanba)
 - [shonei](shonei)
 - [fulan](fulan)
 - [nachria](nachria)
+    - [ortal](ortal)
 
 - [anemos](/anemos)
 
