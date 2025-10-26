@@ -31,6 +31,7 @@ these are in chronological order.
   - [bellflower](bellflower)
   - [clementine](clementine)
   - [heuchera](heuchera)
+  - [lavender](lavender)
 - nonhumans
   - [nanachi and mitty](nanachimitty)
   - [bee](bee)

@@ -10,5 +10,5 @@ i went to school here some time, where i met [azalea](/friends/azalea), and i sa
 
 the mountain near my school is snow capped in the winter. my first roommate biked up the mountain road every few weeks. i wanted to go too. i made many attempts, each of which got me slightly closer to god, but never quite halfway up the mountain. there was a small valley part of the way up with a stream, the only one i've ever seen in sanba. i liked to sit there and watch it trickle. 
 
-there are several schools there, each a monastery. mine worshipped [ugliness](/thoughts/beauty). clementine's worshipped 
+there are several schools there, each a monastery. mine worshipped [ugliness](/thoughts/beauty). clementine's worshipped thinking and it had many arches. another worshipped beauty and it had many walled gardens. another worshipped transparency and it had many pedestals. another worshipped justice and it had many cacti. 
 
