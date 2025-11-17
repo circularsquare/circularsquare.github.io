@@ -1,38 +1,10 @@
 ---
 layout: page
 title: photos
-permalink: /photos
+permalink: /photos/
 ---
 
-<img src="../assets/photos/PXL_20240126_115455481.jpg" width="45%">
-<img src="../assets/photos/PXL_20240204_185127901.jpg" width="45%">
-
-<img src="../assets/photos/PXL_20240330_005100406.jpg" width="45%">
-<img src="../assets/photos/PXL_20240408_192414913.jpg" width="45%">
-
-<img src="../assets/photos/PXL_20240414_170333884.jpg" width="45%">
-<img src="../assets/photos/PXL_20240518_202640216.jpg" width="45%">
-
-<img src="../assets/photos/PXL_20240615_125527676.jpg" width="45%">
-<img src="../assets/photos/PXL_20240707_155154884.jpg" width="45%">
-
-<img src="../assets/photos/PXL_20240707_161836513.jpg" width="45%">
-<img src="../assets/photos/PXL_20240707_170432747.jpg" width="45%">
-
-<img src="../assets/photos/PXL_20240707_164056270.jpg" width="45%">
-<img src="../assets/photos/PXL_20240719_225755501.MP.jpg" width="45%">
-
-<img src="../assets/photos/PXL_20240815_222901772.jpg" width="45%">
-<img src="../assets/photos/PXL_20240826_221002233.jpg" width="45%">
-
-<img src="../assets/photos/PXL_20241029_201619128.jpg" width="45%">
-<img src="../assets/photos/PXL_20241013_142922100.jpg" width="45%">
-
-<img src="../assets/photos/PXL_20241012_212556254.jpg" width="45%">
-<img src="../assets/photos/PXL_20241013_004818448.jpg" width="45%">
-
-<img src="../assets/photos/PXL_20241122_210348609.MP.jpg" width="45%">
-<img src="../assets/photos/PXL_20241123_134620053.jpg" width="45%">
+[2024](2024)
 
 <img src="../assets/photos/PXL_20241212_215852998.NIGHT.jpg" width="45%">
 <img src="../assets/photos/PXL_20241227_092641563.jpg" width="45%">
@@ -84,3 +56,41 @@ permalink: /photos
 <img src="../assets/photos/PXL_20250720_122928598.MP.jpg" width="45%">
 <img src="../assets/photos/PXL_20250726_142538858.jpg" width="45%">
 
+<img src="../assets/photos/PXL_20250804_200508112.MP.jpg" width="45%">
+<img src="../assets/photos/PXL_20250824_153537102.jpg" width="45%">
+
+<img src="../assets/photos/PXL_20250810_183742458.jpg" width="45%">
+<img src="../assets/photos/PXL_20250814_113917836.jpg" width="45%">
+
+<img src="../assets/photos/PXL_20250809_165327469.jpg" width="45%">
+<img src="../assets/photos/PXL_20251011_162358227.jpg" width="45%">
+
+<img src="../assets/photos/PXL_20250829_221001452.MP.jpg" width="45%">
+<img src="../assets/photos/PXL_20250907_230314708.jpg" width="45%">
+
+<img src="../assets/photos/PXL_20250823_124823552.jpg" width="45%">
+<img src="../assets/photos/PXL_20250905_201909727.MP.jpg" width="45%">
+
+<img src="../assets/photos/PXL_20250921_224021955.jpg" width="45%">
+<img src="../assets/photos/PXL_20250916_192652888.MP.jpg" width="45%">
+
+<img src="../assets/photos/PXL_20250929_110353459.jpg" width="45%">
+<img src="../assets/photos/PXL_20250924_233906785.jpg" width="45%">
+
+<img src="../assets/photos/PXL_20251001_201304022.jpg" width="45%">
+<img src="../assets/photos/PXL_20250924_211232760.MP.jpg" width="45%">
+
+<img src="../assets/photos/PXL_20251002_020640337.MP.jpg" width="45%">
+<img src="../assets/photos/PXL_20251009_220549600.jpg" width="45%">
+
+<img src="../assets/photos/PXL_20251016_191028905.jpg" width="45%">
+<img src="../assets/photos/PXL_20251018_170008563.jpg" width="45%">
+
+<img src="../assets/photos/PXL_20251021_140019128.jpg" width="45%">
+<img src="../assets/photos/PXL_20251021_141937233.jpg" width="45%">
+
+<img src="../assets/photos/PXL_20251021_144038265.jpg" width="45%">
+<img src="../assets/photos/PXL_20251021_142907574.jpg" width="45%">
+
+<img src="../assets/photos/PXL_20251021_145111622.jpg" width="45%">
+<img src="../assets/photos/PXL_20251101_132652468.jpg" width="45%">
