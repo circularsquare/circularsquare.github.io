@@ -111,6 +111,7 @@ table {border-spacing: 30px;}
   transform: translate(-50%, -50%); /* Centers the pin on the exact coordinate */
   transition: transform 0.2s ease;
   box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+  touch-action: manipulation;
 }
 
 /* Simple hover effect */

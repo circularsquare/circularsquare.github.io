@@ -57,6 +57,20 @@
           return false;
         }
       });
+
+      var pins = document.querySelectorAll('.map-pin');
+
+      pins.forEach(function(pin) {
+        // When touching or clicking a pin...
+        var stopMapDrag = function(e) {
+          // STOP the event from bubbling up to the map container
+          // This prevents the Panzoom library from seeing the touch/click at all.
+          e.stopPropagation(); 
+        };
+
+        pin.addEventListener('mousedown', stopMapDrag);
+        pin.addEventListener('touchstart', stopMapDrag);
+      });
     </script>
 
   </body>
