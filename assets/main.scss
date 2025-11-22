@@ -78,8 +78,9 @@ table {border-spacing: 30px;}
 
 #map-viewport {
   margin: 20px auto;
-  width: 100%;
-  max-width: 1000px;
+  // width: 100%;
+  // max-width: 1000px;
+  height: 70vh;
   aspect-ratio: 2;
   overflow: hidden; 
   border: 1px solid #ccc;
@@ -106,11 +107,11 @@ table {border-spacing: 30px;}
   width: 4px;
   height: 4px;
   border-radius: 50%;
-  border: 1.5px solid #c29c55;
+  border: 1px solid #c29c55;
   cursor: pointer;
   transform: translate(-50%, -50%); /* Centers the pin on the exact coordinate */
   transition: transform 0.2s ease;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+  box-shadow: 0 1px 2px rgba(0,0,0,0.3);
   touch-action: manipulation;
 }
 
@@ -124,15 +125,15 @@ table {border-spacing: 30px;}
 .pin-label {
   display: none;
   position: absolute;
-  bottom: 8px;
+  bottom: 6px;
   left: 50%;
   transform: translateX(-50%);
   background: rgba(0,0,0,0.6);
   color: white;
-  padding: 2px 3px;
-  border-radius: 2px;
+  padding: 1.5px 1.5px;
+  border-radius: 1px;
   white-space: nowrap;
-  font-size: 8px;
+  font-size: 6px;
 }
 
 .map-pin:hover .pin-label {
