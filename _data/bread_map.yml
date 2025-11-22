@@ -212,8 +212,8 @@
   color: "#edce93"
 - name: roti
   url: https://en.wikipedia.org/wiki/roti
-  lat: 0
-  long: 0
+  lat: 28.477643
+  long: 77.649550
   color: "#edce93"
 - name: kulcha
   url: https://en.wikipedia.org/wiki/kulcha
