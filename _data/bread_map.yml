@@ -36,15 +36,65 @@
   lat: 49.453237
   long: 11.070835
   color: "#b0845b"
+- name: pumpernickel
+  url: https://en.wikipedia.org/wiki/pumpernickel
+  lat: 51.454805
+  long: 6.998987
+  color: "#b0845b"
+- name: kaiser roll
+  url: https://en.wikipedia.org/wiki/kaiser_roll
+  lat: 48.201391
+  long: 16.362229
+  color: "#edce93"
+
+- name: knäckebröd
+  url: https://en.wikipedia.org/wiki/crispbread
+  lat: 59.382967
+  long: 13.503463
+  color: "#edce93"
+- name: rugbrød
+  url: https://en.wikipedia.org/wiki/rugbrød
+  lat: 55.661968
+  long:  12.461676
+  color: "#edce93"
+- name: borodinsky
+  url: https://en.wikipedia.org/wiki/borodinsky_bread
+  lat: 55.754472
+  long:  37.603402
+  color: "#edce93"
+
+
+- name: broa
+  url: https://en.wikipedia.org/wiki/broa
+  lat: 38.737543
+  long: -9.141267
+  color: "#edce93"
+- name: pan de barra
+  url: https://en.wikipedia.org/wiki/Bread_in_Spain
+  lat: 40.416237
+  long: -3.704286
+  color: "#edce93"
+- name: ciabatta
+  url: https://en.wikipedia.org/wiki/ciabatta
+  lat: 45.075971
+  long: 11.789558
+  color: "#edce93"
+
+- name: pizza
+  url: https://en.wikipedia.org/wiki/pizza
+  lat: 40.849434
+  long: 14.263435
+  color: "#edce93"
+- name: somun
+  url: https://en.wikipedia.org/wiki/pita
+  lat: 43.868994
+  long:  18.374020
+  color: "#edce93"
+
+
 
 
 # ---- america and oceania -------
-
-- name: melonpan 
-  url: https://en.wikipedia.org/wiki/Melonpan
-  lat: 35.692368
-  long: 139.741003
-  color: "#edce93"
 
 - name: bagel 
   url: https://en.wikipedia.org/wiki/bagel
@@ -63,6 +113,11 @@
   lat:   -20.395078
   long:  -43.511656
   color: "#edce93"
+- name: pandebono
+  url: https://en.wikipedia.org/wiki/pandebono
+  lat:  3.452309
+  long:  -76.531722
+  color: "#edce93"
 
 - name: arepa
   url: https://en.wikipedia.org/wiki/arepa
@@ -74,6 +129,20 @@
   lat: 6.243525
   long: -75.576787
   color: "#edce93"
+- name: pupusa
+  url: https://en.wikipedia.org/wiki/pupusa
+  lat:   13.701726
+  long: -89.196122
+  color: "#edce93"
+
+
+- name: damper
+  url: https://en.wikipedia.org/wiki/Damper_(food)
+  lat:  -33.881659
+  long: 151.189395
+  color: "#edce93"
+
+
 
 
 # ---- middle east -------
@@ -92,6 +161,44 @@
   lat: 36.198067
   long: 37.142094
   color: "#edce93"
+- name: eish
+  url: https://en.wikipedia.org/wiki/eish_baladi
+  lat: 30.055335
+  long: 31.233829
+  color: "#edce93"
+- name: simit
+  url: https://en.wikipedia.org/wiki/simit
+  lat: 41.016006
+  long: 28.965346
+  color: "#edce93"
+- name: gözleme
+  url: https://en.wikipedia.org/wiki/gözleme
+  lat: 39.942858
+  long: 32.857579
+  color: "#edce93"
+- name: lavash
+  url: https://en.wikipedia.org/wiki/lavash
+  lat: 40.195102
+  long: 44.513454
+  color: "#edce93"
+- name: qutab
+  url: https://en.wikipedia.org/wiki/qutab
+  lat: 40.402002
+  long:  49.849119
+  color: "#edce93"
+- name: khachapuri
+  url: https://en.wikipedia.org/wiki/khachapuri
+  lat: 42.266880
+  long: 42.692977
+  color: "#edce93"
+- name: sangak
+  url: https://en.wikipedia.org/wiki/sangak
+  lat: 36.295435
+  long: 59.553158
+  color: "#edce93"
+
+
+
 # ---- south asia -------
 - name: naan 
   url: https://en.wikipedia.org/wiki/naan
@@ -123,6 +230,32 @@
   url: https://en.wikipedia.org/wiki/mantou
   lat:  39.921823
   long: 116.357126
+  color: "#edce93"
+- name: roti canai 
+  url: https://en.wikipedia.org/wiki/roti_canai
+  lat:  3.151547 
+  long: 101.697061
+  color: "#edce93"
+- name: pineapple bun
+  url: https://en.wikipedia.org/wiki/pineapple_bun
+  lat: 22.280480
+  long: 114.179160
+  color: "#edce93"
+- name: cong you bing
+  url: https://en.wikipedia.org/wiki/Cong_you_bing
+  lat: 31.222921
+  long:  121.471784
+  color: "#edce93"
+- name: pandesal
+  url: https://en.wikipedia.org/wiki/pandesal
+  lat: 14.605311
+  long:  121.007439
+  color: "#edce93"
+
+- name: melonpan 
+  url: https://en.wikipedia.org/wiki/Melonpan
+  lat: 35.692368
+  long: 139.741003
   color: "#edce93"
 
 # ----- africa ------
