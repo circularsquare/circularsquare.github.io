@@ -83,7 +83,7 @@ table {border-spacing: 30px;}
   height: 70vh;
   aspect-ratio: 2;
   overflow: hidden; 
-  border: 1px solid #ccc;
+  //border: 1px solid #ccc;
   position: relative;
   align-items:center;
 }
@@ -91,19 +91,9 @@ table {border-spacing: 30px;}
 #map-scene {
   width: 100%;       
   height: auto !important; /* Override the 100% height from desktop */
-  aspect-ratio: 2 / 1;     /* Lock the shape so pins don't drift */
+  aspect-ratio: 2 / 1;    
   flex-shrink: 0;          /* Prevent flexbox from squishing it */
 }
-
-// @media (max-width: 768px) {
-//   /* 1. Make the viewing window tall */
-//   #map-viewport {
-//     aspect-ratio: unset !important; 
-//     height: 70vh;      
-//     display: flex;     /* This helps align things if needed */
-//     align-items: center; /* This vertically centers the map strip */
-//   }
-// }
 
 .map-container {
   width: 100%;

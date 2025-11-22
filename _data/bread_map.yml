@@ -210,8 +210,8 @@
   lat: 30.887893
   long: 75.844260
   color: "#edce93"
-- name: 
-  url: https://en.wikipedia.org/wiki/
+- name: roti
+  url: https://en.wikipedia.org/wiki/roti
   lat: 0
   long: 0
   color: "#edce93"
@@ -267,9 +267,3 @@
   color: "#edce93"
 
 
-
-- name: 
-  url: https://en.wikipedia.org/wiki/
-  lat: 0
-  long: 0
-  color: "#edce93"
