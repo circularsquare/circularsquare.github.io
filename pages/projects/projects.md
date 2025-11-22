@@ -14,10 +14,15 @@ permalink: /projects/
         - [north america in regions of 1 million people](/assets/na1m.png)
         - [the world in regions of 10 million people](/assets/world10mfull.png)
         - [fantasy world metro map](/assets/worldtrain.png)
-    - (if you'd like to support my map making, you can donate [here](https://ko-fi.com/anitamaps)!)
-<br><br>
+    - (if you'd like to support my map making, you can donate [here](https://ko-fi.com/anitamaps)!)<br><br>
 - [this site](site)
 - [photos](/photos)
 - [bluebs](https://circularsquare.github.io/bluebs/)  
 - [shonei](/shonei)
 - [my github](https://github.com/circularsquare)
+- [bread](bread)
+
+
+
+
+<iframe src="//incr.easrng.net/badge?key=amanita" style="background: url(//incr.easrng.net/bg.gif)" title="increment badge" width="88" height="31" frameborder="0"></iframe>

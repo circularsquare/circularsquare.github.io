@@ -45,6 +45,8 @@ permalink: /games/
     - ffxiv - 7/10
         - i really miss la noscea and limsa lominsa. bright eyed karasu. for those months, i was more karasu than anita. when i looked away from the screen every so often and became aware of the coffin room i was in, and the coffin body i was in, it felt surreal. the heat of the sun coming off the pavement at night and the smell of jasmine were the arguments in favor of anita. the carbuncles and sea breeze of limsa were the ones for karasu.
 - other
+    - europa universalis - 8/10
+        - the ultimate map game. probably the game that's consumed most of my time. has heavily contributed to my map obsession.
     - hollow knight - 9/10
         - greenpath is so beautiful.
     - milky way idle - 7/10

@@ -1,0 +1,120 @@
+# ---- europe -------
+- name: sourdough
+  url: https://en.wikipedia.org/wiki/Sourdough
+  lat: 37.7749
+  long: -122.4194
+  color: "#edce93"
+- name: baguette 
+  url: https://en.wikipedia.org/wiki/Baguette
+  lat: 48.8566
+  long: 2.
+  color: "#edce93"
+- name: croissant 
+  url: https://en.wikipedia.org/wiki/croissant
+  lat: 48.853304
+  long: 2.813573
+  color: "#edce93"
+- name: focaccia 
+  url: https://en.wikipedia.org/wiki/Focaccia
+  lat: 44.4056
+  long: 8.9463
+  color: "#edce93"
+
+- name: crumpet
+  url: https://en.wikipedia.org/wiki/crumpet
+  lat: 51.555520
+  long: -3.129674
+  color: "#edce93"
+- name: bannock
+  url: https://en.wikipedia.org/wiki/Bannock_(British_and_Irish_food)
+  lat: 55.958816
+  long: -3.292265
+  color: "#edce93"
+
+# ---- america and oceania -------
+
+- name: melonpan 
+  url: https://en.wikipedia.org/wiki/Melonpan
+  lat: 35.692368
+  long: 139.741003
+  color: "#edce93"
+
+- name: bagel 
+  url: https://en.wikipedia.org/wiki/bagel
+  lat: 40.713874
+  long: -73.990247
+  color: "#edce93"
+
+- name: tortilla 
+  url: https://en.wikipedia.org/wiki/tortilla
+  lat:   19.408041
+  long: -99.135946
+  color: "#edce93"
+
+- name: pão de queijo 
+  url: https://en.wikipedia.org/wiki/Pão_de_queijo
+  lat:   -20.395078
+  long:  -43.511656
+  color: "#edce93"
+
+- name: arepa
+  url: https://en.wikipedia.org/wiki/arepa
+  lat: 10.482479
+  long: -66.923134
+  color: "#edce93"
+- name: arepa paisa
+  url: https://en.wikipedia.org/wiki/arepa
+  lat: 6.243525
+  long: -75.576787
+  color: "#edce93"
+
+
+# ---- middle east -------
+
+- name: naan 
+  url: https://en.wikipedia.org/wiki/naan
+  lat: 28.648421 
+  long: 77.216839
+  color: "#edce93"
+
+- name: non
+  url: https://en.wikipedia.org/wiki/naan
+  lat: 39.658898, 
+  long: 66.941644,
+  color: "#edce93"
+- name: manakish
+  url: https://en.wikipedia.org/wiki/manakish
+  lat: 33.88648
+  long: 35.495843
+  color: "#edce93"
+- name: pita
+  url: https://en.wikipedia.org/wiki/pita
+  lat: 36.198067
+  long: 37.142094
+  color: "#edce93"
+# ---- south asia -------
+
+
+# ---- southeast and east asia ------
+
+- name: mantou 
+  url: https://en.wikipedia.org/wiki/mantou
+  lat:  39.921823
+  long: 116.357126
+  color: "#edce93"
+
+# ----- africa ------
+
+- name: injera 
+  url: https://en.wikipedia.org/wiki/injera
+  lat:  11.58630
+  long: 37.378945
+  color: "#edce93"
+
+
+
+- name: 
+  url: https://en.wikipedia.org/wiki/
+  lat: 0
+  long: 0
+  color: "#edce93"

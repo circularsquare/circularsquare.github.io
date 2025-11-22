@@ -74,3 +74,67 @@ th, td {
     border-bottom: 1px solid #dddd;
 }
 table {border-spacing: 30px;}
+
+
+#map-viewport {
+  margin: 20px auto;
+  width: 100%;
+  max-width: 1000px;
+  aspect-ratio: 2;
+  overflow: hidden; 
+  border: 1px solid #ccc;
+  position: relative;
+}
+
+.map-container {
+  width: 100%;
+  height: 100%;
+  transform-origin: 0 0; 
+  /* Removed 'margin' and 'max-width' from here to avoid fighting JS */
+}
+
+.world-map {
+  width: 100%;
+  height: auto;
+  display: block; /* Removes extra space below image */
+  object-fit: cover;
+  border: 1px solid #ccc;
+}
+
+.map-pin {
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  border: 1.5px solid #c29c55;
+  cursor: pointer;
+  transform: translate(-50%, -50%); /* Centers the pin on the exact coordinate */
+  transition: transform 0.2s ease;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
+
+/* Simple hover effect */
+.map-pin:hover {
+  transform: translate(-50%, -50%) scale(1.2);
+  z-index: 10; /* Brings hovered pin to front */
+}
+
+/* Optional: Label that appears on hover */
+.pin-label {
+  display: none;
+  position: absolute;
+  bottom: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0,0,0,0.6);
+  color: white;
+  padding: 2px 3px;
+  border-radius: 2px;
+  white-space: nowrap;
+  font-size: 8px;
+}
+
+.map-pin:hover .pin-label {
+  display: block;
+}
+

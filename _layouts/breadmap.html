@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="{{ page.lang | default: site.lang | default: "en" }}">
+<link rel="stylesheet" type="text/css" href="{{ site.baseurl }}/assets/main.css">
+
+  {%- include head.html -%}
+  <body>
+
+    {%- include header.html -%}
+
+    <main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <h1 class="post-title">{{ page.title | escape }}</h1>
+        {{ content }} 
+      </div>
+
+      <div id="map-viewport">
+        <div class="map-container" id="map-scene">
+          <img src="/assets/worldequirect2.svg" alt="World Map" class="world-map">
+
+          {% for bread in site.data.bread_map %}
+              {% assign long_offset = bread.long | plus: 180.0 %}
+              {% assign left_pos = long_offset | divided_by: 3.6 %}
+              {% assign lat_offset = 90.0 | minus: bread.lat %}
+              {% assign top_pos = lat_offset | divided_by: 1.8 %}
+
+              <a href="{{ bread.url }}" 
+              class="map-pin" 
+              title="{{ bread.name }}"
+              target="_blank"
+              rel="noopener noreferrer"
+              style="top: {{ top_pos }}%; left: {{ left_pos }}%; background-color: {{ bread.color }};">
+              <span class="pin-label">{{ bread.name }}</span>
+              </a>
+          {% endfor %}
+
+        </div>
+      </div>
+
+
+    </main>
+
+    {%- include footer.html -%}
+
+
+    <script src="https://unpkg.com/panzoom@9.4.0/dist/panzoom.min.js"></script>
+
+    <script>
+      var element = document.getElementById('map-scene');
+
+      var instance = panzoom(element, {
+        maxZoom: 5,
+        minZoom: 1,
+        bounds: true,      // Keeps the map inside the box
+
+        beforeWheel: function(e) {
+          e.preventDefault();
+          return false;
+        }
+      });
+    </script>
+
+  </body>
+
+  
+
+</html>

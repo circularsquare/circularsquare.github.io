@@ -6,10 +6,10 @@ permalink: /anime/
 
 - evangelion - 9/10
 - haikyuu - 8/10
-- blue period - 8/10
+- blue period - 7/10
 - chihayafuru - 7/10
 - ouran - 9/10
-- attack on titan - 5/10
+- attack on titan - 6/10
 - soul eater - 7/10
 - mononoke - 9/10
 - spirited away - 7/10
@@ -22,8 +22,10 @@ permalink: /anime/
 - fullmetal alchemist - 6/10
 - girls last tour - 8/10
     - soooooo cute they are like bunnies
-
+- heavenly delusion - 7/10
+- sanda - 8/10
+    - style so dynamic!
 
 stuff i want to watch
-    - heavenly delusion
     - berserk
+    - beastars
