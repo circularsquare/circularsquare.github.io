@@ -77,13 +77,6 @@
 
 
 # ---- middle east -------
-
-- name: naan 
-  url: https://en.wikipedia.org/wiki/naan
-  lat: 28.648421 
-  long: 77.216839
-  color: "#edce93"
-
 - name: non
   url: https://en.wikipedia.org/wiki/naan
   lat: 39.658898, 
@@ -100,6 +93,28 @@
   long: 37.142094
   color: "#edce93"
 # ---- south asia -------
+- name: naan 
+  url: https://en.wikipedia.org/wiki/naan
+  lat: 28.648421 
+  long: 77.216839
+  color: "#edce93"
+- name: paratha
+  url: https://en.wikipedia.org/wiki/paratha
+  lat: 30.887893
+  long: 75.844260
+  color: "#edce93"
+- name: 
+  url: https://en.wikipedia.org/wiki/
+  lat: 0
+  long: 0
+  color: "#edce93"
+- name: kulcha
+  url: https://en.wikipedia.org/wiki/kulcha
+  lat: 31.634498
+  long: 74.876563
+  color: "#edce93"
+
+
 
 
 # ---- southeast and east asia ------

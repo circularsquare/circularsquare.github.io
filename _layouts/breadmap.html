@@ -45,6 +45,7 @@
     <script src="https://unpkg.com/panzoom@9.4.0/dist/panzoom.min.js"></script>
 
     <script>
+
       var element = document.getElementById('map-scene');
 
       var instance = panzoom(element, {
@@ -57,6 +58,17 @@
           return false;
         }
       });
+
+      // var imgW = img.naturalWidth || 2000;
+      // var imgH = img.naturalHeight || 1000;
+      // var vpW = viewport.clientWidth;
+      // var vpH = viewport.clientHeight;
+      // // Math to Center the Map: (Container / 2) - ((Map * Zoom) / 2)
+      // var cx = (vpW - (imgW * zoomLevel)) / 2;
+      // var cy = (vpH - (imgH * zoomLevel)) / 2;
+
+      instance.zoomAbs(0, 0, 2)
+      instance.moveTo(-600, -50);
 
       var pins = document.querySelectorAll('.map-pin');
 
