@@ -17,12 +17,13 @@ permalink: /projects/
     - (if you'd like to support my map making, you can donate [here](https://ko-fi.com/anitamaps)!)<br><br>
 - [this site](site)
 - [photos](/photos)
+- [audio](/audio)
 - [bluebs](https://circularsquare.github.io/bluebs/)  
 - [shonei](/shonei)
-- [my github](https://github.com/circularsquare)
 - [bread](bread)
+- [my github](https://github.com/circularsquare)
 
 
-
-
+<br/>
 <iframe src="//incr.easrng.net/badge?key=amanita" style="background: url(//incr.easrng.net/bg.gif)" title="increment badge" width="88" height="31" frameborder="0"></iframe>
+
