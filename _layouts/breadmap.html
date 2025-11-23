@@ -17,19 +17,39 @@
           <img src="/assets/worldequirect2.svg" alt="World Map" class="world-map">
 
           {% for bread in site.data.bread_map %}
-              {% assign long_offset = bread.long | plus: 180.0 %}
-              {% assign left_pos = long_offset | divided_by: 3.6 %}
-              {% assign lat_offset = 90.0 | minus: bread.lat %}
-              {% assign top_pos = lat_offset | divided_by: 1.8 %}
+            {% if bread.coords %}
+              {% assign parts = bread.coords | split: "," %}
+              {% assign lat = parts[0] | strip | plus: 0.0 %}
+              {% assign long = parts[1] | strip | plus: 0.0 %}
+            {% else %}
+              {% assign lat = bread.lat %}
+              {% assign long = bread.long %}
+            {% endif %}
 
-              <a href="{{ bread.url }}" 
+            {% capture pin_color %}
+              {% case bread.color %}
+                {% when 'brown' %}#b0845b
+                {% when 'beige' %}#ebcf9b
+                {% when 'tan' %}#e0bb77
+                {% when 'gold' %}#edcb6d
+                {% when 'white' %}#f7e8cb
+                {% else %}{{ bread.color }} {% endcase %}
+            {% endcapture %}
+            {% assign pin_color = pin_color | strip %}
+
+            {% assign long_offset = long | plus: 180.5 %}
+            {% assign left_pos = long_offset | divided_by: 3.6 %}
+            {% assign lat_offset = 90.0 | minus: lat %}
+            {% assign top_pos = lat_offset | divided_by: 1.8 %}
+
+            <a href="{{ bread.url }}" 
               class="map-pin" 
               title="{{ bread.name }}"
               target="_blank"
               rel="noopener noreferrer"
-              style="top: {{ top_pos }}%; left: {{ left_pos }}%; background-color: {{ bread.color }};">
+              style="top: {{ top_pos }}%; left: {{ left_pos }}%; background-color: {{ pin_color }};">
               <span class="pin-label">{{ bread.name }}</span>
-              </a>
+            </a>
           {% endfor %}
 
         </div>

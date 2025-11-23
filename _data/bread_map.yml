@@ -13,12 +13,22 @@
   url: https://en.wikipedia.org/wiki/croissant
   lat: 48.853304
   long: 2.813573
-  color: "#edce93"
+  color: gold
 - name: focaccia 
   url: https://en.wikipedia.org/wiki/Focaccia
   lat: 44.4056
   long: 8.9463
   color: "#edce93"
+- name: ciabatta
+  url: https://en.wikipedia.org/wiki/ciabatta
+  lat: 45.075971
+  long: 11.789558
+  color: white
+- name: pizza
+  url: https://en.wikipedia.org/wiki/pizza
+  lat: 40.849434
+  long: 14.263435
+  color: gold
 
 - name: crumpet
   url: https://en.wikipedia.org/wiki/crumpet
@@ -35,12 +45,12 @@
   url: https://en.wikipedia.org/wiki/Pretzel
   lat: 49.453237
   long: 11.070835
-  color: "#b0845b"
+  color: brown
 - name: pumpernickel
   url: https://en.wikipedia.org/wiki/pumpernickel
   lat: 51.454805
   long: 6.998987
-  color: "#b0845b"
+  color: brown
 - name: kaiser roll
   url: https://en.wikipedia.org/wiki/kaiser_roll
   lat: 48.201391
@@ -51,17 +61,21 @@
   url: https://en.wikipedia.org/wiki/crispbread
   lat: 59.382967
   long: 13.503463
-  color: "#edce93"
+  color: brown
 - name: rugbrød
   url: https://en.wikipedia.org/wiki/rugbrød
   lat: 55.661968
   long:  12.461676
-  color: "#edce93"
+  color: brown
+- name: rúgbrauð
+  url: https://en.wikipedia.org/wiki/rúgbrauð
+  coords: "64.124109, -21.85771"
+  color: brown
 - name: borodinsky
   url: https://en.wikipedia.org/wiki/borodinsky_bread
   lat: 55.754472
-  long:  37.603402
-  color: "#edce93"
+  long: 37.603402
+  color: brown
 
 
 - name: broa
@@ -74,24 +88,12 @@
   lat: 40.416237
   long: -3.704286
   color: "#edce93"
-- name: ciabatta
-  url: https://en.wikipedia.org/wiki/ciabatta
-  lat: 45.075971
-  long: 11.789558
-  color: "#edce93"
 
-- name: pizza
-  url: https://en.wikipedia.org/wiki/pizza
-  lat: 40.849434
-  long: 14.263435
-  color: "#edce93"
 - name: somun
   url: https://en.wikipedia.org/wiki/pita
   lat: 43.868994
   long:  18.374020
   color: "#edce93"
-
-
 
 
 # ---- america and oceania -------
@@ -100,24 +102,33 @@
   url: https://en.wikipedia.org/wiki/bagel
   lat: 40.713874
   long: -73.990247
-  color: "#edce93"
+  color: white
+- name: cornbread 
+  url: https://en.wikipedia.org/wiki/cornbread
+  coords: "33.756058, -84.393926"
+  color: gold
+- name: frybread 
+  url: https://en.wikipedia.org/wiki/frybread
+  coords: "44.363126, -100.383743"
+  color: gold
+
 
 - name: tortilla 
   url: https://en.wikipedia.org/wiki/tortilla
   lat:   19.408041
   long: -99.135946
-  color: "#edce93"
+  color: white
 
 - name: pão de queijo 
   url: https://en.wikipedia.org/wiki/Pão_de_queijo
   lat:   -20.395078
   long:  -43.511656
-  color: "#edce93"
+  color: gold
 - name: pandebono
   url: https://en.wikipedia.org/wiki/pandebono
   lat:  3.452309
   long:  -76.531722
-  color: "#edce93"
+  color: gold
 
 - name: arepa
   url: https://en.wikipedia.org/wiki/arepa
@@ -134,7 +145,6 @@
   lat:   13.701726
   long: -89.196122
   color: "#edce93"
-
 
 - name: damper
   url: https://en.wikipedia.org/wiki/Damper_(food)
@@ -220,7 +230,37 @@
   lat: 31.634498
   long: 74.876563
   color: "#edce93"
+- name: puri
+  url: https://en.wikipedia.org/wiki/puri_(food)
+  coords: 23.749394, 90.382519
+  color: gold
 
+- name: khakhra
+  url: https://en.wikipedia.org/wiki/khakhra
+  coords: 23.034158, 72.570122
+  color: gold
+
+- name: pav
+  url: https://en.wikipedia.org/wiki/Pav_bhaji
+  coords: 18.990998, 72.834787
+  color: gold
+- name: dosa
+  url: https://en.wikipedia.org/wiki/dosa_(food)
+  coords: 13.343629, 74.757317
+  color: tan
+- name: appam
+  url: https://en.wikipedia.org/wiki/appam
+  coords: 9.923924, 78.117301
+  color: white
+- name: idli
+  url: https://en.wikipedia.org/wiki/
+  coords: 13.083462, 80.249708
+  color: white
+
+- name: parotta
+  url: https://en.wikipedia.org/wiki/parotta
+  coords: 9.963046, 76.289755
+  color: gold
 
 
 
@@ -230,22 +270,22 @@
   url: https://en.wikipedia.org/wiki/mantou
   lat:  39.921823
   long: 116.357126
-  color: "#edce93"
+  color: white
 - name: roti canai 
   url: https://en.wikipedia.org/wiki/roti_canai
   lat:  3.151547 
   long: 101.697061
-  color: "#edce93"
+  color: gold
 - name: pineapple bun
   url: https://en.wikipedia.org/wiki/pineapple_bun
   lat: 22.280480
   long: 114.179160
-  color: "#edce93"
+  color: gold
 - name: cong you bing
   url: https://en.wikipedia.org/wiki/Cong_you_bing
   lat: 31.222921
   long:  121.471784
-  color: "#edce93"
+  color: gold
 - name: pandesal
   url: https://en.wikipedia.org/wiki/pandesal
   lat: 14.605311
