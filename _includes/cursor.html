@@ -1,0 +1,91 @@
+<div id="cursor-container">
+  <div id="bunny" class="custom-element">
+    <img id="bunnyimg" src="/assets/bunnystill.png" alt="bunny" width=32>
+  </div>
+  <!-- <div id="carrot" class="custom-element">🥕</div> -->
+</div>
+
+<style>
+  /* Hide the default mouse cursor */
+  /* body, a, button {
+    cursor: none !important;
+  } */
+
+  #cursor-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none; /* Allows clicking through the emojis */
+    z-index: 9999;
+  }
+
+  .custom-element {
+    position: fixed;
+    font-size: 24px;
+    user-select: none;
+    line-height: 1;
+  }
+
+</style>
+
+<script>
+  const carrot = document.getElementById('carrot');
+  const bunny = document.getElementById('bunny');
+  const bunnyimg = document.getElementById('bunnyimg')
+  const bunnyHop = "/assets/bunnyhopping.gif"
+  const bunnyStill = "/assets/bunnystill.png"
+  let moving = false;
+
+  let mouseX = 0, mouseY = 0; 
+  let bunnyX = parseFloat(sessionStorage.getItem('bunnyX')) || 24;
+  let bunnyY = parseFloat(sessionStorage.getItem('bunnyY')) || 24;
+  const speed = 1; 
+
+  window.addEventListener('beforeunload', () => {
+    sessionStorage.setItem('bunnyX', bunnyX);
+    sessionStorage.setItem('bunnyY', bunnyY);
+  });
+
+  document.addEventListener('mousemove', (e) => {
+    mouseX = e.clientX;
+    mouseY = e.clientY;
+    carrot.style.left = (mouseX + 0) + 'px';
+    carrot.style.top = (mouseY - 24) + 'px';
+  });
+
+  function animate() {
+    // Determine distance between bunny and carrot
+    let dista = ((mouseX - bunnyX)**2 + (mouseY - bunnyY)**2)**0.5
+    if (dista > 50){
+        let dx = (mouseX - bunnyX)/dista;
+        let dy = (mouseY - bunnyY)/dista;
+        bunnyX += dx * speed;
+        bunnyY += dy * speed;
+        if (!moving){
+            bunnyimg.src = bunnyHop;
+            moving = true;
+        }
+    }
+    else {
+        if (moving){
+            bunnyimg.src = bunnyStill;
+            moving = false;
+        }
+    }
+
+    if (mouseX-bunnyX > 0) {
+      bunny.style.transform = "scaleX(-1)"; 
+    } else {
+      bunny.style.transform = "scaleX(1)";
+    }
+
+    bunny.style.left = (bunnyX + 0) + 'px'; 
+    bunny.style.top = (bunnyY - 24) + 'px';
+
+    requestAnimationFrame(animate);
+  }
+
+  animate();
+</script>
