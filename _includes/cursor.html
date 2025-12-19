@@ -38,14 +38,18 @@
   const bunnyStill = "/assets/bunnystill.png"
   let moving = false;
 
-  let mouseX = 0, mouseY = 0; 
+  let mouseX = parseFloat(sessionStorage.getItem('mouseX')) || 0;
+  let mouseY = parseFloat(sessionStorage.getItem('mouseY')) || 0;
   let bunnyX = parseFloat(sessionStorage.getItem('bunnyX')) || 24;
   let bunnyY = parseFloat(sessionStorage.getItem('bunnyY')) || 24;
   const speed = 1; 
 
   window.addEventListener('beforeunload', () => {
+    sessionStorage.setItem('mouseX', mouseX);
+    sessionStorage.setItem('mouseY', mouseY);
     sessionStorage.setItem('bunnyX', bunnyX);
     sessionStorage.setItem('bunnyY', bunnyY);
+
   });
 
   document.addEventListener('mousemove', (e) => {
