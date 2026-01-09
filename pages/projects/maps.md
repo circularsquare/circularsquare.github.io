@@ -11,6 +11,7 @@ permalink: /maps/
 - equal population maps
     - [europe in regions of 1 million people](/assets/euro1m.png) 
     - [north america in regions of 1 million people](/assets/na1m.png) 
+    - [south america in regions of 1 million people](/assets/maps/sa1m.png) 
     - [the world in regions of 10 million people](/assets/world10mfull.png)
     - [fantasy world metro map](/assets/worldtrain.png)
 
