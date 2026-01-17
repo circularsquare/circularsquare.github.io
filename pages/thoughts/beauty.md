@@ -17,3 +17,5 @@ for me, beauty has been
 - [community](/thoughts/community)
 - [independence](/thoughts/aloneness)
 - masculinity
+- pain
+- [winter](/thoughts/winter)
