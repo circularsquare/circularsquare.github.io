@@ -26,3 +26,4 @@ assorted word vomit
 - [words](words)
 - [winter](winter)
 
+- [lists](/lists)

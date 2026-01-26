@@ -34,15 +34,19 @@
   //const carrot = document.getElementById('carrot');
   const bunny = document.getElementById('bunny');
   const bunnyimg = document.getElementById('bunnyimg')
-  const bunnyHop = "/assets/bunnyhopping.gif"
-  const bunnyStill = "/assets/bunnystill.png"
-  let moving = false;
+  const bunnyHop = "/assets/bunnyhopfs.gif"
+  const bunnyStill = "/assets/bunnyhops.png"
+  // const bunnyHop = "/assets/bunnyhopping.gif"
+  // const bunnyStill = "/assets/bunnystill.png"
+  const hopDuration = 800; // Total loop time (8 frames * 100ms)
+  const airStart = 100;    // Start moving at Frame 2
+  const airEnd = 400;      // Stop moving at end of Frame 4
 
   let mouseX = parseFloat(sessionStorage.getItem('mouseX')) || 0;
   let mouseY = parseFloat(sessionStorage.getItem('mouseY')) || 0;
   let bunnyX = parseFloat(sessionStorage.getItem('bunnyX')) || 24;
   let bunnyY = parseFloat(sessionStorage.getItem('bunnyY')) || 24;
-  const speed = 1; 
+  const speed = 1.4; 
 
   window.addEventListener('beforeunload', () => {
     sessionStorage.setItem('mouseX', mouseX);
@@ -59,27 +63,37 @@
     //carrot.style.top = (mouseY - 24) + 'px';
   });
 
+  let hopStartTime = 0;
+  let isHopping = false;
+
   function animate() {
+    const currentTime = Date.now();
     // Determine distance between bunny and carrot
     let dista = ((mouseX - bunnyX)**2 + (mouseY - bunnyY)**2)**0.5
-    if (dista > 50){
-        let dx = (mouseX - bunnyX)/dista;
-        let dy = (mouseY - bunnyY)/dista;
-        bunnyX += dx * speed;
-        bunnyY += dy * speed;
-        if (!moving){
-            bunnyimg.src = bunnyHop;
-            moving = true;
+
+    if (!isHopping){
+      if (dista > 50){
+        bunnyimg.src = bunnyHop;
+        isHopping = true;
+        hopStartTime = currentTime;
+      }
+    } else { // hopping
+      let timeIntoHop = (currentTime - hopStartTime) % hopDuration;
+      if (dista <= 50 && timeIntoHop > 500){
+        isHopping = false;
+        bunnyimg.src = bunnyStill;
+      } 
+      else {
+        if (timeIntoHop >= airStart && timeIntoHop < airEnd){
+          let dx = (mouseX - bunnyX)/dista;
+          let dy = (mouseY - bunnyY)/dista;
+          bunnyX += dx * speed;
+          bunnyY += dy * speed;
         }
-    }
-    else {
-        if (moving){
-            bunnyimg.src = bunnyStill;
-            moving = false;
-        }
+      }
     }
 
-    if (mouseX-bunnyX > 0) {
+    if (mouseX - bunnyX > 0) {
       bunny.style.transform = "scaleX(-1)"; 
     } else {
       bunny.style.transform = "scaleX(1)";
