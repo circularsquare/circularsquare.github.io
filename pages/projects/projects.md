@@ -7,6 +7,7 @@ permalink: /projects/
 - maps
     - city maps
         - [nyc subway stations by population in catchment area](/assets/nycvoronoi.png)
+            - [+ regional rail stations](/assets/maps/nycarea.png)
         - [nyc street trips heat map](/assets/nystreets.png)
         - [nyc bus lines by ridership](/assets/bus.png)
     - equal population maps
