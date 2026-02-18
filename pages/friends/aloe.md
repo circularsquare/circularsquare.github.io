@@ -8,7 +8,7 @@ aloe is a succulent plant with no stem and very thick leaves that are jelly-like
 
 aloe is from a small village in [fulan](/places/fulan) where they grow rice and peanuts. one neighboring village raises a lot of chickens.
 
-aloe can speak to animals, especially birds. when he whistles it's usually too loud for birds though, and it scares them away, but if they're far enough away it doesn't seem as loud to them. 
+aloe can speak to animals, especially birds. when he whistles it's usually too loud for birds though, and it scares them away, but if they're far enough away it doesn't seem as loud to them. in his home in [jornor](/places/jornor), he has many chickens and [bunnies](/anita/bunnies) and a big peacock, which has taught the chickens to fly. he has also caught many animals and interacted with them. he caught a hawk as it was eating his chickens, which apparently has precise projectile poop. 
 
 aloe was an electrical engineer. he had a big box of wires and diodes and lights and solder. he later started working with software. he tried to teach me how to code, but he used C. when he tried to explain what a public static void was, it just scared me away.
 
