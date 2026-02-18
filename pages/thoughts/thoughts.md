@@ -25,5 +25,6 @@ assorted word vomit
 - [roadsides](roadsides)
 - [words](words)
 - [winter](winter)
+- [chapters](chapters)
 
 - [lists](/lists)

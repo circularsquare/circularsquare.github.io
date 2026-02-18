@@ -9,3 +9,4 @@ permalink: /thoughts/mantras
 - so is producing something extraordinary
 - you are worthy, always
 - care, enjoy, forgive 
+- anita unlimited

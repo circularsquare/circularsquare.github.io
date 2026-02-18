@@ -4,7 +4,9 @@ title: professional
 permalink: /anita/professional/
 ---
 
-i've been a trader since 2022.
+i am currently working on a game. in my free time, i mostly make maps. check out my [projects](/projects)!
+
+from 2022-2026 i was a trader.
 
 in college i studied physics, math, and cs, and graduated in 2022.
 
@@ -12,4 +14,4 @@ in 2021, i did my senior thesis on recoil in viscoelastic materials. when you st
 
 in 2020, i did a project where we found systematic defects in silicon wafers. we used fourier transforms to find repeated defects and clutering algorithms to find smudges and blobs, and some other techniques for other stuff.
 
-lately i mostly make maps in my free time. check out my [projects](/projects)!
+
