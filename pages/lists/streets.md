@@ -1,7 +1,7 @@
 ---
 layout: page
 title: streets
-permalink: /thoughts/streets
+permalink: /lists/streets
 ---
 
 here are my 10 least favorite and 10 favorite streets.
