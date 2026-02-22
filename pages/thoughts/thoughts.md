@@ -6,6 +6,8 @@ permalink: /thoughts/
 
 assorted word vomit
 
+- [lists](/lists)
+
 - [time](time)
 - [temperature](temperature)
 - [mean reversion](meanreversion)
@@ -19,7 +21,6 @@ assorted word vomit
 - [community](community)
 - [aloneness](aloneness)
 - [beauty](beauty)
-- [streets](streets)
 - [reasons](reasons)
 - [documentation](documentation)
 - [roadsides](roadsides)
@@ -27,4 +28,3 @@ assorted word vomit
 - [winter](winter)
 - [chapters](chapters)
 
-- [lists](/lists)

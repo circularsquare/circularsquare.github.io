@@ -38,6 +38,7 @@ header_pages:
   - pages/thoughts/thoughts.md
   - pages/friends/friends.md
   - pages/places/places.md
+  - pages/chat.md
 
 
 # Exclude from processing.
