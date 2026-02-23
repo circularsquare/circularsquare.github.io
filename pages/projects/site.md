@@ -19,5 +19,5 @@ feel free to share or link to this website!
 here is my button.
 
 <a href="https://anita.garden" target="_blank">
-  <img src="https://anita.garden/assets/images/button.gif" alt="Anita's Garden" width="88" height="31" style="image-rendering: pixelated;">
+  <img src="https://anita.garden/assets/button.gif" alt="Anita's Garden" width="88" height="31" style="image-rendering: pixelated;">
 </a>
