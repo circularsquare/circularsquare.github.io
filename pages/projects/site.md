@@ -14,4 +14,10 @@ jekyll comes ready with the features needed to make a blog. blogs are linear and
 
 the animation of the bunny chasing the cursor is originally from Terraria © Re-Logic, i found it on pinterest via google image search and could not find the creator of this specific animation.
 
-feel free to share this website! 
+feel free to share or link to this website! 
+
+here is my button.
+
+<a href="https://anita.garden" target="_blank">
+  <img src="https://anita.garden/assets/images/button.gif" alt="Anita's Garden" width="88" height="31" style="image-rendering: pixelated;">
+</a>
