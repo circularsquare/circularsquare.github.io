@@ -83,6 +83,11 @@
     }
     .timer-label span { font-weight: 500; color: var(--text); }
 
+    .label {
+      text-align: center;
+      font-family: var(--font-mono); font-size: 0.75rem; color: var(--text-dim);
+      padding: 8px 24px 16px;
+    }
     .game-area {
       width: 100%; max-width: 1200px; padding: 12px 24px;
       display: flex; gap: 16px; justify-content: center; flex-shrink: 0;
@@ -116,7 +121,7 @@
       position: absolute;
       inset: 0;
       overflow: hidden;
-      transform: scale(1.5);
+      transform: scale(1.3);
       transform-origin: center center;
     }
 
@@ -239,11 +244,10 @@
 
     .leaflet-container { background: #eef3eb; }
     .satellite-mode .leaflet-container { background: #1a2e1a; }
-    /* Pixelated rendering only for map-mode tiles to reduce tile gap flickering */
     .pyramid-layer.map-tiles .leaflet-tile-pane {
-      image-rendering: pixelated;
-      image-rendering: -moz-crisp-edges;
-      image-rendering: crisp-edges;
+    }
+    .pyramid-layer .leaflet-tile-pane img {
+      image-rendering: high-quality;
     }
     .leaflet-control-attribution {
       background: #cde7b7 !important;
@@ -260,17 +264,16 @@
     }
   </style>
 </head>
-<body>
-
+<body class="satellite-mode">
   <header>
-    <h1>GUESS THE CITY</h1>
+    <h1>guess the city!</h1>
     <div class="header-right">
       <select class="difficulty-select" id="difficulty-select">
-        <option value="easy" selected>50 cities</option>
-        <option value="medium">200 cities</option>
-        <option value="hard">1000 cities</option>
+        <option value="easy" selected>easy (50 cities)</option>
+        <option value="medium">medium (200 cities)</option>
+        <option value="hard">hard (1000 cities)</option>
       </select>
-      <button class="mode-toggle" id="mode-toggle" title="Toggle satellite view">🗺️ Map Mode</button>
+      <button class="mode-toggle satellite" id="mode-toggle" title="Toggle satellite view">🛰️ Satellite Mode</button>
       <div class="scoreboard">
         Round: <span id="round-display">1 / 5</span>
         &middot; Score: <span id="score-display">0</span>
@@ -283,7 +286,7 @@
       <div class="timer-bar-fill" id="timer-fill"></div>
     </div>
     <div class="timer-label">
-      <span id="timer-text">45.0s</span>
+      <span id="timer-text">—</span>
       <span id="zoom-label">zoom 15.0</span>
     </div>
   </div>
@@ -336,10 +339,9 @@
   <div class="result-overlay" id="result-overlay">
     <div class="result-card" id="result-card"></div>
   </div>
-  <div class="timer-bar-wrapper">
-    <div class="timer-label">
-      <span id="timer-text">disclaimer: this game is vibe coded</span>
-    </div>
+  <div class="label">
+    check out my <a href="https://anita.garden" style="color:#559139">website!</a> <br>
+    disclaimer: this game is vibe coded 
   </div>
 
 
@@ -417,30 +419,34 @@
       roundsPerGame: 5,
       totalTime: 45,
       startZoom: 15,
-      endZoom: 2,
-      winRadius: 250,
+      endZoom: 3,
+      winRadius: 250,        // base win radius in km (used when zoomed in)
+      scaleThresholdKm: 500, // win radius starts growing once the view exceeds this radius
       penalty: 4,
       maxVisibleLayers: 2,
     };
 
     /* ==========================================================
        VARIABLE SPEED: PIECEWISE TIME → ZOOM MAPPING
+       Each phase: zFrac = fraction of zoom range covered (must sum to 1)
+                   tFrac = fraction of total time spent (must sum to 1)
+       Only CONFIG.totalTime needs to change to rescale everything.
        ========================================================== */
-    const RAW_PHASES = [
-      { zFrac: 0.3, weight: 0.5 },
-      { zFrac: 0.3, weight: 0.7 },
-      { zFrac: 0.4, weight: 0.975 },
+    const PHASE_CONFIG = [
+      { zFrac: 0.3, tFrac: 0.20 },
+      { zFrac: 0.3, tFrac: 0.28 }, 
+      { zFrac: 0.2, tFrac: 0.20 },
+      { zFrac: 0.2, tFrac: 0.30 }
     ];
 
-    const totalWeight = RAW_PHASES.reduce((s, p) => s + p.zFrac * p.weight, 0);
     let _tCursor = 0, _zCursor = 0;
-    const PHASES = RAW_PHASES.map(p => {
-      const duration = (p.zFrac * p.weight / totalWeight) * CONFIG.totalTime;
+    const PHASES = PHASE_CONFIG.map(p => {
       const phase = {
         zoomStart: _zCursor, zoomEnd: _zCursor + p.zFrac,
-        timeStart: _tCursor, timeEnd: _tCursor + duration,
+        timeStart: _tCursor * CONFIG.totalTime,
+        timeEnd: (_tCursor + p.tFrac) * CONFIG.totalTime,
       };
-      _tCursor += duration;
+      _tCursor += p.tFrac;
       _zCursor += p.zFrac;
       return phase;
     });
@@ -485,7 +491,7 @@
       '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> ' +
       '&copy; <a href="https://carto.com/">CARTO</a>';
 
-    let tileMode = "map";
+    let tileMode = "satellite";
 
     function getTiles() { return TILE_SETS[tileMode]; }
 
@@ -521,7 +527,7 @@
        STATE
        ========================================================== */
     let state = {
-      round: 0, score: 0, currentCity: null, guessLatLng: null,
+      round: 0, score: 0, currentCity: null, clueLatLng: null, guessLatLng: null,
       citiesThisGame: [], timeRemaining: CONFIG.totalTime,
       roundActive: false, animFrameId: null,
       animStartTime: null, animTimeOffset: 0, _lastUIUpdate: 0,
@@ -596,7 +602,7 @@
 
       for (const z of desiredZooms) {
         if (!pyramidLayers.find(l => l.zoom === z)) {
-          createPyramidLayer(z, state.currentCity.latlng);
+          createPyramidLayer(z, state.clueLatLng || state.currentCity.latlng);
         }
       }
 
@@ -698,8 +704,8 @@
       // Preload upcoming zoom levels
       const currentIntZoom = Math.max(CONFIG.endZoom, Math.ceil(ez));
       for (let z = currentIntZoom; z >= Math.max(CONFIG.endZoom, currentIntZoom - 3); z--) {
-        const c = state.currentCity;
-        preloadTilesForZoom(c.latlng[0], c.latlng[1], z);
+        const clue = state.clueLatLng || state.currentCity.latlng;
+        preloadTilesForZoom(clue[0], clue[1], z);
       }
 
       updatePyramidLayers(ez);
@@ -715,6 +721,7 @@
         fill.classList.toggle("critical", pct <= 15);
         document.getElementById("timer-text").textContent = `${t.toFixed(1)}s`;
         document.getElementById("zoom-label").textContent = `zoom ${ez.toFixed(1)}`;
+        if (guessCircle) guessCircle.setRadius(getDynamicWinRadius(ez) * 1000);
       }
 
       state.animFrameId = requestAnimationFrame(animationLoop);
@@ -742,7 +749,6 @@
 
     let guessCircle = null;
     const GUESS_CIRCLE_STYLE = {
-      radius: CONFIG.winRadius * 1000,
       color: "#4a8c3f", weight: 2,
       fillColor: "#4a8c3f", fillOpacity: 0.10, dashArray: "6 4",
     };
@@ -750,11 +756,34 @@
     answerMap.on("click", function (e) {
       if (!state.roundActive) return;
       state.guessLatLng = e.latlng;
-      if (guessCircle) guessCircle.setLatLng(e.latlng);
-      else guessCircle = L.circle(e.latlng, GUESS_CIRCLE_STYLE).addTo(answerMap);
+      const ez = effectiveZoom(CONFIG.totalTime - state.timeRemaining);
+      const r = getDynamicWinRadius(ez) * 1000;
+      if (guessCircle) {
+        guessCircle.setLatLng(e.latlng);
+        guessCircle.setRadius(r);
+      } else {
+        guessCircle = L.circle(e.latlng, { ...GUESS_CIRCLE_STYLE, radius: r }).addTo(answerMap);
+      }
       document.getElementById("btn-submit").disabled = false;
       document.getElementById("guess-hint").textContent =
         `${e.latlng.lat.toFixed(2)}, ${e.latlng.lng.toFixed(2)}`;
+    });
+
+    // Hide the circle during player-initiated zoom animations to avoid SVG redraw glitches.
+    // endRound sets roundActive=false before fitBounds, so those zooms are left alone.
+    answerMap.on('zoomstart', () => {
+      if (state.roundActive && guessCircle) {
+        answerMap.removeLayer(guessCircle);
+        guessCircle = null;
+      }
+    });
+    answerMap.on('zoomend', () => {
+      if (state.roundActive && state.guessLatLng) {
+        const ez = effectiveZoom(CONFIG.totalTime - state.timeRemaining);
+        guessCircle = L.circle(state.guessLatLng,
+          { ...GUESS_CIRCLE_STYLE, radius: getDynamicWinRadius(ez) * 1000 }
+        ).addTo(answerMap);
+      }
     });
 
     /* ==========================================================
@@ -787,8 +816,59 @@
       return `${Math.round(km).toLocaleString()} km`;
     }
 
+    // Approximate visible radius in km at a given effective zoom (calibrated for ~450px map).
+    // win radius is held at CONFIG.winRadius until the view exceeds scaleThresholdKm,
+    // then grows proportionally so the acceptance zone stays a fixed fraction of the view.
+    function getDynamicWinRadius(ez) {
+      const viewRadiusKm = 35000 / Math.pow(2, ez);
+      return Math.max(CONFIG.winRadius, CONFIG.winRadius * viewRadiusKm / CONFIG.scaleThresholdKm);
+    }
+
+    function jitterLatLng(latlng, maxRadiusKm = 2) {
+      const [lat, lng] = latlng;
+      const angle = Math.random() * 2 * Math.PI;
+      // sqrt gives uniform area distribution within the circle
+      const dist = Math.sqrt(Math.random()) * maxRadiusKm;
+      const dlat = (dist * Math.cos(angle)) / 111.32;
+      const dlng = (dist * Math.sin(angle)) / (111.32 * Math.cos(lat * Math.PI / 180));
+      return [lat + dlat, lng + dlng];
+    }
+
+    async function isOverWater(lat, lng) {
+      try {
+        const res = await fetch(
+          `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`
+        );
+        if (!res.ok) return false;
+        const data = await res.json();
+        // Open ocean: Nominatim returns { error: "Unable to geocode" }
+        if (data.error) return true;
+        // Named water bodies
+        const waterTypes = new Set([
+          'ocean', 'sea', 'bay', 'strait', 'gulf', 'lake',
+          'river', 'reservoir', 'harbour', 'harbor',
+        ]);
+        if (waterTypes.has(data.type)) return true;
+        if (data.class === 'waterway' || data.class === 'water') return true;
+        return false;
+      } catch {
+        return false; // assume land on error
+      }
+    }
+
+    async function getJitteredLatLng(city, maxTries = 5) {
+      for (let i = 0; i < maxTries; i++) {
+        const jittered = jitterLatLng(city.latlng);
+        if (!(await isOverWater(jittered[0], jittered[1]))) return jittered;
+      }
+      console.log("All jitter attempts landed on water, using exact city center");
+      return city.latlng;
+    }
+
     document.getElementById("difficulty-select").addEventListener("change", () => {
       stopAnimation(); startGame();
+      renderLeaderboard();
+      if (currentLbTab === "global" && globalLeaderboardCache) renderGlobalLeaderboard(globalLeaderboardCache);
     });
 
     document.getElementById("mode-toggle").addEventListener("click", () => {
@@ -799,6 +879,8 @@
       document.body.classList.toggle("satellite-mode", tileMode === "satellite");
       stopAnimation();
       startGame();
+      renderLeaderboard();
+      if (currentLbTab === "global" && globalLeaderboardCache) renderGlobalLeaderboard(globalLeaderboardCache);
     });
 
     function updateTimerUI() {
@@ -816,18 +898,42 @@
 
     /* ==========================================================
        LEADERBOARD — LOCAL + GLOBAL (jsonbin.io)
+       Entries are categorised by difficulty + mode (6 combos).
+       Only entries matching the current selection are shown.
        ========================================================== */
-    const JSONBIN_BIN_ID  = "";
-    const JSONBIN_API_KEY = "";
+    const JSONBIN_BIN_ID  = "699b73faae596e708f4062e1";
+    const JSONBIN_API_KEY = "$2a$10$wgxuqXN86298YHAQDZ/lGOSPnrRiqnHmqgF2FAiq9hkubkmGG/7Ae";
     const JSONBIN_URL = JSONBIN_BIN_ID
       ? `https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}` : null;
 
     const LB_KEY = "guessTheCity_leaderboard";
-    const LB_MAX = 10;
-    const GLOBAL_LB_MAX = 20;
+    const LB_CAT_MAX = 10;     // top entries kept per category locally
+    const GLOBAL_CAT_MAX = 20; // top entries kept per category globally
 
     let currentLbTab = "local";
     let globalLeaderboardCache = null;
+
+    function getCurrentFilter() {
+      return {
+        difficulty: document.getElementById("difficulty-select").value,
+        mode: tileMode,
+      };
+    }
+
+    // Keep the top N entries per difficulty+mode category.
+    function trimByCategory(entries, perCatMax) {
+      const byCategory = {};
+      for (const e of entries) {
+        const key = `${e.difficulty}:${e.mode || "map"}`;
+        (byCategory[key] = byCategory[key] || []).push(e);
+      }
+      const out = [];
+      for (const cat of Object.values(byCategory)) {
+        cat.sort((a, b) => b.score - a.score);
+        out.push(...cat.slice(0, perCatMax));
+      }
+      return out;
+    }
 
     document.querySelectorAll(".lb-tab").forEach(tab => {
       tab.addEventListener("click", () => {
@@ -857,23 +963,25 @@
       try { localStorage.setItem(LB_KEY, JSON.stringify(entries)); } catch {}
     }
 
-    function addToLeaderboard(score, difficulty) {
+    function addToLeaderboard(score, difficulty, mode) {
       const entries = loadLeaderboard();
       entries.push({
-        score, difficulty,
+        score, difficulty, mode,
         maxScore: CONFIG.totalTime * CONFIG.roundsPerGame,
         date: new Date().toLocaleDateString(),
         name: getPlayerName(),
       });
-      entries.sort((a, b) => b.score - a.score);
-      if (entries.length > LB_MAX) entries.length = LB_MAX;
-      saveLeaderboard(entries);
+      saveLeaderboard(trimByCategory(entries, LB_CAT_MAX));
       renderLeaderboard();
-      submitToGlobalLeaderboard(score, difficulty);
+      submitToGlobalLeaderboard(score, difficulty, mode);
     }
 
     function renderLeaderboard() {
-      const entries = loadLeaderboard();
+      const { difficulty, mode } = getCurrentFilter();
+      const entries = loadLeaderboard()
+        .filter(e => e.difficulty === difficulty && (e.mode === mode || !e.mode))
+        .sort((a, b) => b.score - a.score)
+        .slice(0, LB_CAT_MAX);
       const container = document.getElementById("lb-entries");
       if (entries.length === 0) {
         container.innerHTML = '<span class="lb-empty">No games played yet</span>';
@@ -883,7 +991,7 @@
         <div class="lb-entry">
           <span class="lb-rank">${i + 1}.</span>
           <span class="lb-score">${e.score}/${e.maxScore}</span>
-          <span class="lb-diff">${e.difficulty}</span>
+          <span class="lb-diff">${e.date}</span>
         </div>
       `).join("");
     }
@@ -913,24 +1021,26 @@
     }
 
     function renderGlobalLeaderboard(entries) {
+      const { difficulty, mode } = getCurrentFilter();
       const container = document.getElementById("lb-global-entries");
-      if (entries.length === 0) {
-        container.innerHTML = '<span class="lb-empty">No global games yet — be the first!</span>';
+      const filtered = entries
+        .filter(e => e.difficulty === difficulty && (e.mode === mode || !e.mode))
+        .sort((a, b) => b.score - a.score)
+        .slice(0, GLOBAL_CAT_MAX);
+      if (filtered.length === 0) {
+        container.innerHTML = '<span class="lb-empty">No entries for this mode yet — be first!</span>';
         return;
       }
-      container.innerHTML = entries
-        .sort((a, b) => b.score - a.score)
-        .slice(0, GLOBAL_LB_MAX)
-        .map((e, i) => `
-          <div class="lb-entry">
-            <span class="lb-rank">${i + 1}.</span>
-            <span class="lb-score">${e.score}/${e.maxScore}</span>
-            <span class="lb-diff">${e.name || "anon"} · ${e.difficulty}</span>
-          </div>
-        `).join("");
+      container.innerHTML = filtered.map((e, i) => `
+        <div class="lb-entry">
+          <span class="lb-rank">${i + 1}.</span>
+          <span class="lb-score">${e.score}/${e.maxScore}</span>
+          <span class="lb-diff">${e.name || "anon"}</span>
+        </div>
+      `).join("");
     }
 
-    async function submitToGlobalLeaderboard(score, difficulty) {
+    async function submitToGlobalLeaderboard(score, difficulty, mode) {
       if (!JSONBIN_URL) return;
       try {
         const res = await fetch(`${JSONBIN_URL}/latest`, {
@@ -940,19 +1050,18 @@
         const data = await res.json();
         const entries = (data.record && data.record.entries) || [];
         entries.push({
-          score, difficulty,
+          score, difficulty, mode,
           maxScore: CONFIG.totalTime * CONFIG.roundsPerGame,
           name: getPlayerName(), date: new Date().toISOString(),
         });
-        entries.sort((a, b) => b.score - a.score);
-        if (entries.length > GLOBAL_LB_MAX) entries.length = GLOBAL_LB_MAX;
+        const trimmed = trimByCategory(entries, GLOBAL_CAT_MAX);
         await fetch(JSONBIN_URL, {
           method: "PUT",
           headers: { "Content-Type": "application/json", "X-Master-Key": JSONBIN_API_KEY },
-          body: JSON.stringify({ entries }),
+          body: JSON.stringify({ entries: trimmed }),
         });
-        globalLeaderboardCache = entries;
-        if (currentLbTab === "global") renderGlobalLeaderboard(entries);
+        globalLeaderboardCache = trimmed;
+        if (currentLbTab === "global") renderGlobalLeaderboard(trimmed);
       } catch (err) {
         console.warn("Failed to submit to global leaderboard:", err);
       }
@@ -969,9 +1078,10 @@
       startRound();
     }
 
-    function startRound() {
+    async function startRound() {
       const city = state.citiesThisGame[state.round];
       state.currentCity = city;
+      state.clueLatLng = null;
       state.guessLatLng = null;
       state.timeRemaining = CONFIG.totalTime;
       state.roundActive = true;
@@ -980,10 +1090,14 @@
       const startZoom = getEffectiveStartZoom();
 
       clearAllPyramidLayers();
-      createPyramidLayer(startZoom, city.latlng);
+
+      // Jitter start position and check for water (up to 5 tries)
+      state.clueLatLng = await getJitteredLatLng(city);
+
+      createPyramidLayer(startZoom, state.clueLatLng);
 
       for (let z = startZoom - 1; z >= Math.max(CONFIG.endZoom, startZoom - 4); z--) {
-        preloadTilesForZoom(city.latlng[0], city.latlng[1], z);
+        preloadTilesForZoom(state.clueLatLng[0], state.clueLatLng[1], z);
       }
 
       answerMap.setView([20, 0], 2, { animate: false });
@@ -1005,11 +1119,13 @@
         state.guessLatLng.lat, state.guessLatLng.lng,
         city.latlng[0], city.latlng[1]
       );
-      if (dist <= CONFIG.winRadius) {
+      const ez = effectiveZoom(CONFIG.totalTime - state.timeRemaining);
+      const winRadius = getDynamicWinRadius(ez);
+      if (dist <= winRadius) {
         stopAnimation();
         const pts = calcPoints(state.timeRemaining);
         state.score += pts;
-        endRound(true, pts, dist);
+        endRound(true, pts, dist, winRadius);
       } else {
         state.animTimeOffset += CONFIG.penalty;
         state.timeRemaining = Math.max(0, state.timeRemaining - CONFIG.penalty);
@@ -1030,7 +1146,7 @@
       document.getElementById("wrong-feedback").classList.remove("visible");
     }
 
-    function endRound(won, pts, dist) {
+    function endRound(won, pts, dist, winRadius = CONFIG.winRadius) {
       state.roundActive = false;
       stopAnimation();
       const city = state.currentCity;
@@ -1063,7 +1179,7 @@
         card.innerHTML = `
           <h3>The city was</h3>
           <div class="result-city">${city.name}, ${city.country}</div>
-          <div class="result-detail">${formatDist(dist)} away — within ${CONFIG.winRadius} km!</div>
+          <div class="result-detail">${formatDist(dist)} away — within ${Math.round(winRadius)} km</div>
           <div class="result-detail">${state.timeRemaining.toFixed(1)}s remaining</div>
           <div class="result-points win">+${pts} pts</div>
           <button class="primary" style="width:100%">
@@ -1097,14 +1213,13 @@
 
     function showGameOver() {
       const diff = document.getElementById("difficulty-select").value;
-      addToLeaderboard(state.score, diff);
+      addToLeaderboard(state.score, diff, tileMode);
       const maxPossible = CONFIG.totalTime * CONFIG.roundsPerGame;
       const pct = Math.round((state.score / maxPossible) * 100);
       const card = document.getElementById("result-card");
       card.innerHTML = `
         <h3>Game Over</h3>
         <div class="final-score">${state.score} / ${maxPossible}</div>
-        <div class="result-detail">${pct}% of max possible</div>
         <br/>
         <button class="primary" style="width:100%" onclick="dismissAndRestart()">Play Again</button>`;
       document.getElementById("result-overlay").classList.add("visible");
@@ -1125,6 +1240,7 @@
     window.addEventListener("resize", computeMapSize);
 
     requestAnimationFrame(async () => {
+      document.getElementById("timer-text").textContent = `${CONFIG.totalTime.toFixed(1)}s`;
       computeMapSize();
       renderLeaderboard();
       await loadCities();
