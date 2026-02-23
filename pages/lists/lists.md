@@ -11,6 +11,7 @@ most of this website is lists, but this is a list of them.
 - [games](/games)
 - [streets](streets)
 - [websites](/websites)
+- [bubble tea](bubbletea)
 
 - [friends](/friends)
 - [places](/places)
