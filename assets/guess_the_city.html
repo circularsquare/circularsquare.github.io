@@ -176,7 +176,7 @@
 
     .result-overlay {
       display: none; position: fixed; inset: 0;
-      background: rgba(44, 53, 39, 0.35); backdrop-filter: blur(6px);
+      background: rgba(44, 53, 39, 0.35);
       z-index: 9999; justify-content: center; align-items: center;
     }
     .result-overlay.visible { display: flex; }
@@ -327,10 +327,6 @@
         <div class="lb-tabs">
           <button class="lb-tab active" data-tab="local">your best</button>
           <button class="lb-tab" data-tab="global">global</button>
-        </div>
-        <div class="lb-name-area">
-          <input type="text" id="player-name" class="player-name-input"
-                 placeholder="your name" maxlength="16" spellcheck="false" />
         </div>
       </div>
       <div class="lb-entries" id="lb-entries">
@@ -956,12 +952,9 @@
       });
     });
 
-    const nameInput = document.getElementById("player-name");
-    nameInput.value = localStorage.getItem("guessTheCity_playerName") || "";
-    nameInput.addEventListener("input", () => {
-      localStorage.setItem("guessTheCity_playerName", nameInput.value.trim());
-    });
-    function getPlayerName() { return nameInput.value.trim() || "anonymous"; }
+    function getPlayerName() {
+      return localStorage.getItem("guessTheCity_playerName") || "anonymous";
+    }
 
     function loadLeaderboard() {
       try { return JSON.parse(localStorage.getItem(LB_KEY)) || []; }
@@ -981,7 +974,6 @@
       });
       saveLeaderboard(trimByCategory(entries, LB_CAT_MAX));
       renderLeaderboard();
-      submitToGlobalLeaderboard(score, difficulty, mode);
     }
 
     function renderLeaderboard() {
@@ -1048,7 +1040,7 @@
       `).join("");
     }
 
-    async function submitToGlobalLeaderboard(score, difficulty, mode) {
+    async function submitToGlobalLeaderboard(score, difficulty, mode, name = getPlayerName()) {
       if (!JSONBIN_URL) return;
       try {
         const res = await fetch(`${JSONBIN_URL}/latest`, {
@@ -1060,7 +1052,7 @@
         entries.push({
           score, difficulty, mode,
           maxScore: CONFIG.totalTime * CONFIG.roundsPerGame,
-          name: getPlayerName(), date: new Date().toISOString(),
+          name, date: new Date().toISOString(),
         });
         const trimmed = trimByCategory(entries, GLOBAL_CAT_MAX);
         await fetch(JSONBIN_URL, {
@@ -1229,18 +1221,33 @@
       const diff = document.getElementById("difficulty-select").value;
       addToLeaderboard(state.score, diff, tileMode);
       const maxPossible = CONFIG.totalTime * CONFIG.roundsPerGame;
-      const pct = Math.round((state.score / maxPossible) * 100);
+      const savedName = localStorage.getItem("guessTheCity_playerName") || "";
       const card = document.getElementById("result-card");
       card.innerHTML = `
-        <h3>Game Over</h3>
+        <h3>game over</h3>
         <div class="final-score">${state.score} / ${maxPossible}</div>
-        <br/>
-        <div style="display:flex;gap:8px">
+        <div style="display:flex;gap:6px;margin:16px 0 4px">
+          <input type="text" id="score-name-input" class="player-name-input"
+            placeholder="your name" maxlength="16" spellcheck="false"
+            value="${savedName}" style="flex:1;font-size:0.82rem;padding:6px 8px" />
+          <button id="btn-submit-score" onclick="submitScore()">submit score</button>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:8px">
           <button style="flex:1" onclick="dismissGameOver()">close</button>
           <button class="primary" style="flex:1" onclick="dismissAndRestart()">play again</button>
         </div>`;
       state.gameOver = true;
       document.getElementById("result-overlay").classList.add("visible");
+    }
+
+    function submitScore() {
+      const nameEl = document.getElementById("score-name-input");
+      const name = (nameEl && nameEl.value.trim()) || "anonymous";
+      localStorage.setItem("guessTheCity_playerName", name);
+      const diff = document.getElementById("difficulty-select").value;
+      submitToGlobalLeaderboard(state.score, diff, tileMode, name);
+      const btn = document.getElementById("btn-submit-score");
+      if (btn) { btn.textContent = "submitted!"; btn.disabled = true; }
     }
 
     function dismissGameOver() {
