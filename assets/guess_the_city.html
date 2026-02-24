@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Guess the City</title>
+  <title>guess the city!</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet" />
@@ -35,7 +35,7 @@
     }
 
     header {
-      width: 100%; max-width: 1200px; padding: 16px 20px 0;
+      width: 100%; max-width: 1200px; padding: 16px 20px 4px;
       display: flex; justify-content: space-between; align-items: center;
       flex-wrap: wrap; gap: 10px; flex-shrink: 0;
     }
@@ -98,7 +98,7 @@
       display: flex; flex-direction: column; flex-shrink: 0;
     }
     .map-panel-header {
-      padding: 10px 12px; display: flex; justify-content: space-between;
+      padding: 8px 12px; display: flex; justify-content: space-between;
       align-items: center; border-bottom: 1px solid var(--border); flex-shrink: 0;
     }
     .map-panel-header h2 {
@@ -132,6 +132,7 @@
       height: calc(var(--map-size) * 2.3);
       left: 50%;
       top: 50%;
+      will-change: transform;
       transform-origin: center center;
       transform: translate(-50%, -50%) scale(1);
     }
@@ -278,10 +279,10 @@
         <option value="medium">medium (200 cities)</option>
         <option value="hard">hard (1000 cities)</option>
       </select>
-      <button class="mode-toggle satellite" id="mode-toggle" title="Toggle satellite view">🛰️ Satellite Mode</button>
+      <button class="mode-toggle satellite" id="mode-toggle" title="Toggle satellite view">🛰️ satellite mode</button>
       <div class="scoreboard">
-        Round: <span id="round-display">1 / 5</span>
-        &middot; Score: <span id="score-display">0</span>
+        round: <span id="round-display">1 / 5</span>
+        &middot; score: <span id="score-display">0</span>
       </div>
     </div>
   </header>
@@ -299,8 +300,7 @@
   <div class="game-area">
     <div class="map-panel">
       <div class="map-panel-header">
-        <h2>Clue Map</h2>
-        <div class="badge badge-accent">auto-zoom</div>
+        <h2>clue map</h2>
       </div>
       <div class="clue-clip-wrapper" id="clue-clip">
         <div id="pyramid-container"></div>
@@ -309,7 +309,7 @@
     </div>
     <div class="map-panel">
       <div class="map-panel-header">
-        <h2>Your Guess</h2>
+        <h2>your guess</h2>
         <div class="badge badge-accent" id="guess-hint">click to place pin</div>
       </div>
       <div id="answer-map" class="map-container"></div>
@@ -317,16 +317,16 @@
   </div>
 
   <div class="controls">
-    <button id="btn-new-game" style="display:none">New Game</button>
-    <button id="btn-submit" class="primary" disabled>Submit Guess</button>
+    <button id="btn-new-game" style="display:none">new game</button>
+    <button id="btn-submit" class="primary" disabled>submit guess</button>
   </div>
 
   <div class="leaderboard-wrapper">
     <div class="leaderboard">
       <div class="lb-header">
         <div class="lb-tabs">
-          <button class="lb-tab active" data-tab="local">Your Best</button>
-          <button class="lb-tab" data-tab="global">Global</button>
+          <button class="lb-tab active" data-tab="local">your best</button>
+          <button class="lb-tab" data-tab="global">global</button>
         </div>
         <div class="lb-name-area">
           <input type="text" id="player-name" class="player-name-input"
@@ -334,10 +334,10 @@
         </div>
       </div>
       <div class="lb-entries" id="lb-entries">
-        <span class="lb-empty">No games played yet</span>
+        <span class="lb-empty">no games played yet...</span>
       </div>
       <div class="lb-entries" id="lb-global-entries" style="display:none;">
-        <span class="lb-empty">Loading…</span>
+        <span class="lb-empty">loading…</span>
       </div>
     </div>
   </div>
@@ -786,6 +786,7 @@
     });
     answerMap.on('zoomend', () => {
       if (state.roundActive && state.guessLatLng) {
+        if (guessCircle) { answerMap.removeLayer(guessCircle); guessCircle = null; }
         const ez = effectiveZoom(CONFIG.totalTime - state.timeRemaining);
         guessCircle = L.circle(state.guessLatLng,
           { ...GUESS_CIRCLE_STYLE, radius: getDynamicWinRadius(ez) * 1000 }
@@ -881,7 +882,7 @@
     document.getElementById("mode-toggle").addEventListener("click", () => {
       tileMode = tileMode === "map" ? "satellite" : "map";
       const btn = document.getElementById("mode-toggle");
-      btn.textContent = tileMode === "map" ? "🗺️ Map Mode" : "🛰️ Satellite Mode";
+      btn.textContent = tileMode === "map" ? "🗺️ map mode" : "🛰️ satellite mode";
       btn.classList.toggle("satellite", tileMode === "satellite");
       document.body.classList.toggle("satellite-mode", tileMode === "satellite");
       stopAnimation();
@@ -1191,21 +1192,21 @@
 
       if (won) {
         card.innerHTML = `
-          <h3>The city was</h3>
+          <h3>the city was</h3>
           <div class="result-city">${city.name}, ${city.country}</div>
           <div class="result-detail">${formatDist(dist)} away — within ${Math.round(winRadius)} km</div>
           <div class="result-detail">${state.timeRemaining.toFixed(1)}s remaining</div>
           <div class="result-points win">+${pts} pts</div>
           <button class="primary" style="width:100%">
-            ${isLast ? "See Final Score" : "Next City →"}
+            ${isLast ? "see final score" : "next city →"}
           </button>`;
       } else {
         card.innerHTML = `
-          <h3>The city was</h3>
+          <h3>the city was</h3>
           <div class="result-city">${city.name}, ${city.country}</div>
           <div class="result-points lose">+0 pts</div>
           <button class="primary" style="width:100%">
-            ${isLast ? "See Final Score" : "Next City →"}
+            ${isLast ? "see final score" : "next city →"}
           </button>`;
       }
 
@@ -1235,8 +1236,8 @@
         <div class="final-score">${state.score} / ${maxPossible}</div>
         <br/>
         <div style="display:flex;gap:8px">
-          <button style="flex:1" onclick="dismissGameOver()">Close</button>
-          <button class="primary" style="flex:1" onclick="dismissAndRestart()">Play Again</button>
+          <button style="flex:1" onclick="dismissGameOver()">close</button>
+          <button class="primary" style="flex:1" onclick="dismissAndRestart()">play again</button>
         </div>`;
       state.gameOver = true;
       document.getElementById("result-overlay").classList.add("visible");
