@@ -20,7 +20,7 @@ permalink: /projects/
 - [this site](site)
 - [photos](/photos)
 - [audio](/audio)
-- [guess the city](/assets/cityguessing/guess_the_city.html)
+- [guess the city](/assets/guess_the_city.html)
 - [bluebs](https://circularsquare.github.io/bluebs/)  
 - [shonei](/shonei)
 - [bread](bread)
