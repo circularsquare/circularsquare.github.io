@@ -4,7 +4,8 @@
       "Bash(cd:*)",
       "WebFetch(domain:github.com)",
       "WebSearch",
-      "WebFetch(domain:gist.github.com)"
+      "WebFetch(domain:gist.github.com)",
+      "Bash(cat:*2)"
     ]
   }
 }
