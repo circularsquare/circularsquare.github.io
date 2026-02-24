@@ -43,10 +43,10 @@
       font-family: var(--font-mono); font-size: 1.1rem;
       font-weight: 500; letter-spacing: 0.04em; color: var(--accent);
     }
-    .header-right { display: flex; align-items: center; gap: 16px; }
+    .header-right { display: flex; align-items: center; gap: 10px; }
     .scoreboard {
       font-family: var(--font-mono); font-size: 0.82rem;
-      color: var(--text-dim); display: flex; gap: 16px;
+      color: var(--text-dim); display: flex; gap: 4px;
     }
     .scoreboard span { color: var(--text); font-weight: 500; }
     .difficulty-select {
@@ -253,12 +253,6 @@
     .pyramid-layer .leaflet-tile-pane img {
       image-rendering: high-quality;
     }
-    #answer-map .leaflet-control-zoom {
-      transform: scale(0.8); transform-origin: top left;
-    }
-    #answer-map .leaflet-control-scale {
-      transform: scale(0.8); transform-origin: bottom left;
-    }
     .leaflet-control-attribution {
       background: #cde7b7 !important;
       color: var(--text-dim) !important; font-size: 0.6rem !important;
@@ -270,7 +264,7 @@
       .game-area { flex-direction: column; align-items: center; }
       .game-area .map-panel:last-child .map-container,
       .clue-clip-wrapper {
-        height: calc(var(--map-size) * 0.6);
+        height: calc(var(--map-size) * 0.64);
       }
     }
   </style>
