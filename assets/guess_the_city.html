@@ -275,12 +275,13 @@
 </head>
 <body class="satellite-mode">
   <header>
-    <h1>guess the city!</h1>
+    <h1>guess the city !</h1>
     <div class="header-right">
       <select class="difficulty-select" id="difficulty-select">
         <option value="easy" selected>easy (50 cities)</option>
         <option value="medium">medium (200 cities)</option>
         <option value="hard">hard (1000 cities)</option>
+        <option value="anywhere">anywhere (no cities)</option>
       </select>
       <button class="mode-toggle satellite" id="mode-toggle" title="Toggle satellite view">🛰️ satellite mode</button>
       <div class="scoreboard">
@@ -687,6 +688,8 @@
     /* ==========================================================
        rAF ANIMATION LOOP
        ========================================================== */
+    let _lastPyramidUpdate = 0;
+
     function animationLoop(timestamp) {
       if (!state.roundActive) return;
 
@@ -707,14 +710,19 @@
       const progress = elapsedToZoomProgress(elapsed);
       const ez = startZoom - progress * zoomRange;
 
-      // Preload upcoming zoom levels
-      const currentIntZoom = Math.max(CONFIG.endZoom, Math.ceil(ez));
-      for (let z = currentIntZoom; z >= Math.max(CONFIG.endZoom, currentIntZoom - 3); z--) {
-        const clue = state.clueLatLng || state.currentCity.latlng;
-        preloadTilesForZoom(clue[0], clue[1], z);
-      }
+      // Throttle pyramid CSS updates to ~30fps — clip-path+transform at 60fps is expensive
+      if (timestamp - _lastPyramidUpdate >= 33) {
+        _lastPyramidUpdate = timestamp;
 
-      updatePyramidLayers(ez);
+        // Preload upcoming zoom levels
+        const currentIntZoom = Math.max(CONFIG.endZoom, Math.ceil(ez));
+        for (let z = currentIntZoom; z >= Math.max(CONFIG.endZoom, currentIntZoom - 3); z--) {
+          const clue = state.clueLatLng || state.currentCity.latlng;
+          preloadTilesForZoom(clue[0], clue[1], z);
+        }
+
+        updatePyramidLayers(ez);
+      }
 
       // UI at ~4Hz
       if (timestamp - state._lastUIUpdate > 250) {
@@ -737,6 +745,7 @@
       state.animStartTime = null;
       state.animTimeOffset = 0;
       state._lastUIUpdate = 0;
+      _lastPyramidUpdate = 0;
       state.animFrameId = requestAnimationFrame(animationLoop);
     }
 
@@ -755,10 +764,17 @@
     L.control.scale({ imperial: false, position: 'bottomleft' }).addTo(answerMap);
 
     let guessCircle = null;
+    let guessPinMarker = null;
     const GUESS_CIRCLE_STYLE = {
       color: "#4a8c3f", weight: 2,
       fillColor: "#4a8c3f", fillOpacity: 0.10, dashArray: "6 4",
     };
+    const GUESS_PIN_ICON = L.divIcon({
+      className: "",
+      html: `<svg xmlns="http://www.w3.org/2000/svg" width="28" height="40" viewBox="0 0 28 40" style="filter:drop-shadow(0 2px 4px rgba(0,0,0,0.35))"><path d="M14 0 C6.268 0 0 6.268 0 14 C0 24.5 14 40 14 40 C14 40 28 24.5 28 14 C28 6.268 21.732 0 14 0 Z" fill="#4a8c3f"/><circle cx="14" cy="14" r="6" fill="white"/></svg>`,
+      iconSize: [28, 40],
+      iconAnchor: [14, 40],
+    });
 
     answerMap.on("click", function (e) {
       if (!state.roundActive) return;
@@ -771,17 +787,26 @@
       } else {
         guessCircle = L.circle(e.latlng, { ...GUESS_CIRCLE_STYLE, radius: r }).addTo(answerMap);
       }
+      if (guessPinMarker) {
+        guessPinMarker.setLatLng(e.latlng);
+      } else {
+        guessPinMarker = L.marker(e.latlng, { icon: GUESS_PIN_ICON }).addTo(answerMap);
+      }
       document.getElementById("btn-submit").disabled = false;
       document.getElementById("guess-hint").textContent =
         `${e.latlng.lat.toFixed(2)}, ${e.latlng.lng.toFixed(2)}`;
     });
 
-    // Hide the circle during player-initiated zoom animations to avoid SVG redraw glitches.
+    // Hide the circle and pin during player-initiated zoom animations to avoid SVG redraw glitches.
     // endRound sets roundActive=false before fitBounds, so those zooms are left alone.
     answerMap.on('zoomstart', () => {
       if (state.roundActive && guessCircle) {
         answerMap.removeLayer(guessCircle);
         guessCircle = null;
+      }
+      if (state.roundActive && guessPinMarker) {
+        answerMap.removeLayer(guessPinMarker);
+        guessPinMarker = null;
       }
     });
     answerMap.on('zoomend', () => {
@@ -791,6 +816,8 @@
         guessCircle = L.circle(state.guessLatLng,
           { ...GUESS_CIRCLE_STYLE, radius: getDynamicWinRadius(ez) * 1000 }
         ).addTo(answerMap);
+        if (guessPinMarker) { answerMap.removeLayer(guessPinMarker); guessPinMarker = null; }
+        guessPinMarker = L.marker(state.guessLatLng, { icon: GUESS_PIN_ICON }).addTo(answerMap);
       }
     });
 
@@ -871,6 +898,67 @@
       }
       console.log("All jitter attempts landed on water, using exact city center");
       return city.latlng;
+    }
+
+    /* ==========================================================
+       ANYWHERE MODE — random land points
+       ========================================================== */
+    // Weighted by approximate land area so most candidates hit land
+    const LAND_REGIONS = [
+      { lat: [15, 70],   lng: [-168, -52],  weight: 16 }, // North America
+      { lat: [-55, 13],  lng: [-82,  -34],  weight: 12 }, // South America
+      { lat: [35, 71],   lng: [-10,   40],  weight: 7  }, // Europe
+      { lat: [-35, 38],  lng: [-18,   52],  weight: 20 }, // Africa
+      { lat: [0, 72],    lng: [26,   180],  weight: 30 }, // Asia
+      { lat: [-47, -10], lng: [113,  180],  weight: 6  }, // Oceania
+    ];
+
+    function randomLandCandidate() {
+      const total = LAND_REGIONS.reduce((s, r) => s + r.weight, 0);
+      let r = Math.random() * total;
+      for (const region of LAND_REGIONS) {
+        r -= region.weight;
+        if (r <= 0) {
+          const lat = region.lat[0] + Math.random() * (region.lat[1] - region.lat[0]);
+          const lng = region.lng[0] + Math.random() * (region.lng[1] - region.lng[0]);
+          return [lat, lng];
+        }
+      }
+      return [0, 20];
+    }
+
+    async function reverseGeocode(lat, lng) {
+      try {
+        const res = await fetch(
+          `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`
+        );
+        if (!res.ok) return null;
+        const data = await res.json();
+        return data.error ? null : data;
+      } catch { return null; }
+    }
+
+    async function getRandomLandPoint(maxTries = 15) {
+      for (let i = 0; i < maxTries; i++) {
+        const candidate = randomLandCandidate();
+        if (!(await isOverWater(candidate[0], candidate[1]))) return candidate;
+      }
+      return [48.8566, 2.3522]; // fallback: Paris
+    }
+
+    // Fill in latlng for an "anywhere" city placeholder, then background-geocode its name.
+    async function prepareAnywhereCity(city) {
+      city.latlng = await getRandomLandPoint();
+      reverseGeocode(city.latlng[0], city.latlng[1]).then(data => {
+        if (data && data.address) {
+          const a = data.address;
+          city.name = a.city || a.town || a.village || a.county || a.state || null;
+          city.country = a.country || null;
+        }
+        if (!city.name) {
+          city.name = `${city.latlng[0].toFixed(2)}°, ${city.latlng[1].toFixed(2)}°`;
+        }
+      });
     }
 
     document.getElementById("difficulty-select").addEventListener("change", () => {
@@ -988,7 +1076,7 @@
         .slice(0, LB_CAT_MAX);
       const container = document.getElementById("lb-entries");
       if (entries.length === 0) {
-        container.innerHTML = '<span class="lb-empty">No games played yet</span>';
+        container.innerHTML = '<span class="lb-empty">no games played yet</span>';
         return;
       }
       container.innerHTML = entries.map((e, i) => `
@@ -1074,11 +1162,18 @@
     /* ==========================================================
        GAME FLOW
        ========================================================== */
-    function startGame() {
+    async function startGame() {
       state.round = 0;
       state.score = 0;
-      state.citiesThisGame = shuffle(getCityPool()).slice(0, CONFIG.roundsPerGame);
       updateScoreboard();
+      const diff = document.getElementById("difficulty-select").value;
+      if (diff === "anywhere") {
+        state.citiesThisGame = Array.from({ length: CONFIG.roundsPerGame }, () => ({
+          name: null, country: null, latlng: null, isAnywhere: true,
+        }));
+      } else {
+        state.citiesThisGame = shuffle(getCityPool()).slice(0, CONFIG.roundsPerGame);
+      }
       startRound();
     }
 
@@ -1095,8 +1190,18 @@
 
       clearAllPyramidLayers();
 
-      // Jitter start position and check for water (up to 5 tries)
-      state.clueLatLng = await getJitteredLatLng(city);
+      if (city.isAnywhere) {
+        if (!city.latlng) await prepareAnywhereCity(city);
+        state.clueLatLng = city.latlng;
+        // Pre-generate next round's location in the background while the player is guessing
+        if (state.round + 1 < state.citiesThisGame.length) {
+          const next = state.citiesThisGame[state.round + 1];
+          if (!next.latlng) prepareAnywhereCity(next);
+        }
+      } else {
+        // Jitter start position and check for water (up to 5 tries)
+        state.clueLatLng = await getJitteredLatLng(city);
+      }
 
       createPyramidLayer(startZoom, state.clueLatLng);
 
@@ -1106,6 +1211,7 @@
 
       answerMap.setView([20, 0], 2, { animate: false });
       if (guessCircle) { answerMap.removeLayer(guessCircle); guessCircle = null; }
+      if (guessPinMarker) { answerMap.removeLayer(guessPinMarker); guessPinMarker = null; }
 
       document.getElementById("btn-submit").disabled = true;
       document.getElementById("guess-hint").textContent = "click to place pin";
@@ -1185,24 +1291,29 @@
 
       const isLast = state.round + 1 >= CONFIG.roundsPerGame;
       const card = document.getElementById("result-card");
+      const locationLabel = city.isAnywhere ? "the location was" : "the city was";
+      const locationName = city.country
+        ? `${city.name}, ${city.country}`
+        : city.name || `${city.latlng[0].toFixed(2)}°, ${city.latlng[1].toFixed(2)}°`;
+      const nextLabel = city.isAnywhere ? "next location →" : "next city →";
 
       if (won) {
         card.innerHTML = `
-          <h3>the city was</h3>
-          <div class="result-city">${city.name}, ${city.country}</div>
+          <h3>${locationLabel}</h3>
+          <div class="result-city">${locationName}</div>
           <div class="result-detail">${formatDist(dist)} away — within ${Math.round(winRadius)} km</div>
           <div class="result-detail">${state.timeRemaining.toFixed(1)}s remaining</div>
           <div class="result-points win">+${pts} pts</div>
           <button class="primary" style="width:100%">
-            ${isLast ? "see final score" : "next city →"}
+            ${isLast ? "see final score" : nextLabel}
           </button>`;
       } else {
         card.innerHTML = `
-          <h3>the city was</h3>
-          <div class="result-city">${city.name}, ${city.country}</div>
+          <h3>${locationLabel}</h3>
+          <div class="result-city">${locationName}</div>
           <div class="result-points lose">+0 pts</div>
           <button class="primary" style="width:100%">
-            ${isLast ? "see final score" : "next city →"}
+            ${isLast ? "see final score" : nextLabel}
           </button>`;
       }
 
