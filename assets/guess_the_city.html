@@ -426,7 +426,7 @@
       roundsPerGame: 5,
       totalTime: 45,
       startZoom: 15,
-      endZoom: 3,
+      endZoom: 3.5,
       winRadius: 250,        // base win radius in km (used when zoomed in)
       scaleThresholdKm: 500, // win radius starts growing once the view exceeds this radius
       penalty: 4,
@@ -711,7 +711,7 @@
       const ez = startZoom - progress * zoomRange;
 
       // Throttle pyramid CSS updates to ~30fps — clip-path+transform at 60fps is expensive
-      if (timestamp - _lastPyramidUpdate >= 33) {
+      if (timestamp - _lastPyramidUpdate >= 48) {
         _lastPyramidUpdate = timestamp;
 
         // Preload upcoming zoom levels
@@ -882,6 +882,8 @@
         const waterTypes = new Set([
           'ocean', 'sea', 'bay', 'strait', 'gulf', 'lake',
           'river', 'reservoir', 'harbour', 'harbor',
+          'water',   // natural=water (generic water polygons — the main missing case)
+          'sound', 'fjord', 'lagoon', 'inlet', 'cove', 'channel',
         ]);
         if (waterTypes.has(data.type)) return true;
         if (data.class === 'waterway' || data.class === 'water') return true;
