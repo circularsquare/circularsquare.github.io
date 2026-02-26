@@ -711,7 +711,7 @@
       const ez = startZoom - progress * zoomRange;
 
       // Throttle pyramid CSS updates to ~30fps — clip-path+transform at 60fps is expensive
-      if (timestamp - _lastPyramidUpdate >= 48) {
+      if (timestamp - _lastPyramidUpdate >= 33) {
         _lastPyramidUpdate = timestamp;
 
         // Preload upcoming zoom levels
