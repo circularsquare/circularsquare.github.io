@@ -634,19 +634,22 @@ function updateCountryList(){
   for(const {c,i} of fi){
     if(revealedSet.has(i)) found[c.cc]=(found[c.cc]||0)+1;
   }
-  // Only show countries that have at least 1 found
-  const active=Object.keys(found);
-  if(active.length===0){
+  // Split into incomplete and complete
+  const allCountries=Object.keys(totals);
+  const incomplete=allCountries.filter(cc=>(found[cc]||0)<(totals[cc]||1));
+  const complete=allCountries.filter(cc=>(found[cc]||0)>=(totals[cc]||1)&&found[cc]);
+  // Show all countries (including 0-found) when <10 incomplete remain, otherwise only found ones
+  const showAll=incomplete.length<10;
+  const active=showAll?allCountries:Object.keys(found);
+  if(!showAll&&active.length===0){
     document.getElementById('found-list').innerHTML='';
     return;
   }
-  // Split into incomplete and complete
-  const incomplete=active.filter(cc=>found[cc]<(totals[cc]||1));
-  const complete=active.filter(cc=>found[cc]>=(totals[cc]||1));
-  // Sort incomplete by found desc, complete by name
-  incomplete.sort((a,b)=>found[b]-found[a]);
+  // Sort incomplete by found desc, complete by size; filter to active set
+  const incShow=incomplete.filter(cc=>showAll||(found[cc]||0)>0);
+  incShow.sort((a,b)=>(found[b]||0)-(found[a]||0));
   complete.sort((a,b)=>totals[b]-totals[a]);
-  const ordered=[...incomplete,...complete];
+  const ordered=[...incShow,...complete];
   const el=document.getElementById('found-list');
   el.innerHTML='';
   for(const cc of ordered){
@@ -752,11 +755,7 @@ function giveUp(){
 }
 
 function showWin(){
-  gameFinished=true;
-  const inp=document.getElementById('city-input');
-  inp.disabled=true;
-  inp.placeholder='';
-  showFinishOverlay(true);
+  giveUp();
 }
 
 
