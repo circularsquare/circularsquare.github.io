@@ -752,6 +752,10 @@ function giveUp(){
 }
 
 function showWin(){
+  gameFinished=true;
+  const inp=document.getElementById('city-input');
+  inp.disabled=true;
+  inp.placeholder='';
   showFinishOverlay(true);
 }
 
