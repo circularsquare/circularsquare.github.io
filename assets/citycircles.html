@@ -616,10 +616,11 @@ const COUNTRY_NAMES={
   BB:'Barbados',AG:'Antigua and Barbuda',MP:'Northern Mariana Islands',
   KI:'Kiribati',MH:'Marshall Islands',DM:'Dominica',
   CK:'Cook Islands',KN:'Saint Kitts and Nevis',
-  AS:'American Samoa',BQ:'Caribbean Netherlands'
+  AS:'American Samoa',BQ:'Caribbean Netherlands',
+  KH:'Cambodia',BH:'Bahrain'
 };
 
-function countryName(cc){ return COUNTRY_NAMES[cc]||`Territory (${cc})`; }
+function countryName(cc){ return COUNTRY_NAMES[cc]||cc; }
 
 function updateCountryList(){
   // Build country stats from revealedSet
