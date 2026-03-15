@@ -17,12 +17,15 @@ permalink: /projects/
         - [the world in regions of 10 million people](/assets/world10mfull.png)
         - [fantasy world metro map](/assets/worldtrain.png)
     - (if you'd like to support my map making, you can donate [here](https://ko-fi.com/anitamaps)!)<br><br>
+- games
+    - [city circles quiz](/circles)
+    - [guess the city](/assets/guessthecity.html)
+    - [bluebs](https://circularsquare.github.io/bluebs/)  
+    - [shonei](/shonei)
+
 - [this site](site)
 - [photos](/photos)
 - [audio](/audio)
-- [guess the city](/assets/guessthecity.html)
-- [bluebs](https://circularsquare.github.io/bluebs/)  
-- [shonei](/shonei)
 - [bread](bread)
 - [my github](https://github.com/circularsquare)
 

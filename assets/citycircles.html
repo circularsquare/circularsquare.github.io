@@ -1,0 +1,914 @@
+---
+layout: none
+permalink: /circles/
+---
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Proximity City Quiz</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#e3ffe0;--surface:#ffffff;--surface2:#e8f1e0;--border:#aacc9f;--border2:#648f5d;--text:#3a411e;--muted:#7f9363;--radius:2px;--fs-lg:16px;--fs-md:13px;--fs-sm:11px}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:Georgia,serif;font-size:var(--fs-md);overflow:hidden}
+#app{display:grid;grid-template-columns:clamp(232px,25vw,290px) 1fr;height:100vh}
+#sidebar{background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
+#header{padding:18px 18px 14px;border-top:4px solid var(--border2);border-bottom:1px solid var(--border)}
+#header h1{font-size:20px}
+#mode-section{padding:12px 18px 6px}
+.slabel{font-size:var(--fs-sm);color:var(--muted);margin-bottom:7px}
+.mode-tabs{display:flex;gap:5px}
+.mode-tab{flex:1;padding:6px 8px;border:1px solid var(--border);background:transparent;color:var(--muted);font-family:Georgia,serif;font-size:var(--fs-sm);cursor:pointer;border-radius:var(--radius);transition:all .15s;text-align:center}
+.mode-tab:hover{color:var(--text);border-color:var(--border2)}
+.mode-tab.active{background:var(--text);border-color:var(--text);color:var(--surface)}
+#config-section{padding:6px 18px 11px;border-bottom:1px solid var(--border);display:flex;flex-direction:column;gap:9px}
+.config-row{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.config-row label{font-size:var(--fs-sm);color:var(--muted);white-space:nowrap}
+.config-row select{background:var(--surface2);border:1px solid var(--border);color:var(--text);font-family:Georgia,serif;font-size:var(--fs-sm);border-radius:var(--radius);padding:3px 7px;cursor:pointer;outline:none}
+.leaflet-tooltip.city-tip{font-family:Georgia,serif;font-size:var(--fs-sm);background:#ffffff;border:1px solid var(--border2);color:var(--text);border-radius:2px;padding:3px 8px;box-shadow:0 1px 4px rgba(0,0,0,.1);white-space:nowrap}
+#input-section{padding:12px 18px;border-bottom:1px solid var(--border)}
+#city-input{width:100%;background:var(--surface);border:1px solid var(--border);color:var(--text);font-family:Georgia,serif;font-size:var(--fs-md);padding:8px 11px;border-radius:var(--radius);outline:none;transition:border-color .15s;margin-bottom:7px}
+#city-input::placeholder{color:var(--muted)}
+#city-input:focus{border-color:var(--border2)}
+#city-input.shake{animation:shake .3s ease;border-color:#c0392b}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
+#stats{padding:12px 18px;display:grid;grid-template-columns:1fr 1fr;gap:7px;border-bottom:1px solid var(--border)}
+.stat{background:var(--surface2);border-radius:var(--radius);padding:9px 8px 7px;text-align:center}
+.stat-val{font-size:var(--fs-lg);color:var(--text);line-height:1;margin-bottom:3px}
+.stat-label{font-size:var(--fs-sm);color:var(--muted)}
+#found-section{flex:1;overflow:hidden;display:flex;flex-direction:column}
+#found-header{padding:10px 18px 7px;font-size:var(--fs-sm);color:var(--muted);border-bottom:1px solid var(--border)}
+#found-list{flex:1;overflow-y:auto;padding:5px 18px;scrollbar-width:thin;scrollbar-color:var(--border) transparent}
+.found-item{display:flex;align-items:baseline;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--border);animation:fadein .2s ease}
+@keyframes fadein{from{opacity:0;transform:translateY(-3px)}to{opacity:1;transform:translateY(0)}}
+.found-city{font-size:var(--fs-sm)}
+.found-item.done .found-city{color:var(--muted);text-decoration:line-through}
+.found-pop{color:var(--muted);font-size:var(--fs-sm)}
+#actions{padding:10px 18px;border-top:1px solid var(--border);display:flex;gap:7px}
+.btn{flex:1;padding:7px;border:1px solid var(--border);background:transparent;color:var(--muted);font-family:Georgia,serif;font-size:var(--fs-sm);cursor:pointer;border-radius:var(--radius);transition:all .15s}
+.btn:hover{color:var(--text);border-color:var(--border2)}
+.btn.primary{border-color:var(--text);color:var(--text)}
+.btn.primary:hover{background:var(--text);color:var(--surface)}
+#map{width:100%;height:100vh}
+#legend{position:absolute;bottom:28px;right:10px;z-index:500;background:rgba(245,250,240,.93);border:1px solid var(--border);border-radius:2px;padding:8px 11px;font-family:Georgia,serif;font-size:var(--fs-sm);color:var(--muted)}
+#legend .lr{display:flex;align-items:center;gap:7px;margin-bottom:3px}
+#legend .lr:last-child{margin-bottom:0}
+#legend .ld{border-radius:50%;flex-shrink:0;border:1px solid rgba(0,0,0,.15)}
+#win-overlay{display:none;position:fixed;top:16px;right:16px;z-index:1000;width:290px}
+#win-overlay.show{display:block}
+#win-box{background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:20px 22px 18px;text-align:center;box-shadow:0 4px 20px rgba(0,0,0,.12);position:relative}
+#win-close{position:absolute;top:7px;right:10px;background:none;border:none;color:var(--muted);cursor:pointer;padding:0;line-height:1;font-family:Georgia,serif}
+#win-close:hover{color:var(--text)}
+.win-num{font-size:var(--fs-lg);color:var(--text);line-height:1;margin-bottom:3px}
+.win-sub,.win-desc{color:var(--muted);font-size:var(--fs-sm);margin-bottom:3px}
+.win-desc{margin-bottom:16px}
+#win-lb-section{margin-top:16px;text-align:left;border-top:1px solid var(--border);padding-top:14px}
+#win-submit-row{display:flex;gap:6px;margin-bottom:6px}
+#win-name-input{flex:1;background:var(--surface);border:1px solid var(--border);color:var(--text);font-family:Georgia,serif;font-size:var(--fs-sm);padding:6px 9px;border-radius:var(--radius);outline:none}
+#win-name-input:focus{border-color:var(--border2)}
+#win-submit-status{font-size:var(--fs-sm);color:var(--muted);min-height:16px;margin-bottom:6px;text-align:center}
+#win-lb-entries{max-height:190px;overflow-y:auto;border:1px solid var(--border)}
+.lb-table{width:100%;border-collapse:collapse;font-size:var(--fs-sm)}
+.lb-table td.r{text-align:right}
+.lb-table td{padding:5px 6px;border-bottom:1px solid var(--border);color:var(--text)}
+.lb-table tbody tr:last-child td{border-bottom:none}
+.lb-you td{background:var(--surface2)}
+.lb-empty{font-size:var(--fs-sm);color:var(--muted);padding:10px 0;text-align:center}
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="sidebar">
+    <div id="header">
+      <h1>city circles quiz</h1>
+    </div>
+    <div id="mode-section">
+      <div class="slabel">mode</div>
+      <div class="mode-tabs" id="mode-tabs-wrap">
+        <button class="mode-tab active" data-mode="radius" onclick="setMode('radius')">radius</button>
+        <button class="mode-tab" data-mode="nearest" onclick="setMode('nearest')">nearest n</button>
+      </div>
+    </div>
+    <div id="config-section">
+      <div class="config-row" id="radius-row">
+        <label>radius per guess</label>
+        <select id="radius-select" onchange="onRadiusChange()">
+          <option value="100">100 km</option>
+          <option value="200">200 km</option>
+          <option value="500" selected>500 km</option>
+          <option value="1000">1000 km</option>
+        </select>
+      </div>
+      <div class="config-row" id="nearest-row" style="display:none">
+        <label>cities per guess</label>
+        <select id="nearest-select" onchange="onNearestChange()">
+          <option value="20" selected>20 cities</option>
+          <option value="50">50 cities</option>
+          <option value="100">100 cities</option>
+          <option value="200">200 cities</option>
+        </select>
+      </div>
+      <div class="config-row">
+        <label>min population</label>
+        <select id="pop-select" onchange="onPopChange()">
+          <option value="10000">10k+</option>
+          <option value="50000" selected>50k+</option>
+          <option value="100000">100k+</option>
+        </select>
+      </div>
+      </div>
+    <div id="input-section">
+      <input type="text" id="city-input" placeholder="type a city name, press enter…" autocomplete="off" spellcheck="false"/>
+    </div>
+    <div id="stats">
+      <div class="stat"><div class="stat-val" id="stat-cities">0/—</div><div class="stat-label">cities</div></div>
+      <div class="stat"><div class="stat-val" id="stat-pop">—</div><div class="stat-label">population</div></div>
+    </div>
+    <div id="found-section">
+      <div id="found-header">countries</div>
+      <div id="found-list"></div>
+    </div>
+    <div id="actions">
+      <button class="btn primary" id="finish-btn" onclick="giveUp()">finish</button>
+      <button class="btn primary" onclick="newGame()">new game</button>
+    </div>
+    <div style="padding:8px 18px;border-top:1px solid var(--border);text-align:center">
+      <a href="/projects/citycircles" style="font-family:Georgia,serif;font-size:11px;color:var(--muted);text-decoration:underline">about</a>
+    </div>
+  </div>
+  <div id="map"></div>
+</div>
+<div id="legend">
+  <div class="lr"><div class="ld" style="width:6px;height:6px;background:#4a90d9"></div> &gt;10k</div>
+  <div class="lr"><div class="ld" style="width:7px;height:7px;background:#2ab8b8"></div> &gt;30k</div>
+  <div class="lr"><div class="ld" style="width:9px;height:9px;background:#4caf50"></div> &gt;100k</div>
+  <div class="lr"><div class="ld" style="width:11px;height:11px;background:#d4c020"></div> &gt;300k</div>
+  <div class="lr"><div class="ld" style="width:13px;height:13px;background:#e07820"></div> &gt;1M</div>
+  <div class="lr"><div class="ld" style="width:15px;height:15px;background:#d03030"></div> &gt;3M</div>
+  <div class="lr"><div class="ld" style="width:17px;height:17px;background:#c040a0"></div> &gt;10M</div>
+</div>
+<div id="win-overlay">
+  <div id="win-box">
+    <button id="win-close" onclick="document.getElementById('win-overlay').classList.remove('show')" title="close">✕</button>
+    <div class="win-num" id="win-found">0</div>
+    <div class="win-sub" id="win-sub">cities revealed</div>
+    <div class="win-desc" id="win-desc"></div>
+    <button class="btn primary" style="width:100%" onclick="newGame()">play again</button>
+    <div id="win-lb-section">
+      <div id="win-submit-row">
+        <input type="text" id="win-name-input" placeholder="your name" maxlength="24" autocomplete="off" spellcheck="false"/>
+        <button id="win-submit-btn" class="btn primary" onclick="winSubmitScore()">submit score</button>
+      </div>
+      <div id="win-submit-status"></div>
+      <div style="font-size:var(--fs-sm);color:var(--muted);margin-bottom:8px">leaderboard</div>
+      <div id="win-lb-entries"></div>
+    </div>
+  </div>
+</div>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="/assets/games/cities_data.js"></script>
+<script>
+
+  // python -m http.server 8000
+let CITIES=[];
+let cityNameMap=new Map();
+let _filteredCache=null, _filteredMinPop=-1;
+
+function norm(s){
+  return s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]/g,'');
+}
+
+// Generate alias variants: st<->saint, city optional
+function getVariants(n){
+  const set=new Set([n]);
+  function expand(s){
+    if(s.startsWith('saint')) set.add('st'+s.slice(5));
+    if(s.startsWith('st')) set.add('saint'+s.slice(2));
+    if(s.endsWith('city')) set.add(s.slice(0,-4));
+    if(!s.endsWith('city')) set.add(s+'city');
+  }
+  expand(n);
+  [...set].forEach(expand);
+  [...set].forEach(expand);
+  return set;
+}
+
+// Aliases: normalized alias → normalized canonical city name in CITIES_RAW.
+// Diacritics and spaces are already stripped by norm(), so only add aliases
+// that are genuinely different strings after normalization.
+const CITY_ALIASES={
+  'bombay':                    'mumbai',
+  'bangalore':                 'bengaluru',
+  'bengalore':                 'bengaluru',        // misspelling
+  'calcutta':                  'kolkata',
+  'madras':                    'chennai',
+  'poona':                     'pune',
+  'amdavad':                   'ahmedabad',
+  'peking':                    'beijing',
+  'canton':                    'guangzhou',
+  'chungking':                 'chongqing',
+  'nanking':                   'nanjing',
+  'nankin':                    'nanjing',
+  'tientsin':                  'tianjin',
+  'hangchow':                  'hangzhou',
+  'soochow':                   'suzhou',
+  'tsingtao':                  'qingdao',
+  'mukden':                    'shenyang',
+  'amoy':                      'xiamen',
+  'fatshan':                   'foshan',
+  'saigon':                    'hochiminhcity',
+  'ulaanbaatar':               'ulanbator',        // canonical in data is "Ulan Bator"
+  'ulaanbataar':               'ulanbator',
+  'ulanbaatar':                'ulanbator',
+  'ulaanbatar':                'ulanbator',
+  'kiev':                      'kyiv',
+  'rangoon':                   'yangon',
+  'angora':                    'ankara',
+  'constantinople':            'istanbul',
+  'mecca':                     'makkah',
+  'medina':                    'madinah',
+  'basra':                    'basrah',
+  'jidda':                     'jeddah',
+  'jedda':                     'jeddah',
+  'jiddah':                    'jeddah',
+  'teheran':                   'tehran',
+  'leopoldville':              'kinshasa',
+  'dacca':                     'dhaka',
+  'chittagong':                'chattogram',
+  'batavia':                   'jakarta',
+  'leningrad':                 'saintpetersburg',
+  'petrograd':                 'saintpetersburg',
+  'sanktpeterburg':           'saintpetersburg',
+  'petropavlovsk':             'petropavlovskkamchatskiy',
+  'roma':                      'rome',
+  'milano':                    'milan',
+  'munchen':                   'munich',
+  'wien':                      'vienna',
+  'warszawa':                  'warsaw',
+  'praha':                     'prague',
+  'singapura':                 'singapore',
+  'krungthep':                 'bangkok',
+  'khartum':                   'khartoum',
+  'addisabeba':                'addisababa',
+  'alger':                     'algiers',
+  'katmandu':                  'kathmandu',
+  'kathmando':                 'kathmandu',        // misspelling
+  'kaapstad':                  'capetown',
+};
+
+function loadCities(){
+  CITIES=window.CITIES_RAW.map(c=>({name:c[0],lat:c[1],lng:c[2],pop:c[3],cc:c[4]||'??'}));
+  cityNameMap.clear();
+  CITIES.forEach((c,i)=>{
+    const n=norm(c.name);
+    c._norm=n;
+    for(const v of getVariants(n)){
+      if(!cityNameMap.has(v)) cityNameMap.set(v,[]);
+      cityNameMap.get(v).push({c,i});
+    }
+  });
+  // Register aliases — point each alias key at the same entries as its canonical
+  for(const [alias,canonical] of Object.entries(CITY_ALIASES)){
+    const entries=cityNameMap.get(canonical);
+    if(entries&&!cityNameMap.has(alias)) cityNameMap.set(alias,entries);
+  }
+}
+
+
+function hav(la1,lo1,la2,lo2){
+  const R=6371,r=Math.PI/180,dL=(la2-la1)*r,dG=(lo2-lo1)*r;
+  const a=Math.sin(dL/2)**2+Math.cos(la1*r)*Math.cos(la2*r)*Math.sin(dG/2)**2;
+  return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
+}
+
+// Population tiers: > threshold
+const TIERS=[
+  {min:10000000,col:'#c040a0',r:8.5},
+  {min:3000000, col:'#d03030',r:7.5},
+  {min:1000000, col:'#e07820',r:6.5},
+  {min:300000,  col:'#d4c020',r:5.5},
+  {min:100000,  col:'#4caf50',r:4.5},
+  {min:30000,   col:'#2ab8b8',r:3.5},
+  {min:10000,   col:'#4a90d9',r:2.5},
+];
+
+function cityStyle(pop){
+  for(const t of TIERS) if(pop>=t.min) return t;
+  return TIERS[TIERS.length-1];
+}
+
+function formatPop(pop){
+  if(pop>=1000000) return (pop/1000000).toFixed(1).replace(/\.0$/,'')+'m';
+  if(pop>=1000) return Math.round(pop/1000)+'k';
+  return pop.toString();
+}
+
+// ── State ──
+let mode='radius', radKm=500, nearN=20, minPop=50000;
+let gameFinished=false;
+let revealedSet=new Set();  // player-found, counted in Found
+let finishedSet=new Set();  // giveUp-revealed, not counted, have tooltips
+let guessCount=0;
+let cityMarkers={}; // idx -> {main, clones[]}
+// guessCircles: array of {lat, lng, radiusKm} — redrawn on map move
+let guessCircles=[];
+let guessedSet=new Set(); // indices already used as guess origins
+let circleLayerGroup=L.layerGroup();
+
+
+// ── Map ──
+const map=L.map('map',{center:[20,10],zoom:3,minZoom:3,maxZoom:12,worldCopyJump:false,maxBounds:[[-80,-500],[80,500]],maxBoundsViscosity:1.0});
+L.tileLayer('https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png',{
+  attribution:'© OpenStreetMap © CARTO',subdomains:'abcd',maxZoom:19,keepBuffer:10
+}).addTo(map);
+circleLayerGroup.addTo(map);
+// One Leaflet pane per tier; higher z-index = renders on top.
+// TIERS[0] is the largest cities, so it gets the highest z-index (410).
+const TIER_PANES=[];
+for(let i=0;i<TIERS.length;i++){
+  const name='cityTier'+i;
+  map.createPane(name);
+  map.getPane(name).style.zIndex=410-i;
+  TIER_PANES.push(name);
+}
+
+// ── Geodesic circle helpers ──
+// Returns [lat, lng] of a point distKm away at given bearing from (lat, lng).
+// Lat is clamped to ±85 so Mercator doesn't blow up at the poles.
+function geodesicPoint(lat, lng, distKm, bearingDeg){
+  const R=6371, d=distKm/R, b=bearingDeg*Math.PI/180;
+  const φ1=lat*Math.PI/180, λ1=lng*Math.PI/180;
+  const sinφ2=Math.sin(φ1)*Math.cos(d)+Math.cos(φ1)*Math.sin(d)*Math.cos(b);
+  const φ2=Math.asin(Math.max(-1,Math.min(1,sinφ2)));
+  const λ2=λ1+Math.atan2(Math.sin(b)*Math.sin(d)*Math.cos(φ1),Math.cos(d)-Math.sin(φ1)*Math.sin(φ2));
+  return [
+    Math.max(-85,Math.min(85, φ2*180/Math.PI)),
+    ((λ2*180/Math.PI)+540)%360-180
+  ];
+}
+
+// ── Circle drawing — geodesic polygons, 5 copies spanning ±720° ──
+// Longitudes are kept continuous (no [-180,180] snapping) so the polygon
+// never self-intersects when crossing the antimeridian.
+// For circles that enclose a pole the fill is drawn as 2° latitude strips —
+// each strip is a simple trapezoid that never reaches ±85°, so no single
+// polygon causes rendering problems.  The outline is drawn as a polyline.
+function drawAllCircles(){
+  circleLayerGroup.clearLayers();
+  const STEPS=144;
+  const style={color:'#648f5d',weight:1,fillColor:'#648f5d',fillOpacity:0.13,dashArray:'5 4',interactive:false};
+  const outlineStyle={color:'#648f5d',weight:1,dashArray:'5 4',interactive:false};
+  const stripStyle={stroke:false,fillColor:'#648f5d',fillOpacity:0.13,interactive:false};
+  for(const gc of guessCircles){
+    const poleEnclosed=gc.radiusKm>=(90+gc.lat)*111.32||gc.radiusKm>=(90-gc.lat)*111.32;
+    // Arc points (used for outline in both cases, and fill in the normal case)
+    const pts=[];
+    let prevLng=gc.lng;
+    for(let i=0;i<=STEPS;i++){
+      const [lat,rawLng]=geodesicPoint(gc.lat,gc.lng,gc.radiusKm,i/STEPS*360);
+      let lng=rawLng;
+      while(lng-prevLng> 180) lng-=360;
+      while(prevLng-lng> 180) lng+=360;
+      prevLng=lng;
+      pts.push([Math.max(-85,Math.min(85,lat)),lng]);
+    }
+    if(!poleEnclosed){
+      for(const offset of [-720,-360,0,360,720])
+        L.polygon(pts.map(([lat,lng])=>[lat,lng+offset]),style).addTo(circleLayerGroup);
+    } else {
+      // Pole-enclosing: draw fill as two half-circle polygons closed along ±84°.
+      // East half follows bearings 0→180, west half 360→180.  Each polygon's
+      // vertices lie on the actual circle arc (exact geodesic points) plus two
+      // closing vertices on the ±84° parallel — no single polygon approaches a pole.
+      const clampLat=(gc.radiusKm>=(90+gc.lat)*111.32)?-84:84;
+      const H=STEPS/2;
+      const halfPolys=[];
+      for(const dir of [1,-1]){ // +1 = east, -1 = west
+        const hPts=[];
+        let prevLng=gc.lng;
+        for(let i=0;i<=H;i++){
+          const [lat,rawLng]=geodesicPoint(gc.lat,gc.lng,gc.radiusKm,(dir>0?i:STEPS-i)/STEPS*360);
+          let lng=rawLng;
+          while(lng-prevLng>180) lng-=360;
+          while(prevLng-lng>180) lng+=360;
+          prevLng=lng;
+          hPts.push([Math.max(-84,Math.min(84,lat)),lng]);
+        }
+        // Close along the parallel back to the starting longitude
+        hPts.push([clampLat,hPts[hPts.length-1][1]]);
+        hPts.push([clampLat,hPts[0][1]]);
+        halfPolys.push(hPts);
+      }
+      for(const offset of [-720,-360,0,360,720]){
+        L.polyline(pts.map(([lat,lng])=>[lat,lng+offset]),outlineStyle).addTo(circleLayerGroup);
+        for(const hPts of halfPolys)
+          L.polygon(hPts.map(([lat,lng])=>[lat,lng+offset]),stripStyle).addTo(circleLayerGroup);
+      }
+    }
+  }
+}
+
+// ── City markers — 5 copies spanning ±720° to cover full map scroll range ──
+function zoomScale(){return Math.pow(1.25,map.getZoom()-5);}
+
+function placeMarker(c, idx, withTooltip=false){
+  if(cityMarkers[idx]) return;
+  const st=cityStyle(c.pop);
+  const tierIdx=TIERS.findIndex(t=>c.pop>=t.min);
+  const opts={
+    radius:st.r*zoomScale(),
+    fillColor:st.col,
+    color:'rgba(255,255,255,0.75)',
+    weight:1,
+    fillOpacity: 0.6,
+    interactive:withTooltip,
+    pane:TIER_PANES[tierIdx<0?TIER_PANES.length-1:tierIdx]
+  };
+  const main=L.circleMarker([c.lat,c.lng],opts).addTo(map);
+  const clones=[];
+  for(const off of [-720,-360,360,720]){
+    const clone=L.circleMarker([c.lat,c.lng+off],Object.assign({},opts)).addTo(map);
+    clones.push(clone);
+  }
+  if(withTooltip){
+    const addTip=m=>{
+      m.on('mouseover',e=>showCityTip(c,e.target.getLatLng()));
+      m.on('mouseout',hideCityTip);
+    };
+    addTip(main);
+    clones.forEach(addTip);
+  }
+  cityMarkers[idx]={main,clones};
+}
+
+// ── Single shared tooltip for finished cities ──
+let _sharedTip=null;
+function showCityTip(c,latlng){
+  if(!_sharedTip) _sharedTip=L.tooltip({className:'city-tip'});
+  _sharedTip.setContent(`${c.name} · ${formatPop(c.pop)}`);
+  _sharedTip.setLatLng(latlng);
+  if(!map.hasLayer(_sharedTip)) _sharedTip.addTo(map);
+}
+function hideCityTip(){
+  if(_sharedTip&&map.hasLayer(_sharedTip)) map.removeLayer(_sharedTip);
+}
+
+// Viewport-based grid decimation: 100×100 cells, top 2 cities by pop per cell.
+// Called after each guess and debounced on map pan/zoom.
+let _renderTimer=null;
+function scheduleRender(){
+  clearTimeout(_renderTimer);
+  _renderTimer=setTimeout(updateRenderedMarkers,150);
+}
+
+function updateRenderedMarkers(){
+  const bounds=map.getBounds();
+  const vS=bounds.getSouth(), vN=bounds.getNorth();
+  const vW=bounds.getWest(), vE=bounds.getEast();
+  const latSpan=Math.max(vN-vS,0.001);
+  const lngSpan=Math.max(vE-vW,0.001);
+  const GRID=100;
+  // Cell size is derived from the viewport (scales with zoom) but anchored to world
+  // coordinates so panning doesn't shift which cell a city falls in.
+  // Use Mercator Y for rows: the projected Y-span is constant for a given zoom
+  // regardless of latitude, so cellY stays stable during north/south panning.
+  function mercY(lat){const r=lat*Math.PI/180;return Math.log(Math.tan(Math.PI/4+r/2));}
+  const yS=mercY(Math.max(-85,vS)), yN=mercY(Math.min(85,vN));
+  const cellY=Math.max(yN-yS,1e-6)/GRID;
+  const cellLng=lngSpan/GRID;
+
+  // Bin all revealed+finished cities visible in viewport
+  const grid=new Map(); // cellKey -> [idx, ...]
+  function bin(idx){
+    const c=CITIES[idx];
+    if(c.lat<vS||c.lat>vN) return;
+    // Shift lng into [vW, vW+360) to handle world-wrap copies
+    let lng=c.lng;
+    while(lng<vW) lng+=360;
+    while(lng-360>=vW) lng-=360;
+    if(lng>vE) return;
+    const col=Math.floor(lng/cellLng);
+    const row=Math.floor(mercY(c.lat)/cellY);
+    const key=`${row},${col}`;
+    if(!grid.has(key)) grid.set(key,[]);
+    grid.get(key).push(idx);
+  }
+  for(const i of revealedSet) bin(i);
+  for(const i of finishedSet) bin(i);
+
+  // Select top 4 per cell by population
+  const cullAmount = 4;
+  const toShow=new Set();
+  for(const [,idxs] of grid){
+    idxs.sort((a,b)=>CITIES[b].pop-CITIES[a].pop);
+    idxs.slice(0,cullAmount).forEach(i=>toShow.add(i));
+  }
+
+  // Add newly visible markers
+  for(const idx of toShow){
+    if(!cityMarkers[idx]) placeMarker(CITIES[idx],idx,gameFinished&&(revealedSet.has(idx)||finishedSet.has(idx)));
+  }
+  // Remove markers that scrolled out of selection
+  for(const k of Object.keys(cityMarkers)){
+    const idx=+k;
+    if(!toShow.has(idx)) removeMarker(idx);
+  }
+  // Resize all visible markers to current zoom (catches survivors that weren't recreated)
+  const scale=zoomScale();
+  for(const k of Object.keys(cityMarkers)){
+    const r=cityStyle(CITIES[+k].pop).r*scale;
+    const m=cityMarkers[+k];
+    m.main.setRadius(r);
+    m.clones.forEach(c=>c.setRadius(r));
+  }
+}
+
+function removeMarker(idx){
+  const m=cityMarkers[idx];
+  if(!m)return;
+  map.removeLayer(m.main);
+  m.clones.forEach(c=>map.removeLayer(c));
+  delete cityMarkers[idx];
+}
+
+// ── Game helpers ──
+function filteredIndices(){
+  if(_filteredMinPop===minPop && _filteredCache) return _filteredCache;
+  _filteredCache=CITIES.map((c,i)=>({c,i})).filter(({c})=>c.pop>=minPop);
+  _filteredMinPop=minPop;
+  return _filteredCache;
+}
+function totalCities(){return filteredIndices().length;}
+
+function formatPopLarge(n){
+  if(n>=1e9) return (n/1e9).toFixed(1).replace(/\.0$/,'')+'b';
+  if(n>=1e6) return (n/1e6).toFixed(1).replace(/\.0$/,'')+'m';
+  if(n>=1e3) return Math.round(n/1e3)+'k';
+  return n.toString();
+}
+function upStats(){
+  document.getElementById('stat-cities').textContent=revealedSet.size+'/'+totalCities();
+  let pop=0; for(const i of revealedSet) pop+=CITIES[i].pop;
+  document.getElementById('stat-pop').textContent=revealedSet.size?formatPopLarge(pop):'—';
+}
+
+function revealCity(idx){
+  if(revealedSet.has(idx)||finishedSet.has(idx))return false;
+  revealedSet.add(idx);
+  return true;
+}
+
+function findCityByName(input){
+  const n=norm(input);
+  for(const v of getVariants(n)){
+    const r=cityNameMap.get(v);
+    if(r&&r.length) return r;
+  }
+  return null;
+}
+
+// ── Country tracking ──
+const COUNTRY_NAMES={
+  AF:'Afghanistan',AL:'Albania',DZ:'Algeria',AO:'Angola',AR:'Argentina',AM:'Armenia',
+  AU:'Australia',AT:'Austria',AZ:'Azerbaijan',BS:'Bahamas',BD:'Bangladesh',BY:'Belarus',
+  BE:'Belgium',BG:'Bulgaria',BZ:'Belize',BJ:'Benin',BO:'Bolivia',BA:'Bosnia',BW:'Botswana',BR:'Brazil',
+  BN:'Brunei',BF:'Burkina Faso',BI:'Burundi',CM:'Cameroon',CA:'Canada',CV:'Cape Verde',
+  CF:'Central African Republic',TD:'Chad',CL:'Chile',CN:'China',CO:'Colombia',CG:'Congo',
+  CD:'DR Congo',CR:'Costa Rica',CI:"Cote d'Ivoire",HR:'Croatia',CU:'Cuba',CZ:'Czech Republic',
+  DK:'Denmark',DJ:'Djibouti',DO:'Dominican Republic',EC:'Ecuador',EG:'Egypt',SV:'El Salvador',
+  ER:'Eritrea',EE:'Estonia',ET:'Ethiopia',FJ:'Fiji',FI:'Finland',FR:'France',GA:'Gabon',
+  GM:'Gambia',GE:'Georgia',DE:'Germany',GH:'Ghana',GR:'Greece',GT:'Guatemala',GN:'Guinea',
+  GW:'Guinea-Bissau',GY:'Guyana',HT:'Haiti',HN:'Honduras',HK:'Hong Kong',HU:'Hungary',
+  IN:'India',ID:'Indonesia',IQ:'Iraq',IE:'Ireland',IL:'Israel',IT:'Italy',JM:'Jamaica',
+  JP:'Japan',JO:'Jordan',KZ:'Kazakhstan',KE:'Kenya',KP:'North Korea',KR:'South Korea',
+  KW:'Kuwait',KG:'Kyrgyzstan',LA:'Laos',LV:'Latvia',LB:'Lebanon',LR:'Liberia',LY:'Libya',
+  LT:'Lithuania',MG:'Madagascar',MW:'Malawi',MY:'Malaysia',ML:'Mali',MR:'Mauritania',
+  MX:'Mexico',MD:'Moldova',MN:'Mongolia',MA:'Morocco',MZ:'Mozambique',MM:'Myanmar',
+  NA:'Namibia',NP:'Nepal',NL:'Netherlands',NZ:'New Zealand',NI:'Nicaragua',NE:'Niger',
+  NG:'Nigeria',NO:'Norway',OM:'Oman',PK:'Pakistan',PA:'Panama',PG:'Papua New Guinea',
+  PY:'Paraguay',PE:'Peru',PH:'Philippines',PL:'Poland',PT:'Portugal',PR:'Puerto Rico',
+  QA:'Qatar',RO:'Romania',RU:'Russia',RW:'Rwanda',SA:'Saudi Arabia',SN:'Senegal',
+  RS:'Serbia',SL:'Sierra Leone',SG:'Singapore',SO:'Somalia',ZA:'South Africa',ES:'Spain',
+  LK:'Sri Lanka',SD:'Sudan',SE:'Sweden',CH:'Switzerland',SY:'Syria',TW:'Taiwan',
+  TJ:'Tajikistan',TZ:'Tanzania',TH:'Thailand',TG:'Togo',TT:'Trinidad',TN:'Tunisia',
+  TR:'Turkey',TM:'Turkmenistan',UG:'Uganda',UA:'Ukraine',AE:'UAE',GB:'United Kingdom',
+  US:'United States',UY:'Uruguay',UZ:'Uzbekistan',VE:'Venezuela',VN:'Vietnam',
+  YE:'Yemen',ZM:'Zambia',ZW:'Zimbabwe',XK:'Kosovo',ME:'Montenegro',MK:'North Macedonia',
+  SK:'Slovakia',SI:'Slovenia',CY:'Cyprus',LU:'Luxembourg',MT:'Malta',IS:'Iceland',
+  NC:'New Caledonia',GF:'French Guiana',TL:'Timor-Leste',
+  IM:'Isle of Man',JE:'Jersey',GG:'Guernsey',GI:'Gibraltar',
+  CC:'Cocos Islands',CX:'Christmas Island',FK:'Falkland Islands',
+  SH:'Saint Helena',TC:'Turks and Caicos',KY:'Cayman Islands',
+  BM:'Bermuda',AW:'Aruba',CW:'Curacao',
+  FO:'Faroe Islands',GL:'Greenland',SJ:'Svalbard',
+  MO:'Macau',PS:'Palestine',SS:'South Sudan',IR:'Iran',
+  EH:'Western Sahara',GP:'Guadeloupe',MQ:'Martinique',
+  RE:'Reunion',YT:'Mayotte',PF:'French Polynesia',
+  GQ:'Equatorial Guinea',SZ:'Eswatini',LS:'Lesotho',
+  KM:'Comoros',MU:'Mauritius',SC:'Seychelles',MV:'Maldives',
+  ST:'Sao Tome and Principe',PM:'Saint Pierre and Miquelon',
+  MF:'Saint Martin',SX:'Sint Maarten',WS:'Samoa',TO:'Tonga',
+  VU:'Vanuatu',SB:'Solomon Islands',PW:'Palau',
+  VI:'US Virgin Islands',VG:'British Virgin Islands',
+  GU:'Guam',SR:'Suriname',LC:'Saint Lucia',VC:'Saint Vincent',
+  BB:'Barbados',AG:'Antigua and Barbuda',MP:'Northern Mariana Islands',
+  KI:'Kiribati',MH:'Marshall Islands',DM:'Dominica',
+  CK:'Cook Islands',KN:'Saint Kitts and Nevis',
+  AS:'American Samoa',BQ:'Caribbean Netherlands'
+};
+
+function countryName(cc){ return COUNTRY_NAMES[cc]||`Territory (${cc})`; }
+
+function updateCountryList(){
+  // Build country stats from revealedSet
+  const fi=filteredIndices();
+  // total per country (filtered)
+  const totals={};
+  for(const {c} of fi){
+    totals[c.cc]=(totals[c.cc]||0)+1;
+  }
+  // found per country
+  const found={};
+  for(const {c,i} of fi){
+    if(revealedSet.has(i)) found[c.cc]=(found[c.cc]||0)+1;
+  }
+  // Only show countries that have at least 1 found
+  const active=Object.keys(found);
+  if(active.length===0){
+    document.getElementById('found-list').innerHTML='';
+    return;
+  }
+  // Split into incomplete and complete
+  const incomplete=active.filter(cc=>found[cc]<(totals[cc]||1));
+  const complete=active.filter(cc=>found[cc]>=(totals[cc]||1));
+  // Sort incomplete by found desc, complete by name
+  incomplete.sort((a,b)=>found[b]-found[a]);
+  complete.sort((a,b)=>totals[b]-totals[a]);
+  const ordered=[...incomplete,...complete];
+  const el=document.getElementById('found-list');
+  el.innerHTML='';
+  for(const cc of ordered){
+    const f=found[cc]||0;
+    const t=totals[cc]||0;
+    const done=f>=t;
+    const row=document.createElement('div');
+    row.className='found-item'+(done?' done':'');
+    row.innerHTML=`<span class="found-city">${countryName(cc)}</span><span class="found-pop">${f}/${t}</span>`;
+    el.appendChild(row);
+  }
+}
+
+function processGuessOrigin(idx){
+  const seed=CITIES[idx];
+  revealCity(idx);
+  const drawCircle=!guessedSet.has(idx);
+  guessedSet.add(idx);
+  if(mode==='radius'){
+    const latDeg=radKm/111;
+    const lngDeg=radKm/(111*Math.cos(seed.lat*Math.PI/180)||0.001);
+    if(drawCircle){
+      guessCircles.push({lat:seed.lat,lng:seed.lng,radiusKm:radKm});
+      drawAllCircles();
+    }
+    const fi=filteredIndices();
+    for(const {c,i} of fi){
+      const dlat=Math.abs(c.lat-seed.lat);
+      const dlng=Math.min(Math.abs(c.lng-seed.lng),360-Math.abs(c.lng-seed.lng));
+      if(dlat>latDeg+1||dlng>lngDeg+1) continue;
+      const d=Math.min(hav(seed.lat,seed.lng,c.lat,c.lng),
+                       hav(seed.lat,seed.lng+360,c.lat,c.lng),
+                       hav(seed.lat,seed.lng-360,c.lat,c.lng));
+      if(d<=radKm) revealCity(i);
+    }
+  } else {
+    const fi=filteredIndices();
+    const withDist=fi.map(({c,i})=>({c,i,d:Math.min(
+      hav(seed.lat,seed.lng,c.lat,c.lng),
+      hav(seed.lat,seed.lng+360,c.lat,c.lng),
+      hav(seed.lat,seed.lng-360,c.lat,c.lng)
+    )})).sort((a,b)=>a.d-b.d);
+    const slice=withDist.slice(0,nearN);
+    const farthestDist=slice.length>0?slice[slice.length-1].d:radKm;
+    if(drawCircle){
+      guessCircles.push({lat:seed.lat,lng:seed.lng,radiusKm:farthestDist});
+      drawAllCircles();
+    }
+    for(const {i} of slice) revealCity(i);
+  }
+}
+
+function onGuess(raw){
+  const results=findCityByName(raw);
+  if(!results) return false;
+  const fiSet=new Set(filteredIndices().map(x=>x.i));
+  const valid=results.filter(r=>fiSet.has(r.i));
+  if(!valid.length) return false;
+  if(valid.every(r=>guessedSet.has(r.i))) return false;
+  guessCount++;
+  if(guessCount===1) lockControls();
+  for(const {i} of valid) processGuessOrigin(i);
+  updateRenderedMarkers();
+  updateCountryList();
+  upStats();
+  if(revealedSet.size>=totalCities()) setTimeout(showWin,500);
+  return true;
+}
+
+// ── Game control ──
+function newGame(){
+  document.getElementById('win-overlay').classList.remove('show');
+  gameFinished=false;
+  revealedSet.clear();
+  finishedSet.clear();
+  guessCount=0;
+  guessCircles=[];
+  guessedSet=new Set();
+  unlockControls();
+  Object.keys(cityMarkers).forEach(k=>removeMarker(+k));
+  circleLayerGroup.clearLayers();
+  document.getElementById('found-list').innerHTML='';
+  const inp=document.getElementById('city-input');
+  inp.value='';
+  inp.disabled=false;
+  inp.placeholder='type a city name, press enter\u2026';
+  upStats();
+  map.setView([20,10],3,{animate:true});
+}
+
+function giveUp(){
+  gameFinished=true;
+  for(const {i} of filteredIndices()){
+    if(!revealedSet.has(i)) finishedSet.add(i);
+  }
+  // Clear all markers so they get re-placed with tooltips enabled
+  Object.keys(cityMarkers).forEach(k=>removeMarker(+k));
+  updateRenderedMarkers();
+  const inp=document.getElementById('city-input');
+  inp.disabled=true;
+  inp.placeholder='';
+  setTimeout(()=>showFinishOverlay(false),300);
+}
+
+function showWin(){
+  showFinishOverlay(true);
+}
+
+
+// ── Config ──
+function setMode(m){
+  mode=m;
+  document.querySelectorAll('.mode-tab').forEach(t=>t.classList.toggle('active',t.dataset.mode===m));
+  document.getElementById('radius-row').style.display=m==='radius'?'flex':'none';
+  document.getElementById('nearest-row').style.display=m==='nearest'?'flex':'none';
+  newGame();
+}
+function lockControls(){
+  document.getElementById('radius-select').disabled=true;
+  document.getElementById('nearest-select').disabled=true;
+  document.getElementById('pop-select').disabled=true;
+  document.getElementById('mode-tabs-wrap').style.pointerEvents='none';
+  document.getElementById('mode-tabs-wrap').style.opacity='0.45';
+}
+function unlockControls(){
+  document.getElementById('radius-select').disabled=false;
+  document.getElementById('nearest-select').disabled=false;
+  document.getElementById('pop-select').disabled=false;
+  document.getElementById('mode-tabs-wrap').style.pointerEvents='';
+  document.getElementById('mode-tabs-wrap').style.opacity='';
+}
+function onRadiusChange(){
+  if(guessCount>0)return;
+  radKm=+document.getElementById('radius-select').value;
+}
+function onNearestChange(){
+  if(guessCount>0)return;
+  nearN=+document.getElementById('nearest-select').value;
+}
+function onPopChange(){
+  minPop=+document.getElementById('pop-select').value;
+  _filteredCache=null;
+  newGame();
+}
+
+// ── Input ──
+document.getElementById('city-input').addEventListener('keydown',e=>{
+  if(e.key!=='Enter')return;
+  const v=e.target.value.trim();
+  if(!v)return;
+  if(onGuess(v)){
+    e.target.value='';
+  } else {
+    const inp=e.target;
+    inp.classList.add('shake');
+    inp.addEventListener('animationend',()=>inp.classList.remove('shake'),{once:true});
+  }
+});
+
+document.addEventListener('keydown',e=>{
+  const inp=document.getElementById('city-input');
+  if(inp.disabled||document.activeElement===inp) return;
+  if(e.ctrlKey||e.altKey||e.metaKey) return;
+  if(e.key==='Tab'){e.preventDefault();inp.focus();return;}
+  if(e.key.length===1) inp.focus();
+});
+
+map.on('moveend',scheduleRender);
+map.on('zoomstart',()=>clearTimeout(_renderTimer));
+map.on('zoomend',()=>{
+  clearTimeout(_renderTimer);
+  updateRenderedMarkers();
+});
+loadCities();newGame();
+
+// ── Leaderboard ──
+const JSONBIN_KEY='$2a$10$wgxuqXN86298YHAQDZ/lGOSPnrRiqnHmqgF2FAiq9hkubkmGG/7Ae';
+const JSONBIN_ID='69b70188c3097a1dd529cead'; 
+function lbKey(){
+  return mode==='radius'?`radius_${radKm}_${minPop}`:`nearest_${nearN}_${minPop}`;
+}
+
+function lbLabel(){
+  const pop=minPop>=1e6?(minPop/1e6)+'m+':minPop>=1e3?(minPop/1e3)+'k+':minPop+'+';
+  if(mode==='radius') return `radius · ${radKm} km · pop ${pop}`;
+  return `nearest ${nearN} · pop ${pop}`;
+}
+
+async function lbFetch(){
+  if(!JSONBIN_KEY||!JSONBIN_ID) return {};
+  try{
+    const r=await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_ID}/latest`,{headers:{'X-Master-Key':JSONBIN_KEY,'X-Bin-Meta':false}});
+    if(!r.ok) return {};
+    return await r.json()||{};
+  }catch(e){return {};}
+}
+
+async function lbSubmit(name,found,total){
+  if(!JSONBIN_KEY||!JSONBIN_ID) return null;
+  const all=await lbFetch();
+  const key=lbKey();
+  const list=(all[key]||[]).slice();
+  list.push({name,found,total,date:new Date().toISOString().slice(0,10)});
+  list.sort((a,b)=>b.found-a.found);
+  all[key]=list.slice(0,10);
+  try{
+    await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_ID}`,{
+      method:'PUT',
+      headers:{'Content-Type':'application/json','X-Master-Key':JSONBIN_KEY},
+      body:JSON.stringify(all)
+    });
+  }catch(e){}
+  return all[key];
+}
+
+function lbRenderTable(entries,highlightName){
+  if(!entries||!entries.length) return '<div class="lb-empty">no scores yet</div>';
+  let html='<table class="lb-table"><tbody>';
+  let highlightDone=false;
+  entries.forEach((e,i)=>{
+    const you=!highlightDone&&highlightName&&e.name===highlightName;
+    if(you) highlightDone=true;
+    const score=e.total?`${e.found}/${e.total}`:e.found;
+    html+=`<tr${you?' class="lb-you"':''}><td>${i+1}</td><td>${e.name}</td><td class="r">${score}</td></tr>`;
+  });
+  html+='</tbody></table>';
+  return html;
+}
+
+async function winSubmitScore(){
+  const name=document.getElementById('win-name-input').value.trim();
+  if(!name) return;
+  const btn=document.getElementById('win-submit-btn');
+  const status=document.getElementById('win-submit-status');
+  btn.disabled=true;
+  status.textContent='submitting…';
+  const list=await lbSubmit(name,revealedSet.size,totalCities());
+  if(list){
+    status.textContent='submitted!';
+    document.getElementById('win-lb-entries').innerHTML=lbRenderTable(list,name);
+  } else {
+    status.textContent='jsonbin not configured — fill in JSONBIN_KEY and JSONBIN_ID';
+  }
+}
+
+
+function showFinishOverlay(won){
+  const total=totalCities();
+  document.getElementById('win-found').textContent=`${revealedSet.size}/${total}`;
+  document.getElementById('win-sub').textContent='cities found';
+  document.getElementById('win-desc').textContent=`${guessCount} guess${guessCount!==1?'es':''}`;
+  document.getElementById('win-overlay').classList.add('show');
+  document.getElementById('win-submit-status').textContent='';
+  document.getElementById('win-submit-btn').disabled=false;
+  // keep name from previous submission
+  const entries=document.getElementById('win-lb-entries');
+  entries.innerHTML='<div class="lb-empty">loading…</div>';
+  (async()=>{
+    const all=await lbFetch();
+    entries.innerHTML=lbRenderTable(all[lbKey()]||[],null);
+  })();
+}
+</script>
+</body>
+</html>
