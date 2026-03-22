@@ -276,7 +276,7 @@
 - name: johnnycake
   url: https://en.wikipedia.org/wiki/Johnnycake
   coords: "41.490, -71.312"
-  color: "#f4c430"
+  color: gold
 
 - name: touton
   url: https://en.wikipedia.org/wiki/Touton
