@@ -6,7 +6,7 @@
   color: "#edce93"
 - name: baguette 
   url: https://en.wikipedia.org/wiki/Baguette
-  lat: 48.8566
+  lat: 48.3566
   long: 2.
   color: "#edce93"
 - name: croissant 
@@ -14,11 +14,32 @@
   lat: 48.853304
   long: 2.813573
   color: gold
+- name: campagne
+  url: https://en.wikipedia.org/wiki/Pain_de_campagne
+  lat: 45.7640
+  long: 4.8357
+  color: "#edce93"
+- name: brioche
+  url: https://en.wikipedia.org/wiki/Brioche
+  lat: 49.4431
+  long: 1.0993
+  color: gold
+- name: crepe
+  url: https://en.wikipedia.org/wiki/Crêpe
+  lat: 48.1173
+  long: -1.6778
+  color: "#edce93" 
+
+
 - name: focaccia 
   url: https://en.wikipedia.org/wiki/Focaccia
   lat: 44.4056
   long: 8.9463
   color: "#edce93"
+- name: farinata
+  url: https://en.wikipedia.org/wiki/Farinata
+  coords: "44.735308, 9.910611"
+  color: "#daa520"
 - name: ciabatta
   url: https://en.wikipedia.org/wiki/ciabatta
   lat: 45.075971
@@ -29,17 +50,46 @@
   lat: 40.849434
   long: 14.263435
   color: gold
+- name: breadstick
+  url: https://en.wikipedia.org/wiki/Breadstick
+  lat: 45.0703
+  long: 7.6869
+  color: white 
+- name: panettone
+  url: https://en.wikipedia.org/wiki/Panettone
+  coords: "45.464, 9.190"
+  color: "gold"
+- name: pane carasau
+  url: https://en.wikipedia.org/wiki/Pane_carasau
+  coords: "40.121, 9.012"
+  color: "#eedc82"
 
 - name: crumpet
   url: https://en.wikipedia.org/wiki/crumpet
   lat: 51.555520
   long: -3.129674
   color: "#edce93"
+- name: english muffin
+  url: https://en.wikipedia.org/wiki/English_muffin
+  coords: "51.507, -0.127"
+  color: "#d2b48c"
 - name: bannock
   url: https://en.wikipedia.org/wiki/Bannock_(British_and_Irish_food)
   lat: 55.958816
-  long: -3.292265
+  long: -3.012265
   color: "#edce93"
+- name: scone
+  url: https://en.wikipedia.org/wiki/Scone
+  coords: "55.953, -4.188"
+  color: "#edce93"
+- name: farl
+  url: https://en.wikipedia.org/wiki/Farl
+  coords: "54.597, -5.930"
+  color: white
+- name: hardtack
+  url: https://en.wikipedia.org/wiki/Hardtack
+  coords: "45.512849, -32.415877"
+  color: "white"
 
 - name: pretzel
   url: https://en.wikipedia.org/wiki/Pretzel
@@ -56,26 +106,63 @@
   lat: 48.201391
   long: 16.362229
   color: "#edce93"
+- name: kipferl
+  url: https://en.wikipedia.org/wiki/Kipferl
+  coords: "49.401, 16.362"
+  color: gold
+- name: langos
+  url: https://en.wikipedia.org/wiki/Lángos
+  coords: "47.497, 19.040"
+  color: gold
 
 - name: knäckebröd
   url: https://en.wikipedia.org/wiki/crispbread
   lat: 59.382967
   long: 13.503463
   color: brown
+- name: lefse
+  url: https://en.wikipedia.org/wiki/Lefse
+  coords: "59.913, 10.752"
+  color: beige
 - name: rugbrød
   url: https://en.wikipedia.org/wiki/rugbrød
   lat: 55.661968
-  long:  12.461676
+  long:  11.061676
   color: brown
+- name: wienerbrød (danish pastry)
+  url: https://en.wikipedia.org/wiki/Danish_pastry
+  coords: "55.676, 12.568"
+  color: "gold"
 - name: rúgbrauð
   url: https://en.wikipedia.org/wiki/rúgbrauð
   coords: "64.124109, -21.85771"
   color: brown
+
+- name: cozonac
+  url: https://en.wikipedia.org/wiki/Cozonac
+  coords: "44.426, 26.102"
+  color: "#edce93"
 - name: borodinsky
   url: https://en.wikipedia.org/wiki/borodinsky_bread
-  lat: 55.754472
-  long: 37.603402
+  lat: 54.754472
+  long: 38.903402
   color: brown
+- name: karavai
+  url: https://en.wikipedia.org/wiki/Karavai
+  coords: "55.755, 37.617"
+  color: "#edce93"
+- name: qistibi
+  url: https://en.wikipedia.org/wiki/Qistibi
+  coords: "55.788, 49.122"
+  color: "white"
+- name: ruisleipä
+  url: https://en.wikipedia.org/wiki/Ruisleip%C3%A4
+  coords: "60.169, 24.938"
+  color: brown
+- name: pulla
+  url: https://en.wikipedia.org/wiki/Cardamom_bread
+  coords: "60.169, 22.738"
+  color: white
 
 
 - name: broa
@@ -83,17 +170,70 @@
   lat: 38.737543
   long: -9.141267
   color: "#edce93"
+- name: massa sovada
+  url: https://en.wikipedia.org/wiki/Massa_sovada
+  coords: "37.741, -25.675"
+  color: "#edce93"
+- name: pan gallego
+  url: https://en.wikipedia.org/wiki/Pan_gallego
+  coords: "42.880, -8.545"
+  color: "#edce93"
 - name: pan de barra
   url: https://en.wikipedia.org/wiki/Bread_in_Spain
   lat: 40.416237
   long: -3.704286
   color: "#edce93"
+- name: ensaimada
+  url: https://en.wikipedia.org/wiki/Ensaimada
+  coords: "39.569, 2.650"
+  color: "#edce93"
 
+# east europe
 - name: somun
   url: https://en.wikipedia.org/wiki/pita
   lat: 43.868994
   long:  18.374020
   color: "#edce93"
+- name: pogača
+  url: https://en.wikipedia.org/wiki/Pogača
+  lat: 44.7866
+  long: 20.4489
+  color: gold # Belgrade, Serbia
+- name: babka
+  url: https://en.wikipedia.org/wiki/babka
+  coords: "50.063904, 19.961073"
+  color: "#edce93"
+- name: bialy
+  url: https://en.wikipedia.org/wiki/Bialy_(bread)
+  lat: 53.1325
+  long: 23.1688
+  color: white 
+- name: kolach
+  url: https://en.wikipedia.org/wiki/Kolach_(bread)
+  coords: "50.075, 14.437"
+  color: brown
+- name: pirozhki
+  url: https://en.wikipedia.org/wiki/pirozhki
+  coords: "56.326, 44.005"
+  color: gold
+- name: pryanik
+  url: https://en.wikipedia.org/wiki/pryanik
+  coords: "54.196, 37.618"
+  color: "#edce93"
+
+- name: paximathia
+  url: https://en.wikipedia.org/wiki/Paximathia
+  coords: "35.338, 25.144"
+  color: brown
+- name: tsoureki
+  url: https://en.wikipedia.org/wiki/Tsoureki
+  coords: "40.640, 22.944"
+  color: "#edce93"
+- name: palianytsia
+  url: https://en.wikipedia.org/wiki/Palianytsia
+  coords: "50.450, 30.523"
+  color: beige
+
 
 
 # ---- america and oceania -------
@@ -103,14 +243,45 @@
   lat: 40.713874
   long: -73.990247
   color: white
+- name: montreal bagel
+  url: https://en.wikipedia.org/wiki/Montreal-style_bagel
+  coords: "45.501, -73.567"
+  color: white
+- name: cracker
+  url: https://en.wikipedia.org/wiki/Cracker_(food)
+  lat: 42.2495
+  long: -71.0662
+  color: white
 - name: cornbread 
   url: https://en.wikipedia.org/wiki/cornbread
   coords: "33.756058, -84.393926"
   color: gold
+- name: salt-risen bread
+  url: https://en.wikipedia.org/wiki/Salt-rising_bread
+  coords: "37.747, -80.469"
+  color: "#edce93"
+- name: biscuit
+  url: https://en.wikipedia.org/wiki/Biscuit_(bread)
+  lat: 36.4490
+  long: -82.3880
+  color: "#edce93" 
 - name: frybread 
   url: https://en.wikipedia.org/wiki/frybread
   coords: "44.363126, -100.383743"
   color: gold
+- name: banana bread
+  url: https://en.wikipedia.org/wiki/Banana_bread
+  coords: "39.097447, -84.512008"
+  color: brown 
+- name: johnnycake
+  url: https://en.wikipedia.org/wiki/Johnnycake
+  coords: "41.490, -71.312"
+  color: "#f4c430"
+
+- name: touton
+  url: https://en.wikipedia.org/wiki/Touton
+  coords: "47.561, -52.712"
+  color: "#edce93"
 
 
 - name: tortilla 
@@ -118,6 +289,26 @@
   lat:   19.408041
   long: -99.135946
   color: white
+- name: bolillo
+  url: https://en.wikipedia.org/wiki/Bolillo
+  coords: "20.674, -103.347"
+  color: white
+- name: pan dulce
+  url: https://en.wikipedia.org/wiki/Pan_dulce
+  coords: "19.041, -98.206"
+  color: gold
+
+- name: coco bread
+  url: https://en.wikipedia.org/wiki/Coco_bread
+  lat: 17.9714
+  long: -76.7936
+  color: white
+- name: roti (wrap)
+  url: https://en.wikipedia.org/wiki/Roti_(wrap)
+  coords: "10.631652, -61.444546"
+  color: gold
+
+# ----- south america ------
 
 - name: pão de queijo 
   url: https://en.wikipedia.org/wiki/Pão_de_queijo
@@ -129,6 +320,31 @@
   lat:  3.452309
   long:  -76.531722
   color: gold
+- name: empanada
+  url: https://en.wikipedia.org/wiki/Empanada
+  coords: "-34.603, -58.381"
+  color: gold
+- name: fugazza
+  url: https://en.wikipedia.org/wiki/Fugazza
+  coords: "-33.603, -58.181"
+  color: "#f3e5ab"
+- name: hallulla
+  url: https://en.wikipedia.org/wiki/Hallulla
+  coords: "-33.448, -71.969"
+  color: "#f5deb3"
+- name: marraqueta
+  url: https://en.wikipedia.org/wiki/Marraqueta
+  coords: "-33.448, -70.669"
+  color: "#edce93"
+- name: chipa
+  url: https://en.wikipedia.org/wiki/Chipa
+  lat: -25.2637
+  long: -57.5759
+  color: gold 
+- name: sopapilla
+  url: https://en.wikipedia.org/wiki/Sopapilla
+  coords: "35.084, -106.650"
+  color: "#edce93"
 
 - name: arepa
   url: https://en.wikipedia.org/wiki/arepa
@@ -151,21 +367,39 @@
   lat:  -33.881659
   long: 151.189395
   color: "#edce93"
-
+- name: rewena
+  url: https://en.wikipedia.org/wiki/Rēwena_bread
+  coords: "-38.136, 176.249"
+  color: brown
 
 
 
 # ---- middle east -------
 - name: non
-  url: https://en.wikipedia.org/wiki/naan
+  url: https://en.wikipedia.org/wiki/Tandyr_nan
   lat: 39.658898, 
   long: 66.941644,
   color: "#edce93"
+- name: boortsog
+  url: https://en.wikipedia.org/wiki/Boortsog
+  coords: "47.886, 106.906"
+  color: "#edce93"
+- name: qatlama
+  url: https://en.wikipedia.org/wiki/Qatlama
+  coords: "33.982220, 71.634099"
+  color: "#edce93"
+
+
+
 - name: manakish
   url: https://en.wikipedia.org/wiki/manakish
   lat: 33.88648
   long: 35.495843
   color: "#edce93"
+- name: matzah
+  url: https://en.wikipedia.org/wiki/Matzah
+  coords: "31.768, 35.213"
+  color: "#f3e5ab"
 - name: pita
   url: https://en.wikipedia.org/wiki/pita
   lat: 36.198067
@@ -176,6 +410,30 @@
   lat: 30.055335
   long: 31.233829
   color: "#edce93"
+- name: msemmen
+  url: https://en.wikipedia.org/wiki/Msemmen
+  lat: 36.733785
+  long: 3.086463 
+  color: "#edce93"
+- name: baghrir
+  url: https://en.wikipedia.org/wiki/Baghrir
+  lat: 33.5731
+  long: -7.5898
+  color: "gold"
+- name: bazin
+  url: https://en.wikipedia.org/wiki/Bazin_(bread)
+  lat: 32.8872
+  long: 13.1913
+  color: "#edce93" 
+- name: taboon bread
+  url: https://en.wikipedia.org/wiki/Taboon_bread
+  coords: "31.768, 35.213"
+  color: "#edce93"
+- name: markook
+  url: https://en.wikipedia.org/wiki/Markook
+  coords: "33.315833, 36.337559"
+  color: "#edce93"
+
 - name: simit
   url: https://en.wikipedia.org/wiki/simit
   lat: 41.016006
@@ -201,13 +459,30 @@
   lat: 42.266880
   long: 42.692977
   color: "#edce93"
+- name: samoon
+  url: https://en.wikipedia.org/wiki/Samoon
+  coords: "33.315, 44.366"
+  color: "#edce93"
+
+- name: sheermal
+  url: https://en.wikipedia.org/wiki/Sheermal
+  coords: "26.846, 80.946"
+  color: "#edce93"
+- name: barbari
+  url: https://en.wikipedia.org/wiki/Barbari_bread
+  coords: "35.689, 51.389"
+  color: "#edce93"
 - name: sangak
   url: https://en.wikipedia.org/wiki/sangak
   lat: 36.295435
   long: 59.553158
   color: "#edce93"
 
-
+- name: bolani
+  url: https://en.wikipedia.org/wiki/Bolani
+  lat: 34.5553
+  long: 69.1775
+  color: gold 
 
 # ---- south asia -------
 - name: naan 
@@ -223,7 +498,11 @@
 - name: roti
   url: https://en.wikipedia.org/wiki/roti
   lat: 28.477643
-  long: 77.649550
+  long: 78.249550
+  color: "#edce93"
+- name: chapati
+  url: https://en.wikipedia.org/wiki/Chapati
+  coords: "29.543945, 76.903677"
   color: "#edce93"
 - name: kulcha
   url: https://en.wikipedia.org/wiki/kulcha
@@ -234,6 +513,10 @@
   url: https://en.wikipedia.org/wiki/puri_(food)
   coords: 23.749394, 90.382519
   color: gold
+- name: papadam
+  url: https://en.wikipedia.org/wiki/Papadam
+  coords: "13.083, 80.270"
+  color: "#f5deb3"
 
 - name: khakhra
   url: https://en.wikipedia.org/wiki/khakhra
@@ -261,6 +544,10 @@
   url: https://en.wikipedia.org/wiki/parotta
   coords: 9.963046, 76.289755
   color: gold
+- name: puran poli
+  url: https://en.wikipedia.org/wiki/Puran_poli
+  coords: "18.520, 73.856"
+  color: "#edce93"
 
 
 
@@ -271,32 +558,82 @@
   lat:  39.921823
   long: 116.357126
   color: white
+- name: wotou
+  url: https://en.wikipedia.org/wiki/Wotou
+  coords: "39.084, 117.201"
+  color: "#edce93"
+- name: balep korkun
+  url: https://en.wikipedia.org/wiki/Balep_korkun
+  coords: "29.646, 91.117"
+  color: "#edce93"
+- name: pineapple bun
+  url: https://en.wikipedia.org/wiki/pineapple_bun
+  lat: 22.280480
+  long: 114.09160
+  color: gold
+- name: egg waffle
+  url: https://en.wikipedia.org/wiki/Egg_waffle
+  coords: "22.396, 115.109"
+  color: "#ffdb58"
+- name: bing
+  url: https://en.wikipedia.org/wiki/Bing_(bread)
+  coords: "35.062714, 117.132028"
+  color: gold
+- name: scallion bread
+  url: https://en.wikipedia.org/wiki/Scallion_bread
+  coords: "25.033, 121.565"
+  color: gold
+- name: shengjian bao
+  url: https://en.wikipedia.org/wiki/Shengjian_mantou
+  coords: "31.329503, 120.568566"
+  color: white
+- name: shaobing
+  url: https://en.wikipedia.org/wiki/Shaobing
+  coords: "40.004, 117.707"
+  color: "#edce93"
+- name: guokui
+  url: https://en.wikipedia.org/wiki/Guokui
+  coords: "34.263, 108.948"
+  color: gold
+- name: youtiao
+  url: https://en.wikipedia.org/wiki/Youtiao
+  coords: "30.199087, 120.151219"
+  color: gold
+- name: banh mi
+  url: https://en.wikipedia.org/wiki/Banh_mi
+  lat: 10.7769
+  long: 106.7009
+  color: gold 
 - name: roti canai 
   url: https://en.wikipedia.org/wiki/roti_canai
   lat:  3.151547 
   long: 101.697061
-  color: gold
-- name: pineapple bun
-  url: https://en.wikipedia.org/wiki/pineapple_bun
-  lat: 22.280480
-  long: 114.179160
-  color: gold
-- name: cong you bing
-  url: https://en.wikipedia.org/wiki/Cong_you_bing
-  lat: 31.222921
-  long:  121.471784
   color: gold
 - name: pandesal
   url: https://en.wikipedia.org/wiki/pandesal
   lat: 14.605311
   long:  121.007439
   color: "#edce93"
+- name: kamir
+  url: https://en.wikipedia.org/wiki/Kamir
+  coords: "-6.889, 109.381"
+  color: brown
 
 - name: melonpan 
   url: https://en.wikipedia.org/wiki/Melonpan
   lat: 35.692368
   long: 139.741003
   color: "#edce93"
+- name: shokupan 
+  url: https://en.wikipedia.org/wiki/Japanese_milk_bread
+  lat: 43.072197
+  long: 141.357757
+  color: white
+- name: hotteok
+  url: https://en.wikipedia.org/wiki/Hotteok
+  coords: "35.179, 129.075"
+  color: "#edce93"
+
 
 # ----- africa ------
 
@@ -305,5 +642,62 @@
   lat:  11.58630
   long: 37.378945
   color: "#edce93"
+- name: himbasha
+  url: https://en.wikipedia.org/wiki/Himbasha
+  coords: "15.322, 38.925"
+  color: brown
+- name: kisra
+  url: https://en.wikipedia.org/wiki/Kisra
+  coords: "15.500, 32.560"
+  color: "#d2b48c"
+- name: lahoh
+  url: https://en.wikipedia.org/wiki/Lahoh
+  coords: "15.369, 44.191"
+  color: white
 
+- name: tapalapa
+  url: https://en.wikipedia.org/wiki/Tapalapa_bread
+  coords: "13.454, -16.579"
+  color: "#edce93"
+- name: agege bread
+  url: https://en.wikipedia.org/wiki/Agege_bread
+  coords: "6.618, 3.321"
+  color: white
+- name: ngome
+  url: https://en.wikipedia.org/wiki/Ngome_(bread)
+  coords: "12.639, -8.002"
+  color: gold
+- name: masa
+  url: https://en.wikipedia.org/wiki/Masa_(rice_cake)
+  coords: "12.002, 8.592"
+  color: gold
 
+- name: kwanga
+  url: https://en.wikipedia.org/wiki/Chikwangue
+  coords: "-4.322, 15.317"
+  color: "#edce93"
+- name: maandazi
+  url: https://en.wikipedia.org/wiki/Maandazi
+  coords: "-6.792, 39.208"
+  color: "#edce93"
+- name: sabaayad
+  url: https://en.wikipedia.org/wiki/Canjeero
+  coords: "2.043, 45.318"
+  color: "#edce93"
+
+- name: chapati
+  url: https://en.wikipedia.org/wiki/Chapati
+  coords: "-4.050603, 39.664018"
+  color: "#edce93"
+- name: mofogasy
+  url: https://en.wikipedia.org/wiki/Mofogasy
+  coords: "-18.879, 47.507"
+  color: "#edce93"
+- name: roosterkoek
+  url: https://en.wikipedia.org/wiki/South_African_cuisine
+  coords: "-33.932, 18.860"
+  color: gold
+- name: potbrood
+  url: https://en.wikipedia.org/wiki/Potbrood
+  coords: "-25.747, 28.229"
+  color: beige

@@ -102,6 +102,21 @@
         pin.addEventListener('mousedown', stopMapDrag);
         pin.addEventListener('touchstart', stopMapDrag);
       });
+
+      // Dynamic border: darker + browner version of each pin's background
+      pins.forEach(function(pin) {
+        var bg = getComputedStyle(pin).backgroundColor;
+        var match = bg.match(/\d+/g);
+        if (match && match.length >= 3) {
+          var r = parseInt(match[0]);
+          var g = parseInt(match[1]);
+          var b = parseInt(match[2]);
+          var dr = Math.round(r * 0.65);
+          var dg = Math.round(g * 0.60);
+          var db = Math.round(b * 0.50);
+          pin.style.borderColor = 'rgb(' + dr + ',' + dg + ',' + db + ')';
+        }
+      });
     </script>
 
   </body>
