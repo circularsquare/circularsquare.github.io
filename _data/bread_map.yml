@@ -536,7 +536,7 @@
   coords: 9.923924, 78.117301
   color: white
 - name: idli
-  url: https://en.wikipedia.org/wiki/
+  url: https://en.wikipedia.org/wiki/idli
   coords: 13.083462, 80.249708
   color: white
 
@@ -690,7 +690,7 @@
   coords: "-4.050603, 39.664018"
   color: "#edce93"
 - name: mofogasy
-  url: https://en.wikipedia.org/wiki/Mofogasy
+  url: https://en.wikipedia.org/wiki/Mofo_gasy
   coords: "-18.879, 47.507"
   color: "#edce93"
 - name: roosterkoek
