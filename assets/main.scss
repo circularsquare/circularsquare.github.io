@@ -93,7 +93,6 @@ table {border-spacing: 30px;}
   height: auto !important; /* Override the 100% height from desktop */
   aspect-ratio: 2 / 1;
   flex-shrink: 0;          /* Prevent flexbox from squishing it */
-  will-change: transform;  /* Keep on GPU layer to prevent post-zoom pixel snapping */
 }
 
 .map-container {
