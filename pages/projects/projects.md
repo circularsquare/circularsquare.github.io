@@ -11,6 +11,8 @@ permalink: /projects/
         - [nyc street trips heat map](/assets/nystreets.png)
         - [nyc bus lines by ridership](/assets/bus.png)
     - equal population maps
+        - [asia in regions of 1 million people](/assets/maps/asia1meng.png) (in progress)
+            - [local language labels](/assets/maps/asia1mloc.png)
         - [europe in regions of 1 million people](/assets/euro1m.png)
         - [north america in regions of 1 million people](/assets/na1m.png)
         - [south america in regions of 1 million people](/assets/maps/sa1m.png) 
