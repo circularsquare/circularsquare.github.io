@@ -16,6 +16,8 @@ permalink: /projects/
         - [south america in regions of 1 million people](/assets/maps/sa1m.png) 
         - [the world in regions of 10 million people](/assets/world10mfull.png)
         - [fantasy world metro map](/assets/worldtrain.png)
+    - interactive 
+        - [ancestry dot map](/ancestrydots)
     - (if you'd like to support my map making, you can donate [here](https://ko-fi.com/anitamaps)!)<br><br>
 - games
     - [city circles quiz](/circles)
