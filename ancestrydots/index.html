@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ancestry Dot Map</title>
+  <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" />
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    .maplibregl-popup-content {
+      background: rgba(20,20,20,0.88);
+      color: #eee;
+      font-size: 12px;
+      padding: 4px 8px;
+      border-radius: 4px;
+      pointer-events: none;
+    }
+    .maplibregl-popup-tip { display: none; }
+    body { background: #111; font-family: sans-serif; }
+    #map { width: 100vw; height: 100vh; }
+
+    #legend {
+      position: absolute;
+      bottom: 36px;
+      right: 16px;
+      z-index: 1000;
+      background: rgba(20,20,20,0.88);
+      border-radius: 8px;
+      font-size: 12px;
+      color: #eee;
+      height: 88vh;
+      width: 231px;
+      display: flex;
+      flex-direction: column;
+    }
+    #info-btn {
+      position: absolute;
+      bottom: 36px;
+      left: 16px;
+      z-index: 1000;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: #ddd;
+      color: #111;
+      border: none;
+      font-size: 20px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      line-height: 1;
+    }
+    #info-btn:hover { background: #fff; }
+    #info-panel {
+      display: none;
+      position: absolute;
+      bottom: 70px;
+      left: 16px;
+      z-index: 1000;
+      background: rgba(20,20,20,0.88);
+      border-radius: 8px;
+      color: #ccc;
+      font-size: 12px;
+      line-height: 1.6;
+      padding: 12px 14px;
+      max-width: 384px;
+    }
+    #info-panel.open { display: block; }
+    #info-panel p { margin: 0 0 8px; }
+    #info-panel p:last-child { margin: 0; }
+    #info-panel a { color: #89b4fa; }
+
+    #legend-controls {
+      padding: 8px 12px;
+      border-bottom: 1px solid #333;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      flex-shrink: 0;
+    }
+    #legend-controls-buttons {
+      display: flex;
+      gap: 6px;
+    }
+    #legend-controls button {
+      flex: 1;
+      background: #333;
+      color: #ccc;
+      border: none;
+      border-radius: 4px;
+      padding: 4px 0;
+      font-size: 11px;
+      cursor: pointer;
+    }
+    #legend-controls button:hover { background: #444; color: #fff; }
+    #size-row {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      font-size: 10px;
+      color: #888;
+    }
+    #size-slider {
+      flex: 1;
+      accent-color: #888;
+      cursor: pointer;
+    }
+
+    #legend-scroll {
+      overflow-y: scroll;
+      scrollbar-gutter: stable;
+      padding: 6px 12px 10px;
+      scrollbar-width: thin;
+      scrollbar-color: #555 transparent;
+    }
+    #legend-scroll::-webkit-scrollbar { width: 5px; }
+    #legend-scroll::-webkit-scrollbar-thumb { background: #555; border-radius: 3px; }
+
+    /* ── Group collapsible ── */
+    details.legend-group { margin-top: 8px; }
+    details.legend-group:first-child { margin-top: 2px; }
+
+    summary.legend-group-header {
+      list-style: none;
+      display: flex;
+      align-items: center;
+      font-size: 11px;
+      font-weight: bold;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: #aaa;
+      cursor: pointer;
+      padding: 3px 0;
+      border-top: 1px solid #2a2a2a;
+      user-select: none;
+    }
+    details.legend-group:first-child > summary.legend-group-header {
+      border-top: none;
+    }
+    summary.legend-group-header::-webkit-details-marker { display: none; }
+    /* Chevron arrow — rotates when open */
+    summary.legend-group-header::after {
+      content: '▶';
+      font-size: 8px;
+      color: #555;
+      padding-left: 6px;
+      display: inline-block;
+    }
+    details[open] > summary.legend-group-header::after {
+      transform: rotate(90deg);
+    }
+
+    /* ── Group indicator checkbox ── */
+    .group-indicator {
+      margin-right: 7px;
+      flex-shrink: 0;
+      accent-color: #888;
+      cursor: pointer;
+    }
+
+    /* ── Individual entries ── */
+    .legend-entries { padding: 2px 0 4px 4px; }
+    .legend-entry {
+      display: flex;
+      align-items: center;
+      line-height: 1.75;
+      cursor: pointer;
+      user-select: none;
+    }
+    .legend-entry:hover { color: #fff; }
+    .subgroup-header {
+      font-size: 10px;
+      color: #555;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      padding: 5px 0 1px;
+    }
+    .legend-count {
+      margin-left: auto;
+      padding-left: 6px;
+      font-size: 10px;
+      color: #999;
+      flex-shrink: 0;
+    }
+    .legend-entry input[type="checkbox"] {
+      margin-right: 5px;
+      flex-shrink: 0;
+      accent-color: #888;
+      cursor: pointer;
+      position: relative;
+      top: -1px;
+    }
+    .legend-dot {
+      width: 11px;
+      height: 11px;
+      border-radius: 50%;
+      margin-right: 6px;
+      flex-shrink: 0;
+      position: relative;
+      top: -1px;
+    }
+    input[type="color"].legend-dot {
+      border: none;
+      padding: 0;
+      cursor: pointer;
+      background: none;
+    }
+    input[type="color"].legend-dot::-webkit-color-swatch-wrapper { padding: 0; }
+    input[type="color"].legend-dot::-webkit-color-swatch { border: none; border-radius: 50%; }
+    input[type="color"].legend-dot::-moz-color-swatch { border: none; border-radius: 50%; }
+  </style>
+</head>
+<body>
+  <div id="map"></div>
+  <button id="info-btn" title="About this map">ℹ</button>
+  <div id="info-panel">
+    <p>Each dot represents 100 reported ancestries from the US Census (ACS 5-year estimates, 2024).</p>
+    <p>You can customize colors by clicking the colored circle next to any ancestry!</p>
+    <p>Ancestry reporting is voluntary. So in census ancestry data, some people are not counted, and others are double-counted (putting up to two ancestries is allowed).</p>
+    <p>* <strong> Note: </strong>The two "no reported ancestry" groups don't reflect specific census data. Rather, they are my crude estimates that attempt to count some of the people who do not report ancestry. <em>White, no reported ancestry</em> is calculated per census tract as the white (race) population minus all the ancestries in the Eastern European, Western European, and North American groups. <em>Black, no reported ancestry</em> is analogously the black (race) population minus the African and Afro-Caribbean groups.</p>
+    <p>Dots are distributed randomly throughout their census tract's land area. The land area is not perfect. sorry.</p>
+    <p>Inspired by <a href="https://censusdots.com" target="_blank">censusdots.com</a>.</p>
+    <p>This map is made by <a href="https://anita.garden/projects" target="_blank">anita</a>!</p>
+  </div>
+  <div id="legend">
+    <div id="legend-controls">
+      <div id="legend-controls-buttons">
+        <button id="btn-show-all">Show all</button>
+        <button id="btn-hide-all">Hide all</button>
+        <button id="btn-reset-colors">Reset colors</button>
+      </div>
+      <div id="size-row">
+        <span>dot size</span>
+        <input type="range" id="size-slider" min="0.5" max="2" step="0.05" value="1">
+      </div>
+    </div>
+    <div id="legend-scroll"></div>
+  </div>
+
+  <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+  <script src="https://unpkg.com/pmtiles@3.2.0/dist/pmtiles.js"></script>
+  <script>
+    // Register PMTiles protocol with MapLibre
+    {
+      const protocol = new pmtiles.Protocol();
+      maplibregl.addProtocol('pmtiles', protocol.tile.bind(protocol));
+    }
+  </script>
+  <script>
+    const GROUP_ORDER = ['eastern', 'western', 'american', 'african', 'afro_carib', 'latino', 'mena', 's_c_asian', 'se_asian', 'east_asian', 'native', 'pacific', 'no_ancestry'];
+    const SUBGROUP_ORDER  = ['uk_ireland', 'nordic', 'france_benelux', 'germany_rest', 'north_balkans', 'balkan', 'russia_ukraine', 'central_american', 'south_american', 'south_asian', 'central_asian', 'white_unspecified', 'black_unspecified'];
+    const SUBGROUP_LABELS = {
+      uk_ireland:       'UK & Ireland',
+      nordic:           'Nordic',
+      france_benelux:   'France / Benelux',
+      germany_rest:     'Germany & rest',
+      north_balkans:    'N. of Balkans',
+      balkan:           'Balkans',
+      russia_ukraine:   'Russia / Ukraine',
+      central_american: 'Central American',
+      south_american:   'South American',
+      south_asian:      'South Asian',
+      central_asian:    'Central Asian',
+    };
+    const SUBGROUP_RANK = Object.fromEntries(SUBGROUP_ORDER.map((s, i) => [s, i]));
+    const GROUP_LABELS = {
+      western:   'Western European',
+      eastern:   'Eastern European',
+      american:  'North American',
+      east_asian:'East Asian',
+      se_asian:  'Southeast Asian',
+      s_c_asian: 'South & Central Asian',
+      african:   'African',
+      afro_carib:'Afro-Caribbean',
+      latino:    'Latino',
+      mena:      'Middle Eastern & North African',
+      native:      'Native American',
+      pacific:     'Pacific Islander',
+      no_ancestry: 'No Reported Ancestry',
+    };
+
+    function fmtCount(n) {
+      if (n >= 1000000) return (n / 1000000).toFixed(1).replace(/\.0$/, '') + 'm';
+      if (n >= 1000)    return Math.round(n / 1000) + 'k';
+      return String(n);
+    }
+
+    function buildLegend(items, map) {
+      items = items.filter(i => i.population > 0);
+      const byGroup = {};
+      for (const { label, group, subgroup, color, population } of items) {
+        (byGroup[group] ??= []).push({ label, subgroup: subgroup || '', color, count: Math.round(population / 100) });
+      }
+      for (const entries of Object.values(byGroup)) {
+        entries.sort((a, b) => b.count - a.count);
+      }
+
+      // Build HTML — <details> per group, closed by default
+      let html = '';
+      for (const key of GROUP_ORDER) {
+        const entries = byGroup[key];
+        if (!entries) continue;
+        const groupColor = entries[0].color;
+        const groupTotal = entries.reduce((s, e) => s + e.count * 100, 0);
+        const groupCountHtml = groupTotal > 0 ? `<span class="legend-count">${fmtCount(groupTotal)}</span>` : '';
+        html += `<details class="legend-group">` +
+          `<summary class="legend-group-header">` +
+          `<input type="checkbox" class="group-indicator" data-group="${key}" checked>` +
+          `<span class="legend-dot" style="background:${groupColor}"></span>` +
+          `${GROUP_LABELS[key]}${key === 'no_ancestry' ? '*' : ''}${groupCountHtml}` +
+          `</summary>` +
+          `<div class="legend-entries">`;
+        let currentSubgroup = null;
+        for (const { label, subgroup, color, count } of entries) {
+          currentSubgroup = subgroup;
+          const id = `chk-${label.replace(/\W+/g, '-')}`;
+          const countHtml = count > 0 ? `<span class="legend-count">${fmtCount(count * 100)}</span>` : '';
+          let displayLabel = label.replace(/, no ancestry reported$/i, ', no reported ancestry');
+          if (key === 'no_ancestry') displayLabel += '*';
+          html += `<label class="legend-entry" for="${id}">` +
+            `<input type="checkbox" id="${id}" data-label="${label}" data-group="${key}" checked>` +
+            `<input type="color" class="legend-dot" data-label="${label}" value="${color}" title="Change color">` +
+            `${displayLabel}${countHtml}</label>`;
+        }
+        html += `</div></details>`;
+      }
+      document.getElementById('legend-scroll').innerHTML = html;
+
+      const allLabels = items.map(i => i.label);
+      const checked = new Set(allLabels);
+
+      // Group label lists for fast lookups
+      const groupMembers = {};
+      for (const key of GROUP_ORDER) {
+        groupMembers[key] = (byGroup[key] || []).map(e => e.label);
+      }
+
+      function groupState(key) {
+        const members = groupMembers[key];
+        const n = members.filter(l => checked.has(l)).length;
+        return n === 0 ? 'none' : n === members.length ? 'all' : 'mixed';
+      }
+
+      function updateGroupIndicators() {
+        document.querySelectorAll('.group-indicator').forEach(el => {
+          const state = groupState(el.dataset.group);
+          el.checked = state === 'all';
+          el.indeterminate = state === 'mixed';
+        });
+      }
+
+      function applyFilter() {
+        map.setPaintProperty('dots', 'circle-opacity', checked.size === 0
+          ? 0
+          : ['case', ['in', ['get', 'label'], ['literal', [...checked]]], 0.7, 0]);
+        updateGroupIndicators();
+      }
+
+      // Color overrides
+      const colorOverrides = {};
+
+      function buildColorExpression() {
+        const base = ['match', ['get', 'label'], ...items.flatMap(it => [it.label, it.color]), '#888888'];
+        const entries = Object.entries(colorOverrides);
+        if (entries.length === 0) return base;
+        const expr = ['case'];
+        for (const [lbl, col] of entries) {
+          expr.push(['==', ['get', 'label'], lbl], col);
+        }
+        expr.push(base);
+        return expr;
+      }
+
+      let colorThrottleTimer = null;
+      let colorPending = false;
+
+      document.getElementById('legend-scroll').addEventListener('input', e => {
+        if (!e.target.matches('input[type="color"].legend-dot')) return;
+        colorOverrides[e.target.dataset.label] = e.target.value;
+
+        if (colorThrottleTimer) {
+          colorPending = true;
+          return;
+        }
+
+        map.setPaintProperty('dots', 'circle-color', buildColorExpression());
+        colorThrottleTimer = setTimeout(() => {
+          colorThrottleTimer = null;
+          if (colorPending) {
+            colorPending = false;
+            map.setPaintProperty('dots', 'circle-color', buildColorExpression());
+          }
+        }, 300);
+      });
+
+      // Individual checkboxes
+      document.getElementById('legend-scroll').addEventListener('change', e => {
+        const cb = e.target;
+        if (!cb.matches('input[type="checkbox"]')) return;
+        if (cb.classList.contains('group-indicator')) {
+          // Browser already toggled cb.checked — use it as the intent
+          const key = cb.dataset.group;
+          groupMembers[key].forEach(l => cb.checked ? checked.add(l) : checked.delete(l));
+          document.querySelectorAll(`input[data-group="${key}"]:not(.group-indicator)`)
+            .forEach(child => child.checked = cb.checked);
+        } else {
+          cb.checked ? checked.add(cb.dataset.label) : checked.delete(cb.dataset.label);
+        }
+        applyFilter();
+      });
+
+      // Prevent group indicator click from collapsing <details> (no preventDefault —
+      // we want the browser to handle the checkbox visual toggle naturally)
+      document.querySelectorAll('.group-indicator').forEach(el => {
+        el.addEventListener('click', e => e.stopPropagation());
+      });
+
+      // Reset colors
+      const defaultColors = Object.fromEntries(items.map(it => [it.label, it.color]));
+      document.getElementById('btn-reset-colors').addEventListener('click', () => {
+        for (const key of Object.keys(colorOverrides)) delete colorOverrides[key];
+        document.querySelectorAll('#legend-scroll input[type="color"].legend-dot')
+          .forEach(el => { el.value = defaultColors[el.dataset.label] ?? el.value; });
+        map.setPaintProperty('dots', 'circle-color', buildColorExpression());
+      });
+
+      // Show all / Hide all
+      document.getElementById('btn-show-all').addEventListener('click', () => {
+        document.querySelectorAll('#legend-scroll input[data-label]')
+          .forEach(cb => { cb.checked = true; checked.add(cb.dataset.label); });
+        updateGroupIndicators();
+        applyFilter();
+      });
+      document.getElementById('btn-hide-all').addEventListener('click', () => {
+        document.querySelectorAll('#legend-scroll input[data-label]')
+          .forEach(cb => { cb.checked = false; checked.delete(cb.dataset.label); });
+        updateGroupIndicators();
+        applyFilter();
+      });
+
+      // Tooltip — only for checked dots
+      const tooltip = new maplibregl.Popup({
+        closeButton: false,
+        closeOnClick: false,
+        offset: 8,
+      });
+
+      map.on('mousemove', 'dots', e => {
+        const feature = e.features[0];
+        if (!checked.has(feature.properties.label)) {
+          map.getCanvas().style.cursor = '';
+          tooltip.remove();
+          return;
+        }
+        map.getCanvas().style.cursor = 'pointer';
+        tooltip.setLngLat(feature.geometry.coordinates).setHTML(feature.properties.label).addTo(map);
+      });
+
+      map.on('mouseleave', 'dots', () => {
+        map.getCanvas().style.cursor = '';
+        tooltip.remove();
+      });
+
+      // Apply legend.json colors to map, overriding whatever is baked into the tiles
+      map.setPaintProperty('dots', 'circle-color', buildColorExpression());
+
+      // Dot size slider
+      const baseStops = { 4: 1, 6: 1, 8: 1, 10: 2, 12: 4, 14: 8 };
+      function scaledRadius(scale) {
+        return ['interpolate', ['exponential', 1.26], ['zoom'],
+          ...Object.entries(baseStops).flatMap(([z, r]) => [+z, r * scale])
+        ];
+      }
+      document.getElementById('size-slider').addEventListener('input', e => {
+        const scale = parseFloat(e.target.value);
+map.setPaintProperty('dots', 'circle-radius', scaledRadius(scale));
+      });
+    }
+
+    const map = new maplibregl.Map({
+      container: 'map',
+      style: 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json',
+      center: [-73.93, 40.724],
+      zoom: 11,
+    });
+
+    map.on('load', () => {
+      // Add PMTiles vector source — only tiles for the current viewport are fetched
+      map.addSource('dots', {
+        type: 'vector',
+        url: 'pmtiles://data/processed/dots_all_1per100.pmtiles',
+      });
+
+      map.addLayer({
+        id: 'dots',
+        type: 'circle',
+        source: 'dots',
+        'source-layer': 'dots',
+        paint: {
+          'circle-color': ['get', 'color'],
+          'circle-opacity': 0.7,
+          'circle-stroke-width': 0,
+          'circle-radius': ['interpolate', ['exponential', 1.26], ['zoom'],
+            4, 1,
+            6,  1,
+            8,  1,
+            10, 2,
+            12, 4,
+            14, 8,
+          ],
+        },
+      });
+
+      // Build legend from pre-computed legend.json (label counts + colors)
+      fetch('data/processed/legend.json')
+        .then(r => r.json())
+        .then(items => buildLegend(items, map))
+        .catch(err => console.warn('Could not load legend.json:', err));
+    });
+
+    document.getElementById('info-btn').addEventListener('click', () => {
+      document.getElementById('info-panel').classList.toggle('open');
+    });
+  </script>
+</body>
+</html>
