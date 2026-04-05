@@ -1,7 +1,8 @@
 {
   "permissions": {
     "allow": [
-      "Bash(find /c/Users/anita/projects/website -type f -name *city*)"
+      "Bash(find /c/Users/anita/projects/website -type f -name *city*)",
+      "Read(//c/Users/anita/projects/maps/ancestrydots/**)"
     ]
   }
 }
