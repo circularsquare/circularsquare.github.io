@@ -20,6 +20,8 @@
     .maplibregl-popup-tip { display: none; }
     body { background: #111; }
     #map { width: 100vw; height: 100vh; }
+    .maplibregl-canvas-container.maplibregl-interactive { cursor: default; }
+    .maplibregl-canvas-container.maplibregl-interactive:active { cursor: default; }
 
     #legend {
       position: absolute;
@@ -30,7 +32,7 @@
       border-radius: 8px;
       font-size: 12px;
       color: #eee;
-      height: 88vh;
+      max-height: calc(100vh - 50px);
       width: 231px;
       display: flex;
       flex-direction: column;
@@ -184,7 +186,7 @@
     #legend-scroll {
       overflow-y: scroll;
       scrollbar-gutter: stable;
-      padding: 6px 6px 10px 12px;
+      padding: 0px 6px 10px 12px;
       scrollbar-width: thin;
       scrollbar-color: #555 transparent;
     }
@@ -192,7 +194,7 @@
     #legend-scroll::-webkit-scrollbar-thumb { background: #555; border-radius: 3px; }
 
     /* ── Group collapsible ── */
-    details.legend-group { margin-top: 8px; }
+    details.legend-group { margin-top: 5px; }
     details.legend-group:first-child { margin-top: 2px; }
 
     summary.legend-group-header {
@@ -205,7 +207,7 @@
       letter-spacing: 0.06em;
       color: #aaa;
       cursor: pointer;
-      padding: 6px 0 2px;
+      padding: 5px 0 1px;
       border-top: 1px solid #2a2a2a;
       user-select: none;
     }
@@ -241,7 +243,8 @@
     .legend-entry {
       display: flex;
       align-items: center;
-      line-height: 1.75;
+      line-height: 1.2;
+      padding: 2px 0;
       user-select: none;
     }
     .legend-entry:hover { color: #fff; }
@@ -501,10 +504,11 @@
       <button id="info-panel-close" title="Close">✕</button>
     </div>
     <p>Each dot represents 100 reported ancestries from the US Census (ACS 5-year estimates, 2024).</p>
-    <p>You can customize colors by clicking the colored circle next to any ancestry!</p>
+    <p>Dots are distributed randomly in their census tract's land area.</p>
+    <p>You can customize colors by clicking the colored dot in the legend! </p>
+    <p>Double clicking a dot on the map will filter to just that ancestry. </p>
     <p>Ancestry reporting in the census is voluntary. So in this data, some people are not counted, and others are double-counted (putting up to two ancestries is allowed).</p>
     <p>* <strong> Note: </strong>The two "no reported ancestry" groups don't reflect specific census data. Rather, they are my crude estimates that attempt to count some of the people who do not report ancestry. <em>White, no reported ancestry</em> is calculated per census tract as the white (race) population minus all the ancestries in the Eastern European, Western European, and North American groups. <em>Black, no reported ancestry</em> is analogously the black (race) population minus the African and Afro-Caribbean groups.</p>
-    <p>Dots are distributed randomly throughout their census tract's land area.</p>
     <p>Inspired by <a href="https://censusdots.com" target="_blank">censusdots.com</a>.</p>
     <p>This map is made by <a href="https://anita.garden/projects" target="_blank">anita</a>!</p>
   </div>
@@ -517,7 +521,6 @@
       <div id="legend-controls-buttons">
         <button id="btn-show-all">show all</button>
         <button id="btn-hide-all">hide all</button>
-        <button id="btn-reset-colors">reset colors</button>
       </div>
       <div id="size-row">
         <span>dot size</span>
@@ -844,13 +847,13 @@
 
       // Reset colors
       const defaultColors = Object.fromEntries(items.map(it => [it.label, it.color]));
-      document.getElementById('btn-reset-colors').addEventListener('click', () => {
+      window.resetColors = function resetColors() {
         for (const key of Object.keys(colorOverrides)) delete colorOverrides[key];
         document.querySelectorAll('#legend-scroll .color-dot')
           .forEach(el => { const c = defaultColors[el.dataset.label]; if (c) { el.style.background = c; el.dataset.color = c; } });
         cpClose();
         map.setPaintProperty('dots', 'circle-color', buildColorExpression());
-      });
+      }
 
       // Show all / Hide all
       document.getElementById('btn-show-all').addEventListener('click', () => {
@@ -885,13 +888,26 @@
           tooltip.remove();
           return;
         }
-        map.getCanvas().style.cursor = 'pointer';
+        map.getCanvas().style.cursor = '';
         tooltip.setLngLat(feature.geometry.coordinates).setHTML(feature.properties.label).addTo(map);
       });
 
       map.on('mouseleave', 'dots', () => {
         map.getCanvas().style.cursor = '';
         tooltip.remove();
+      });
+
+      map.on('dblclick', 'dots', e => {
+        if (window.gameActive) return;
+        e.preventDefault();
+        const label = e.features[0].properties.label;
+        if (!checked.has(label)) return;
+        // Solo this ancestry
+        checked.clear();
+        checked.add(label);
+        document.querySelectorAll('#legend-scroll input[data-label]')
+          .forEach(cb => { cb.checked = cb.dataset.label === label; });
+        applyFilter();
       });
 
       // Apply legend.json colors to map, overriding whatever is baked into the tiles
@@ -1033,6 +1049,7 @@
 
       function enterGame() {
         window.gameActive = true;
+        document.getElementById('info-panel').classList.add('hidden');
         document.getElementById('legend-controls-buttons').style.display = 'none';
         document.getElementById('legend-scroll').style.display = 'none';
         document.getElementById('game-panel').classList.add('active');
@@ -1082,9 +1099,11 @@
         map.setPaintProperty('dots', 'circle-opacity', 1);
       }
 
+      let revealedAt = 0;
       function revealAnswer(guessLabel) {
         if (revealed) return;
         revealed = true;
+        revealedAt = Date.now();
         const isCorrect = guessLabel === currentAnswer.label;
         const resultEl = document.getElementById('game-result');
 
@@ -1162,7 +1181,7 @@
           e.preventDefault();
           if (highlightIdx >= 0 && highlightIdx < items.length) {
             revealAnswer(items[highlightIdx].dataset.label);
-          } else if (items.length === 1) {
+          } else if (items.length > 0) {
             revealAnswer(items[0].dataset.label);
           }
         }
@@ -1183,6 +1202,13 @@
       document.getElementById('game-skip').addEventListener('click', () => revealAnswer(null));
       document.getElementById('game-next').addEventListener('click', startRound);
 
+      document.addEventListener('keydown', e => {
+        if (e.key === 'Enter' && gameActive && revealed && Date.now() - revealedAt > 100) {
+          e.preventDefault();
+          startRound();
+        }
+      });
+
       document.getElementById('game-btn').addEventListener('click', () => {
         if (!gameItems) return;
         if (gameActive) exitGame();
@@ -1192,8 +1218,7 @@
       // Listen for game exit to restore colors
       document.addEventListener('game-exit', () => {
         // buildLegend will have set up the color expression; re-fire it
-        const btn = document.getElementById('btn-reset-colors');
-        if (btn) btn.click();
+        if (window.resetColors) window.resetColors();
       });
     }
   </script>
