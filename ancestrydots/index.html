@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Ancestry Dot Map</title>
+  <link rel="icon" href="data/favicon.png" />
   <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;700&display=swap" />
   <style>
@@ -43,7 +44,7 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 5px 6px 5px 12px;
+      padding: 8px 6px 0px 12px;
       flex-shrink: 0;
     }
     #legend-title {
@@ -101,7 +102,6 @@
     }
     #info-btn:hover { background: #fff; }
     #info-panel {
-      display: none;
       position: absolute;
       bottom: 64px;
       left: 16px;
@@ -111,13 +111,39 @@
       color: #ccc;
       font-size: 12px;
       line-height: 1.6;
-      padding: 12px 14px;
-      max-width: 384px;
+      padding: 11px 13px;
+      max-width: min(384px, 100vw - 271px);
     }
-    #info-panel.open { display: block; }
+    #info-panel.hidden { display: none; }
+    #info-panel-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 5px;
+    }
+    #info-panel-title {
+      font-size: 11px;
+      font-weight: bold;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: #888;
+    }
+    #info-panel-close {
+      background: none;
+      border: none;
+      color: #888;
+      font-size: 18px;
+      cursor: pointer;
+      padding: 2px 4px;
+      line-height: 1;
+    }
+    #info-panel-close:hover { color: #fff; }
     #info-panel p { margin: 0 0 8px; }
     #info-panel p:last-child { margin: 0; }
     #info-panel a { color: #89b4fa; }
+    @media (max-width: 480px) {
+      #info-panel { max-width: calc(100vw - 50vw - 24px); font-size: 11px; }
+    }
 
     #legend-controls {
       padding: 8px 12px;
@@ -158,7 +184,7 @@
     #legend-scroll {
       overflow-y: scroll;
       scrollbar-gutter: stable;
-      padding: 6px 12px 10px;
+      padding: 6px 6px 10px 12px;
       scrollbar-width: thin;
       scrollbar-color: #555 transparent;
     }
@@ -190,10 +216,13 @@
     /* Chevron arrow — rotates when open */
     summary.legend-group-header::after {
       content: '▶';
-      font-size: 8px;
+      font-size: 10px;
       color: #555;
-      padding-left: 6px;
+      margin-left: 6px;
       display: inline-block;
+      width: 12px;
+      text-align: center;
+      flex-shrink: 0;
     }
     details[open] > summary.legend-group-header::after {
       transform: rotate(90deg);
@@ -213,10 +242,28 @@
       display: flex;
       align-items: center;
       line-height: 1.75;
-      cursor: pointer;
       user-select: none;
     }
     .legend-entry:hover { color: #fff; }
+    .legend-cb {
+      display: flex;
+      align-items: center;
+      cursor: pointer;
+      padding: 2px 3px 2px 0;
+      flex-shrink: 0;
+    }
+    .legend-cb input[type="checkbox"] {
+      accent-color: #888;
+      cursor: pointer;
+      position: relative;
+      top: -1px;
+      margin: 0;
+    }
+    .legend-label {
+      cursor: pointer;
+      flex: 1;
+      min-width: 0;
+    }
     .subgroup-header {
       font-size: 10px;
       color: #555;
@@ -231,14 +278,6 @@
       color: #999;
       flex-shrink: 0;
     }
-    .legend-entry input[type="checkbox"] {
-      margin-right: 7px;
-      flex-shrink: 0;
-      accent-color: #888;
-      cursor: pointer;
-      position: relative;
-      top: -1px;
-    }
     .legend-dot {
       width: 11px;
       height: 11px;
@@ -248,24 +287,217 @@
       position: relative;
       top: -1px;
     }
-    input[type="color"].legend-dot {
-      border: none;
-      padding: 0;
-      cursor: pointer;
-      background: none;
+    .color-dot { cursor: pointer; margin-left: 4px; }
+    .color-dot:hover { filter: brightness(1.4); }
+    /* ── Custom color picker ── */
+    #color-picker {
+      display: none;
+      position: absolute;
+      z-index: 2000;
+      background: rgba(20,20,20,0.92);
+      border-radius: 8px;
+      padding: 10px;
+      width: 168px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.5);
     }
-    input[type="color"].legend-dot::-webkit-color-swatch-wrapper { padding: 0; }
-    input[type="color"].legend-dot::-webkit-color-swatch { border: none; border-radius: 50%; }
-    input[type="color"].legend-dot::-moz-color-swatch { border: none; border-radius: 50%; }
+    #color-picker.open { display: block; }
+    #cp-preview-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+    #cp-preview {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    #cp-hex {
+      font-size: 11px;
+      color: #888;
+      font-family: monospace;
+    }
+    #cp-sliders input[type="range"] {
+      width: 100%;
+      height: 10px;
+      -webkit-appearance: none;
+      appearance: none;
+      border-radius: 5px;
+      outline: none;
+      cursor: pointer;
+      margin: 3px 0;
+    }
+    #cp-sliders input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: #fff;
+      border: 1px solid #555;
+      cursor: pointer;
+    }
+    #cp-sliders input[type="range"]::-moz-range-thumb {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: #fff;
+      border: 1px solid #555;
+      cursor: pointer;
+    }
+    #cp-hue {
+      background: linear-gradient(to right, #f00, #ff0, #0f0, #0ff, #00f, #f0f, #f00);
+    }
+    #cp-palette {
+      display: grid;
+      grid-template-columns: repeat(8, 1fr);
+      gap: 3px;
+      margin-top: 8px;
+    }
+    .cp-swatch {
+      width: 14px;
+      height: 14px;
+      border-radius: 3px;
+      cursor: pointer;
+      border: 1px solid transparent;
+    }
+    .cp-swatch:hover { border-color: #fff; }
+
+    /* ── Game mode ── */
+    #game-btn {
+      position: static;
+      width: 31px;
+      height: 31px;
+      border-radius: 50%;
+      background: #ddd;
+      color: #111;
+      border: none;
+      font-size: 15px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      line-height: 1;
+    }
+    #game-btn:hover { background: #fff; }
+    #game-panel {
+      display: none;
+      padding: 12px;
+      flex: 1;
+      flex-direction: column;
+      gap: 10px;
+    }
+    #game-panel.active { display: flex; }
+    #game-prompt {
+      font-size: 13px;
+      color: #ccc;
+      line-height: 1.5;
+    }
+    #game-prompt .game-dot {
+      display: inline-block;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      vertical-align: middle;
+      margin: 0 2px;
+    }
+    #game-input-wrap {
+      position: relative;
+    }
+    #game-input {
+      width: 100%;
+      background: #222;
+      border: 1px solid #444;
+      border-radius: 4px;
+      color: #eee;
+      font-size: 13px;
+      font-family: 'Nunito', sans-serif;
+      padding: 6px 8px;
+      outline: none;
+    }
+    #game-input:focus { border-color: #888; }
+    #game-input:disabled { opacity: 0.5; }
+    #game-suggestions {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      background: #222;
+      border: 1px solid #444;
+      border-top: none;
+      border-radius: 0 0 4px 4px;
+      max-height: 180px;
+      overflow-y: auto;
+      z-index: 10;
+      display: none;
+      scrollbar-width: thin;
+      scrollbar-color: #555 transparent;
+    }
+    #game-suggestions.open { display: block; }
+    .game-suggestion {
+      padding: 5px 8px;
+      font-size: 12px;
+      color: #ccc;
+      cursor: pointer;
+    }
+    .game-suggestion:hover,
+    .game-suggestion.highlighted { background: #333; color: #fff; }
+    #game-result {
+      font-size: 13px;
+      line-height: 1.5;
+    }
+    #game-result .correct { color: #a6e3a1; }
+    #game-result .incorrect { color: #f38ba8; }
+    #game-result .answer-label { color: #eee; font-weight: bold; }
+    #game-result .answer-dot {
+      display: inline-block;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      vertical-align: middle;
+      margin: 0 2px;
+    }
+    #game-buttons {
+      display: flex;
+      gap: 6px;
+    }
+    #game-buttons button {
+      flex: 1;
+      background: #333;
+      color: #ccc;
+      border: none;
+      border-radius: 4px;
+      padding: 6px 0;
+      font-size: 12px;
+      font-family: 'Nunito', sans-serif;
+      cursor: pointer;
+    }
+    #game-buttons button:hover { background: #444; color: #fff; }
+    #game-population {
+      font-size: 11px;
+      color: #666;
+    }
+    #game-score {
+      font-size: 11px;
+      color: #888;
+      text-align: right;
+      padding-bottom: 2px;
+      border-bottom: 1px solid #333;
+    }
   </style>
 </head>
 <body>
   <div id="map"></div>
   <div id="bottom-left">
-    <button id="info-btn" title="About this map">ℹ</button>
     <span id="map-title" style="cursor:pointer" title="About this map">Ancestry Dot Map</span>
+    <button id="info-btn" title="About this map">ℹ</button>
+    <button id="game-btn" title="Guess the ancestry!">??</button>
   </div>
   <div id="info-panel">
+    <div id="info-panel-header">
+      <span id="info-panel-title">About</span>
+      <button id="info-panel-close" title="Close">✕</button>
+    </div>
     <p>Each dot represents 100 reported ancestries from the US Census (ACS 5-year estimates, 2024).</p>
     <p>You can customize colors by clicking the colored circle next to any ancestry!</p>
     <p>Ancestry reporting in the census is voluntary. So in this data, some people are not counted, and others are double-counted (putting up to two ancestries is allowed).</p>
@@ -291,6 +523,33 @@
       </div>
     </div>
     <div id="legend-scroll"></div>
+    <div id="game-panel">
+      <div id="game-score"></div>
+      <div id="game-prompt"></div>
+      <div id="game-input-wrap">
+        <input type="text" id="game-input" placeholder="Type to guess..." autocomplete="off">
+        <div id="game-suggestions"></div>
+      </div>
+      <div id="game-result"></div>
+      <div id="game-population"></div>
+      <div id="game-buttons">
+        <button id="game-skip">skip</button>
+        <button id="game-next" style="display:none">next</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="color-picker">
+    <div id="cp-preview-row">
+      <div id="cp-preview"></div>
+      <span id="cp-hex"></span>
+    </div>
+    <div id="cp-sliders">
+      <input type="range" id="cp-hue" min="0" max="360" value="0">
+      <input type="range" id="cp-sat" min="0" max="100" value="70">
+      <input type="range" id="cp-lit" min="0" max="100" value="50">
+    </div>
+    <div id="cp-palette"></div>
   </div>
 
   <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
@@ -390,10 +649,10 @@
           const countHtml = count > 0 ? `<span class="legend-count">${fmtCount(count * 100)}</span>` : '';
           let displayLabel = label.replace(/, no ancestry reported$/i, ', no reported ancestry');
           if (key === 'no_ancestry') displayLabel += '*';
-          html += `<label class="legend-entry" for="${id}">` +
-            `<input type="checkbox" id="${id}" data-label="${label}" data-group="${key}" checked>` +
-            `<input type="color" class="legend-dot" data-label="${label}" value="${color}" title="Change color">` +
-            `${displayLabel}${countHtml}</label>`;
+          html += `<div class="legend-entry">` +
+            `<label class="legend-cb" for="${id}"><input type="checkbox" id="${id}" data-label="${label}" data-group="${key}" checked></label>` +
+            `<span class="legend-dot color-dot" data-label="${label}" data-color="${color}" style="background:${color}" title="Change color"></span>` +
+            `<label class="legend-label" for="${id}">${displayLabel}${countHtml}</label></div>`;
         }
         html += `</div></details>`;
       }
@@ -444,26 +703,119 @@
         return expr;
       }
 
+      // ── Custom color picker ──
+      const cpEl = document.getElementById('color-picker');
+      const cpPreview = document.getElementById('cp-preview');
+      const cpHex = document.getElementById('cp-hex');
+      const cpHue = document.getElementById('cp-hue');
+      const cpSat = document.getElementById('cp-sat');
+      const cpLit = document.getElementById('cp-lit');
+      const cpPalette = document.getElementById('cp-palette');
+      let cpTarget = null; // the .color-dot span being edited
+
+      // Palette colors (H, S%, L%)
+      const PALETTE = [
+        [0,70,50],[20,70,50],[30,70,50],[50,70,50],
+        [75,70,50],[140,70,50],[175,60,45],[210,70,50],
+        [260,60,55],[280,60,50],[310,70,50],[335,70,50],
+        [0,0,50],[210,15,50],[25,40,35],[340,60,70],
+      ];
+      cpPalette.innerHTML = PALETTE.map(([h,s,l]) =>
+        `<div class="cp-swatch" data-h="${h}" data-s="${s}" data-l="${l}" style="background:hsl(${h},${s}%,${l}%)"></div>`
+      ).join('');
+
+      function hslToHex(h, s, l) {
+        s /= 100; l /= 100;
+        const a = s * Math.min(l, 1 - l);
+        const f = n => { const k = (n + h / 30) % 12; return l - a * Math.max(-1, Math.min(k - 3, 9 - k, 1)); };
+        return '#' + [f(0), f(8), f(4)].map(v => Math.round(v * 255).toString(16).padStart(2, '0')).join('');
+      }
+
+      function hexToHsl(hex) {
+        let r = parseInt(hex.slice(1,3),16)/255, g = parseInt(hex.slice(3,5),16)/255, b = parseInt(hex.slice(5,7),16)/255;
+        const max = Math.max(r,g,b), min = Math.min(r,g,b), d = max - min;
+        let h = 0, s = 0, l = (max + min) / 2;
+        if (d > 0) {
+          s = d / (1 - Math.abs(2 * l - 1));
+          if (max === r) h = ((g - b) / d + 6) % 6 * 60;
+          else if (max === g) h = ((b - r) / d + 2) * 60;
+          else h = ((r - g) / d + 4) * 60;
+        }
+        return [Math.round(h), Math.round(s * 100), Math.round(l * 100)];
+      }
+
+      function cpUpdatePreview() {
+        const hex = hslToHex(+cpHue.value, +cpSat.value, +cpLit.value);
+        cpPreview.style.background = hex;
+        cpHex.textContent = hex;
+        cpSat.style.background = `linear-gradient(to right, hsl(${cpHue.value},0%,${cpLit.value}%), hsl(${cpHue.value},100%,${cpLit.value}%))`;
+        cpLit.style.background = `linear-gradient(to right, hsl(${cpHue.value},${cpSat.value}%,0%), hsl(${cpHue.value},${cpSat.value}%,50%), hsl(${cpHue.value},${cpSat.value}%,100%))`;
+      }
+
       let colorThrottleTimer = null;
       let colorPending = false;
 
-      document.getElementById('legend-scroll').addEventListener('input', e => {
-        if (!e.target.matches('input[type="color"].legend-dot')) return;
-        colorOverrides[e.target.dataset.label] = e.target.value;
+      function cpApplyColor() {
+        if (!cpTarget) return;
+        const hex = hslToHex(+cpHue.value, +cpSat.value, +cpLit.value);
+        cpTarget.style.background = hex;
+        cpTarget.dataset.color = hex;
+        colorOverrides[cpTarget.dataset.label] = hex;
 
-        if (colorThrottleTimer) {
-          colorPending = true;
-          return;
-        }
-
+        if (colorThrottleTimer) { colorPending = true; return; }
         map.setPaintProperty('dots', 'circle-color', buildColorExpression());
         colorThrottleTimer = setTimeout(() => {
           colorThrottleTimer = null;
-          if (colorPending) {
-            colorPending = false;
-            map.setPaintProperty('dots', 'circle-color', buildColorExpression());
-          }
+          if (colorPending) { colorPending = false; map.setPaintProperty('dots', 'circle-color', buildColorExpression()); }
         }, 300);
+      }
+
+      cpHue.addEventListener('input', () => { cpUpdatePreview(); cpApplyColor(); });
+      cpSat.addEventListener('input', () => { cpUpdatePreview(); cpApplyColor(); });
+      cpLit.addEventListener('input', () => { cpUpdatePreview(); cpApplyColor(); });
+
+      cpPalette.addEventListener('click', e => {
+        const sw = e.target.closest('.cp-swatch');
+        if (!sw) return;
+        cpHue.value = sw.dataset.h;
+        cpSat.value = sw.dataset.s;
+        cpLit.value = sw.dataset.l;
+        cpUpdatePreview();
+        cpApplyColor();
+      });
+
+      function cpOpen(dot) {
+        cpTarget = dot;
+        const [h, s, l] = hexToHsl(dot.dataset.color);
+        cpHue.value = h; cpSat.value = s; cpLit.value = l;
+        cpUpdatePreview();
+        // Position: to the left of the legend
+        const rect = dot.getBoundingClientRect();
+        cpEl.style.top = Math.min(rect.top, window.innerHeight - 220) + 'px';
+        cpEl.style.right = (window.innerWidth - rect.left + 4) + 'px';
+        cpEl.style.left = '';
+        cpEl.classList.add('open');
+      }
+
+      function cpClose() {
+        cpEl.classList.remove('open');
+        cpTarget = null;
+      }
+
+      document.getElementById('legend-scroll').addEventListener('click', e => {
+        const dot = e.target.closest('.color-dot');
+        if (!dot) return;
+        e.preventDefault();
+        e.stopPropagation();
+        if (cpTarget === dot) { cpClose(); return; }
+        cpOpen(dot);
+      });
+
+      // Close picker when clicking outside
+      document.addEventListener('mousedown', e => {
+        if (cpEl.classList.contains('open') && !cpEl.contains(e.target) && !e.target.closest('.color-dot')) {
+          cpClose();
+        }
       });
 
       // Individual checkboxes
@@ -492,8 +844,9 @@
       const defaultColors = Object.fromEntries(items.map(it => [it.label, it.color]));
       document.getElementById('btn-reset-colors').addEventListener('click', () => {
         for (const key of Object.keys(colorOverrides)) delete colorOverrides[key];
-        document.querySelectorAll('#legend-scroll input[type="color"].legend-dot')
-          .forEach(el => { el.value = defaultColors[el.dataset.label] ?? el.value; });
+        document.querySelectorAll('#legend-scroll .color-dot')
+          .forEach(el => { const c = defaultColors[el.dataset.label]; if (c) { el.style.background = c; el.dataset.color = c; } });
+        cpClose();
         map.setPaintProperty('dots', 'circle-color', buildColorExpression());
       });
 
@@ -519,6 +872,11 @@
       });
 
       map.on('mousemove', 'dots', e => {
+        if (window.gameActive) {
+          map.getCanvas().style.cursor = '';
+          tooltip.remove();
+          return;
+        }
         const feature = e.features[0];
         if (!checked.has(feature.properties.label)) {
           map.getCanvas().style.cursor = '';
@@ -585,9 +943,9 @@
           'circle-opacity': 0.75,
           'circle-stroke-width': 0,
           'circle-radius': ['interpolate', ['exponential', 1.26], ['zoom'],
-            4, 1,
+            4,  1,
             6,  1,
-            8,  1,
+            8,  1.4,
             10, 2,
             12, 4,
             14, 8,
@@ -598,19 +956,244 @@
       // Build legend from pre-computed legend.json (label counts + colors)
       fetch('data/processed/legend.json')
         .then(r => r.json())
-        .then(items => buildLegend(items, map))
+        .then(items => { buildLegend(items, map); window._setGameItems(items); })
         .catch(err => console.warn('Could not load legend.json:', err));
     });
 
-    const toggleInfo = () => document.getElementById('info-panel').classList.toggle('open');
+    const toggleInfo = () => document.getElementById('info-panel').classList.toggle('hidden');
     document.getElementById('info-btn').addEventListener('click', toggleInfo);
     document.getElementById('map-title').addEventListener('click', toggleInfo);
+    document.getElementById('info-panel-close').addEventListener('click', () => {
+      document.getElementById('info-panel').classList.add('hidden');
+    });
+    map.on('click', () => {
+      document.getElementById('info-panel').classList.add('hidden');
+    });
 
     document.getElementById('legend-toggle').addEventListener('click', () => {
+      if (window.gameActive) {
+        // X in game mode exits the game
+        document.getElementById('game-btn').click();
+        return;
+      }
       const legend = document.getElementById('legend');
       const hidden = legend.classList.toggle('hidden');
       document.getElementById('legend-toggle').textContent = hidden ? '☰' : '✕';
     });
+
+    // ── Game mode ──
+    {
+      window.gameActive = false;
+      let gameItems = null;   // set once legend.json loads
+      let currentAnswer = null;
+      let gameColor = null;
+      let revealed = false;
+      let highlightIdx = -1;
+
+      // Score tracking (localStorage)
+      let correct = parseInt(localStorage.getItem('game-correct') || '0');
+      let total = parseInt(localStorage.getItem('game-total') || '0');
+
+      function updateScoreDisplay() {
+        document.getElementById('game-score').textContent = `${correct} / ${total}`;
+      }
+
+      function recordGuess(isCorrect) {
+        if (isCorrect) correct++;
+        total++;
+        localStorage.setItem('game-correct', correct);
+        localStorage.setItem('game-total', total);
+        updateScoreDisplay();
+      }
+
+      // Expose setter for items (called from buildLegend's fetch)
+      window._setGameItems = items => { gameItems = items.filter(i => i.population > 0); };
+
+      function randomGameColor() {
+        const h = Math.floor(Math.random() * 360);
+        return `hsl(${h}, 70%, 60%)`;
+      }
+
+      function pickAncestry() {
+        // Weighted random: weight = clamp(population / 500000, 0.01, 1.0)
+        const weighted = gameItems.map(it => ({
+          ...it,
+          weight: Math.max(0.01, Math.min(1, it.population / 500000))
+        }));
+        const totalWeight = weighted.reduce((s, it) => s + it.weight, 0);
+        let r = Math.random() * totalWeight;
+        for (const it of weighted) {
+          r -= it.weight;
+          if (r <= 0) return it;
+        }
+        return weighted[weighted.length - 1];
+      }
+
+      function enterGame() {
+        window.gameActive = true;
+        document.getElementById('legend-controls-buttons').style.display = 'none';
+        document.getElementById('legend-scroll').style.display = 'none';
+        document.getElementById('game-panel').classList.add('active');
+        document.getElementById('legend-title').textContent = 'Guess the Ancestry';
+        updateScoreDisplay();
+        startRound();
+      }
+
+      function exitGame() {
+        window.gameActive = false;
+        document.getElementById('legend-controls-buttons').style.display = '';
+        document.getElementById('legend-scroll').style.display = '';
+        document.getElementById('game-panel').classList.remove('active');
+        document.getElementById('legend-title').textContent = 'Legend';
+
+        // Restore normal map state
+        if (map.getLayer('dots')) {
+          map.setPaintProperty('dots', 'circle-opacity', 0.75);
+          // Re-apply legend colors — trigger from buildLegend's stored expression
+          const evt = new Event('game-exit');
+          document.dispatchEvent(evt);
+        }
+      }
+
+      function startRound() {
+        revealed = false;
+        highlightIdx = -1;
+        currentAnswer = pickAncestry();
+        gameColor = randomGameColor();
+
+        document.getElementById('game-prompt').innerHTML =
+          `What ancestry do these <span class="game-dot" style="background:${gameColor}"></span> dots represent?`;
+        document.getElementById('game-input').value = '';
+        document.getElementById('game-input').disabled = false;
+        document.getElementById('game-input').focus();
+        document.getElementById('game-result').innerHTML = '';
+        document.getElementById('game-population').textContent =
+          `${fmtCount(currentAnswer.population)} people`;
+        document.getElementById('game-suggestions').innerHTML = '';
+        document.getElementById('game-suggestions').classList.remove('open');
+        document.getElementById('game-skip').style.display = '';
+        document.getElementById('game-next').style.display = 'none';
+
+        // Show only this ancestry's dots in the random color
+        map.setPaintProperty('dots', 'circle-color',
+          ['case', ['==', ['get', 'label'], currentAnswer.label], gameColor, 'transparent']);
+        map.setPaintProperty('dots', 'circle-opacity', 1);
+      }
+
+      function revealAnswer(guessLabel) {
+        if (revealed) return;
+        revealed = true;
+        const isCorrect = guessLabel === currentAnswer.label;
+        const resultEl = document.getElementById('game-result');
+
+        if (guessLabel) {
+          const guessGroup = gameItems.find(it => it.label === guessLabel)?.group;
+          const sameGroup = !isCorrect && guessGroup === currentAnswer.group;
+          const wrongWord = sameGroup ? 'Close!' : 'Nope!';
+          resultEl.innerHTML = isCorrect
+            ? `<span class="correct">Correct!</span> <span class="answer-dot" style="background:${currentAnswer.color}"></span> <span class="answer-label">${currentAnswer.label}</span>`
+            : `<span class="incorrect">${wrongWord}</span> It was <span class="answer-dot" style="background:${currentAnswer.color}"></span> <span class="answer-label">${currentAnswer.label}</span>`;
+          recordGuess(isCorrect);
+        } else {
+          resultEl.innerHTML = `It was <span class="answer-dot" style="background:${currentAnswer.color}"></span> <span class="answer-label">${currentAnswer.label}</span>`;
+        }
+
+        // Show dots in real color
+        map.setPaintProperty('dots', 'circle-color',
+          ['case', ['==', ['get', 'label'], currentAnswer.label], currentAnswer.color, 'transparent']);
+
+        document.getElementById('game-input').disabled = true;
+        document.getElementById('game-suggestions').classList.remove('open');
+        document.getElementById('game-skip').style.display = 'none';
+        document.getElementById('game-next').style.display = '';
+      }
+
+      // Autocomplete
+      const gameInput = document.getElementById('game-input');
+      const suggestionsEl = document.getElementById('game-suggestions');
+
+      function updateSuggestions() {
+        const query = gameInput.value.trim().toLowerCase();
+        if (!query || !gameItems) {
+          suggestionsEl.classList.remove('open');
+          suggestionsEl.innerHTML = '';
+          highlightIdx = -1;
+          return;
+        }
+        const matches = gameItems
+          .filter(it => it.label.toLowerCase().includes(query))
+          .sort((a, b) => {
+            // Prioritize starts-with matches
+            const aStarts = a.label.toLowerCase().startsWith(query) ? 0 : 1;
+            const bStarts = b.label.toLowerCase().startsWith(query) ? 0 : 1;
+            return aStarts - bStarts || b.population - a.population;
+          })
+          .slice(0, 8);
+
+        if (matches.length === 0) {
+          suggestionsEl.classList.remove('open');
+          suggestionsEl.innerHTML = '';
+          highlightIdx = -1;
+          return;
+        }
+
+        highlightIdx = -1;
+        suggestionsEl.innerHTML = matches.map((m, i) =>
+          `<div class="game-suggestion" data-label="${m.label}">${m.label}</div>`
+        ).join('');
+        suggestionsEl.classList.add('open');
+      }
+
+      gameInput.addEventListener('input', updateSuggestions);
+
+      gameInput.addEventListener('keydown', e => {
+        const items = suggestionsEl.querySelectorAll('.game-suggestion');
+        if (e.key === 'ArrowDown') {
+          e.preventDefault();
+          highlightIdx = Math.min(highlightIdx + 1, items.length - 1);
+          items.forEach((el, i) => el.classList.toggle('highlighted', i === highlightIdx));
+        } else if (e.key === 'ArrowUp') {
+          e.preventDefault();
+          highlightIdx = Math.max(highlightIdx - 1, 0);
+          items.forEach((el, i) => el.classList.toggle('highlighted', i === highlightIdx));
+        } else if (e.key === 'Enter') {
+          e.preventDefault();
+          if (highlightIdx >= 0 && highlightIdx < items.length) {
+            revealAnswer(items[highlightIdx].dataset.label);
+          } else if (items.length === 1) {
+            revealAnswer(items[0].dataset.label);
+          }
+        }
+      });
+
+      suggestionsEl.addEventListener('click', e => {
+        const el = e.target.closest('.game-suggestion');
+        if (el) revealAnswer(el.dataset.label);
+      });
+
+      // Close suggestions on outside click
+      document.addEventListener('click', e => {
+        if (!e.target.closest('#game-input-wrap')) {
+          suggestionsEl.classList.remove('open');
+        }
+      });
+
+      document.getElementById('game-skip').addEventListener('click', () => revealAnswer(null));
+      document.getElementById('game-next').addEventListener('click', startRound);
+
+      document.getElementById('game-btn').addEventListener('click', () => {
+        if (!gameItems) return;
+        if (gameActive) exitGame();
+        else enterGame();
+      });
+
+      // Listen for game exit to restore colors
+      document.addEventListener('game-exit', () => {
+        // buildLegend will have set up the color expression; re-fire it
+        const btn = document.getElementById('btn-reset-colors');
+        if (btn) btn.click();
+      });
+    }
   </script>
 </body>
 </html>
