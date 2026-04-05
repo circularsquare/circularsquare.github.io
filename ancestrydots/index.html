@@ -1053,6 +1053,8 @@
       function enterGame() {
         window.gameActive = true;
         document.getElementById('info-panel').classList.add('hidden');
+        document.getElementById('legend').classList.remove('hidden');
+        document.getElementById('legend-toggle').textContent = '✕';
         document.getElementById('legend-controls-buttons').style.display = 'none';
         document.getElementById('legend-scroll').style.display = 'none';
         document.getElementById('game-panel').classList.add('active');
