@@ -566,9 +566,13 @@
 
     map.on('load', () => {
       // Add PMTiles vector source — only tiles for the current viewport are fetched
+      const isLocal = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+      const tilesUrl = isLocal
+        ? 'pmtiles://data/processed/dots_all_1per100.pmtiles'
+        : 'pmtiles://https://pub-ae551368cea941f39101e13c84d60bde.r2.dev/dots_all_1per100.pmtiles';
       map.addSource('dots', {
         type: 'vector',
-        url: 'pmtiles://data/processed/dots_all_1per100.pmtiles',
+        url: tilesUrl,
       });
 
       map.addLayer({
