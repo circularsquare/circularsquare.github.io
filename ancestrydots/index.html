@@ -503,10 +503,10 @@
   <div id="map"></div>
   <div id="bottom-left">
     <span id="map-title" style="cursor:pointer" title="About this map">Ancestry Dot Map</span>
-    <button id="info-btn" title="About this map">ℹ</button>
+    <button id="info-btn" title="About this map"><span style="font-family:'Times New Roman',Times,serif;font-style:italic;font-size:19px;font-weight:bold;margin-left:-1px">i</span></button>
     <button id="game-btn" title="Guess the ancestry!">??</button>
   </div>
-  <div id="info-panel">
+  <div id="info-panel" class="hidden">
     <div id="info-panel-header">
       <span id="info-panel-title">About</span>
       <button id="info-panel-close" title="Close">✕</button>
@@ -515,8 +515,8 @@
     <p>Dots are distributed randomly in their census tract's land area.</p>
     <p>You can customize colors by clicking the colored dot in the legend! </p>
     <p>Double clicking a dot on the map will filter to just that ancestry. </p>
-    <p>Ancestry reporting in the census is voluntary. So in this data, some people are not counted, and others are double-counted (putting up to two ancestries is allowed).</p>
-    <p>* <strong> Note: </strong>The two "no reported ancestry" groups don't reflect specific census data. Rather, they are my crude estimates that attempt to count some of the people who do not report ancestry. <em>White, no reported ancestry</em> is calculated per census tract as the white (race) population minus all the ancestries in the Eastern European, Western European, and North American groups. <em>Black, no reported ancestry</em> is analogously the black (race) population minus the African and Afro-Caribbean groups.</p>
+    <p>Ancestry reporting in the ACS is voluntary. So in this data, some people are not counted, and others are double-counted (putting up to two ancestries is allowed).</p>
+    <p>* <strong> Note: </strong>The two "no reported ancestry" groups don't reflect specific census data. Rather, they are my crude estimates that attempt to count some of the people who do not report ancestry. <em>Black, no reported ancestry</em> is calculated per census tract as the black (race) population minus all the ancestries in the African and West Indian groups. <em>White, no reported ancestry</em> is analogously the white (race) population minus the European and North American groups.</p>
     <p>Inspired by <a href="https://censusdots.com" target="_blank">censusdots.com</a>.</p>
     <p>This map is made by <a href="https://anita.garden/projects" target="_blank">anita</a>!</p>
   </div>
@@ -566,12 +566,12 @@
   </div>
 
   <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
-  <script src="https://unpkg.com/pmtiles@3.2.0/dist/pmtiles.js"></script>
+  <script src="https://unpkg.com/pmtiles@4.2.1/dist/pmtiles.js"></script>
   <script>
     // Register PMTiles protocol with MapLibre
     {
       const protocol = new pmtiles.Protocol();
-      maplibregl.addProtocol('pmtiles', protocol.tile.bind(protocol));
+      maplibregl.addProtocol('pmtiles', protocol.tile);
     }
   </script>
   <script>
@@ -599,7 +599,7 @@
       se_asian:  'Southeast Asian',
       s_c_asian: 'South & Central Asian',
       african:   'African',
-      afro_carib:'Afro-Caribbean',
+      afro_carib:'West Indian',
       latino:    'Latino',
       mena:      'Middle Eastern & North African',
       native:      'Native American',
@@ -643,16 +643,31 @@
       for (const key of GROUP_ORDER) {
         const entries = byGroup[key];
         if (!entries) continue;
+
+        if (key === 'no_ancestry') {
+          // Render no-ancestry entries as top-level items (no collapsible group)
+          for (const [i, { label, color, count }] of entries.entries()) {
+            html += `<div style="border-top:1px solid #2a2a2a;margin:${i === 0 ? '5px' : '1px'} 0 1px"></div>`;
+            const id = `chk-${label.replace(/\W+/g, '-')}`;
+            const countHtml = count > 0 ? `<span class="legend-count">${fmtCount(count * 100)}</span>` : '';
+            let displayLabel = label.replace(/, no ancestry reported$/i, ', no reported ancestry') + '*';
+            html += `<div class="legend-entry" style="padding:4px 0">` +
+              `<label class="legend-cb" for="${id}"><input type="checkbox" id="${id}" data-label="${label}" data-group="${key}" checked></label>` +
+              `<span class="legend-dot color-dot" data-label="${label}" data-color="${color}" style="background:${color}" title="Change color"></span>` +
+              `<label class="legend-label" for="${id}">${displayLabel}${countHtml}</label></div>`;
+          }
+          continue;
+        }
+
         const anchor = GROUP_COLOR_ANCHOR[key];
-        const groupColor = key === 'no_ancestry' ? 'hsl(0,0%,50%)'
-          : (entries.find(e => e.label === anchor)?.color ?? entries[0].color);
+        const groupColor = entries.find(e => e.label === anchor)?.color ?? entries[0].color;
         const groupTotal = entries.reduce((s, e) => s + e.count * 100, 0);
         const groupCountHtml = groupTotal > 0 ? `<span class="legend-count">${fmtCount(groupTotal)}</span>` : '';
         html += `<details class="legend-group">` +
           `<summary class="legend-group-header">` +
           `<input type="checkbox" class="group-indicator" data-group="${key}" checked>` +
           `<span class="legend-dot" style="background:${groupColor}"></span>` +
-          `${GROUP_LABELS[key]}${key === 'no_ancestry' ? '*' : ''}${groupCountHtml}` +
+          `${GROUP_LABELS[key]}${groupCountHtml}` +
           `</summary>` +
           `<div class="legend-entries">`;
         let currentSubgroup = null;
@@ -661,7 +676,6 @@
           const id = `chk-${label.replace(/\W+/g, '-')}`;
           const countHtml = count > 0 ? `<span class="legend-count">${fmtCount(count * 100)}</span>` : '';
           let displayLabel = label.replace(/, no ancestry reported$/i, ', no reported ancestry');
-          if (key === 'no_ancestry') displayLabel += '*';
           html += `<div class="legend-entry">` +
             `<label class="legend-cb" for="${id}"><input type="checkbox" id="${id}" data-label="${label}" data-group="${key}" checked></label>` +
             `<span class="legend-dot color-dot" data-label="${label}" data-color="${color}" style="background:${color}" title="Change color"></span>` +
@@ -987,9 +1001,9 @@
         .catch(err => console.warn('Could not load legend.json:', err));
     });
 
-    // Hide info panel by default on narrow screens
-    if (window.innerWidth <= 600) {
-      document.getElementById('info-panel').classList.add('hidden');
+    // Show info panel by default on wide screens (starts hidden in HTML)
+    if (window.innerWidth > 600) {
+      document.getElementById('info-panel').classList.remove('hidden');
     }
     const toggleInfo = () => document.getElementById('info-panel').classList.toggle('hidden');
     document.getElementById('info-btn').addEventListener('click', toggleInfo);
