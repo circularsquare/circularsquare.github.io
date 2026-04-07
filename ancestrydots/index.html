@@ -70,11 +70,13 @@
       flex-shrink: 0;
     }
     #legend-toggle:hover { color: #fff; }
-    @media (max-width: 480px) {
-      #legend { width: calc(50vw - 8px); font-size: 11px; }
+    @media (max-width: 600px) {
+      #legend { width: clamp(182px, 40vw, 231px); font-size: 11px; max-height: 60vh; top: 4px; right: 4px; }
+      #bottom-left { bottom: 8px; left: 4px; gap: 6px; }
+      #info-panel { bottom: 56px; left: 4px; padding: 8px 9px; }
     }
     #bottom-left {
-      position: absolute;
+      position: fixed;
       bottom: 16px;
       left: 16px;
       z-index: 1000;
@@ -98,7 +100,7 @@
       background: #ddd;
       color: #111;
       border: none;
-      font-size: 17px;
+      font-size: 20px;
       cursor: pointer;
       display: flex;
       align-items: center;
@@ -118,6 +120,8 @@
       line-height: 1.6;
       padding: 11px 13px;
       max-width: min(384px, 100vw - 271px);
+      max-height: calc(100vh - 80px);
+      overflow-y: auto;
     }
     #info-panel.hidden { display: none; }
     #info-panel-header {
@@ -146,8 +150,8 @@
     #info-panel p { margin: 0 0 8px; }
     #info-panel p:last-child { margin: 0; }
     #info-panel a { color: #89b4fa; }
-    @media (max-width: 480px) {
-      #info-panel { max-width: calc(100vw - 50vw - 24px); font-size: 11px; }
+    @media (max-width: 600px) {
+      #info-panel { max-width: calc(100vw - clamp(182px, 40vw, 231px) - 32px); font-size: 11px; }
     }
 
     #legend-controls {
@@ -182,6 +186,7 @@
     }
     #size-slider {
       flex: 1;
+      min-width: 0;
       accent-color: #888;
       cursor: pointer;
     }
@@ -858,6 +863,7 @@
         map.setPaintProperty('dots', 'circle-color', buildColorExpression());
       }
 
+
       // Show all / Hide all
       document.getElementById('btn-show-all').addEventListener('click', () => {
         document.querySelectorAll('#legend-scroll input[data-label]')
@@ -981,6 +987,10 @@
         .catch(err => console.warn('Could not load legend.json:', err));
     });
 
+    // Hide info panel by default on narrow screens
+    if (window.innerWidth <= 600) {
+      document.getElementById('info-panel').classList.add('hidden');
+    }
     const toggleInfo = () => document.getElementById('info-panel').classList.toggle('hidden');
     document.getElementById('info-btn').addEventListener('click', toggleInfo);
     document.getElementById('map-title').addEventListener('click', toggleInfo);
@@ -1149,7 +1159,9 @@
         const matches = gameItems
           .filter(it => it.label.toLowerCase().includes(query))
           .sort((a, b) => {
-            // Prioritize starts-with matches
+            const aExact = a.label.toLowerCase() === query ? 0 : 1;
+            const bExact = b.label.toLowerCase() === query ? 0 : 1;
+            if (aExact !== bExact) return aExact - bExact;
             const aStarts = a.label.toLowerCase().startsWith(query) ? 0 : 1;
             const bStarts = b.label.toLowerCase().startsWith(query) ? 0 : 1;
             return aStarts - bStarts || b.population - a.population;
