@@ -4,6 +4,8 @@ title: projects
 permalink: /projects/
 ---
 
+{% include img-preview.html %}
+
 - maps
     - city maps
         - [nyc subway stations by population in catchment area](/assets/nycvoronoi.png)
@@ -19,18 +21,18 @@ permalink: /projects/
         - [the world in regions of 10 million people](/assets/world10mfull.png)
         - [fantasy world metro map](/assets/worldtrain.png)
     - interactive 
-        - [ancestry dot map](/ancestrydots)
+        - <a href="/ancestrydots" data-thumb="/assets/thumbs/ancestrydots.png">ancestry dot map</a>
     - (if you'd like to support my map making, you can donate [here](https://ko-fi.com/anitamaps)!)<br><br>
 - games
-    - [city circles quiz](/circles)
-    - [guess the city](/assets/guessthecity.html)
+    - <a href="/circles" data-thumb="/assets/thumbs/citycircles.png">city circles quiz</a>
+    - <a href="/assets/guessthecity.html" data-thumb="/assets/thumbs/guessthecity.png">guess the city</a>
     - [bluebs](https://circularsquare.github.io/bluebs/)  
     - [shonei](/shonei)
 
 - [this site](site)
 - [photos](/photos)
 - [audio](/audio)
-- [bread](bread)
+- <a href="bread" data-thumb="/assets/thumbs/breads.png">bread</a>
 - [my github](https://github.com/circularsquare)
 
 

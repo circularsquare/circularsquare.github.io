@@ -1,0 +1,47 @@
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  var tooltip = document.createElement("div");
+  tooltip.className = "img-preview-tooltip";
+  tooltip.style.display = "none";
+  document.body.appendChild(tooltip);
+
+  var img = document.createElement("img");
+  tooltip.appendChild(img);
+
+  var imgExts = /\.(png|jpg|jpeg|gif|webp)$/i;
+
+  function thumbUrl(href) {
+    // /assets/foo.png -> /assets/thumbs/foo.jpg
+    return href.replace(/^\/assets\//, "/assets/thumbs/").replace(/\.(png|jpg|jpeg|gif|webp)$/i, ".jpg");
+  }
+
+  document.querySelectorAll(".post-content a").forEach(function (link) {
+    var href = link.getAttribute("href");
+    var thumb = link.getAttribute("data-thumb");
+    if (!thumb && (!href || !imgExts.test(href))) return;
+
+    link.addEventListener("mouseenter", function () {
+      img.src = thumb || thumbUrl(href);
+      tooltip.style.display = "block";
+    });
+
+    link.addEventListener("mousemove", function (e) {
+      var x = e.pageX + 15;
+      var y = e.pageY + 15;
+      if (x + 310 > window.scrollX + window.innerWidth) {
+        x = e.pageX - 315;
+      }
+      if (y + 260 > window.scrollY + window.innerHeight) {
+        y = e.pageY - 265;
+      }
+      tooltip.style.left = x + "px";
+      tooltip.style.top = y + "px";
+    });
+
+    link.addEventListener("mouseleave", function () {
+      tooltip.style.display = "none";
+      img.src = "";
+    });
+  });
+});
+</script>

@@ -162,3 +162,22 @@ table {border-spacing: 30px;}
   height: 450px;
   border: none;
 }
+
+/* Image preview tooltip on hover */
+.img-preview-tooltip {
+  position: absolute;
+  z-index: 100;
+  pointer-events: none;
+  max-width: 255px;
+  max-height: 213px;
+  border: 1px solid var(--teal);
+  background: var(--white);
+  padding: 3px;
+  box-shadow: 2px 2px 6px rgba(0,0,0,0.2);
+}
+.img-preview-tooltip img {
+  display: block;
+  max-width: 100%;
+  max-height: 207px;
+  object-fit: contain;
+}
