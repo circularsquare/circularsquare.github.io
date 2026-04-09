@@ -112,13 +112,17 @@
     );
   }
 
-  window.addEventListener('beforeunload', () => {
+  function saveBunnies() {
     sessionStorage.setItem('mouseX', mouseX);
     sessionStorage.setItem('mouseY', mouseY);
     localStorage.setItem('bunnies', JSON.stringify(
       bunnies.map(b => ({ x: b.x, y: b.y }))
     ));
-  });
+  }
+
+  window.addEventListener('beforeunload', saveBunnies);
+  window.addEventListener('pagehide', saveBunnies);
+  setInterval(saveBunnies, 2000);
 
   function hitboxCenter(bun, useDest) {
     const px = useDest ? bun.destX : bun.x;
