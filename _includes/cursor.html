@@ -1,109 +1,263 @@
-<div id="cursor-container">
-  <div id="bunny" class="custom-element">
-    <img id="bunnyimg" src="/assets/bunnyhops.png" alt="bunny" width=32>
-  </div>
-  <!-- <div id="carrot" class="custom-element">🥕</div> -->
-</div>
-
 <style>
-  /* Hide the default mouse cursor */
-  /* body, a, button {
-    cursor: none !important;
-  } */
-
-  #cursor-container {
+  .bunny {
     position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    pointer-events: none; /* Allows clicking through the emojis */
     z-index: 9999;
-  }
-
-  .custom-element {
-    position: fixed;
-    font-size: 24px;
     user-select: none;
-    line-height: 1;
   }
 
+  .bunny-sprite {
+    width: 40px;
+    height: 40px;
+    background-image: url('/assets/bunnyhop-spritesheet.png');
+    background-repeat: no-repeat;
+    background-size: calc(40px * 7) 40px;
+    image-rendering: auto;
+    transform: scale(0.8);
+    transform-origin: top left;
+  }
 </style>
 
 <script>
-  //const carrot = document.getElementById('carrot');
-  const bunny = document.getElementById('bunny');
-  const bunnyimg = document.getElementById('bunnyimg')
-  const bunnyHop = "/assets/bunnyhopfs.gif"
-  const bunnyStill = "/assets/bunnyhops.png"
-  // const bunnyHop = "/assets/bunnyhopping.gif"
-  // const bunnyStill = "/assets/bunnystill.png"
-  const hopDuration = 700; // Total loop time (8 frames * 100ms)
-  const airStart = 100;    // Start moving at Frame 2
-  const airEnd = 400;      // Stop moving at end of Frame 4
+  const frameCount = 7;
+  const frameSize = 40;
+  const frameDuration = 100;
+  const airFrames = new Set([1, 2, 3]);
+  const stopThreshold = 50;
+  const verticalOffset = 24;
+  const hopDistance = 30;
+  const bunnySize = 30;
+  const hitboxOffsetX = 16; // center of 32px rendered sprite
+  const hitboxOffsetY = 25; // bottom-center of sprite
+  const airStartMs = 100;
+  const airEndMs = 400;
+  const followRange = 350;
+  const minPause = 0;
+  const maxPause = 100;
+  const wanderMinPause = 0;
+  const wanderMaxPause = 2000;
+  const wanderAngleRange = Math.PI / 6;
 
   let mouseX = parseFloat(sessionStorage.getItem('mouseX')) || 0;
   let mouseY = parseFloat(sessionStorage.getItem('mouseY')) || 0;
-  let bunnyX = parseFloat(sessionStorage.getItem('bunnyX')) || 24;
-  let bunnyY = parseFloat(sessionStorage.getItem('bunnyY')) || 24;
-  const speed = 1.7; 
-
-  window.addEventListener('beforeunload', () => {
-    sessionStorage.setItem('mouseX', mouseX);
-    sessionStorage.setItem('mouseY', mouseY);
-    sessionStorage.setItem('bunnyX', bunnyX);
-    sessionStorage.setItem('bunnyY', bunnyY);
-
-  });
+  let lastMouseMoveTime = 0;
+  const mouseIdleTimeout = 8000;
 
   document.addEventListener('mousemove', (e) => {
     mouseX = e.clientX;
     mouseY = e.clientY;
-    //carrot.style.left = (mouseX + 0) + 'px';
-    //carrot.style.top = (mouseY - 24) + 'px';
+    lastMouseMoveTime = Date.now();
   });
 
-  let hopStartTime = 0;
-  let isHopping = false;
+  const bunnies = [];
+
+  function createBunny(x, y) {
+    const el = document.createElement('div');
+    el.className = 'bunny';
+    const spriteEl = document.createElement('div');
+    spriteEl.className = 'bunny-sprite';
+    el.appendChild(spriteEl);
+    document.body.appendChild(el);
+
+    const b = {
+      el,
+      spriteEl,
+      x,
+      y,
+      isHopping: false,
+      hopStartTime: 0,
+      hopEndTime: Date.now(),
+      pauseDuration: Math.random() * 1000,
+      startX: x,
+      startY: y,
+      destX: x,
+      destY: y,
+    };
+
+    function setFrame(index) {
+      spriteEl.style.backgroundPosition = `-${index * frameSize}px 0`;
+    }
+
+    setFrame(frameCount - 1);
+
+    el.addEventListener('click', () => {
+      createBunny(b.x, b.y);
+    });
+
+    el.addEventListener('contextmenu', (e) => {
+      e.preventDefault();
+      removeBunny(b);
+    });
+
+    b.setFrame = setFrame;
+    bunnies.push(b);
+    return b;
+  }
+
+  function removeBunny(b) {
+    if (bunnies.length <= 1) return; // always keep at least one
+    b.el.remove();
+    bunnies.splice(bunnies.indexOf(b), 1);
+  }
+
+  // Restore bunnies from localStorage, or create one in the middle of the screen
+  const saved = JSON.parse(localStorage.getItem('bunnies') || '[]');
+  if (saved.length > 0) {
+    for (const { x, y } of saved) {
+      createBunny(x, y);
+    }
+  } else {
+    createBunny(
+      window.innerWidth / 3 + Math.random() * window.innerWidth / 3,
+      window.innerHeight / 3 + Math.random() * window.innerHeight / 3
+    );
+  }
+
+  window.addEventListener('beforeunload', () => {
+    sessionStorage.setItem('mouseX', mouseX);
+    sessionStorage.setItem('mouseY', mouseY);
+    localStorage.setItem('bunnies', JSON.stringify(
+      bunnies.map(b => ({ x: b.x, y: b.y }))
+    ));
+  });
+
+  function hitboxCenter(bun, useDest) {
+    const px = useDest ? bun.destX : bun.x;
+    const py = useDest ? bun.destY : bun.y;
+    return { x: px + hitboxOffsetX, y: py + hitboxOffsetY };
+  }
 
   function animate() {
-    const currentTime = Date.now();
-    // Determine distance between bunny and carrot
-    let dista = ((mouseX - bunnyX)**2 + (mouseY - bunnyY)**2)**0.5
+    const now = Date.now();
 
-    if (!isHopping){
-      if (dista > 50){
-        bunnyimg.src = bunnyHop;
-        isHopping = true;
-        hopStartTime = currentTime;
-      }
-    } else { // hopping
-      let timeIntoHop = (currentTime - hopStartTime) % hopDuration;
-      if (dista <= 50 && timeIntoHop > 500){
-        isHopping = false;
-        bunnyimg.src = bunnyStill;
-      } 
-      else {
-        if (timeIntoHop >= airStart && timeIntoHop < airEnd){
-          let dx = (mouseX - bunnyX)/dista;
-          let dy = (mouseY - bunnyY)/dista;
-          bunnyX += dx * speed;
-          bunnyY += dy * speed;
+    for (const b of bunnies) {
+      const distance = Math.hypot(mouseX - b.x, mouseY - b.y);
+
+      if (b.isHopping) {
+        const elapsed = now - b.hopStartTime;
+        const frame = Math.min(Math.floor(elapsed / frameDuration), frameCount - 1);
+
+        b.setFrame(frame);
+
+        // Lerp from start to destination during air time
+        if (elapsed >= airStartMs && elapsed < airEndMs) {
+          const t = (elapsed - airStartMs) / (airEndMs - airStartMs);
+          b.x = b.startX + (b.destX - b.startX) * t;
+          b.y = b.startY + (b.destY - b.startY) * t;
+        } else if (elapsed >= airEndMs) {
+          b.x = b.destX;
+          b.y = b.destY;
+        }
+
+        if (elapsed >= frameCount * frameDuration) {
+          b.isHopping = false;
+          b.hopEndTime = now;
+          const following = distance < followRange && now - lastMouseMoveTime < mouseIdleTimeout;
+          b.pauseDuration = following
+            ? minPause + Math.random() * (maxPause - minPause)
+            : wanderMinPause + Math.random() * (wanderMaxPause - wanderMinPause);
+          b.setFrame(frameCount - 1);
+        }
+      } else if (now - b.hopEndTime > b.pauseDuration) {
+        let shouldHop = false;
+        let destX, destY;
+
+        // Check if overlapping with another bunny — hop away immediately
+        const bHit = hitboxCenter(b, false);
+        for (const other of bunnies) {
+          if (other === b) continue;
+          const oHit = hitboxCenter(other, other.isHopping);
+          const d = Math.hypot(bHit.x - oHit.x, bHit.y - oHit.y);
+          if (d < bunnySize) {
+            shouldHop = true;
+            if (d < 1) {
+              const randAngle = Math.random() * Math.PI * 2;
+              destX = b.x + Math.cos(randAngle) * hopDistance;
+              destY = b.y + Math.sin(randAngle) * hopDistance;
+            } else {
+              destX = b.x + (bHit.x - oHit.x) / d * hopDistance;
+              destY = b.y + (bHit.y - oHit.y) / d * hopDistance;
+            }
+            break;
+          }
+        }
+
+        const following = distance < followRange && now - lastMouseMoveTime < mouseIdleTimeout;
+
+        if (!shouldHop && following && distance > stopThreshold) {
+          shouldHop = true;
+          const hopDist = Math.min(hopDistance, distance);
+          destX = b.x + (mouseX - b.x) / distance * hopDist;
+          destY = b.y + (mouseY - b.y) / distance * hopDist;
+        } else if (!shouldHop && !(following && distance <= stopThreshold)) {
+          // Wander: not following, or following but cursor is out of range
+          shouldHop = true;
+          const angle = (Math.random() - 0.5) * 2 * wanderAngleRange;
+          const direction = Math.random() < 0.5 ? -1 : 1;
+          destX = b.x + Math.cos(angle) * direction * hopDistance;
+          destY = b.y + Math.sin(angle) * hopDistance;
+        }
+
+        if (shouldHop) {
+          // Shift destination away from other bunnies
+          const destHitX = destX + hitboxOffsetX;
+          const destHitY = destY + hitboxOffsetY;
+          for (const other of bunnies) {
+            if (other === b) continue;
+            const oHit = hitboxCenter(other, other.isHopping);
+            const d = Math.hypot(destHitX - oHit.x, destHitY - oHit.y);
+            if (d < bunnySize) {
+              if (d < 1) {
+                const randAngle = Math.random() * Math.PI * 2;
+                destX += Math.cos(randAngle) * bunnySize;
+                destY += Math.sin(randAngle) * bunnySize;
+              } else {
+                destX += (destHitX - oHit.x) / d * (bunnySize - d);
+                destY += (destHitY - oHit.y) / d * (bunnySize - d);
+              }
+            }
+          }
+
+          // Cap hop distance
+          const maxDist = hopDistance * 1.2;
+          const actualDist = Math.hypot(destX - b.x, destY - b.y);
+          if (actualDist > maxDist) {
+            destX = b.x + (destX - b.x) / actualDist * maxDist;
+            destY = b.y + (destY - b.y) / actualDist * maxDist;
+          }
+
+          b.isHopping = true;
+          b.hopStartTime = now;
+          b.startX = b.x;
+          b.startY = b.y;
+          b.destX = destX;
+          b.destY = destY;
+          b.el.style.transform = destX - b.x > 0 ? "scaleX(-1)" : "scaleX(1)";
         }
       }
-    }
 
-    if (mouseX - bunnyX > 0) {
-      bunny.style.transform = "scaleX(-1)"; 
-    } else {
-      bunny.style.transform = "scaleX(1)";
+      if (!b.isHopping && distance < followRange && now - lastMouseMoveTime < mouseIdleTimeout) {
+        b.el.style.transform = mouseX - b.x > 0 ? "scaleX(-1)" : "scaleX(1)";
+      }
+      b.el.style.left = b.x + 'px';
+      b.el.style.top = (b.y - verticalOffset) + 'px';
     }
-
-    bunny.style.left = (bunnyX + 0) + 'px'; 
-    bunny.style.top = (bunnyY - 24) + 'px';
 
     requestAnimationFrame(animate);
   }
 
   animate();
+
+  // Double-tap background to remove all but one bunny (mobile-friendly)
+  let lastTapTime = 0;
+  document.addEventListener('click', (e) => {
+    if (e.target.closest('.bunny')) return;
+    const now = Date.now();
+    if (now - lastTapTime < 400) {
+      while (bunnies.length > 1) {
+        removeBunny(bunnies[bunnies.length - 1]);
+      }
+    }
+    lastTapTime = now;
+  });
+
 </script>
