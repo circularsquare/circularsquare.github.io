@@ -50,7 +50,7 @@
 
   const bunnies = [];
 
-  function createBunny(x, y) {
+  function createBunny(x, y, facingLeft) {
     const el = document.createElement('div');
     el.className = 'bunny';
     const spriteEl = document.createElement('div');
@@ -71,7 +71,10 @@
       startY: y,
       destX: x,
       destY: y,
+      facingLeft: facingLeft || false,
     };
+
+    el.style.transform = b.facingLeft ? "scaleX(-1)" : "scaleX(1)";
 
     function setFrame(index) {
       spriteEl.style.backgroundPosition = `-${index * frameSize}px 0`;
@@ -80,7 +83,7 @@
     setFrame(frameCount - 1);
 
     el.addEventListener('click', () => {
-      createBunny(b.x, b.y);
+      createBunny(b.x, b.y, b.facingLeft);
     });
 
     el.addEventListener('contextmenu', (e) => {
@@ -128,8 +131,8 @@
   // Restore bunnies from localStorage, or create one in the middle of the screen
   const saved = JSON.parse(localStorage.getItem('bunnies') || '[]');
   if (saved.length > 0) {
-    for (const { x, y } of saved) {
-      createBunny(x, y);
+    for (const { x, y, facingLeft } of saved) {
+      createBunny(x, y, facingLeft);
     }
   } else {
     createBunny(
@@ -142,7 +145,7 @@
     sessionStorage.setItem('mouseX', mouseX);
     sessionStorage.setItem('mouseY', mouseY);
     localStorage.setItem('bunnies', JSON.stringify(
-      bunnies.map(b => ({ x: b.x, y: b.y }))
+      bunnies.map(b => ({ x: b.x, y: b.y, facingLeft: b.facingLeft }))
     ));
   }
 
@@ -277,7 +280,8 @@
           b.startY = b.y;
           b.destX = destX;
           b.destY = destY;
-          b.el.style.transform = destX - b.x > 0 ? "scaleX(-1)" : "scaleX(1)";
+          b.facingLeft = destX - b.x > 0;
+          b.el.style.transform = b.facingLeft ? "scaleX(-1)" : "scaleX(1)";
         }
       }
 
