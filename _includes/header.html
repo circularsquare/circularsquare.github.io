@@ -5,6 +5,11 @@
     {%- assign page_paths = site.header_pages | default: default_paths -%}
     {%- assign titles_size = site.pages | map: 'title' | join: '' | size -%}
     <a class="site-title" rel="author" href="{{ "/" | relative_url }}"> anita's website </a>
+    <span id="bunny-counter" style="display: none; align-items: flex-end; gap: 0; font-size: 14px; vertical-align: bottom; margin-left: 4px; position: relative; top: -2px;">
+      <span class="bunny-sprite" style="width: 40px; height: 40px; display: inline-block; background-image: url('/assets/bunnyhop-spritesheet.png'); background-repeat: no-repeat; background-size: calc(40px * 7) 40px; background-position: -240px 0; image-rendering: auto; transform: scale(0.8); transform-origin: bottom left; margin-right: -10px;"></span>
+      <span>: <span id="bunny-count">1</span></span>
+      <a href="#" id="bunny-clear" style="font-size: 12px; margin-left: 4px; color: inherit; opacity: 0.6;">(clear)</a>
+    </span>
 
     {%- if titles_size > 0 -%}
       <nav class="site-nav">

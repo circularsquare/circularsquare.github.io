@@ -32,7 +32,7 @@
   const airEndMs = 400;
   const followRange = 350;
   const minPause = 0;
-  const maxPause = 100;
+  const maxPause = 250;
   const wanderMinPause = 0;
   const wanderMaxPause = 2000;
   const wanderAngleRange = Math.PI / 6;
@@ -90,13 +90,39 @@
 
     b.setFrame = setFrame;
     bunnies.push(b);
+    updateCounter();
     return b;
+  }
+
+  const bunnyCountEl = document.getElementById('bunny-count');
+  const bunnyCounterEl = document.getElementById('bunny-counter');
+  let rainbowActive = false;
+  let rainbowFrame = null;
+
+  function updateCounter() {
+    if (bunnyCountEl) bunnyCountEl.textContent = bunnies.length;
+    if (bunnyCounterEl) bunnyCounterEl.style.display = bunnies.length > 1 ? 'inline-flex' : 'none';
+    const shouldRainbow = bunnies.length === 67 || bunnies.length > 200;
+    if (shouldRainbow && !rainbowActive) {
+      rainbowActive = true;
+      (function cycleRainbow() {
+        if (!rainbowActive) return;
+        const hue = (Date.now() / 10) % 360;
+        if (bunnyCountEl) bunnyCountEl.style.color = `hsl(${hue}, 80%, 45%)`;
+        rainbowFrame = requestAnimationFrame(cycleRainbow);
+      })();
+    } else if (!shouldRainbow && rainbowActive) {
+      rainbowActive = false;
+      cancelAnimationFrame(rainbowFrame);
+      if (bunnyCountEl) bunnyCountEl.style.color = '';
+    }
   }
 
   function removeBunny(b) {
     if (bunnies.length <= 1) return; // always keep at least one
     b.el.remove();
     bunnies.splice(bunnies.indexOf(b), 1);
+    updateCounter();
   }
 
   // Restore bunnies from localStorage, or create one in the middle of the screen
@@ -185,6 +211,22 @@
           }
         }
 
+        // If only bunny and off-screen, hop toward nearest screen edge
+        const offScreen = b.x < -32 || b.x > window.innerWidth || b.y < -32 || b.y > window.innerHeight;
+        if (!shouldHop && bunnies.length === 1 && offScreen) {
+          shouldHop = true;
+          const targetX = Math.max(32, Math.min(window.innerWidth - 32, b.x));
+          const targetY = Math.max(32, Math.min(window.innerHeight - 32, b.y));
+          const d = Math.hypot(targetX - b.x, targetY - b.y);
+          if (d > 1) {
+            destX = b.x + (targetX - b.x) / d * hopDistance;
+            destY = b.y + (targetY - b.y) / d * hopDistance;
+          } else {
+            destX = b.x;
+            destY = b.y;
+          }
+        }
+
         const following = distance < followRange && now - lastMouseMoveTime < mouseIdleTimeout;
 
         if (!shouldHop && following && distance > stopThreshold) {
@@ -239,9 +281,6 @@
         }
       }
 
-      if (!b.isHopping && distance < followRange && now - lastMouseMoveTime < mouseIdleTimeout) {
-        b.el.style.transform = mouseX - b.x > 0 ? "scaleX(-1)" : "scaleX(1)";
-      }
       b.el.style.left = b.x + 'px';
       b.el.style.top = (b.y - verticalOffset) + 'px';
     }
@@ -251,17 +290,15 @@
 
   animate();
 
-  // Double-tap background to remove all but one bunny (mobile-friendly)
-  let lastTapTime = 0;
-  document.addEventListener('click', (e) => {
-    if (e.target.closest('.bunny')) return;
-    const now = Date.now();
-    if (now - lastTapTime < 400) {
+  // Clear button in header
+  const clearBtn = document.getElementById('bunny-clear');
+  if (clearBtn) {
+    clearBtn.addEventListener('click', (e) => {
+      e.preventDefault();
       while (bunnies.length > 1) {
         removeBunny(bunnies[bunnies.length - 1]);
       }
-    }
-    lastTapTime = now;
-  });
+    });
+  }
 
 </script>

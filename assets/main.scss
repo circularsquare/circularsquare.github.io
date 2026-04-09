@@ -66,6 +66,58 @@ a:active {
 }
 
 .site-header { border-top: 5px solid var(--teal); border-bottom: 1px solid var(--teal); min-height: 55.95px; position: relative; }
+
+// Make nav collapse into hamburger earlier to leave room for bunny counter
+.site-nav {
+  @media screen and (max-width: 680px) {
+    position: absolute;
+    top: 9px;
+    right: calc(var(--spacing-unit, 30px) / 2);
+    background-color: var(--lgreen);
+    border: 1px solid var(--teal);
+    border-radius: 5px;
+    text-align: right;
+
+    label[for="nav-trigger"] {
+      display: block;
+      float: right;
+      width: 36px;
+      height: 36px;
+      z-index: 2;
+      cursor: pointer;
+    }
+
+    .menu-icon {
+      display: block;
+      float: right;
+      width: 36px;
+      height: 26px;
+      line-height: 0;
+      padding-top: 10px;
+      text-align: center;
+
+      > svg {
+        fill: var(--teal);
+      }
+    }
+
+    input ~ .trigger {
+      clear: both;
+      display: none;
+    }
+
+    input:checked ~ .trigger {
+      display: block;
+      padding-bottom: 5px;
+    }
+
+    .page-link {
+      display: block;
+      padding: 5px 10px;
+      margin-left: 0;
+    }
+  }
+}
 .site-footer { border-top: 1px solid var(--teal); padding: 10px 0px; margin-top: auto;}
 
 
