@@ -890,7 +890,7 @@ map.on('click', (e) => {
 });
 
 map.on('mousemove', 'waiting-layer', (e) => {
-    if (lockedTrain) return;
+    if (lockedTrain || hoveredTrain) return;
     map.getCanvas().style.cursor = 'pointer';
     const p = e.features[0].properties;
     const coords = e.features[0].geometry.coordinates;
