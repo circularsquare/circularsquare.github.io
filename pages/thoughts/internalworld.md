@@ -1,7 +1,7 @@
 ---
 layout: page
 title: internal world
-permalink: /thoughts/internalworld
+permalink: /thoughts/internalworld/
 ---
 
 people have said that it seems that i have a rich internal world. years ago, i would have agreed, but as of now i don't enjoy my internal world nearly as much. what does that mean, anyways? to have a rich internal world, isn't it kind of just saying that you [don't](/thoughts/meanreversion) have a rich external world? does it just mean i'm autistic? and when i put my internal world in text like this, it's kind of external now, right?

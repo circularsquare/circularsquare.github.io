@@ -1,7 +1,7 @@
 ---
 layout: page
 title: azalea
-permalink: /friends/azalea
+permalink: /friends/azalea/
 ---
 
 azalea is a type of rhododendron, which is a type of heath (erica). 

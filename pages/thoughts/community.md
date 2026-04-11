@@ -1,7 +1,7 @@
 ---
 layout: page
 title: community
-permalink: /thoughts/community
+permalink: /thoughts/community/
 ---
 
 community is something that i did not have for a long time. it was in reach, but i did not reach for it. out of fear of rejection and also slightly out of fear of [normalness](/thoughts/normalness). though in most ways, being part of community usually makes you much less normal. [chrysanthemum](/friends/chrysanthemum) talks about parasocial relationships. my relationship to community is mostly parasocial, i think.

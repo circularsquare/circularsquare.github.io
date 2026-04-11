@@ -1,7 +1,7 @@
 ---
 layout: page
 title: sundew
-permalink: /friends/sundew
+permalink: /friends/sundew/
 ---
 
 sundew (drosera) is a carnivorous plant. the thin green leaves have red hairs that it coats in a liquid that captures and digests gnats and other little bugs.

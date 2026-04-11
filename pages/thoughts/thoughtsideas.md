@@ -1,7 +1,7 @@
 ---
 layout: page
 title: thoughtsideas
-permalink: /thoughts/thoughtsideas
+permalink: /thoughts/thoughtsideas/
 ---
 
 ideas for future thoughts

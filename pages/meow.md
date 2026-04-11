@@ -6,5 +6,5 @@ permalink: /meow/
 
 meow! 
 
-[home](../home)
+[home](/)
 [anita](../anita)

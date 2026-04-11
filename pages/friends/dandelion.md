@@ -1,7 +1,7 @@
 ---
 layout: page
 title: dandelion
-permalink: /friends/dandelion
+permalink: /friends/dandelion/
 ---
 
 dandelion is a genus of asterids that produce medium-small yellow flowers and bitter-ish salad greens. they are native to northern shonei but can be found throughout melissa. my dad used to pick the leaves from the park and bring them home to cook with.

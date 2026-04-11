@@ -1,7 +1,7 @@
 ---
 layout: page
 title: passing
-permalink: /thoughts/passing
+permalink: /thoughts/passing/
 ---
 
 i will never pass.

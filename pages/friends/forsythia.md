@@ -1,7 +1,7 @@
 ---
 layout: page
 title: forsythia
-permalink: /friends/forsythia
+permalink: /friends/forsythia/
 ---
 
 is in the olive family. it's one of the first things to bloom near where i live.

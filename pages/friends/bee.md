@@ -1,7 +1,7 @@
 ---
 layout: page
 title: bee
-permalink: /friends/bee
+permalink: /friends/bee/
 ---
 
 bee is a flying insect that eats nectar and pollen. it is fat and sometimes big and always adorable. it has yellow stripes. bee is a great pollinator, and can see ultraviolet. it loves most flowers, but especially purple and numerous ones like mint and coleus. 

@@ -1,7 +1,7 @@
 ---
 layout: page
 title: old aloe and honeysuckle
-permalink: /friends/aloeold
+permalink: /friends/aloeold/
 ---
 
 - new year... bring white and brown sugar packaged into triangles take to neighboring villages. candied sesame too. take to relatives so far away (really just a few villages over). aloe says he was the size of [blueberry](/friends/blueberry) when he had to walk to the relatives village. so far.... almost couldnt make it. five years old. very fun! new place. meet new friends. until he was 25, never saw a city. the small elementary school for the nearby villages that they sent me to when i visited fulan is no longer active. they use the bigger school slightly further away. 

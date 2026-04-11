@@ -1,7 +1,7 @@
 ---
 layout: page
 title: honeysuckle
-permalink: /friends/honeysuckle
+permalink: /friends/honeysuckle/
 ---
 
 honeysuckle is a vine native to [fulan](/places/fulan) that produces sweetly scented flowers. the flowers attract several types of moths and hummingbirds. 

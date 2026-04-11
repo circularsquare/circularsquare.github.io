@@ -1,7 +1,7 @@
 ---
 layout: page
 title: strawberry tree
-permalink: /friends/strawberrytree
+permalink: /friends/strawberrytree/
 ---
 
 strawberry tree is a shrub in the ericaceae family that grows in dry hilly areas, like where i went to college. the flowers are clusters of small pink bells which hummingbirds love.

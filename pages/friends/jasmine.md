@@ -1,7 +1,7 @@
 ---
 layout: page
 title: jasmine
-permalink: /friends/jasmine
+permalink: /friends/jasmine/
 ---
 
 jasmine is a vine/shrub in the olive family with sweet smelling flowers. it grows throughout fulan and shonei. 

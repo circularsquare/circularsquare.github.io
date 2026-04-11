@@ -1,7 +1,7 @@
 ---
 layout: page
 title: momentum
-permalink: /thoughts/momentum
+permalink: /thoughts/momentum/
 ---
 
 everything trends. everything spirals into itself, feeds on itself, and grows.

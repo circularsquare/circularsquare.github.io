@@ -1,7 +1,7 @@
 ---
 layout: page
 title: olive
-permalink: /friends/olive
+permalink: /friends/olive/
 ---
 
 olive is a tree native to coastal [nachria](/places/nachria) and [shonei](/places/shonei) and many of the other shores of smina. it is related to lilac, [jasmine](/friends/jasmine), [forsythia](/friends/forsythia) and ash. the fruits have a high oil content, which is easily extractable. the white flowers have a strong sweet scent. 

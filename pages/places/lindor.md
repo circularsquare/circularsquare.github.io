@@ -13,7 +13,7 @@ this was my first place that i really wanted to make feel like my own home. i re
 
 then it was full. all the space is taken up by [bunny](/friends/nanachimitty) stuff or plants or hay. the windows are especially packed. i have filled this space with friends, with myself. it will be hard to leave.
 
-one time [gingko](/friends/gingko) asked me why i chose to move here. it was hard to remember, but there were three main reasons. the first is that [andrew](/andrew) really really wanted to, and i wanted to make him happy. the second is that there are many many things to look at. having lived here for 9 months, i am fairly familiar with the immediate surroundings but there is still so much to loo at. the third reason is that here is where i am least stared at, in a way. many people look stranger than i do. 
+one time [gingko](/friends/gingko) asked me why i chose to move here. it was hard to remember, but there were three main reasons. the first is that [andrew](/anita/andrew/) really really wanted to, and i wanted to make him happy. the second is that there are many many things to look at. having lived here for 9 months, i am fairly familiar with the immediate surroundings but there is still so much to loo at. the third reason is that here is where i am least stared at, in a way. many people look stranger than i do. 
 
 there are still a lot of stares. 
 

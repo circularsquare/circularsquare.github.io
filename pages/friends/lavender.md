@@ -1,7 +1,7 @@
 ---
 layout: page
 title: lavender
-permalink: /friends/lavender
+permalink: /friends/lavender/
 ---
 
 lavender is a plant with light purple flowers that grows in coastal [nachria](/places/nachria) and [shonei](/places/shonei). the flowers are very fragrant, and yield a sweet smelling oil. dried flowers are sometimes used in food or tea. the stems are resilient, growing woody over time. 

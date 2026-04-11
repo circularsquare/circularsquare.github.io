@@ -1,7 +1,7 @@
 ---
 layout: page
 title: photos
-permalink: /photos/2024
+permalink: /photos/2024/
 ---
 
 

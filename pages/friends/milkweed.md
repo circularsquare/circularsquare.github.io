@@ -1,7 +1,7 @@
 ---
 layout: page
 title: milkweed
-permalink: /friends/milkweed
+permalink: /friends/milkweed/
 ---
 
 milkweed is a plant that has milky latex and grows bunches of many small flowers that monarch butterflies like to eat from. 

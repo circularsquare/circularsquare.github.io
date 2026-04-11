@@ -1,7 +1,7 @@
 ---
 layout: page
 title: bellflower
-permalink: /friends/bellflower
+permalink: /friends/bellflower/
 ---
 
 bellflower is an herbaceous plant that grows in the mountains and fields of melacca. it has blue-purple flowers and edible roots. it can survive down to -40 degrees!

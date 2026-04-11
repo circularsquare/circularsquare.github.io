@@ -1,7 +1,7 @@
 ---
 layout: page
 title: winter
-permalink: /thoughts/winter
+permalink: /thoughts/winter/
 ---
 
 winter is [cold](/thoughts/temperature). where i am in [melissa](/places/melissa), the seasons are very pronounced as the milean sea gyre [strengthens](/thoughts/momentum) in winter, bringing cold northern water to the coast of melissa, and sea ice to fuun. 

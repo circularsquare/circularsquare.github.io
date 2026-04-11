@@ -1,7 +1,7 @@
 ---
 layout: page
 title: equilibrium
-permalink: /thoughts/meanreversion
+permalink: /thoughts/meanreversion/
 ---
 
 everything [normalizes](/thoughts/normalness). everything returns to equilibrium.

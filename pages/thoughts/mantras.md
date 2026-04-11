@@ -1,7 +1,7 @@
 ---
 layout: page
 title: mantras
-permalink: /thoughts/mantras
+permalink: /thoughts/mantras/
 ---
 
 - when you are [alone](/thoughts/aloneness), 

@@ -1,7 +1,7 @@
 ---
 layout: page
 title: places
-permalink: /anemos/places
+permalink: /anemos/places/
 ---
 <img src="../assets/nix.png">
 

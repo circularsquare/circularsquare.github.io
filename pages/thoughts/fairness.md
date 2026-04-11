@@ -1,7 +1,7 @@
 ---
 layout: page
 title: fairness
-permalink: /thoughts/fairness
+permalink: /thoughts/fairness/
 ---
 
 so this is a thought that i don't have anymore because i think it's pretty terrible. but well into high school it was how i thought about justice. (nowadays, i don't really think about justice at all, which i think is good.) it goes like this:

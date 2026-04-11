@@ -1,7 +1,7 @@
 ---
 layout: page
 title: poinsettia
-permalink: /friends/poinsettia
+permalink: /friends/poinsettia/
 ---
 
 poinsettia is a type of euphorbia indigenous to [shilla](/places/shilla). it has clusters of bright red leaves among the green. the first time i saw you, i thought the red leaves were a flock of birds. 

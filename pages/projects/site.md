@@ -1,7 +1,7 @@
 ---
 layout: page
 title: this site
-permalink: /projects/site
+permalink: /projects/site/
 ---
 
 its pretty cool, right? 

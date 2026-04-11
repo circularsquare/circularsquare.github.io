@@ -1,7 +1,7 @@
 ---
 layout: page
 title: herbs
-permalink: /anemos/herbs
+permalink: /anemos/herbs/
 ---
 
 the herbalism of anemos...

@@ -1,7 +1,7 @@
 ---
 layout: page
 title: chrysanthemum
-permalink: /friends/chrysanthemum
+permalink: /friends/chrysanthemum/
 ---
 
 chrsyanthemum is a genus in asteraceae that comes in many colors and makes great tea.

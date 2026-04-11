@@ -1,7 +1,7 @@
 ---
 layout: page
 title: russula
-permalink: /friends/russula
+permalink: /friends/russula/
 ---
 
 russula is a genus of mostly red mushrooms with brittle gills. they form ectomycorrhiza with plants. they are common in lakta.

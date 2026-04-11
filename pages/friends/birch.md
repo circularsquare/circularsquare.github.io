@@ -1,7 +1,7 @@
 ---
 layout: page
 title: birch
-permalink: /friends/birch
+permalink: /friends/birch/
 ---
 
 birch is a genus of hardwood tree, closely related to alder and oak. it grows in cold areas, like in ortal and some of the more sheltered valleys of fuun. it's often used to make paper.

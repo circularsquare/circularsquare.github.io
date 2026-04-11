@@ -1,7 +1,7 @@
 ---
 layout: page
 title: hydrangea
-permalink: /friends/hydrangea
+permalink: /friends/hydrangea/
 ---
 
 hydrangea is a family of flowering plants that are usually bushes. their flowers are pink in basic soil and blue in acidic soil. which is weird because it's usually the other way i thought. 

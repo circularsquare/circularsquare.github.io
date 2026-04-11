@@ -1,7 +1,7 @@
 ---
 layout: page
 title: foxglove
-permalink: /friends/foxglove
+permalink: /friends/foxglove/
 ---
 
 is a plant with many bell shaped pink flowers coming off a stem. 

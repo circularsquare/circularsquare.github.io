@@ -1,7 +1,7 @@
 ---
 layout: page
 title: fidelity
-permalink: /thoughts/fidelity
+permalink: /thoughts/fidelity/
 ---
 
 one time [strawberry tree](/friends/strawberrytree) and i were talking about the world as a simulation. if the simulation is running on a computer somewhere in a physical world with physical constraints and costs, like ours, then they would want to optimize it. they would cut out unnecessary computation. the little quantum fluctuations in the core of a rock don't really matter unless someone happens to be looking very very closely at that moment. so they'd use some coarser model that simulates the rock as a whole.

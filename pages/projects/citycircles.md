@@ -1,7 +1,7 @@
 ---
 layout: page
 title: city circles quiz
-permalink: /projects/citycircles
+permalink: /projects/citycircles/
 ---
 
 hi!

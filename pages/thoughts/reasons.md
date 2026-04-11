@@ -1,7 +1,7 @@
 ---
 layout: page
 title: reasons
-permalink: /thoughts/reasons
+permalink: /thoughts/reasons/
 ---
 
 to be clear, these aren't good reasons, they were just reasons.

@@ -1,6 +1,6 @@
 ---
 layout: acronyms
 title: acronyms
-permalink: /projects/acronyms
+permalink: /projects/acronyms/
 ---
 

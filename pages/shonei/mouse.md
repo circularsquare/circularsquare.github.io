@@ -1,7 +1,7 @@
 ---
 layout: page
 title: mouse
-permalink: /shonei/mouse
+permalink: /shonei/mouse/
 ---
 
 mice are the usual people of shonei. mice love wheat and rice and holes and money and .

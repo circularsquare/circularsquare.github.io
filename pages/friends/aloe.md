@@ -1,7 +1,7 @@
 ---
 layout: page
 title: aloe
-permalink: /friends/aloe
+permalink: /friends/aloe/
 ---
 
 aloe is a succulent plant with no stem and very thick leaves that are jelly-like inside. 

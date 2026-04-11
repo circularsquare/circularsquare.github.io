@@ -1,7 +1,7 @@
 ---
 layout: page
 title: documentation
-permalink: /thoughts/documentation
+permalink: /thoughts/documentation/
 ---
 
 memory was good, until people decided they needed to remember more things, and for longer, so they invented writing. then memory got worse.
