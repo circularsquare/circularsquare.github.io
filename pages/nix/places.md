@@ -3,7 +3,7 @@ layout: page
 title: places
 permalink: /anemos/places/
 ---
-<img src="../assets/nix.png">
+<img src="/assets/nix.png">
 
 the wind blows from west to east, like on earth.
 

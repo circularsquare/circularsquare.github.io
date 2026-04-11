@@ -6,5 +6,5 @@ permalink: /anemos/
 
 somewhere...
 
-- [magic](magic)
-- [places](places)
+- [magic](magic/)
+- [places](places/)

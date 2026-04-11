@@ -17,9 +17,9 @@ permalink: /books/
 - three body problem - 10/10
     - the part in the 3rd book about the future society where there's only women really stuck with me. the portrayal of the consequences is super sexist but i like it
 - exhalation - 8/10
-    - scifi short story collection. recommended to me by [gingko](/friends/gingko). compact packages of mind-blowing worlds!
+    - scifi short story collection. recommended to me by [gingko](/friends/gingko/). compact packages of mind-blowing worlds!
 - collected schizophrenias - 5/10
-    - a very relatable perspective on being crazy. [chrsyanthemum](/friends/chrysanthemum) doesn't like this book because she shares too many characteristics with the author.
+    - a very relatable perspective on being crazy. [chrsyanthemum](/friends/chrysanthemum/) doesn't like this book because she shares too many characteristics with the author.
 - dune - 8/10
     - i am the muad'dib
     - i did not like the books after the first one.
@@ -27,6 +27,6 @@ permalink: /books/
 - city of quartz - 7/10
     - it explains everything i ever wondered about los angeles. it's very easy to follow too. i've never gotten this far into a long history book except with the power broker, which i audiobooked.
 - stag dance - 6/10
-    - the book has several short stories which cover various aspects and incarnations of [community](/thoughts/community), some of which are very distant to me and interesting.
+    - the book has several short stories which cover various aspects and incarnations of [community](/thoughts/community/), some of which are very distant to me and interesting.
 - canticle for leibowitz - 9/10
-    - very cool. [chrysanthemum](/friends/chrysanthemum) gave me this book. it's a science fiction book. it changed my view on christianity favorably and drastically. i wish i could talk about it with [aloe](friends/aloe).
+    - very cool. [chrysanthemum](/friends/chrysanthemum/) gave me this book. it's a science fiction book. it changed my view on christianity favorably and drastically. i wish i could talk about it with [aloe](/friends/aloe/).

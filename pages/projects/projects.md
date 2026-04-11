@@ -28,11 +28,11 @@ permalink: /projects/
     - <a href="/circles" data-thumb="/assets/thumbs/citycircles.png">city circles quiz</a>
     - <a href="/assets/guessthecity.html" data-thumb="/assets/thumbs/guessthecity.png">guess the city</a>
     - [bluebs](https://circularsquare.github.io/bluebs/)  
-    - [shonei](/shonei)
+    - [shonei](/shonei/)
 
-- [this site](site)
-- [photos](/photos)
-- [audio](/audio)
+- [this site](site/)
+- [photos](/photos/)
+- [audio](/audio/)
 - <a href="bread" data-thumb="/assets/thumbs/breads.png">bread</a>
 - [my github](https://github.com/circularsquare)
 

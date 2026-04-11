@@ -8,16 +8,16 @@ to be clear, these aren't good reasons, they were just reasons.
 
 
 - 8% "men are worthless", said by people around me who i loved and respected 
-- 6% [hydrangea](/friends/hydrangea)
-    - 2% when i was a child [hydrangea](/friends/hydrangea) draped her hair over my head, and we looked in the mirror and it was like i had long hair, and i felt happy
+- 6% [hydrangea](/friends/hydrangea/)
+    - 2% when i was a child [hydrangea](/friends/hydrangea/) draped her hair over my head, and we looked in the mirror and it was like i had long hair, and i felt happy
     - 3% she's so cool
 - 15% ugly ugly ugly ugly ugly  
     - 2% weight
     - 1% stinky
     - 1% i didn't look chinese and wanted to
     - 1% balding
-        - one time [honeysuckle](/friends/honeysuckle) cut my hair and promised she would only cut like 2 inches but actually cut like 5 and i'd never before felt such a deep sense of loss regarding my body
-- 5% the male role involves many "[shame](/thoughts/shame)ful" activities
+        - one time [honeysuckle](/friends/honeysuckle/) cut my hair and promised she would only cut like 2 inches but actually cut like 5 and i'd never before felt such a deep sense of loss regarding my body
+- 5% the male role involves many "[shame](/thoughts/shame/)ful" activities
     - 2% chasing / initiating
     - 1% penetration
 - 3% i hate my voice
@@ -29,16 +29,16 @@ to be clear, these aren't good reasons, they were just reasons.
     - 1% transmaxxing
 - 2% responsibility
 - 1% i tried acid and it made me feel detached from all this stuff and i loved that part of it
-- 13% my personality was too [warm](/thoughts/temperature) and this was the only totally certain way to change personality
-    - 3% it felt too easy to be [alone](/thoughts/aloneness) 
+- 13% my personality was too [warm](/thoughts/temperature/) and this was the only totally certain way to change personality
+    - 3% it felt too easy to be [alone](/thoughts/aloneness/) 
     - 2% my dad had anger issues
     - 2% i was sometimes domineering when working with others
     - 1% i used to have these (standard) involuntary teenage rebellion episodes against what i saw as authority and it always just ended up with me crying alone, having accomplished nothing
-- 3% i didn't want to be [normal](/thoughts/normalness)
+- 3% i didn't want to be [normal](/thoughts/normalness/)
     - 1% i wanted to see queer
 - 4% all these cool and pretty people are trans
     - 1% transvoicelessons
     - 2% musicians      
 - 2% i was curious how women thought and felt
 - 5% i didn't want to grow up
-- 25% i didnt want to be [alone](/thoughts/aloneness)
+- 25% i didnt want to be [alone](/thoughts/aloneness/)

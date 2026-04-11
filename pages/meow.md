@@ -7,4 +7,4 @@ permalink: /meow/
 meow! 
 
 [home](/)
-[anita](../anita)
+[anita](../anita/)

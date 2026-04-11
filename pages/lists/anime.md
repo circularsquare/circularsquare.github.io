@@ -18,7 +18,7 @@ permalink: /anime/
 - spirited away - 7/10
 - howls moving castle - 7/10
 - made in abyss - 9/10
-    - [nanachi and mitty](/friends/nanachimitty)'s namesake!
+    - [nanachi and mitty](/friends/nanachimitty/)'s namesake!
 - prince of tennis - 5/10
     - the first show i watched.
 - yakitate - 6/10

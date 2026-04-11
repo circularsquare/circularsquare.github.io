@@ -32,7 +32,7 @@ permalink: /games/
         - aaaaaaaaa!!!! japan!!!!!
 - minecraft-like games
     - minecraft - 8/10
-        - a classic. i've played a lot with [plum](/friends/plum) and [watercress](/friends/watercress) and others. i love building a town together.
+        - a classic. i've played a lot with [plum](/friends/plum/) and [watercress](/friends/watercress/) and others. i love building a town together.
         - as a kid i played on economy servers where i got my first taste of trading. the chest shop exchange idea still lives rent free in my head
     - terraria - 9/10
         - i want to get every item.

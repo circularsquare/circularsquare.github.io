@@ -8,7 +8,7 @@ mice are the usual people of shonei. mice love wheat and rice and holes and mone
 
 a mouse has 
 - inventory
-- [job](/shonei/building)
+- [job](/shonei/building/)
 - skills
 - home
 - needs
