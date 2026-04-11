@@ -18,7 +18,7 @@ body { background: #0a0a0a; color: #eee; font-family: 'Nunito', sans-serif; over
     background: rgba(10,10,10,0.85);
     border: 1px solid #333;
     border-radius: 8px;
-    padding: 12px 20px;
+    padding: 10px 12px;
     display: flex;
     flex-wrap: wrap;
     align-items: center;
@@ -26,10 +26,11 @@ body { background: #0a0a0a; color: #eee; font-family: 'Nunito', sans-serif; over
     z-index: 9999;
 }
 #time-label {
-    font-size: 28px;
+    font-size: 20px;
     font-weight: 700;
-    width: 120px;
-    flex-shrink: 0;
+    color: #ccc;
+    width: 95px;
+    flex: 0 0 90px;
     text-align: center;
     font-variant-numeric: tabular-nums;
 }
@@ -46,8 +47,8 @@ body { background: #0a0a0a; color: #eee; font-family: 'Nunito', sans-serif; over
     gap: 1px;
 }
 #dot-size-wrap span {
-    font-size: 13px;
-    color: #888;
+    font-size: 12px;
+    color: #ccc;
     line-height: 1;
 }
 #dot-slider {
@@ -62,7 +63,7 @@ body { background: #0a0a0a; color: #eee; font-family: 'Nunito', sans-serif; over
 #speed-buttons button {
     background: none;
     border: 1px solid #555;
-    color: #999;
+    color: #ccc;
     border-radius: 4px;
     width: 32px;
     height: 32px;
@@ -86,10 +87,11 @@ body { background: #0a0a0a; color: #eee; font-family: 'Nunito', sans-serif; over
 }
 #train-count {
     font-size: 13px;
-    color: #999;
-    flex-shrink: 0;
+    color: #ccc;
+    flex: 0 0 88px;
     text-align: right;
     line-height: 1.4;
+    font-variant-numeric: tabular-nums;
 }
 #loading {
     position: absolute;
@@ -97,7 +99,7 @@ body { background: #0a0a0a; color: #eee; font-family: 'Nunito', sans-serif; over
     left: 50%;
     transform: translate(-50%, -50%);
     font-size: 18px;
-    color: #999;
+    color: #ccc;
     z-index: 20;
 }
 .train-tooltip .maplibregl-popup-content {
@@ -208,10 +210,10 @@ body { background: #0a0a0a; color: #eee; font-family: 'Nunito', sans-serif; over
 #info-panel p:last-child { margin-bottom: 0; }
 #info-panel a { color: #89b4fa; }
 
-@media (max-width: 600px) {
+@media (max-width: 560px) {
     #controls {
         top: 8px;
-        right: 8px;
+        right: 80px;
         left: 8px;
         max-width: none;
         padding: 10px 12px;
@@ -221,7 +223,9 @@ body { background: #0a0a0a; color: #eee; font-family: 'Nunito', sans-serif; over
     #time-label {
         order: 1;
         font-size: 22px;
-        width: auto;
+        width: 95px;
+        min-width: 95px;
+        flex: 0 0 auto;
     }
     #time-slider {
         order: 2;
@@ -289,8 +293,8 @@ body { background: #0a0a0a; color: #eee; font-family: 'Nunito', sans-serif; over
 <div id="controls" style="display:none;">
     <div id="speed-buttons">
         <button data-speed="0"><svg width="10" height="12" viewBox="0 0 10 12"><rect x="0" y="0" width="3" height="12" fill="currentColor"/><rect x="7" y="0" width="3" height="12" fill="currentColor"/></svg></button>
-        <button data-speed="1" class="active">1x</button>
-        <button data-speed="2">2x</button>
+        <button data-speed="1">1x</button>
+        <button data-speed="2" class="active">2x</button>
         <button data-speed="4">4x</button>
     </div>
     <input type="range" id="time-slider" min="0" max="1439" value="390" step="1">
@@ -324,10 +328,15 @@ const map = new maplibregl.Map({
             source: 'carto-dark',
             minzoom: 0,
             maxzoom: 18,
+            paint: {
+                'raster-brightness-max': 1.0,
+                'raster-brightness-min': 0.05,
+            },
         }],
     },
     center: [-73.95, 40.735],
-    zoom: 11,
+    zoom: 11.38,
+    minZoom: 10,
     attributionControl: true,
 });
 
@@ -335,8 +344,8 @@ const map = new maplibregl.Map({
 const ROUTE_COLORS = {
     'A': '#0087d4', // greener 10, lighten 0.01
     'C': '#0064d4', // lighten 0.01
-    'E': '#0045de', // purpler 10, lighten 0.03
-    'B': '#fb8400', // yellower 5, lighten 0.03
+    'E': '#084bdf', // purpler 10, lighten 0.06
+    'B': '#f88300', // yellower 5, lighten 0.02
     'D': '#f07000', // yellower 1, lighten 0.01
     'F': '#f55700', // redder 5, lighten 0.02
     'FX': '#f55700', // F express
@@ -345,15 +354,15 @@ const ROUTE_COLORS = {
     '5': '#00b360', // lighten 0.05
     '1': '#df3441', // red group
     '2': '#df4134', // yellower 10, lighten 0.05
-    '3': '#df3436', // yellower 5, lighten 0.05
+    '3': '#e0383a', // yellower 5, lighten 0.07
     '7': '#bb42bd', // purple, local, lighten 0.02
-    '7X': '#bb42bd', // hue+3, lighten 0.07
+    '7X': '#ba4fc2', // bluer 3, lighten 0.07
     'N': '#f7cd35', // hue+4, lighten 0.03
     'Q': '#f7c135', // lighten 0.03
-    'W': '#f6c921', // hue+4, darken 0.01
+    'W': '#f4c721', // hue+4, darken 0.02
     'R': '#f6ba21', // darken 0.01
     'J': '#7f582e', // brown group
-    'Z': '#734f29', // hue+4, darken 0.07
+    'Z': '#734a29', // darken 0.07
     '6': '#008f4d', // darken 0.02
     '6X': '#008f4d', // 6 express
     'G': '#6cbe45', // official MTA green (GTFS has dull #799534)
@@ -366,8 +375,8 @@ const ROUTE_COLORS = {
 
 let data = null;
 let simTime = 6.5 * 3600;
-let speedMultiplier = 1;
-let lastSpeed = 1; // last non-zero speed for spacebar toggle
+let speedMultiplier = 2;
+let lastSpeed = 2; // last non-zero speed for spacebar toggle
 let dotScale = 1.2;
 let animFrame = null;
 let anchorWall = 0;   // wall-clock ms when current playback segment started
@@ -395,6 +404,7 @@ map.on('load', () => {
 });
 
 let trainIndex = null; // sorted by startTime for binary-search scan
+let trainDrawOrder = null; // per-train draw order (startTime + random tiebreak)
 
 function preprocessData() {
     // pre-compute start/end times and sort trains for efficient scanning
@@ -410,6 +420,9 @@ function preprocessData() {
     });
     entries.sort((a, b) => a.startTime - b.startTime);
     trainIndex = entries;
+
+    // stable draw order: first departure time + random tiebreak (no route bias)
+    trainDrawOrder = data.trains.map(train => train.timeline[0][0] + Math.random());
 
     // filter walks to >= 20 riders
     if (data.transfer_walks) {
@@ -751,7 +764,7 @@ function renderTrains() {
         features.push({
             type: 'Feature',
             geometry: { type: 'Point', coordinates: [lon, lat] },
-            properties: { radius, color: ROUTE_COLORS[train.route] || train.color, stroke: ROUTE_STROKES[train.route] || darkenHex(train.color, 0.75), route: train.route, riders: ridersRound, ti, order: LINE_PRIORITY[train.route] || 0 },
+            properties: { radius, color: ROUTE_COLORS[train.route] || train.color, stroke: ROUTE_STROKES[train.route] || darkenHex(train.color, 0.75), route: train.route, riders: ridersRound, ti, order: trainDrawOrder[ti] },
         });
     }
 
@@ -809,22 +822,43 @@ function renderTrains() {
 
 // update all tooltips (hover + locked) with live data
 map.on('render', () => {
-    // update hover tooltip
-    if (hoverType === 'train' && hoverTrain) {
-        const pos = trainPositions.get(hoverTrain.ti);
-        if (pos) {
-            const train = data.trains[hoverTrain.ti];
-            hoverTooltip.setLngLat(pos);
-            hoverTooltip.setHTML(trainTooltipHTML({ route: train.route, color: ROUTE_COLORS[train.route] || train.color, riders: pos[2] }));
-        } else {
+    // re-query what's under the cursor so tooltips update as trains move
+    if (lastMousePoint) {
+        const trainFeats = map.queryRenderedFeatures(lastMousePoint, { layers: ['trains-layer'] });
+        const waitFeats = map.queryRenderedFeatures(lastMousePoint, { layers: ['waiting-layer'] });
+        if (trainFeats.length > 0) {
+            const p = trainFeats[0].properties;
+            const coords = trainFeats[0].geometry.coordinates;
+            if (hoverType !== 'train' || !hoverTrain || hoverTrain.ti !== p.ti) {
+                hoverTrain = { ti: p.ti };
+                hoverType = 'train';
+                map.getCanvas().style.cursor = 'pointer';
+            }
+            hoverTooltip.setLngLat(coords).setHTML(trainTooltipHTML(p)).addTo(map);
+        } else if (waitFeats.length > 0) {
+            const p = waitFeats[0].properties;
+            const coords = waitFeats[0].geometry.coordinates;
+            if (hoverType !== 'station' || !hoverStation || hoverStation.si !== p.si) {
+                hoverStation = { si: p.si, lngLat: coords };
+                hoverType = 'station';
+                map.getCanvas().style.cursor = 'pointer';
+            }
+            hoverTooltip.setLngLat(coords).setHTML(stationTooltipHTML(p.si, Math.round(getStationWaiting(p.si)))).addTo(map);
+        } else if (hoverType) {
             hoverTrain = null;
+            hoverStation = null;
             hoverType = null;
             hoverTooltip.remove();
+            map.getCanvas().style.cursor = '';
         }
-    } else if (hoverType === 'station' && hoverStation) {
-        const waiting = Math.round(getStationWaiting(hoverStation.si));
-        if (waiting > 0) {
-            hoverTooltip.setHTML(stationTooltipHTML(hoverStation.si, waiting));
+    } else {
+        // mouse is outside the map — just update positions for locked tooltips
+        if (hoverType) {
+            hoverTrain = null;
+            hoverStation = null;
+            hoverType = null;
+            hoverTooltip.remove();
+            map.getCanvas().style.cursor = '';
         }
     }
 
@@ -900,6 +934,7 @@ let hoverTrain = null;   // { ti }
 let hoverStation = null;  // { lngLat }
 let hoverType = null;     // 'train' | 'station' | null
 const lockedTooltips = []; // [{ type, popup, ti?, lngLat? }]
+let lastMousePoint = null; // pixel coords for re-querying under cursor
 
 const DARK_TEXT_ROUTES = new Set(['N', 'Q', 'R', 'W']);
 const EXPRESS_ROUTES = new Set(['7X', '6X', 'FX']);
@@ -935,6 +970,9 @@ function clearAllLocked() {
     lockedTooltips.length = 0;
 }
 
+map.on('mousemove', (e) => { lastMousePoint = e.point; });
+map.on('mouseout', () => { lastMousePoint = null; });
+
 map.on('mousemove', 'trains-layer', (e) => {
     map.getCanvas().style.cursor = 'pointer';
     const p = e.features[0].properties;
@@ -954,7 +992,9 @@ map.on('mouseleave', 'trains-layer', () => {
     }
 });
 
+let clickedTrain = false;
 map.on('click', 'trains-layer', (e) => {
+    clickedTrain = true;
     const p = e.features[0].properties;
     const coords = e.features[0].geometry.coordinates;
     const popup = makePopup();
@@ -983,6 +1023,7 @@ map.on('mouseleave', 'waiting-layer', () => {
 });
 
 map.on('click', 'waiting-layer', (e) => {
+    if (clickedTrain) return; // train layer already handled this click
     const p = e.features[0].properties;
     const coords = e.features[0].geometry.coordinates;
     const popup = makePopup();
@@ -991,6 +1032,7 @@ map.on('click', 'waiting-layer', (e) => {
 });
 
 map.on('click', (e) => {
+    clickedTrain = false;
     if (lockedTooltips.length === 0) return;
     const features = map.queryRenderedFeatures(e.point, { layers: ['trains-layer', 'waiting-layer'] });
     if (features.length > 0) return;
