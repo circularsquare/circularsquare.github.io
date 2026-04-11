@@ -2,7 +2,9 @@
 <html>
 <head>
 <meta charset="utf-8">
-<title>NYC Subway Ridership</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>nyc riders</title>
+<link rel="icon" type="image/png" href="favicon.png">
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
 body { background: #0a0a0a; color: #eee; font-family: 'Nunito', sans-serif; overflow: hidden; }
@@ -10,8 +12,8 @@ body { background: #0a0a0a; color: #eee; font-family: 'Nunito', sans-serif; over
 
 #controls {
     position: absolute;
-    top: 16px;
-    right: 16px;
+    top: 12px;
+    right: 12px;
     max-width: calc(100vw - 160px);
     background: rgba(10,10,10,0.85);
     border: 1px solid #333;
@@ -34,7 +36,7 @@ body { background: #0a0a0a; color: #eee; font-family: 'Nunito', sans-serif; over
 #time-slider {
     flex: 1;
     min-width: 120px;
-    accent-color: #8899aa;
+    accent-color: #6889a8;
 }
 #dot-size-wrap {
     display: flex;
@@ -44,13 +46,13 @@ body { background: #0a0a0a; color: #eee; font-family: 'Nunito', sans-serif; over
     gap: 1px;
 }
 #dot-size-wrap span {
-    font-size: 11px;
+    font-size: 13px;
     color: #888;
     line-height: 1;
 }
 #dot-slider {
     width: 60px;
-    accent-color: #8899aa;
+    accent-color: #6889a8;
 }
 #speed-buttons {
     display: flex;
@@ -73,8 +75,8 @@ body { background: #0a0a0a; color: #eee; font-family: 'Nunito', sans-serif; over
     justify-content: center;
     line-height: 1;
 }
-#speed-buttons button:hover { border-color: #8899aa; color: #eee; }
-#speed-buttons button.active { border-color: #8899aa; color: #8899aa; }
+#speed-buttons button:hover { border-color: #6889a8; color: #eee; }
+#speed-buttons button.active { border-color: #6889a8; color: #6889a8; }
 #stats-group {
     display: flex;
     align-items: center;
@@ -207,6 +209,37 @@ body { background: #0a0a0a; color: #eee; font-family: 'Nunito', sans-serif; over
 #info-panel a { color: #89b4fa; }
 
 @media (max-width: 600px) {
+    #controls {
+        top: 8px;
+        right: 8px;
+        left: 8px;
+        max-width: none;
+        padding: 10px 12px;
+        gap: 6px 10px;
+    }
+    #speed-buttons { order: 0; }
+    #time-label {
+        order: 1;
+        font-size: 22px;
+        width: auto;
+    }
+    #time-slider {
+        order: 2;
+        min-width: 0;
+        width: 100%;
+        flex-basis: 100%;
+    }
+    #stats-group {
+        order: 3;
+        margin-left: 0;
+        margin-top: -2px;
+        width: 100%;
+        flex-basis: 100%;
+        justify-content: space-between;
+    }
+    #map-title {
+        display: none;
+    }
     #info-panel {
         bottom: 56px;
         left: 4px;
@@ -217,8 +250,8 @@ body { background: #0a0a0a; color: #eee; font-family: 'Nunito', sans-serif; over
 }
 #map-title {
     position: absolute;
-    top: 16px;
-    left: 16px;
+    top: 20px;
+    left: 20px;
     z-index: 9999;
     color: #ccc;
     font-size: 22px;
@@ -233,9 +266,8 @@ body { background: #0a0a0a; color: #eee; font-family: 'Nunito', sans-serif; over
 </head>
 <body>
 <span id="map-title">nycriders</span>
-
 <div id="map"></div>
-<div id="loading">Loading data...</div>
+<div id="loading">loading data...</div>
 
 <button id="info-btn" title="About this map">
     <span style="font-family:'Times New Roman',Times,serif;font-style:italic;font-size:19px;font-weight:bold;margin-left:-1px">i</span>
@@ -250,8 +282,7 @@ body { background: #0a0a0a; color: #eee; font-family: 'Nunito', sans-serif; over
     <p>The MTA publishes <a href="https://data.ny.gov/Transportation/MTA-Subway-Origin-Destination-Ridership-Estimate-2/y2qv-fytt" target="_blank"> hourly origin-destination pair ridership estimates</a>, as well as <a href="https://new.mta.info/developers" target="_blank">train timetables</a>. In this map, riders navigate from their origins to their destinations, taking into account transfer times and when trains are scheduled. The size of a train's bubble is proportional to the number of riders on it. </p>
     <p>The riders use the <a href="https://www.microsoft.com/en-us/research/wp-content/uploads/2012/01/raptor_alenex.pdf" target="_blank">RAPTOR</a> algorithm to navigate, finding the fastest possible route. All trains are assumed to run on time. Origin-destination data is hourly, so the exact departure time of a rider within the hour is randomly chosen. There is no cap on the number of riders on a train.</p>
     <p>Trains' speed is based on their timetables. Sometimes the timetables are a bit wonky, which is why trains sometimes go weirdly fast or slow.</p>
-    <p>Route geometry from <a href="https://new.mta.info/developers" target="_blank">MTA GTFS</a>. Map built with <a href="https://maplibre.org" target="_blank">MapLibre GL</a> and <a href="https://carto.com/basemaps" target="_blank">CARTO</a> basemap tiles.</p>
-    <p>Visuals inspired by <a href="https://subwaybuilder.com" target="_blank">subwaybuilder</a>.</p>
+    <p>Route geometry from <a href="https://new.mta.info/developers" target="_blank">MTA GTFS</a>. Map built with <a href="https://maplibre.org" target="_blank">MapLibre GL</a> and <a href="https://carto.com/basemaps" target="_blank">CARTO</a> basemap tiles. Visuals inspired by <a href="https://subwaybuilder.com" target="_blank">subwaybuilder</a>.</p>
     <p>Made by <a href="https://anita.garden/projects" target="_blank">anita</a>!</p>
 </div>
 
@@ -267,7 +298,7 @@ body { background: #0a0a0a; color: #eee; font-family: 'Nunito', sans-serif; over
     <div id="stats-group">
         <div id="dot-size-wrap">
             <span>dot size</span>
-            <input type="range" id="dot-slider" min="40" max="200" value="80" step="1" title="Dot size">
+            <input type="range" id="dot-slider" min="40" max="200" value="120" step="1" title="Dot size">
         </div>
         <div id="train-count"></div>
     </div>
@@ -337,14 +368,14 @@ let data = null;
 let simTime = 6.5 * 3600;
 let speedMultiplier = 1;
 let lastSpeed = 1; // last non-zero speed for spacebar toggle
-let dotScale = 0.8;
+let dotScale = 1.2;
 let animFrame = null;
 let anchorWall = 0;   // wall-clock ms when current playback segment started
 let anchorSim = 0;    // simTime at that moment
 const BASE_SIM_SPEED = 60;
 
 const emptyGeoJSON = { type: 'FeatureCollection', features: [] };
-const trainPositions = new Map(); // ti -> [lon, lat] precise coords for tooltip
+const trainPositions = new Map(); // ti -> [lon, lat, riders] precise coords + riders for tooltip
 
 map.on('load', () => {
     fetch('trains.json')
@@ -499,15 +530,11 @@ function resetAnchor() {
     anchorSim = simTime;
 }
 
-let renderPending = false;
+let lastRenderWall = 0;
+const RENDER_INTERVAL = 32; // ~30fps cap for setData calls
 
 function startAnimation() {
     resetAnchor();
-    map.on('sourcedata', (e) => {
-        if (e.sourceId === 'trains' && e.isSourceLoaded) {
-            renderPending = false;
-        }
-    });
     animFrame = requestAnimationFrame(tick);
 }
 
@@ -521,8 +548,8 @@ function tick(now) {
 
     updateTimeLabel();
 
-    if (!renderPending) {
-        renderPending = true;
+    if (now - lastRenderWall >= RENDER_INTERVAL) {
+        lastRenderWall = now;
         renderTrains();
     }
 
@@ -562,6 +589,27 @@ function darkenHex(hex, factor) {
     const g = Math.round(parseInt(hex.slice(3, 5), 16) * factor);
     const b = Math.round(parseInt(hex.slice(5, 7), 16) * factor);
     return `#${r.toString(16).padStart(2,'0')}${g.toString(16).padStart(2,'0')}${b.toString(16).padStart(2,'0')}`;
+}
+
+const WAIT_TRANSITION = 10; // sim seconds to smoothly ramp between values
+
+function getStationWaiting(si) {
+    const tl = data.waiting[si].timeline;
+    let lo = 0, hi = tl.length - 1, idx = -1;
+    while (lo <= hi) {
+        const mid = (lo + hi) >> 1;
+        if (tl[mid][0] <= simTime) { idx = mid; lo = mid + 1; }
+        else hi = mid - 1;
+    }
+    if (idx < 0) return 0;
+    let waiting = tl[idx][1];
+    const timeSinceChange = simTime - tl[idx][0];
+    if (timeSinceChange < WAIT_TRANSITION && idx > 0) {
+        const prevWaiting = tl[idx - 1][1];
+        const f = timeSinceChange / WAIT_TRANSITION;
+        waiting = prevWaiting + f * (waiting - prevWaiting);
+    }
+    return waiting;
 }
 
 function renderTrains() {
@@ -695,10 +743,10 @@ function renderTrains() {
 
         activeCount++;
         totalRiders += riders;
-        trainPositions.set(ti, [lon, lat]);
 
         const radius = bubbleRadius(riders) * zoomScale * dotScale;
         const ridersRound = Math.round(riders);
+        trainPositions.set(ti, [lon, lat, ridersRound]);
 
         features.push({
             type: 'Feature',
@@ -710,34 +758,17 @@ function renderTrains() {
     map.getSource('trains').setData({ type: 'FeatureCollection', features });
 
     // render transfer waiting bubbles (per-station, with smooth transitions)
-    const WAIT_TRANSITION = 10; // sim seconds to smoothly ramp between values
     const waitFeatures = [];
-    for (const station of data.waiting) {
-        const tl = station.timeline;
-        // binary search for last entry <= simTime
-        let lo = 0, hi = tl.length - 1, idx = -1;
-        while (lo <= hi) {
-            const mid = (lo + hi) >> 1;
-            if (tl[mid][0] <= simTime) { idx = mid; lo = mid + 1; }
-            else hi = mid - 1;
-        }
-        if (idx < 0) continue;
-
-        // smooth transition: ramp over WAIT_TRANSITION seconds after each change
-        let waiting = tl[idx][1];
-        const timeSinceChange = simTime - tl[idx][0];
-        if (timeSinceChange < WAIT_TRANSITION && idx > 0) {
-            const prevWaiting = tl[idx - 1][1];
-            const f = timeSinceChange / WAIT_TRANSITION;
-            waiting = prevWaiting + f * (waiting - prevWaiting);
-        }
+    for (let si = 0; si < data.waiting.length; si++) {
+        const station = data.waiting[si];
+        const waiting = getStationWaiting(si);
         if (waiting < 0.5) continue;
 
         const radius = bubbleRadius(waiting) * zoomScale * dotScale;
         waitFeatures.push({
             type: 'Feature',
             geometry: { type: 'Point', coordinates: [station.lon, station.lat] },
-            properties: { radius, riders: Math.round(waiting), name: station.name || '', routes: JSON.stringify(station.routes || []) },
+            properties: { radius, riders: Math.round(waiting), name: station.name || '', routes: JSON.stringify(station.routes || []), si },
         });
     }
     map.getSource('waiting').setData({ type: 'FeatureCollection', features: waitFeatures });
@@ -776,16 +807,46 @@ function renderTrains() {
         `${activeCount} trains<br>${Math.round(totalRiders).toLocaleString()} riders`;
 }
 
-// update tooltip from precise computed positions
+// update all tooltips (hover + locked) with live data
 map.on('render', () => {
-    if (!hoveredTrain) return;
-    const pos = trainPositions.get(hoveredTrain.ti);
-    if (pos) {
-        tooltip.setLngLat(pos);
-    } else {
-        lockedTrain = null;
-        hoveredTrain = null;
-        tooltip.remove();
+    // update hover tooltip
+    if (hoverType === 'train' && hoverTrain) {
+        const pos = trainPositions.get(hoverTrain.ti);
+        if (pos) {
+            const train = data.trains[hoverTrain.ti];
+            hoverTooltip.setLngLat(pos);
+            hoverTooltip.setHTML(trainTooltipHTML({ route: train.route, color: ROUTE_COLORS[train.route] || train.color, riders: pos[2] }));
+        } else {
+            hoverTrain = null;
+            hoverType = null;
+            hoverTooltip.remove();
+        }
+    } else if (hoverType === 'station' && hoverStation) {
+        const waiting = Math.round(getStationWaiting(hoverStation.si));
+        if (waiting > 0) {
+            hoverTooltip.setHTML(stationTooltipHTML(hoverStation.si, waiting));
+        }
+    }
+
+    // update locked tooltips
+    for (let i = lockedTooltips.length - 1; i >= 0; i--) {
+        const lt = lockedTooltips[i];
+        if (lt.type === 'train') {
+            const pos = trainPositions.get(lt.ti);
+            if (pos) {
+                const train = data.trains[lt.ti];
+                lt.popup.setLngLat(pos);
+                lt.popup.setHTML(trainTooltipHTML({ route: train.route, color: ROUTE_COLORS[train.route] || train.color, riders: pos[2] }));
+            } else {
+                lt.popup.remove();
+                lockedTooltips.splice(i, 1);
+            }
+        } else if (lt.type === 'station') {
+            const waiting = Math.round(getStationWaiting(lt.si));
+            if (waiting > 0) {
+                lt.popup.setHTML(stationTooltipHTML(lt.si, waiting));
+            }
+        }
     }
 });
 
@@ -825,15 +886,20 @@ document.addEventListener('keydown', (e) => {
 
 
 // --- Tooltip ---
-const tooltip = new maplibregl.Popup({
-    closeButton: false,
-    closeOnClick: false,
-    className: 'train-tooltip',
-    offset: 12,
-});
+function makePopup() {
+    return new maplibregl.Popup({
+        closeButton: false,
+        closeOnClick: false,
+        className: 'train-tooltip',
+        offset: 12,
+    });
+}
 
-let hoveredTrain = null;
-let lockedTrain = null; // clicked train stays locked until clicking elsewhere
+const hoverTooltip = makePopup();
+let hoverTrain = null;   // { ti }
+let hoverStation = null;  // { lngLat }
+let hoverType = null;     // 'train' | 'station' | null
+const lockedTooltips = []; // [{ type, popup, ti?, lngLat? }]
 
 const DARK_TEXT_ROUTES = new Set(['N', 'Q', 'R', 'W']);
 const EXPRESS_ROUTES = new Set(['7X', '6X', 'FX']);
@@ -853,63 +919,82 @@ function trainTooltipHTML(p) {
     return `${routeIconHTML(p.route)}<span style="color:${p.color};white-space:nowrap">${p.riders}&nbsp;riders</span>`;
 }
 
+function stationTooltipHTML(si, riders) {
+    const station = data.waiting[si];
+    const routes = station.routes || [];
+    const icons = routes.map(r => routeIconHTML(r)).join('');
+    const n = routes.length;
+    const cols = n <= 3 ? n : n === 4 ? 2 : 3;
+    const iconsWrap = icons ? `<span class="route-icons" style="grid-template-columns:repeat(${cols},20px)">${icons}</span>` : '';
+    const nameLabel = station.name ? `<b style="white-space:nowrap">${station.name}</b>` : '';
+    return `${nameLabel}${iconsWrap}<span style="white-space:nowrap">${riders}&nbsp;waiting</span>`;
+}
+
+function clearAllLocked() {
+    for (const lt of lockedTooltips) lt.popup.remove();
+    lockedTooltips.length = 0;
+}
+
 map.on('mousemove', 'trains-layer', (e) => {
     map.getCanvas().style.cursor = 'pointer';
-    if (lockedTrain) return;
     const p = e.features[0].properties;
     const coords = e.features[0].geometry.coordinates;
-    hoveredTrain = { ti: p.ti, coords };
-    tooltip.setLngLat(coords)
+    hoverTrain = { ti: p.ti };
+    hoverType = 'train';
+    hoverTooltip.setLngLat(coords)
         .setHTML(trainTooltipHTML(p))
         .addTo(map);
 });
 map.on('mouseleave', 'trains-layer', () => {
     map.getCanvas().style.cursor = '';
-    if (lockedTrain) return;
-    hoveredTrain = null;
-    tooltip.remove();
+    if (hoverType === 'train') {
+        hoverTrain = null;
+        hoverType = null;
+        hoverTooltip.remove();
+    }
 });
 
 map.on('click', 'trains-layer', (e) => {
     const p = e.features[0].properties;
     const coords = e.features[0].geometry.coordinates;
-    lockedTrain = { ti: p.ti };
-    hoveredTrain = { ti: p.ti, coords };
-    tooltip.setLngLat(coords)
-        .setHTML(trainTooltipHTML(p))
-        .addTo(map);
-});
-
-map.on('click', (e) => {
-    if (!lockedTrain) return;
-    // check if this click hit a train — if so, the layer click handler fires first
-    const features = map.queryRenderedFeatures(e.point, { layers: ['trains-layer'] });
-    if (features.length > 0) return;
-    lockedTrain = null;
-    hoveredTrain = null;
-    tooltip.remove();
+    const popup = makePopup();
+    popup.setLngLat(coords).setHTML(trainTooltipHTML(p)).addTo(map);
+    lockedTooltips.push({ type: 'train', popup, ti: p.ti });
 });
 
 map.on('mousemove', 'waiting-layer', (e) => {
-    if (lockedTrain || hoveredTrain) return;
+    if (hoverType === 'train') return;
     map.getCanvas().style.cursor = 'pointer';
     const p = e.features[0].properties;
     const coords = e.features[0].geometry.coordinates;
-    const routes = JSON.parse(p.routes || '[]');
-    const icons = routes.map(r => routeIconHTML(r)).join('');
-    const n = routes.length;
-    const cols = n <= 3 ? n : n === 4 ? 2 : 3;
-    const iconsWrap = icons ? `<span class="route-icons" style="grid-template-columns:repeat(${cols},20px)">${icons}</span>` : '';
-    const nameLabel = p.name ? `<b style="white-space:nowrap">${p.name}</b>` : '';
-    const label = `${nameLabel}${iconsWrap}<span style="white-space:nowrap">${p.riders}&nbsp;waiting</span>`;
-    tooltip.setLngLat(coords)
-        .setHTML(label)
+    hoverStation = { si: p.si, lngLat: coords };
+    hoverType = 'station';
+    hoverTooltip.setLngLat(coords)
+        .setHTML(stationTooltipHTML(p.si, p.riders))
         .addTo(map);
 });
 map.on('mouseleave', 'waiting-layer', () => {
     map.getCanvas().style.cursor = '';
-    if (lockedTrain) return;
-    tooltip.remove();
+    if (hoverType === 'station') {
+        hoverStation = null;
+        hoverType = null;
+        hoverTooltip.remove();
+    }
+});
+
+map.on('click', 'waiting-layer', (e) => {
+    const p = e.features[0].properties;
+    const coords = e.features[0].geometry.coordinates;
+    const popup = makePopup();
+    popup.setLngLat(coords).setHTML(stationTooltipHTML(p.si, p.riders)).addTo(map);
+    lockedTooltips.push({ type: 'station', popup, si: p.si });
+});
+
+map.on('click', (e) => {
+    if (lockedTooltips.length === 0) return;
+    const features = map.queryRenderedFeatures(e.point, { layers: ['trains-layer', 'waiting-layer'] });
+    if (features.length > 0) return;
+    clearAllLocked();
 });
 
 // --- Info panel ---
