@@ -404,7 +404,7 @@ map.on('load', () => {
 });
 
 let trainIndex = null; // sorted by startTime for binary-search scan
-let trainDrawOrder = null; // per-train draw order (startTime + random tiebreak)
+let trainDrawOrder = null; // per-train random draw order
 
 function preprocessData() {
     // pre-compute start/end times and sort trains for efficient scanning
@@ -421,8 +421,8 @@ function preprocessData() {
     entries.sort((a, b) => a.startTime - b.startTime);
     trainIndex = entries;
 
-    // stable draw order: first departure time + random tiebreak (no route bias)
-    trainDrawOrder = data.trains.map(train => train.timeline[0][0] + Math.random());
+    // stable random draw order (no route bias)
+    trainDrawOrder = data.trains.map(() => Math.random());
 
     // filter walks to >= 20 riders
     if (data.transfer_walks) {
@@ -951,7 +951,7 @@ function routeIconHTML(route) {
 }
 
 function trainTooltipHTML(p) {
-    return `${routeIconHTML(p.route)}<span style="color:${p.color};white-space:nowrap">${p.riders}&nbsp;riders</span>`;
+    return `${routeIconHTML(p.route)}<span style="color:#fff;white-space:nowrap">${p.riders}&nbsp;riders</span>`;
 }
 
 function stationTooltipHTML(si, riders) {
