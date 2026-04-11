@@ -67,18 +67,23 @@ body { background: #0a0a0a; color: #eee; font-family: 'Nunito', sans-serif; over
 #hide-waiting-cb {
     accent-color: #6889a8;
 }
+#speed-group {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    flex-shrink: 0;
+}
 #speed-buttons {
     display: flex;
     gap: 4px;
-    flex-shrink: 0;
 }
 #speed-buttons button {
     background: none;
     border: 1px solid #555;
     color: #ccc;
     border-radius: 4px;
-    width: 32px;
-    height: 32px;
+    width: 30px;
+    height: 30px;
     padding: 0;
     cursor: pointer;
     font-size: 13px;
@@ -90,6 +95,25 @@ body { background: #0a0a0a; color: #eee; font-family: 'Nunito', sans-serif; over
 }
 #speed-buttons button:hover { border-color: #6889a8; color: #eee; }
 #speed-buttons button.active { border-color: #6889a8; color: #6889a8; }
+#speed-expand-btn {
+    font-size: 13px;
+}
+#speed-panel {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+#speed-panel.hidden { display: none; }
+#speed-slider {
+    width: 90px;
+    accent-color: #6889a8;
+}
+#speed-slider-label {
+    font-size: 11px;
+    color: #ccc;
+    flex-shrink: 0;
+    font-variant-numeric: tabular-nums;
+}
 #stats-group {
     display: flex;
     align-items: center;
@@ -303,11 +327,17 @@ body { background: #0a0a0a; color: #eee; font-family: 'Nunito', sans-serif; over
 </div>
 
 <div id="controls" style="display:none;">
-    <div id="speed-buttons">
-        <button data-speed="0"><svg width="10" height="12" viewBox="0 0 10 12"><rect x="0" y="0" width="3" height="12" fill="currentColor"/><rect x="7" y="0" width="3" height="12" fill="currentColor"/></svg></button>
-        <button data-speed="1">1x</button>
-        <button data-speed="2" class="active">2x</button>
-        <button data-speed="4">4x</button>
+    <div id="speed-group">
+        <div id="speed-buttons">
+            <button data-speed="0"><svg width="10" height="12" viewBox="0 0 10 12"><rect x="0" y="0" width="3" height="12" fill="currentColor"/><rect x="7" y="0" width="3" height="12" fill="currentColor"/></svg></button>
+            <button data-speed="1">1x</button>
+            <button data-speed="2" class="active">2x</button>
+            <button id="speed-expand-btn" title="Custom speed">&#9881;</button>
+        </div>
+        <div id="speed-panel" class="hidden">
+            <input type="range" id="speed-slider" min="0" max="20" value="2" step="0.5">
+            <span id="speed-slider-label">2x</span>
+        </div>
     </div>
     <input type="range" id="time-slider" min="0" max="1439" value="390" step="1">
     <div id="time-label">6:30am</div>
@@ -944,13 +974,28 @@ function setSpeed(s) {
     speedMultiplier = s;
     if (s > 0) lastSpeed = s;
     resetAnchor();
-    document.querySelectorAll('#speed-buttons button').forEach(btn => {
+    document.querySelectorAll('#speed-buttons button[data-speed]').forEach(btn => {
         btn.classList.toggle('active', Number(btn.dataset.speed) === s);
     });
+    const sl = document.getElementById('speed-slider');
+    const lb = document.getElementById('speed-slider-label');
+    if (sl) { sl.value = s; lb.textContent = (s % 1 === 0 ? s : s.toFixed(1)) + 'x'; }
 }
 
-document.querySelectorAll('#speed-buttons button').forEach(btn => {
+document.querySelectorAll('#speed-buttons button[data-speed]').forEach(btn => {
     btn.addEventListener('click', () => setSpeed(Number(btn.dataset.speed)));
+});
+
+const speedPanel = document.getElementById('speed-panel');
+const speedSlider = document.getElementById('speed-slider');
+const speedSliderLabel = document.getElementById('speed-slider-label');
+document.getElementById('speed-expand-btn').addEventListener('click', () => {
+    speedPanel.classList.toggle('hidden');
+});
+speedSlider.addEventListener('input', () => {
+    const v = parseFloat(speedSlider.value);
+    speedSliderLabel.textContent = v % 1 === 0 ? v + 'x' : v.toFixed(1) + 'x';
+    setSpeed(v);
 });
 
 document.addEventListener('keydown', (e) => {
