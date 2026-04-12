@@ -7,11 +7,9 @@ permalink: /projects/
 {% include img-preview.html %}
 
 - maps
-    - city maps
-        - [nyc subway stations by population in catchment area](/assets/nycvoronoi.png)
-            - [+ regional rail stations](/assets/maps/nycarea.png) ([smaller image](/assets/maps/nycarea.jpg) here)
-        - [nyc street trips heat map](/assets/nystreets.png)
-        - [nyc bus lines by ridership](/assets/bus.png)
+    - interactive 
+        - <a href="/ancestrydots" data-thumb="/assets/thumbs/ancestrydots.png">ancestry dot map</a>
+        - <a href="/nycriders" data-thumb="/assets/thumbs/nycriders.png">nyc riders</a>
     - equal population maps
         - [asia in regions of 1 million people](/assets/maps/asia1meng.png) (in progress)
             - [with local language labels](/assets/maps/asia1mloc.png)
@@ -20,9 +18,11 @@ permalink: /projects/
         - [south america in regions of 1 million people](/assets/maps/sa1m.png) 
         - [the world in regions of 10 million people](/assets/world10mfull.png)
         - [fantasy world metro map](/assets/worldtrain.png)
-    - interactive 
-        - <a href="/ancestrydots" data-thumb="/assets/thumbs/ancestrydots.png">ancestry dot map</a>
-        - <a href="/nycriders" data-thumb="/assets/thumbs/nycriders.png">nyc riders</a>
+    - city maps
+        - [nyc subway stations by population in catchment area](/assets/nycvoronoi.png)
+            - [+ regional rail stations](/assets/maps/nycarea.png) ([smaller image](/assets/maps/nycarea.jpg) here)
+        - [nyc street trips heat map](/assets/nystreets.png)
+        - [nyc bus lines by ridership](/assets/bus.png)
     - (if you'd like to support my map making, you can donate [here](https://ko-fi.com/anitamaps)!)<br><br>
 - games
     - <a href="/circles" data-thumb="/assets/thumbs/citycircles.png">city circles quiz</a>

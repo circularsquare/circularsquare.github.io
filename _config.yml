@@ -34,8 +34,8 @@ plugins:
 
 header_pages:
   - pages/home.md
-  - pages/anita/anita.md
   - pages/projects/projects.md
+  - pages/anita/anita.md
   - pages/thoughts/thoughts.md
   - pages/friends/friends.md
   - pages/places/places.md
