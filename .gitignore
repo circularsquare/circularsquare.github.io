@@ -3,6 +3,7 @@ _site
 .jekyll-cache
 .jekyll-metadata
 vendor
+_config_dev.yml
 
 # Large files served from R2
 *.pmtiles
