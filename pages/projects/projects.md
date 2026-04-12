@@ -22,7 +22,7 @@ permalink: /projects/
         - [fantasy world metro map](/assets/worldtrain.png)
     - interactive 
         - <a href="/ancestrydots" data-thumb="/assets/thumbs/ancestrydots.png">ancestry dot map</a>
-        - <a href="/nycriders">nyc riders</a>
+        - <a href="/nycriders" data-thumb="/assets/thumbs/nycriders.png">nyc riders</a>
     - (if you'd like to support my map making, you can donate [here](https://ko-fi.com/anitamaps)!)<br><br>
 - games
     - <a href="/circles" data-thumb="/assets/thumbs/citycircles.png">city circles quiz</a>
