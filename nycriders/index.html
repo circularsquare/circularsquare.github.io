@@ -590,6 +590,7 @@ function setupTrainLayer() {
         id: 'walks-layer',
         type: 'circle',
         source: 'walks',
+        layout: { visibility: showWalks ? 'visible' : 'none' },
         paint: {
             'circle-radius': ['get', 'radius'],
             'circle-color': '#cbcbcb',
@@ -602,6 +603,7 @@ function setupTrainLayer() {
         id: 'waiting-layer',
         type: 'circle',
         source: 'waiting',
+        layout: { visibility: showWaiting ? 'visible' : 'none' },
         paint: {
             'circle-radius': ['get', 'radius'],
             'circle-color': '#cbcbcb',
@@ -648,6 +650,7 @@ function resetAnchor() {
 
 let lastRenderWall = 0;
 const RENDER_INTERVAL = 32; // ~30fps cap for setData calls
+let tooltipDirty = false; // set when trains re-rendered or mouse moved
 
 function startAnimation() {
     resetAnchor();
@@ -788,11 +791,16 @@ function renderTrains() {
         const useWrap = ii >= tLo;
         const effSim = useWrap ? simTime + 86400 : simTime;
 
-        // find current timeline segment
-        let idx = 0;
-        for (let i = 1; i < tl.length; i++) {
-            if (tl[i][0] >= effSim) { idx = i - 1; break; }
-            if (i === tl.length - 1) idx = i;
+        // find current timeline segment (binary search on tl[i][0])
+        let idx;
+        {
+            let lo = 0, hi = tl.length - 1;
+            while (lo < hi) {
+                const mid = (lo + hi + 1) >> 1;
+                if (tl[mid][0] <= effSim) lo = mid;
+                else hi = mid - 1;
+            }
+            idx = lo;
         }
 
         let lat, lon, riders;
@@ -890,6 +898,7 @@ function renderTrains() {
     }
 
     map.getSource('trains').setData({ type: 'FeatureCollection', features });
+    tooltipDirty = true;
 
     // render transfer waiting bubbles (per-station, with smooth transitions)
     if (showWaiting) {
@@ -903,7 +912,7 @@ function renderTrains() {
             waitFeatures.push({
                 type: 'Feature',
                 geometry: { type: 'Point', coordinates: [station.lon, station.lat] },
-                properties: { radius, riders: Math.round(waiting), name: station.name || '', routes: JSON.stringify(station.routes || []), si },
+                properties: { radius, si },
             });
         }
         map.getSource('waiting').setData({ type: 'FeatureCollection', features: waitFeatures });
@@ -960,6 +969,11 @@ function renderTrains() {
 
 // update all tooltips (hover + locked) with live data
 map.on('render', () => {
+    // Skip if nothing relevant changed. Tooltips need updates only when trains
+    // re-rendered (positions moved) or the mouse moved. Pan/zoom fires 'render'
+    // too but popups track LngLat automatically.
+    if (!tooltipDirty) return;
+    tooltipDirty = false;
     // re-query what's under the cursor so tooltips update as trains move
     if (lastMousePoint) {
         const trainFeats = map.queryRenderedFeatures(lastMousePoint, { layers: ['trains-layer'] });
@@ -1036,8 +1050,15 @@ dotSlider.addEventListener('input', () => {
     dotScale = parseInt(dotSlider.value) / 100;
 });
 
-let showWaiting = true;
-let showWalks = true;
+// default stations/walks off on narrow screens — they're the heaviest layers
+// and mobile GPUs struggle with hundreds of extra circles
+const isMobile = window.innerWidth <= 560;
+let showWaiting = !isMobile;
+let showWalks = !isMobile;
+if (isMobile) {
+    document.getElementById('toggle-waiting-cb').checked = false;
+    document.getElementById('toggle-walks-cb').checked = false;
+}
 document.getElementById('toggle-waiting-cb').addEventListener('change', (e) => {
     showWaiting = e.target.checked;
     map.setLayoutProperty('waiting-layer', 'visibility', showWaiting ? 'visible' : 'none');
@@ -1143,8 +1164,8 @@ function clearAllLocked() {
     lockedTooltips.length = 0;
 }
 
-map.on('mousemove', (e) => { lastMousePoint = e.point; });
-map.on('mouseout', () => { lastMousePoint = null; });
+map.on('mousemove', (e) => { lastMousePoint = e.point; tooltipDirty = true; });
+map.on('mouseout', () => { lastMousePoint = null; tooltipDirty = true; });
 
 map.on('mousemove', 'trains-layer', (e) => {
     map.getCanvas().style.cursor = 'pointer';
@@ -1183,7 +1204,7 @@ map.on('mousemove', 'waiting-layer', (e) => {
     hoverStation = { si: p.si, lngLat: coords };
     hoverType = 'station';
     hoverTooltip.setLngLat(coords)
-        .setHTML(stationTooltipHTML(p.si, p.riders))
+        .setHTML(stationTooltipHTML(p.si, Math.round(getStationWaiting(p.si))))
         .addTo(map);
 });
 map.on('mouseleave', 'waiting-layer', () => {
@@ -1200,7 +1221,7 @@ map.on('click', 'waiting-layer', (e) => {
     const p = e.features[0].properties;
     const coords = e.features[0].geometry.coordinates;
     const popup = makePopup();
-    popup.setLngLat(coords).setHTML(stationTooltipHTML(p.si, p.riders)).addTo(map);
+    popup.setLngLat(coords).setHTML(stationTooltipHTML(p.si, Math.round(getStationWaiting(p.si)))).addTo(map);
     lockedTooltips.push({ type: 'station', popup, si: p.si });
 });
 

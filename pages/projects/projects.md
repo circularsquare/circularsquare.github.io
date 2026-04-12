@@ -24,11 +24,13 @@ permalink: /projects/
         - [nyc street trips heat map](/assets/nystreets.png)
         - [nyc bus lines by ridership](/assets/bus.png)
     - (if you'd like to support my map making, you can donate [here](https://ko-fi.com/anitamaps)!)<br><br>
+
 - games
     - <a href="/circles" data-thumb="/assets/thumbs/citycircles.png">city circles quiz</a>
     - <a href="/assets/guessthecity.html" data-thumb="/assets/thumbs/guessthecity.png">guess the city</a>
-    - [bluebs](https://circularsquare.github.io/bluebs/)  
-    - [shonei](/shonei/)
+    - [bluebs](https://circularsquare.github.io/bluebs/)
+    - [shonei](/shonei/) 
+  <br><br>
 
 - [this site](site/)
 - [photos](/photos/)
