@@ -1,7 +1,7 @@
 ---
 layout: page
 title: elements
-permalink: /thoughts/elements/
+permalink: /lists/elements/
 ---
 
 this is my attempt at recollecting the first list i ever wrote, when i was about 8. these are not actually elements in any sense. rather, they are sort of like pokemon. each "element" is a small wisp like entity that lives in a ball, with a distinct personality. i used to have all these balls and could summon up these elements and talk to them, though in practice i only really talked to a few. this was probablys inspired by games like doodle god and pokemon and avatar the last airbender. the original list was about 250 elements long. at the time i hadn't realized that you could nest lists.

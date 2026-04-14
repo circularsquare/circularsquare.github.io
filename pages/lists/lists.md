@@ -12,6 +12,8 @@ most of this website is lists, but this is a list of them.
 - [streets](streets/)
 - [websites](/websites/)
 - [bubble tea](bubbletea/)
+- [elements](elements/)
+- [maps](maps/)
 
 - [friends](/friends/)
 - [places](/places/)
