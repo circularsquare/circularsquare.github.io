@@ -19,7 +19,9 @@ body { background: #0a0a0a; color: #eee; font-family: 'Nunito', sans-serif; over
     flex-direction: column;
     gap: 6px;
     z-index: 9999;
+    pointer-events: none;
 }
+#controls-wrap > * { pointer-events: auto; }
 #controls {
     background: rgba(10,10,10,0.85);
     border: 1px solid #333;
@@ -155,6 +157,24 @@ body { background: #0a0a0a; color: #eee; font-family: 'Nunito', sans-serif; over
     #speed-buttons button:hover { border-color: #6889a8; color: #eee; }
 }
 #speed-buttons button.active { border-color: #6889a8; color: #6889a8; }
+#ridership-toggle-btn {
+    background: none;
+    border: 1px solid #555;
+    color: #ccc;
+    border-radius: 4px;
+    width: 30px;
+    height: 30px;
+    padding: 0;
+    cursor: pointer;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+@media (hover: hover) {
+    #ridership-toggle-btn:hover { border-color: #6889a8; color: #eee; }
+}
+#ridership-toggle-btn.active { border-color: #6889a8; color: #6889a8; }
 #speed-expand-btn {
     font-size: 13px;
     margin-right: 5px;
@@ -164,7 +184,7 @@ body { background: #0a0a0a; color: #eee; font-family: 'Nunito', sans-serif; over
     color: #ccc;
     flex-shrink: 0;
     font-variant-numeric: tabular-nums;
-    min-width: 27px;
+    min-width: 55px;
     text-align: right;
     margin-left: -6px;
 }
@@ -347,6 +367,100 @@ body { background: #0a0a0a; color: #eee; font-family: 'Nunito', sans-serif; over
     text-shadow: 0 1px 3px #000;
     pointer-events: none;
 }
+#ridership-tooltip {
+    position: fixed;
+    z-index: 10000;
+    background: rgba(10,10,10,0.9);
+    color: #eee;
+    padding: 6px 10px;
+    border-radius: 4px;
+    font-size: 13px;
+    font-family: 'Nunito', sans-serif;
+    border: 1px solid #444;
+    pointer-events: none;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+}
+#ridership-tooltip.hidden { display: none; }
+#ridership-tooltip .route-icon {
+    width: 20px;
+    height: 20px;
+    font-size: 12px;
+}
+.ridership-row { cursor: default; }
+#ridership-panel {
+    background: rgba(10,10,10,0.85);
+    border: 1px solid #333;
+    border-radius: 8px;
+    padding: 10px 12px;
+    max-height: calc(100vh - 120px);
+    overflow-y: auto;
+    width: 260px;
+    max-width: calc(100vw - 24px);
+    color: #ccc;
+    align-self: flex-end;
+}
+#ridership-panel.hidden { display: none; }
+.ridership-title {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #888;
+    margin-bottom: 8px;
+}
+.ridership-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    height: 18px;
+    margin-bottom: 3px;
+}
+.ridership-row .route-icon {
+    width: 16px;
+    height: 16px;
+    font-size: 10px;
+    flex-shrink: 0;
+}
+.bar-container {
+    position: relative;
+    flex: 1;
+    height: 10px;
+    background: #1a1a1a;
+    border-radius: 2px;
+    overflow: hidden;
+}
+.bar-cumulative {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 0;
+}
+.bar-current {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 0;
+}
+.bar-num {
+    font-size: 10px;
+    color: #aaa;
+    font-variant-numeric: tabular-nums;
+    min-width: 36px;
+    text-align: right;
+    flex-shrink: 0;
+}
+@media (max-width: 560px) {
+    #ridership-panel {
+        padding: 8px 9px;
+        max-height: 45vh;
+        max-width: 50vw;
+    }
+}
 </style>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700&display=swap" />
 <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" />
@@ -385,11 +499,12 @@ body { background: #0a0a0a; color: #eee; font-family: 'Nunito', sans-serif; over
         <input type="range" id="time-slider" min="0" max="1439" value="420" step="1">
         <div id="time-label">7:00am</div>
         <div id="train-count"></div>
+        <button id="ridership-toggle-btn" title="Ridership by line"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="4" width="12" height="3" rx="1"/><rect x="3" y="11" width="18" height="3" rx="1"/><rect x="3" y="18" width="8" height="3" rx="1"/></svg></button>
     </div>
     <div id="settings-panel" class="hidden">
         <div class="settings-row" id="speed-slider-row">
             <span class="settings-label">time speed</span>
-            <input type="range" id="speed-slider" min="0" max="20" value="2" step="0.1">
+            <input type="range" id="speed-slider" min="0" max="18" value="10" step="1">
             <span id="speed-slider-label">2x</span>
         </div>
         <div class="settings-row">
@@ -403,7 +518,9 @@ body { background: #0a0a0a; color: #eee; font-family: 'Nunito', sans-serif; over
             </div>
         </div>
     </div>
+    <div id="ridership-panel" class="hidden"></div>
 </div>
+<div id="ridership-tooltip" class="hidden"></div>
 
 <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
 <script>
@@ -439,34 +556,34 @@ const map = new maplibregl.Map({
 
 // per-route color overrides (HSL-adjusted from GTFS defaults)
 const ROUTE_COLORS = {
-    'A': '#0087d4', // greener 10, lighten 0.01
+    'A': '#007dc5', // greener 10, darken 0.02
     'C': '#0064d4', // lighten 0.01
     'E': '#084bdf', // purpler 10, lighten 0.06
-    'B': '#f88300', // yellower 5, lighten 0.02
-    'D': '#f07000', // yellower 1, lighten 0.01
+    'B': '#f87700', // yellower 3, lighten 0.02
+    'D': '#f06a00', // lighten 0.01
     'F': '#f55700', // redder 5, lighten 0.02
     'FX': '#f55700', // F express
-    'M': '#eb5500', // redder 5
+    'M': '#e15100', // redder 5, darken 0.02
     '4': '#00b33c', // yellower 12, lighten 0.05
     '5': '#00b360', // lighten 0.05
-    '1': '#df3441', // red group
+    '1': '#de2b39', // red group, darken 0.02
     '2': '#df4134', // yellower 10, lighten 0.05
     '3': '#e0383a', // yellower 5, lighten 0.07
     '7': '#bb42bd', // purple, local, lighten 0.02
     '7X': '#ba4fc2', // bluer 3, lighten 0.07
-    'N': '#f7cd35', // hue+4, lighten 0.03
-    'Q': '#f7c135', // lighten 0.03
-    'W': '#f4c721', // hue+4, darken 0.02
-    'R': '#f6ba21', // darken 0.01
+    'N': '#f7d92b', // hue+7, lighten 0.01
+    'Q': '#f7be2b', // lighten 0.01
+    'W': '#f3d417', // hue+7, darken 0.04
+    'R': '#f6b717', // darken 0.03
     'J': '#7f582e', // brown group
     'Z': '#734a29', // darken 0.07
     '6': '#008f4d', // darken 0.02
     '6X': '#008f4d', // 6 express
     'G': '#6cbe45', // official MTA green (GTFS has dull #799534)
     'L': '#818a91', // lighten 0.02
-    'GS': '#818a91', // 42 St Shuttle
-    'FS': '#818a91', // Franklin Ave Shuttle
-    'H': '#818a91', // Rockaway Park Shuttle
+    'GS': '#787981', // 42 St Shuttle, darken 0.03
+    'FS': '#787981', // Franklin Ave Shuttle, darken 0.03
+    'H': '#787981', // Rockaway Park Shuttle, darken 0.03
     'SI': '#000000', // no OD data
 };
 
@@ -493,6 +610,7 @@ map.on('load', () => {
             document.getElementById('controls-wrap').style.display = 'flex';
             drawSubwayLines();
             setupTrainLayer();
+            buildRidershipPanel();
             startAnimation();
         })
         .catch(e => {
@@ -502,6 +620,16 @@ map.on('load', () => {
 
 let trainIndex = null; // sorted by startTime for binary-search scan
 let trainDrawOrder = null; // per-train random draw order
+
+const BASE_ROUTE = { '6X': '6', '7X': '7', 'FX': 'F' };
+const RIDERSHIP_ROUTES = ['1','2','3','4','5','6','7','A','C','E','B','D','F','M','N','Q','R','W','G','J','Z','L','GS','FS','H'];
+let cumulativeByRoute = {}; // route -> { times: Float32Array, cums: Float32Array }
+let maxDailyRiders = 0;
+const ridershipRows = {}; // route -> { cumBar, curBar, num, row }
+let latestCurrentByRoute = {};
+let hoveredRidershipRoute = null;
+let ridershipPanelEl = null;
+let ridershipPanelOpen = false;
 
 function preprocessData() {
     // pre-compute start/end times and sort trains for efficient scanning
@@ -531,6 +659,151 @@ function preprocessData() {
     if (data.dest_walks) {
         data.dest_walks = data.dest_walks.filter(w => w[6] >= 10);
     }
+
+    computeRidership();
+}
+
+function computeRidership() {
+    // For each route, build a cumulative boardings timeline.
+    // Boardings at station i are approximated as max(0, riders[i] - riders[i-1])
+    // from the train timeline. This undercounts when alightings and boardings
+    // happen simultaneously, but suffices for a relative per-line visual.
+    const eventsByRoute = {};
+    for (const r of RIDERSHIP_ROUTES) eventsByRoute[r] = [];
+
+    for (const train of data.trains) {
+        const route = BASE_ROUTE[train.route] || train.route;
+        if (!(route in eventsByRoute)) continue;
+        const tl = train.timeline;
+        let prev = 0;
+        for (let i = 0; i < tl.length; i++) {
+            const entry = tl[i];
+            if (entry.length < 4) continue;
+            const riders = entry[3];
+            // exact boardings if build.py emitted them (entry[4]), else fall back
+            // to net-delta estimate (undercounts simultaneous board+alight)
+            const boardings = entry.length >= 5 ? entry[4] : Math.max(0, riders - prev);
+            if (boardings > 0) eventsByRoute[route].push([entry[0], boardings]);
+            prev = riders;
+        }
+    }
+
+    maxDailyRiders = 0;
+    cumulativeByRoute = {};
+    for (const route of RIDERSHIP_ROUTES) {
+        const events = eventsByRoute[route];
+        events.sort((a, b) => a[0] - b[0]);
+        const times = new Float32Array(events.length);
+        const cums = new Float32Array(events.length);
+        let sum = 0;
+        for (let i = 0; i < events.length; i++) {
+            sum += events[i][1];
+            times[i] = events[i][0];
+            cums[i] = sum;
+        }
+        cumulativeByRoute[route] = { times, cums };
+        if (sum > maxDailyRiders) maxDailyRiders = sum;
+    }
+}
+
+function cumulativeAt(route, time) {
+    const d = cumulativeByRoute[route];
+    if (!d || d.times.length === 0) return 0;
+    let lo = 0, hi = d.times.length - 1, idx = -1;
+    while (lo <= hi) {
+        const mid = (lo + hi) >> 1;
+        if (d.times[mid] <= time) { idx = mid; lo = mid + 1; }
+        else hi = mid - 1;
+    }
+    if (idx < 0) {
+        const t1 = d.times[0], c1 = d.cums[0];
+        const t0 = Math.max(0, t1 - 60);
+        if (time <= t0) return 0;
+        return c1 * (time - t0) / (t1 - t0);
+    }
+    if (idx >= d.times.length - 1) return d.cums[idx];
+    const t0 = d.times[idx], t1 = d.times[idx + 1];
+    if (t1 <= t0) return d.cums[idx + 1];
+    const f = (time - t0) / (t1 - t0);
+    return d.cums[idx] + f * (d.cums[idx + 1] - d.cums[idx]);
+}
+
+function buildRidershipPanel() {
+    const panel = document.getElementById('ridership-panel');
+    ridershipPanelEl = panel;
+    panel.innerHTML = '';
+    const title = document.createElement('div');
+    title.className = 'ridership-title';
+    title.textContent = 'simulation ridership by line';
+    panel.appendChild(title);
+    for (const route of RIDERSHIP_ROUTES) {
+        const row = document.createElement('div');
+        row.className = 'ridership-row';
+
+        const iconWrap = document.createElement('span');
+        iconWrap.innerHTML = routeIconHTML(route);
+        row.appendChild(iconWrap.firstChild);
+
+        const barCont = document.createElement('div');
+        barCont.className = 'bar-container';
+        const color = ROUTE_COLORS[route] || '#999';
+        const cumBar = document.createElement('div');
+        cumBar.className = 'bar-cumulative';
+        cumBar.style.background = hexToRgba(color, 0.6);
+        const curBar = document.createElement('div');
+        curBar.className = 'bar-current';
+        curBar.style.background = color;
+        barCont.appendChild(cumBar);
+        barCont.appendChild(curBar);
+        row.appendChild(barCont);
+
+        const num = document.createElement('div');
+        num.className = 'bar-num';
+        row.appendChild(num);
+
+        row.addEventListener('mouseenter', () => {
+            hoveredRidershipRoute = route;
+            const tip = document.getElementById('ridership-tooltip');
+            const rect = row.getBoundingClientRect();
+            tip.style.top = (rect.top + rect.height / 2) + 'px';
+            tip.style.right = (window.innerWidth - rect.left + 8) + 'px';
+            tip.style.left = 'auto';
+            tip.style.transform = 'translateY(-50%)';
+            updateRidershipTooltip();
+            tip.classList.remove('hidden');
+        });
+        row.addEventListener('mouseleave', () => {
+            if (hoveredRidershipRoute === route) {
+                hoveredRidershipRoute = null;
+                document.getElementById('ridership-tooltip').classList.add('hidden');
+            }
+        });
+
+        panel.appendChild(row);
+        ridershipRows[route] = { cumBar, curBar, num, row };
+    }
+}
+
+function updateRidershipTooltip() {
+    if (!hoveredRidershipRoute) return;
+    const tip = document.getElementById('ridership-tooltip');
+    const cur = Math.round(latestCurrentByRoute[hoveredRidershipRoute] || 0);
+    tip.innerHTML = `<span>${cur.toLocaleString()} riders on the</span>${routeIconHTML(hoveredRidershipRoute)}`;
+}
+
+function updateRidershipPanel(currentByRoute) {
+    latestCurrentByRoute = currentByRoute;
+    if (!ridershipPanelOpen || !maxDailyRiders) return;
+    for (const route of RIDERSHIP_ROUTES) {
+        const r = ridershipRows[route];
+        if (!r) continue;
+        const cum = cumulativeAt(route, simTime);
+        const cur = currentByRoute[route] || 0;
+        r.cumBar.style.width = (cum / maxDailyRiders * 100) + '%';
+        r.curBar.style.width = (cur / maxDailyRiders * 100) + '%';
+        r.num.textContent = Math.round(cum).toLocaleString();
+    }
+    if (hoveredRidershipRoute) updateRidershipTooltip();
 }
 
 
@@ -709,6 +982,12 @@ function darkenHex(hex, factor) {
     const b = Math.round(parseInt(hex.slice(5, 7), 16) * factor);
     return `#${r.toString(16).padStart(2,'0')}${g.toString(16).padStart(2,'0')}${b.toString(16).padStart(2,'0')}`;
 }
+function hexToRgba(hex, a) {
+    const r = parseInt(hex.slice(1, 3), 16);
+    const g = parseInt(hex.slice(3, 5), 16);
+    const b = parseInt(hex.slice(5, 7), 16);
+    return `rgba(${r},${g},${b},${a})`;
+}
 function lightenHex(hex, factor) {
     const r = parseInt(hex.slice(1, 3), 16);
     const g = parseInt(hex.slice(3, 5), 16);
@@ -745,6 +1024,8 @@ function renderTrains() {
     const features = [];
     let activeCount = 0;
     let totalRiders = 0;
+    const currentByRoute = ridershipPanelOpen ? {} : null;
+    if (currentByRoute) for (const r of RIDERSHIP_ROUTES) currentByRoute[r] = 0;
     // zoom in 4x (2 zoom levels) → bubbles 2x bigger on screen
     const zoomScale = Math.pow(2, (map.getZoom() - BASE_ZOOM) / 2);
 
@@ -876,6 +1157,10 @@ function renderTrains() {
 
         activeCount++;
         totalRiders += riders;
+        if (currentByRoute) {
+            const baseR = BASE_ROUTE[train.route] || train.route;
+            if (baseR in currentByRoute) currentByRoute[baseR] += riders;
+        }
 
         const radius = bubbleRadius(riders) * zoomScale * dotScale;
         const ridersRound = Math.round(riders);
@@ -965,6 +1250,8 @@ function renderTrains() {
 
     document.getElementById('train-count').innerHTML =
         `${activeCount} trains<br>${Math.round(totalRiders).toLocaleString()} riders`;
+
+    if (currentByRoute) updateRidershipPanel(currentByRoute);
 }
 
 // update all tooltips (hover + locked) with live data
@@ -976,8 +1263,8 @@ map.on('render', () => {
     tooltipDirty = false;
     // re-query what's under the cursor so tooltips update as trains move
     if (lastMousePoint) {
-        const trainFeats = map.queryRenderedFeatures(lastMousePoint, { layers: ['trains-layer'] });
-        const waitFeats = map.queryRenderedFeatures(lastMousePoint, { layers: ['waiting-layer'] });
+        const trainFeats = map.getLayer('trains-layer') ? map.queryRenderedFeatures(lastMousePoint, { layers: ['trains-layer'] }) : [];
+        const waitFeats = map.getLayer('waiting-layer') ? map.queryRenderedFeatures(lastMousePoint, { layers: ['waiting-layer'] }) : [];
         if (trainFeats.length > 0) {
             const p = trainFeats[0].properties;
             const coords = trainFeats[0].geometry.coordinates;
@@ -1069,6 +1356,28 @@ document.getElementById('toggle-walks-cb').addEventListener('change', (e) => {
     map.setLayoutProperty('walks-layer', 'visibility', showWalks ? 'visible' : 'none');
     if (!showWalks) map.getSource('walks').setData(emptyGeoJSON);
 });
+const ridershipToggleBtn = document.getElementById('ridership-toggle-btn');
+ridershipToggleBtn.addEventListener('mousedown', (e) => e.preventDefault());
+ridershipToggleBtn.addEventListener('click', () => {
+    const panel = document.getElementById('ridership-panel');
+    panel.classList.toggle('hidden');
+    ridershipPanelOpen = !panel.classList.contains('hidden');
+    ridershipToggleBtn.classList.toggle('active', ridershipPanelOpen);
+});
+
+const SPEED_STOPS = [0, 1/60, 0.05, 0.1, 0.2, 0.3, 0.5, 0.7, 1, 1.5, 2, 3, 5, 7, 10, 15, 20, 30, 50];
+function speedLabel(s) {
+    if (Math.abs(s - 1/60) < 1e-9) return 'real time';
+    return s + 'x';
+}
+function speedStopIndex(s) {
+    let best = 0, bestDiff = Infinity;
+    for (let i = 0; i < SPEED_STOPS.length; i++) {
+        const d = Math.abs(SPEED_STOPS[i] - s);
+        if (d < bestDiff) { bestDiff = d; best = i; }
+    }
+    return best;
+}
 
 function setSpeed(s) {
     speedMultiplier = s;
@@ -1079,7 +1388,7 @@ function setSpeed(s) {
     });
     const sl = document.getElementById('speed-slider');
     const lb = document.getElementById('speed-slider-label');
-    if (sl) { sl.value = s; lb.textContent = (s % 1 === 0 ? s : s.toFixed(1)) + 'x'; }
+    if (sl) { sl.value = speedStopIndex(s); lb.textContent = speedLabel(s); }
 }
 
 document.querySelectorAll('#speed-buttons button[data-speed]').forEach(btn => {
@@ -1100,8 +1409,8 @@ speedExpandBtn.addEventListener('click', () => {
     speedExpandBtn.classList.toggle('active', !settingsPanel.classList.contains('hidden'));
 });
 speedSlider.addEventListener('input', () => {
-    const v = parseFloat(speedSlider.value);
-    speedSliderLabel.textContent = v % 1 === 0 ? v + 'x' : v.toFixed(1) + 'x';
+    const v = SPEED_STOPS[parseInt(speedSlider.value)];
+    speedSliderLabel.textContent = speedLabel(v);
     setSpeed(v);
 });
 
@@ -1132,12 +1441,13 @@ let lastMousePoint = null; // pixel coords for re-querying under cursor
 
 const DARK_TEXT_ROUTES = new Set(['N', 'Q', 'R', 'W']);
 const EXPRESS_ROUTES = new Set(['7X', '6X', 'FX']);
+const ROUTE_LABELS = { 'H': 'RS' };
 
 function routeIconHTML(route) {
     const color = ROUTE_COLORS[route] || '#999';
     const textColor = DARK_TEXT_ROUTES.has(route) ? '#000' : '#fff';
     const isExpress = EXPRESS_ROUTES.has(route);
-    const label = route.replace('X', '');
+    const label = ROUTE_LABELS[route] || route.replace('X', '');
     if (isExpress) {
         return `<span class="route-icon express" style="background:${color};color:${textColor}"><span>${label}</span></span>`;
     }
@@ -1227,8 +1537,10 @@ map.on('click', 'waiting-layer', (e) => {
 
 map.on('click', (e) => {
     clickedTrain = false;
+    document.getElementById('info-panel').classList.add('hidden');
     if (lockedTooltips.length === 0) return;
-    const features = map.queryRenderedFeatures(e.point, { layers: ['trains-layer', 'waiting-layer'] });
+    const layers = ['trains-layer', 'waiting-layer'].filter(l => map.getLayer(l));
+    const features = layers.length ? map.queryRenderedFeatures(e.point, { layers }) : [];
     if (features.length > 0) return;
     clearAllLocked();
 });
