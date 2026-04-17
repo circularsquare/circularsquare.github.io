@@ -20,6 +20,16 @@
     .maplibregl-popup-tip { display: none; }
     body { background: #111; }
     #map { width: 100vw; height: 100vh; }
+    #loading {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 18px;
+      color: #ccc;
+      z-index: 20;
+      pointer-events: none;
+    }
     .maplibregl-canvas-container.maplibregl-interactive { cursor: default; }
     .maplibregl-canvas-container.maplibregl-interactive:active { cursor: default; }
 
@@ -501,6 +511,7 @@
 </head>
 <body>
   <div id="map"></div>
+  <div id="loading">loading data...</div>
   <div id="bottom-left">
     <span id="map-title" style="cursor:pointer" title="About this map">Ancestry Dot Map</span>
     <button id="info-btn" title="About this map"><span style="font-family:'Times New Roman',Times,serif;font-style:italic;font-size:19px;font-weight:bold;margin-left:-1px">i</span></button>
@@ -961,6 +972,7 @@
       style: 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json',
       center: [-73.93, 40.724],
       zoom: 11,
+      minZoom: 5,
     });
 
     map.on('load', () => {
@@ -995,10 +1007,32 @@
       });
 
       // Build legend from pre-computed legend.json (label counts + colors)
+      let legendReady = false, tilesReady = false;
+      const maybeHideLoading = () => {
+        if (legendReady && tilesReady) {
+          const el = document.getElementById('loading');
+          if (el) el.style.display = 'none';
+        }
+      };
+      map.on('sourcedata', e => {
+        if (e.sourceId === 'dots' && e.isSourceLoaded) {
+          tilesReady = true;
+          maybeHideLoading();
+        }
+      });
       fetch('data/processed/legend.json')
         .then(r => r.json())
-        .then(items => { buildLegend(items, map); window._setGameItems(items); })
-        .catch(err => console.warn('Could not load legend.json:', err));
+        .then(items => {
+          buildLegend(items, map);
+          window._setGameItems(items);
+          legendReady = true;
+          maybeHideLoading();
+        })
+        .catch(err => {
+          console.warn('Could not load legend.json:', err);
+          const el = document.getElementById('loading');
+          if (el) el.textContent = 'Failed to load data';
+        });
     });
 
     // Show info panel by default on wide screens (starts hidden in HTML)
