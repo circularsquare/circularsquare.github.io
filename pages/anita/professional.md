@@ -4,7 +4,7 @@ title: professional
 permalink: /anita/professional/
 ---
 
-i am currently working on a game. in my free time, i mostly make maps. check out my [projects](/projects/)!
+i am currently working on a [game](/shonei/). in my free time, i mostly make maps. check out my [projects](/projects/)!
 
 from 2022-2026 i was a trader.
 
