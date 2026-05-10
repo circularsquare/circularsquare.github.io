@@ -7,3 +7,4 @@ _config_dev.yml
 
 # Large files served from R2
 *.pmtiles
+londonriders/trains.json

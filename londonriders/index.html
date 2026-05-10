@@ -1,0 +1,3109 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>london riders</title>
+<link rel="icon" type="image/png" href="favicon.png">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { background: #0a0a0a; color: #eee; font-family: 'Nunito', sans-serif; overflow: hidden; }
+#map { width: 100vw; height: 100vh; }
+
+/* maplibre's default grab/grabbing is a system-white hand that's hard to see
+   on the light basemap — fall back to the standard arrow.
+   !important because maplibre-gl.css loads after this block. */
+.maplibregl-canvas-container.maplibregl-interactive,
+.maplibregl-canvas-container.maplibregl-interactive:active {
+    cursor: default !important;
+}
+
+#controls-wrap {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    max-width: calc(100vw - 24px);
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    z-index: 9999;
+    pointer-events: none;
+}
+#controls-wrap > * { pointer-events: auto; }
+#controls {
+    background: rgba(10,10,10,0.85);
+    border: 1px solid #333;
+    border-radius: 8px;
+    padding: 8px 10px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 5px 10px;
+}
+#settings-panel,
+#static-settings-panel {
+    background: rgba(10,10,10,0.85);
+    border: 1px solid #333;
+    border-radius: 8px;
+    padding: 10px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    width: 72%;
+    align-self: flex-end;
+}
+#settings-panel.hidden,
+#static-settings-panel.hidden { display: none; }
+.settings-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+#speed-slider-row #speed-slider {
+    flex: 1;
+    min-width: 0;
+    accent-color: #6889a8;
+}
+.settings-label {
+    font-size: 12px;
+    color: #ccc;
+    flex-shrink: 0;
+}
+#time-label {
+    font-size: 20px;
+    font-weight: 700;
+    color: #ccc;
+    width: 81px;
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+}
+#time-slider {
+    min-width: 180px;
+    height: 14px;
+    -webkit-appearance: none;
+    appearance: none;
+    background: transparent;
+    cursor: pointer;
+}
+#time-slider::-webkit-slider-runnable-track {
+    height: 3px;
+    background: #555;
+    border-radius: 2px;
+}
+#time-slider::-moz-range-track {
+    height: 3px;
+    background: #555;
+    border-radius: 2px;
+}
+#time-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 3px;
+    height: 14px;
+    background: #cfd9e4;
+    border: none;
+    border-radius: 1px;
+    margin-top: -5.5px;
+}
+#time-slider::-moz-range-thumb {
+    width: 3px;
+    height: 14px;
+    background: #cfd9e4;
+    border: none;
+    border-radius: 1px;
+}
+#dot-size-wrap {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex: 1;
+    min-width: 0;
+}
+#dot-slider,
+#static-dot-slider {
+    flex: 1;
+    min-width: 0;
+    accent-color: #6889a8;
+}
+#toggle-wrap {
+    display: flex;
+    gap: 10px;
+    font-size: 12px;
+    color: #ccc;
+    flex-shrink: 0;
+    line-height: 1.2;
+}
+#toggle-wrap label {
+    cursor: pointer;
+    white-space: nowrap;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+#toggle-wrap input {
+    accent-color: #6889a8;
+    margin: 0;
+}
+#speed-buttons,
+#static-speed-buttons {
+    display: flex;
+    gap: 4px;
+    flex-shrink: 0;
+}
+#speed-buttons button,
+#static-speed-buttons button {
+    background: none;
+    border: 1px solid #555;
+    color: #ccc;
+    border-radius: 4px;
+    width: 30px;
+    height: 30px;
+    padding: 0;
+    cursor: pointer;
+    font-size: 13px;
+    font-family: inherit;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+}
+@media (hover: hover) {
+    #speed-buttons button:hover,
+    #static-speed-buttons button:hover { border-color: #6889a8; color: #eee; }
+}
+#speed-buttons button.active,
+#static-speed-buttons button.active { border-color: #6889a8; color: #6889a8; }
+#ridership-toggle-btn,
+#static-toggle-btn {
+    background: none;
+    border: 1px solid #555;
+    color: #ccc;
+    border-radius: 4px;
+    width: 30px;
+    height: 30px;
+    padding: 0;
+    cursor: pointer;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+@media (hover: hover) {
+    #ridership-toggle-btn:hover,
+    #static-toggle-btn:hover { border-color: #6889a8; color: #eee; }
+}
+#ridership-toggle-btn.active,
+#static-toggle-btn.active { border-color: #6889a8; color: #6889a8; }
+#speed-expand-btn,
+#static-settings-btn {
+    font-size: 13px;
+    margin-right: 5px;
+}
+#speed-slider-label {
+    font-size: 12px;
+    color: #ccc;
+    flex-shrink: 0;
+    font-variant-numeric: tabular-nums;
+    min-width: 55px;
+    text-align: right;
+    margin-left: -6px;
+}
+#train-count {
+    font-size: 13px;
+    color: #ccc;
+    flex: 0 0 88px;
+    text-align: right;
+    line-height: 1.4;
+    font-variant-numeric: tabular-nums;
+    margin-left: -4px;
+}
+#loading {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 18px;
+    color: #ccc;
+    z-index: 20;
+}
+.train-tooltip .maplibregl-popup-content {
+    background: rgba(10,10,10,0.9);
+    color: #eee;
+    padding: 6px 10px;
+    border-radius: 4px;
+    font-size: 13px;
+    font-family: 'Nunito', sans-serif;
+    border: 1px solid #444;
+    pointer-events: none;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    max-width: none !important;
+    width: max-content;
+}
+.route-icons {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 3px;
+}
+.route-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1px 7px;
+    border-radius: 3px;
+    font-size: 11px;
+    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    font-weight: 700;
+    line-height: 1.35;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+.route-icon.express {
+    width: 17px;
+    height: 17px;
+    font-size: 12px;
+    border-radius: 3px;
+    transform: rotate(45deg);
+    overflow: visible;
+    margin: 1.5px;
+}
+.route-icon.express span {
+    transform: rotate(-45deg) translateY(-0.5px);
+}
+.train-tooltip .maplibregl-popup-tip { display: none; }
+
+#info-btn {
+    position: absolute;
+    bottom: 16px;
+    left: 16px;
+    z-index: 9999;
+    width: 31px;
+    height: 31px;
+    border-radius: 50%;
+    border: none;
+    background: #ddd;
+    color: #111;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+#info-btn:hover { background: #fff; }
+
+#info-panel {
+    position: absolute;
+    bottom: 64px;
+    left: 16px;
+    z-index: 9999;
+    background: rgba(20,20,20,0.758);
+    max-width: min(384px, 100vw - 271px);
+    max-height: calc(100vh - 80px);
+    overflow-y: auto;
+    padding: 11px 13px;
+    border-radius: 8px;
+    font-size: 12px;
+    color: #ccc;
+    line-height: 1.5;
+}
+#info-panel.hidden { display: none; }
+#info-panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 5px;
+}
+#info-panel-title {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #888;
+}
+#info-panel-close {
+    background: none;
+    border: none;
+    color: #888;
+    font-size: 18px;
+    cursor: pointer;
+    padding: 0;
+    line-height: 1;
+}
+#info-panel-close:hover { color: #fff; }
+#info-panel p { margin-bottom: 8px; }
+#info-panel p:last-child { margin-bottom: 0; }
+#info-panel a { color: #89b4fa; }
+
+@media (max-width: 560px) {
+    #controls-wrap {
+        top: 6px;
+        right: 6px;
+    }
+    #controls {
+        padding: 10px 12px;
+        gap: 3px 10px;
+    }
+    #speed-buttons,
+    #static-speed-buttons { order: 0; }
+    #train-count {
+        order: 1;
+        margin-left: auto;
+    }
+    #controls::before {
+        content: '';
+        order: 2;
+        flex-basis: 100%;
+        height: 0;
+    }
+    #time-label {
+        order: 3;
+        font-size: 20px;
+        width: 81px;
+    }
+    #time-slider {
+        order: 4;
+        min-width: 0;
+        flex: 1;
+    }
+    #map-title {
+        display: none;
+    }
+    #info-panel {
+        bottom: 56px;
+        left: 4px;
+        padding: 8px 9px;
+        max-width: calc(100vw - 32px);
+        font-size: 11px;
+    }
+}
+#map-title {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    z-index: 9999;
+    color: #ccc;
+    font-size: 22px;
+    font-weight: bold;
+    letter-spacing: 0.04em;
+    text-shadow: 0 1px 3px #000;
+    pointer-events: none;
+}
+#ridership-tooltip {
+    position: fixed;
+    z-index: 10000;
+    background: rgba(10,10,10,0.9);
+    color: #eee;
+    padding: 6px 10px;
+    border-radius: 4px;
+    font-size: 13px;
+    font-family: 'Nunito', sans-serif;
+    border: 1px solid #444;
+    pointer-events: none;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+}
+#ridership-tooltip.hidden { display: none; }
+#ridership-tooltip .route-icon {
+    font-size: 11px;
+}
+.ridership-row { cursor: default; }
+#ridership-panel {
+    background: rgba(10,10,10,0.85);
+    border: 1px solid #333;
+    border-radius: 8px;
+    padding: 10px 12px;
+    max-height: calc(100vh - 120px);
+    overflow-y: auto;
+    width: 260px;
+    max-width: calc(100vw - 24px);
+    color: #ccc;
+    align-self: flex-end;
+}
+#ridership-panel.hidden { display: none; }
+.ridership-title {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #888;
+    margin-bottom: 8px;
+}
+.ridership-row {
+    display: grid;
+    grid-template-columns: 110px 1fr 36px;
+    align-items: center;
+    column-gap: 6px;
+    height: 18px;
+    margin-bottom: 3px;
+}
+.ridership-row .route-icon {
+    font-size: 9px;
+    padding: 1px 5px;
+    line-height: 1.3;
+    justify-self: start;
+}
+.bar-container {
+    position: relative;
+    flex: 1;
+    height: 10px;
+    background: #1a1a1a;
+    border-radius: 2px;
+    overflow: hidden;
+}
+.bar-cumulative {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 0;
+}
+.bar-current {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 0;
+}
+.bar-num {
+    font-size: 10px;
+    color: #aaa;
+    font-variant-numeric: tabular-nums;
+    min-width: 36px;
+    text-align: right;
+    flex-shrink: 0;
+}
+@media (max-width: 560px) {
+    #ridership-panel {
+        padding: 8px 9px;
+        max-height: 45vh;
+        max-width: 50vw;
+    }
+}
+
+/* static mode drill-down panel */
+#drill-panel {
+    position: absolute;
+    bottom: 16px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 9999;
+    background: rgba(10,10,10,0.92);
+    border: 1px solid #333;
+    border-radius: 8px;
+    padding: 10px 14px;
+    width: min(560px, calc(100vw - 24px));
+    color: #ccc;
+    font-family: inherit;
+    font-size: 12px;
+}
+#drill-panel.hidden { display: none; }
+.drill-close {
+    position: absolute;
+    top: 4px;
+    right: 6px;
+    background: none;
+    border: none;
+    color: #888;
+    cursor: pointer;
+    font-size: 16px;
+    line-height: 1;
+    padding: 4px 6px;
+}
+.drill-close:hover { color: #fff; }
+.drill-header {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+.drill-station-name {
+    color: #eee;
+    font-weight: 700;
+    font-size: 13px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.drill-station-name.right { margin-left: auto; margin-right: 22px; text-align: right; }
+.drill-sep {
+    flex: 1;
+    border-bottom: 1px dashed #444;
+    margin: 0 4px;
+    align-self: center;
+}
+.drill-rows {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    margin-bottom: 4px;
+}
+.drill-row {
+    display: grid;
+    grid-template-columns: 88px 12px 1fr 52px;
+    align-items: center;
+    column-gap: 6px;
+    height: 31px;
+}
+.drill-row .route-icon {
+    font-size: 9px;
+    padding: 1px 5px;
+    line-height: 1.3;
+    justify-self: start;
+    cursor: pointer;
+    transition: transform 80ms;
+    max-width: 88px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+@media (hover: hover) {
+    .drill-row .route-icon:hover { transform: scale(1.06); }
+}
+#drill-panel.line-mode {
+    width: auto;
+    min-width: min(360px, calc(100vw - 24px));
+    max-width: calc(100vw - 24px);
+}
+#drill-panel.line-mode .drill-header {
+    align-items: center;
+    padding-right: 22px;
+}
+#drill-panel.line-mode .drill-header .drill-metric-buttons {
+    margin-bottom: 0;
+}
+.drill-line-wrap {
+    overflow-x: auto;
+    overflow-y: visible;
+    margin-top: 4px;
+}
+.drill-line-wrap svg { display: block; }
+.drill-line-wrap text { font-family: inherit; }
+.drill-line-wrap line { transition: opacity 80ms; }
+.drill-line-wrap line[data-tip]:hover { opacity: 0.6; }
+.drill-arrow {
+    color: #ccc;
+    font-size: 15px;
+    font-weight: 700;
+    text-align: center;
+    line-height: 1;
+}
+.drill-chart {
+    height: 31px;
+    display: block;
+    width: 100%;
+}
+.drill-chart rect { transition: opacity 80ms; }
+.drill-chart rect:hover { opacity: 1 !important; }
+.drill-axis {
+    position: relative;
+    margin-left: 112px;   /* 88px icon col + 6px gap + 12px arrow + 6px gap */
+    margin-right: 58px;   /* 52px total col + the row's 6px gap */
+    height: 14px;
+    color: #777;
+    font-size: 10px;
+    font-variant-numeric: tabular-nums;
+}
+.drill-axis span {
+    position: absolute;
+    transform: translateX(-50%);
+    top: 1px;
+}
+.drill-row-total {
+    flex-shrink: 0;
+    text-align: right;
+    color: #ccc;
+    font-size: 11px;
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+}
+.drill-metric-buttons {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-bottom: 6px;
+}
+.drill-total {
+    margin-left: auto;
+    color: #aaa;
+    font-size: 11px;
+    font-variant-numeric: tabular-nums;
+}
+.station-metric-btn,
+.drill-toggle-btn {
+    background: none;
+    border: 1px solid #555;
+    color: #ccc;
+    border-radius: 3px;
+    height: 22px;
+    padding: 0 8px;
+    cursor: pointer;
+    font-size: 11px;
+    font-family: inherit;
+    line-height: 1;
+}
+@media (hover: hover) {
+    .station-metric-btn:hover,
+    .drill-toggle-btn:hover { border-color: #6889a8; color: #eee; }
+}
+.station-metric-btn.active,
+.drill-toggle-btn.active { border-color: #6889a8; color: #6889a8; }
+#drill-tooltip {
+    position: fixed;
+    z-index: 10001;
+    background: rgba(10,10,10,0.92);
+    border: 1px solid #444;
+    border-radius: 4px;
+    color: #eee;
+    padding: 4px 8px;
+    font-size: 11px;
+    font-family: inherit;
+    pointer-events: none;
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+}
+#drill-tooltip.hidden { display: none; }
+@media (max-width: 560px) {
+    #drill-panel { font-size: 11px; bottom: 8px; }
+    .drill-row { grid-template-columns: 70px 10px 1fr 48px; }
+    .drill-row .route-icon { max-width: 70px; }
+    .drill-axis { margin-left: 92px; margin-right: 54px; }
+}
+</style>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700&display=swap" />
+<link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" />
+</head>
+<body>
+<span id="map-title">londonriders</span>
+<div id="map"></div>
+<div id="loading">loading data...</div>
+
+<button id="info-btn" title="About this map">
+    <span style="font-family:'Times New Roman',Times,serif;font-style:italic;font-size:19px;font-weight:bold;margin-left:-1px">i</span>
+</button>
+
+<div id="info-panel" class="hidden">
+    <div id="info-panel-header">
+        <span id="info-panel-title">About</span>
+        <button id="info-panel-close" title="Close">&#10005;</button>
+    </div>
+    <p>This map shows TfL rail / London Tube trips taken on a typical weekday. The size of a train's bubble is proportional to the number of riders on it.</p>
+    <p>TfL publishes the <a href="https://crowding.data.tfl.gov.uk/" target="_blank">NUMBAT dataset</a>: 15-minute origin-destination ridership across the whole rail network, plus per-link train frequencies. Trains are derived from timetables. </p>
+    <p>Station coordinates from NUMBAT; track centrelines from <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> contributors (ODbL). Map built with <a href="https://maplibre.org" target="_blank">MapLibre GL</a> and <a href="https://carto.com/basemaps" target="_blank">CARTO</a> basemap tiles.</p>
+    <p>Made by <a href="https://anita.garden/projects" target="_blank">anita</a>!</p>
+</div>
+
+<div id="controls-wrap" style="display:none;">
+    <div id="controls">
+        <div id="speed-buttons">
+            <button id="speed-expand-btn" title="Settings"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915"/><circle cx="12" cy="12" r="3"/></svg></button>
+            <button data-speed="0"><svg width="10" height="12" viewBox="0 0 10 12"><rect x="0" y="0" width="3" height="12" fill="currentColor"/><rect x="7" y="0" width="3" height="12" fill="currentColor"/></svg></button>
+            <button data-speed="1" class="active">1x</button>
+            <button data-speed="2">2x</button>
+        </div>
+        <div id="static-speed-buttons" style="display:none;">
+            <button id="static-settings-btn" title="Settings"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915"/><circle cx="12" cy="12" r="3"/></svg></button>
+            <button data-static-speed="0" class="active"><svg width="10" height="12" viewBox="0 0 10 12"><rect x="0" y="0" width="3" height="12" fill="currentColor"/><rect x="7" y="0" width="3" height="12" fill="currentColor"/></svg></button>
+            <button data-static-speed="1">1x</button>
+        </div>
+        <input type="range" id="time-slider" min="300" max="1500" value="420" step="1">
+        <div id="time-label">7:00am</div>
+        <div id="train-count"></div>
+        <button id="static-toggle-btn" title="Daily totals (static mode)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="3" y1="14" x2="14" y2="3"/><line x1="7" y1="18" x2="18" y2="7"/><line x1="11" y1="22" x2="22" y2="11"/></svg></button>
+        <button id="ridership-toggle-btn" title="Ridership by line"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="4" width="12" height="3" rx="1"/><rect x="3" y="11" width="18" height="3" rx="1"/><rect x="3" y="18" width="8" height="3" rx="1"/></svg></button>
+    </div>
+    <div id="settings-panel" class="hidden">
+        <div class="settings-row" id="speed-slider-row">
+            <span class="settings-label">time speed</span>
+            <input type="range" id="speed-slider" min="0" max="18" value="10" step="1">
+            <span id="speed-slider-label">2x</span>
+        </div>
+        <div class="settings-row">
+            <div id="dot-size-wrap">
+                <span class="settings-label">dot size</span>
+                <input type="range" id="dot-slider" min="40" max="200" value="120" step="1" title="Dot size">
+            </div>
+            <div id="toggle-wrap">
+                <label title="Show riders waiting at stations"><input type="checkbox" id="toggle-waiting-cb" checked>stations</label>
+                <label title="Show riders walking to/from/between stations"><input type="checkbox" id="toggle-walks-cb">walks</label>
+            </div>
+        </div>
+    </div>
+    <div id="static-settings-panel" class="hidden">
+        <div class="settings-row">
+            <span class="settings-label">dot size</span>
+            <input type="range" id="static-dot-slider" min="40" max="200" value="100" step="1" title="Dot size">
+        </div>
+    </div>
+    <div id="ridership-panel" class="hidden"></div>
+</div>
+<div id="ridership-tooltip" class="hidden"></div>
+<div id="drill-panel" class="hidden"></div>
+<div id="drill-tooltip" class="hidden"></div>
+
+<script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+<script>
+const map = new maplibregl.Map({
+    container: 'map',
+    style: {
+        version: 8,
+        sources: {
+            'carto-dark': {
+                type: 'raster',
+                tiles: ['https://a.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png'],
+                tileSize: 256,
+                attribution: '&copy; OSM &copy; CARTO',
+            }
+        },
+        layers: [{
+            id: 'carto-dark-layer',
+            type: 'raster',
+            source: 'carto-dark',
+            minzoom: 0,
+            maxzoom: 18,
+        }],
+    },
+    center: [-0.118, 51.515],
+    zoom: 10.6,
+    minZoom: 9,
+    attributionControl: true,
+});
+
+// TfL line palette (NUMBAT line codes -> official TfL hex)
+const ROUTE_COLORS = {
+    'BAK': '#B36305',  // Bakerloo
+    'CEN': '#E32017',  // Central
+    'CIR': '#FFD300',  // Circle
+    'DIS': '#00782A',  // District
+    'HAM': '#F3A9BB',  // Hammersmith & City + Circle (NUMBAT merged)
+    'JUB': '#A0A5A9',  // Jubilee
+    'MET': '#9B0056',  // Metropolitan
+    'NOR': '#505050',  // Northern (lightened grey — pure #000 is invisible on dark map)
+    'PIC': '#003688',  // Piccadilly
+    'VIC': '#0098D4',  // Victoria
+    'WAC': '#95CDBA',  // Waterloo & City
+    'DLR': '#00A4A7',  // DLR
+    'EZL': '#6950A1',  // Elizabeth line
+    // Overground line colours — TfL's per-line palette (Nov 2023 rebrand),
+    // pulled ~70% back toward TfL official from the earlier heavy desaturation.
+    'NLL': '#1A7ABB',  // Mildmay (blue, vs Victoria cyan)
+    'ELL': '#DA3C38',  // Windrush (red, vs Central red)
+    'WEL': '#EFA420',  // Lioness (orange, vs Circle yellow)
+    'GOB': '#77B948',  // Suffragette (green, vs District deep green)
+    'URL': '#5D6167',  // Liberty (slate, vs Jubilee silver)
+    'WAG': '#975890',  // Weaver (purple, vs Metropolitan magenta)
+    'TRM': '#84B817',  // Trams
+};
+
+// Per-line train capacity (seats + standing, TfL's 4-5/m² standing density).
+// Sources: ianvisits 2024 capacity table, Wikipedia per-stock pages.
+//   Bakerloo  1972 Stock 7-car  = 851
+//   Central   1992 Stock 8-car  = 1047
+//   Circle    S7 Stock   7-car  = 1045
+//   District  S7 Stock   7-car  = 1045
+//   H&C       S7 Stock   7-car  = 1045 (HAM CSV merges H&C+Circle)
+//   Jubilee   1996 Stock 7-car  = 964
+//   Metropolitan S8 Stock 8-car = 1176
+//   Northern  1995 Stock 6-car  = 752
+//   Piccadilly 1973 Stock 6-car = 798
+//   Victoria  2009 Stock 8-car  = 986
+//   W&C       1992 Stock 4-car  = 506
+//   DLR       B07 3-car         ~ 280
+//   Elizabeth Class 345 9-car   = 1500
+//   Mildmay (NLL/WLL)  Class 378 5-car = 1178
+//   Windrush (ELL)     Class 378 5-car = 1178
+//   Lioness/Suffragette/Weaver/Liberty Class 710 4-car = 678
+const ROUTE_CAPACITY = {
+    'BAK': 851,  'CEN': 1047, 'CIR': 1045, 'DIS': 1045, 'HAM': 1045,
+    'JUB': 964,  'MET': 1176, 'NOR': 752,  'PIC': 798,  'VIC': 986,
+    'WAC': 506,  'DLR': 280,  'EZL': 1500,
+    'NLL': 1178, 'ELL': 1178,
+    'WEL': 678,  'GOB': 678,  'URL': 678,  'WAG': 678,
+};
+
+let data = null;
+// Service day: 5am to 1am next morning (20 hours). The 1am-5am window is when
+// the system is closed, so we skip it — the loop wraps from 1am back to 5am.
+const DAY_START = 5 * 3600;     // 18000s = 05:00
+const DAY_END = 25 * 3600;      // 90000s = 01:00 next day
+const DAY_LEN = DAY_END - DAY_START;  // 20h = 72000s
+let simTime = 7 * 3600;
+let speedMultiplier = 1;
+let lastSpeed = 1; // last non-zero speed for spacebar toggle
+let dotScale = 1.2;
+let animFrame = null;
+let anchorWall = 0;   // wall-clock ms when current playback segment started
+let anchorSim = 0;    // simTime at that moment
+const BASE_SIM_SPEED = 60;
+
+const emptyGeoJSON = { type: 'FeatureCollection', features: [] };
+const trainPositions = new Map(); // ti -> [lon, lat, riders] precise coords + riders for tooltip
+
+// trains.json is ~110MB — too big for GitHub Pages (100MB hard limit).
+// Served from Cloudflare R2 in production; loaded locally during dev.
+const isLocalhost = location.hostname === 'localhost' || location.hostname === '127.0.0.1' || location.protocol === 'file:';
+const TRAINS_URL = isLocalhost
+    ? 'trains.json'
+    : 'https://pub-ae551368cea941f39101e13c84d60bde.r2.dev/londonriders/trains.json';
+
+map.on('load', () => {
+    fetch(TRAINS_URL)
+        .then(r => r.json())
+        .then(d => {
+            data = d;
+            preprocessData();
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('controls-wrap').style.display = 'flex';
+            drawSubwayLines();
+            setupTrainLayer();
+            buildRidershipPanel();
+            startAnimation();
+        })
+        .catch(e => {
+            document.getElementById('loading').textContent = 'Failed to load data: ' + e.message;
+        });
+});
+
+let trainIndex = null; // sorted by startTime for binary-search scan
+let trainDrawOrder = null; // per-train random draw order
+
+const BASE_ROUTE = {};
+const RIDERSHIP_ROUTES = ['BAK','CEN','DIS','HAM','JUB','MET','NOR','PIC','VIC','WAC','DLR','EZL','NLL','ELL','WEL','GOB','URL','WAG'];
+let cumulativeByRoute = {}; // route -> { times: Float32Array, cums: Float32Array }
+let maxDailyRiders = 0;
+const ridershipRows = {}; // route -> { cumBar, curBar, num, row }
+let latestCurrentByRoute = {};
+let hoveredRidershipRoute = null;
+let ridershipPanelEl = null;
+let ridershipPanelOpen = false;
+
+function preprocessData() {
+    // pre-compute start/end times and sort trains for efficient scanning
+    const DWELL_PRE = 20;
+    const entries = data.trains.map((train, ti) => {
+        const tl = train.timeline;
+        const startTime = tl[0][0];
+        let lastStationTime = startTime;
+        for (let i = tl.length - 1; i >= 0; i--) {
+            if (tl[i].length >= 4) { lastStationTime = tl[i][0]; break; }
+        }
+        return { ti, startTime, endTime: lastStationTime + DWELL_PRE };
+    });
+    entries.sort((a, b) => a.startTime - b.startTime);
+    trainIndex = entries;
+
+    // stable random draw order (no route bias)
+    trainDrawOrder = data.trains.map(() => Math.random());
+
+    // filter walks to >= 20 riders
+    if (data.transfer_walks) {
+        data.transfer_walks = data.transfer_walks.filter(w => w[6] >= 20);
+    }
+    if (data.origin_walks) {
+        data.origin_walks = data.origin_walks.filter(w => w[6] >= 10);
+    }
+    if (data.dest_walks) {
+        data.dest_walks = data.dest_walks.filter(w => w[6] >= 10);
+    }
+
+    computeRidership();
+}
+
+function computeRidership() {
+    // For each route, build a cumulative boardings timeline.
+    // Boardings at station i are approximated as max(0, riders[i] - riders[i-1])
+    // from the train timeline. This undercounts when alightings and boardings
+    // happen simultaneously, but suffices for a relative per-line visual.
+    const eventsByRoute = {};
+    for (const r of RIDERSHIP_ROUTES) eventsByRoute[r] = [];
+
+    for (const train of data.trains) {
+        const route = BASE_ROUTE[train.route] || train.route;
+        if (!(route in eventsByRoute)) continue;
+        const tl = train.timeline;
+        let prev = 0;
+        for (let i = 0; i < tl.length; i++) {
+            const entry = tl[i];
+            if (entry.length < 4) continue;
+            const riders = entry[3];
+            // exact boardings if build.py emitted them (entry[4]), else fall back
+            // to net-delta estimate (undercounts simultaneous board+alight)
+            const boardings = entry.length >= 5 ? entry[4] : Math.max(0, riders - prev);
+            // Cumulative resets at the service-day boundary (5am), so skip any
+            // overnight boardings before then. Without this the day starts at
+            // a non-zero count and the bars never visibly start fresh.
+            if (boardings > 0 && entry[0] >= DAY_START) {
+                eventsByRoute[route].push([entry[0], boardings]);
+            }
+            prev = riders;
+        }
+    }
+
+    maxDailyRiders = 0;
+    cumulativeByRoute = {};
+    for (const route of RIDERSHIP_ROUTES) {
+        const events = eventsByRoute[route];
+        events.sort((a, b) => a[0] - b[0]);
+        const times = new Float32Array(events.length);
+        const cums = new Float32Array(events.length);
+        let sum = 0;
+        for (let i = 0; i < events.length; i++) {
+            sum += events[i][1];
+            times[i] = events[i][0];
+            cums[i] = sum;
+        }
+        cumulativeByRoute[route] = { times, cums };
+        if (sum > maxDailyRiders) maxDailyRiders = sum;
+    }
+}
+
+function cumulativeAt(route, time) {
+    const d = cumulativeByRoute[route];
+    if (!d || d.times.length === 0) return 0;
+    let lo = 0, hi = d.times.length - 1, idx = -1;
+    while (lo <= hi) {
+        const mid = (lo + hi) >> 1;
+        if (d.times[mid] <= time) { idx = mid; lo = mid + 1; }
+        else hi = mid - 1;
+    }
+    if (idx < 0) {
+        const t1 = d.times[0], c1 = d.cums[0];
+        const t0 = Math.max(0, t1 - 60);
+        if (time <= t0) return 0;
+        return c1 * (time - t0) / (t1 - t0);
+    }
+    if (idx >= d.times.length - 1) return d.cums[idx];
+    const t0 = d.times[idx], t1 = d.times[idx + 1];
+    if (t1 <= t0) return d.cums[idx + 1];
+    const f = (time - t0) / (t1 - t0);
+    return d.cums[idx] + f * (d.cums[idx + 1] - d.cums[idx]);
+}
+
+function buildRidershipPanel() {
+    const panel = document.getElementById('ridership-panel');
+    ridershipPanelEl = panel;
+    panel.innerHTML = '';
+    const title = document.createElement('div');
+    title.className = 'ridership-title';
+    title.textContent = 'simulation ridership by line';
+    panel.appendChild(title);
+    for (const route of RIDERSHIP_ROUTES) {
+        const row = document.createElement('div');
+        row.className = 'ridership-row';
+
+        const iconWrap = document.createElement('span');
+        iconWrap.innerHTML = routeIconHTML(route);
+        row.appendChild(iconWrap.firstChild);
+
+        const barCont = document.createElement('div');
+        barCont.className = 'bar-container';
+        const color = ROUTE_COLORS[route] || '#999';
+        const cumBar = document.createElement('div');
+        cumBar.className = 'bar-cumulative';
+        cumBar.style.background = hexToRgba(color, 0.6);
+        const curBar = document.createElement('div');
+        curBar.className = 'bar-current';
+        curBar.style.background = color;
+        barCont.appendChild(cumBar);
+        barCont.appendChild(curBar);
+        row.appendChild(barCont);
+
+        const num = document.createElement('div');
+        num.className = 'bar-num';
+        row.appendChild(num);
+
+        row.addEventListener('mouseenter', () => {
+            hoveredRidershipRoute = route;
+            const tip = document.getElementById('ridership-tooltip');
+            const rect = row.getBoundingClientRect();
+            tip.style.top = (rect.top + rect.height / 2) + 'px';
+            tip.style.right = (window.innerWidth - rect.left + 8) + 'px';
+            tip.style.left = 'auto';
+            tip.style.transform = 'translateY(-50%)';
+            updateRidershipTooltip();
+            tip.classList.remove('hidden');
+        });
+        row.addEventListener('mouseleave', () => {
+            if (hoveredRidershipRoute === route) {
+                hoveredRidershipRoute = null;
+                document.getElementById('ridership-tooltip').classList.add('hidden');
+            }
+        });
+
+        panel.appendChild(row);
+        ridershipRows[route] = { cumBar, curBar, num, row };
+    }
+}
+
+function updateRidershipTooltip() {
+    if (!hoveredRidershipRoute) return;
+    const tip = document.getElementById('ridership-tooltip');
+    const cur = Math.round(latestCurrentByRoute[hoveredRidershipRoute] || 0);
+    tip.innerHTML = `<span>${cur.toLocaleString()} riders on the</span>${routeIconHTML(hoveredRidershipRoute)}`;
+}
+
+function updateRidershipPanel(currentByRoute) {
+    latestCurrentByRoute = currentByRoute;
+    if (!ridershipPanelOpen || !maxDailyRiders) return;
+    for (const route of RIDERSHIP_ROUTES) {
+        const r = ridershipRows[route];
+        if (!r) continue;
+        const cum = cumulativeAt(route, simTime);
+        const cur = currentByRoute[route] || 0;
+        r.cumBar.style.width = (cum / maxDailyRiders * 100) + '%';
+        r.curBar.style.width = (cur / maxDailyRiders * 100) + '%';
+        r.num.textContent = Math.round(cum).toLocaleString();
+    }
+    if (hoveredRidershipRoute) updateRidershipTooltip();
+}
+
+
+// higher number = drawn on top
+const LINE_PRIORITY = {
+    'TRM': 0,
+    'WAG': 1, 'URL': 1, 'GOB': 1, 'NLL': 1, 'WEL': 1, 'ELL': 1,  // Overground
+    'WAC': 2,
+    'DLR': 3,
+    'HAM': 4, 'CIR': 4,
+    'MET': 5,
+    'BAK': 6,
+    'DIS': 7,
+    'JUB': 8,
+    'PIC': 9,
+    'EZL': 10,
+    'NOR': 11,
+    'VIC': 12,
+    'CEN': 13,
+};
+
+function drawSubwayLines() {
+    // Render link_shapes (the Dijkstra-picked station-to-station polylines) rather
+    // than raw OSM ways. Avoids the parallel-track ghost-line problem where OSM
+    // tags both Up and Down tracks as separate ways: link_shapes only ever covers
+    // the single track Dijkstra picked, which is the one trains actually follow.
+    const linkShapes = data.link_shapes || {};
+    const features = [];
+    for (const key in linkShapes) {
+        const coords = linkShapes[key];
+        if (!coords || coords.length < 2) continue;
+        const lineCode = key.split(':', 1)[0];
+        features.push({
+            type: 'Feature',
+            geometry: {
+                type: 'LineString',
+                coordinates: coords,
+            },
+            properties: {
+                route: lineCode,
+                color: ROUTE_COLORS[lineCode] || (data.line_colors && data.line_colors[lineCode]) || '#888',
+                priority: LINE_PRIORITY[lineCode] ?? 0,
+            },
+        });
+    }
+    features.sort((a, b) => a.properties.priority - b.properties.priority);
+    map.addSource('subway-lines', {
+        type: 'geojson',
+        data: { type: 'FeatureCollection', features },
+    });
+    map.addLayer({
+        id: 'subway-lines-layer',
+        type: 'line',
+        source: 'subway-lines',
+        paint: {
+            'line-color': ['get', 'color'],
+            'line-width': 1.5,
+            'line-opacity': 0.8,
+        },
+    });
+}
+
+function setupTrainLayer() {
+    map.addSource('walks', { type: 'geojson', data: emptyGeoJSON });
+    map.addLayer({
+        id: 'walks-layer',
+        type: 'circle',
+        source: 'walks',
+        layout: { visibility: showWalks ? 'visible' : 'none' },
+        paint: {
+            'circle-radius': ['get', 'radius'],
+            'circle-color': '#cbcbcb',
+            'circle-opacity': ['get', 'opacity'],
+        },
+    });
+
+    map.addSource('waiting', { type: 'geojson', data: emptyGeoJSON });
+    map.addLayer({
+        id: 'waiting-layer',
+        type: 'circle',
+        source: 'waiting',
+        layout: { visibility: showWaiting ? 'visible' : 'none' },
+        paint: {
+            'circle-radius': ['get', 'radius'],
+            'circle-color': '#cbcbcb',
+            'circle-opacity': 0.8,
+        },
+    });
+
+    map.addSource('trains', { type: 'geojson', data: emptyGeoJSON });
+    map.addLayer({
+        id: 'trains-layer',
+        type: 'circle',
+        source: 'trains',
+        layout: {
+            'circle-sort-key': ['get', 'order'],
+        },
+        paint: {
+            'circle-radius': ['get', 'radius'],
+            'circle-color': ['get', 'color'],
+            'circle-opacity': 0.8,
+            'circle-stroke-width': ['get', 'strokeWidth'],
+            'circle-stroke-color': ['get', 'stroke'],
+            'circle-stroke-opacity': 0.8,
+        },
+    });
+
+    // static-mode layers (sit underneath trains; hidden until toggled on)
+    map.addSource('static-highlight', { type: 'geojson', data: emptyGeoJSON });
+    map.addLayer({
+        id: 'static-highlight-layer',
+        type: 'line',
+        source: 'static-highlight',
+        layout: { visibility: 'none', 'line-cap': 'round', 'line-join': 'round' },
+        paint: {
+            'line-color': '#ffffff',
+            'line-width': ['get', 'outline_width'],
+            'line-offset': ['get', 'offset'],
+            'line-opacity': 0.55,
+        },
+    }, 'trains-layer');
+
+    map.addSource('static-segments', { type: 'geojson', data: emptyGeoJSON });
+    map.addLayer({
+        id: 'static-segments-layer',
+        type: 'line',
+        source: 'static-segments',
+        layout: {
+            visibility: 'none',
+            'line-cap': 'round',
+            'line-join': 'round',
+            'line-sort-key': ['get', 'priority'],
+        },
+        paint: {
+            'line-color': ['get', 'color'],
+            'line-width': ['get', 'width'],
+            'line-offset': ['get', 'offset'],
+            'line-opacity': 0.85,
+        },
+    }, 'trains-layer');
+
+    // overlay layer: white at 0.22 over the colored line itself, so highlighted
+    // routes also "lighten" rather than just gaining an outline halo.
+    map.addLayer({
+        id: 'static-highlight-overlay-layer',
+        type: 'line',
+        source: 'static-highlight',
+        layout: { visibility: 'none', 'line-cap': 'round', 'line-join': 'round' },
+        paint: {
+            'line-color': '#ffffff',
+            'line-width': ['get', 'base_width'],
+            'line-offset': ['get', 'offset'],
+            'line-opacity': 0.22,
+        },
+    }, 'trains-layer');
+
+    map.addSource('static-stations', { type: 'geojson', data: emptyGeoJSON });
+    map.addLayer({
+        id: 'static-stations-layer',
+        type: 'circle',
+        source: 'static-stations',
+        layout: { visibility: 'none' },
+        paint: {
+            'circle-radius': ['get', 'radius'],
+            'circle-color': '#cbcbcb',
+            'circle-opacity': 0.85,
+        },
+    }, 'trains-layer');
+}
+
+
+function formatTime(secs) {
+    let h = Math.floor(secs / 3600) % 24;
+    const m = Math.floor((secs % 3600) / 60);
+    const ampm = h < 12 ? 'am' : 'pm';
+    if (h === 0) h = 12;
+    else if (h > 12) h -= 12;
+    return `${h}:${String(m).padStart(2, '0')}${ampm}`;
+}
+
+
+// --- Animation ---
+
+function resetAnchor() {
+    anchorWall = performance.now();
+    anchorSim = simTime;
+}
+
+let lastRenderWall = 0;
+const RENDER_INTERVAL = 32; // ~30fps cap for setData calls
+let tooltipDirty = false; // set when trains re-rendered or mouse moved
+
+function startAnimation() {
+    resetAnchor();
+    animFrame = requestAnimationFrame(tick);
+}
+
+function tick(now) {
+    if (speedMultiplier > 0) {
+        simTime = anchorSim + (now - anchorWall) / 1000 * BASE_SIM_SPEED * speedMultiplier;
+        if (simTime >= DAY_END) simTime -= DAY_LEN;
+        if (simTime < DAY_START) simTime += DAY_LEN;
+        slider.value = Math.floor(simTime / 60);
+    }
+
+    updateTimeLabel();
+
+    if (now - lastRenderWall >= RENDER_INTERVAL) {
+        lastRenderWall = now;
+        renderTrains();
+    }
+
+    animFrame = requestAnimationFrame(tick);
+}
+
+function updateTimeLabel() {
+    document.getElementById('time-label').textContent = formatTime(simTime);
+}
+
+const DWELL = 15; // visual stop at each station (sim seconds)
+const ACCEL = 15; // accel/decel duration (sim seconds)
+
+// quadratic ease-in-out: accel phase capped to half of travel time for short segments
+function easePosition(frac, travelTime) {
+    const a = Math.min(ACCEL / travelTime, 0.5);
+    const denom = 2 * a * (1 - a);
+    if (frac < a) return (frac * frac) / denom;
+    if (frac > 1 - a) { const d = 1 - frac; return 1 - (d * d) / denom; }
+    return a / (2 * (1 - a)) + (frac - a) / (1 - a);
+}
+
+const BASE_ZOOM = 11;
+
+// precompute stroke colors
+const ROUTE_STROKES = {};
+for (const [route, color] of Object.entries(ROUTE_COLORS)) {
+    ROUTE_STROKES[route] = darkenHex(color, 0.75);
+}
+
+function bubbleRadius(count) {
+    return Math.max(1, Math.min(60, Math.sqrt(count) * 0.5));
+}
+
+function darkenHex(hex, factor) {
+    const r = Math.round(parseInt(hex.slice(1, 3), 16) * factor);
+    const g = Math.round(parseInt(hex.slice(3, 5), 16) * factor);
+    const b = Math.round(parseInt(hex.slice(5, 7), 16) * factor);
+    return `#${r.toString(16).padStart(2,'0')}${g.toString(16).padStart(2,'0')}${b.toString(16).padStart(2,'0')}`;
+}
+function hexToRgba(hex, a) {
+    const r = parseInt(hex.slice(1, 3), 16);
+    const g = parseInt(hex.slice(3, 5), 16);
+    const b = parseInt(hex.slice(5, 7), 16);
+    return `rgba(${r},${g},${b},${a})`;
+}
+function lightenHex(hex, factor) {
+    const r = parseInt(hex.slice(1, 3), 16);
+    const g = parseInt(hex.slice(3, 5), 16);
+    const b = parseInt(hex.slice(5, 7), 16);
+    const lr = Math.round(r + (255 - r) * factor);
+    const lg = Math.round(g + (255 - g) * factor);
+    const lb = Math.round(b + (255 - b) * factor);
+    return `#${lr.toString(16).padStart(2,'0')}${lg.toString(16).padStart(2,'0')}${lb.toString(16).padStart(2,'0')}`;
+}
+
+const WAIT_TRANSITION = 10; // sim seconds to smoothly ramp between values
+
+function getStationWaiting(si) {
+    const tl = data.waiting[si].timeline;
+    let lo = 0, hi = tl.length - 1, idx = -1;
+    while (lo <= hi) {
+        const mid = (lo + hi) >> 1;
+        if (tl[mid][0] <= simTime) { idx = mid; lo = mid + 1; }
+        else hi = mid - 1;
+    }
+    if (idx < 0) return 0;
+    let waiting = tl[idx][1];
+    const timeSinceChange = simTime - tl[idx][0];
+    if (timeSinceChange < WAIT_TRANSITION && idx > 0) {
+        const prevWaiting = tl[idx - 1][1];
+        const f = timeSinceChange / WAIT_TRANSITION;
+        waiting = prevWaiting + f * (waiting - prevWaiting);
+    }
+    return waiting;
+}
+
+function renderTrains() {
+    trainPositions.clear();
+    const features = [];
+    let activeCount = 0;
+    let totalRiders = 0;
+    const currentByRoute = ridershipPanelOpen ? {} : null;
+    if (currentByRoute) for (const r of RIDERSHIP_ROUTES) currentByRoute[r] = 0;
+    // zoom in 4x (2 zoom levels) → bubbles 2x bigger on screen
+    const zoomScale = Math.pow(2, (map.getZoom() - BASE_ZOOM) / 2);
+
+    // binary search: find first train in sorted index where startTime <= simTime
+    // (skip trains that haven't started yet)
+    let tLo = 0, tHi = trainIndex.length;
+    while (tLo < tHi) {
+        const mid = (tLo + tHi) >> 1;
+        if (trainIndex[mid].startTime > simTime) tHi = mid;
+        else tLo = mid + 1;
+    }
+
+    // for midnight wrap: also check late-night trains that cross midnight
+    // (endTime >= 86400) by using simTime + 86400 for time comparisons
+    const wrapActive = simTime < 5 * 3600; // GTFS trips can extend past midnight (up to ~28h)
+    let wrapLo = 0;
+    if (wrapActive) {
+        let lo2 = 0, hi2 = trainIndex.length;
+        const simWrap = simTime + 86400;
+        while (lo2 < hi2) {
+            const mid = (lo2 + hi2) >> 1;
+            if (trainIndex[mid].startTime > simWrap) hi2 = mid;
+            else lo2 = mid + 1;
+        }
+        wrapLo = lo2;
+    }
+
+    // scan from 0..tLo (all trains that have started by simTime)
+    // plus late-night wrapping trains from tLo..wrapLo
+    const scanEnd = wrapActive ? wrapLo : tLo;
+    for (let ii = 0; ii < scanEnd; ii++) {
+        const entry = trainIndex[ii];
+        // for trains past tLo, only include if they cross midnight
+        if (ii >= tLo) {
+            if (entry.endTime < 86400) continue; // doesn't cross midnight
+        } else {
+            if (entry.endTime < simTime) continue; // already finished
+        }
+        const ti = entry.ti;
+        const train = data.trains[ti];
+        const tl = train.timeline;
+
+        // use wrapped simTime for late-night trains crossing midnight
+        const useWrap = ii >= tLo;
+        const effSim = useWrap ? simTime + 86400 : simTime;
+
+        // find current timeline segment (binary search on tl[i][0])
+        let idx;
+        {
+            let lo = 0, hi = tl.length - 1;
+            while (lo < hi) {
+                const mid = (lo + hi + 1) >> 1;
+                if (tl[mid][0] <= effSim) lo = mid;
+                else hi = mid - 1;
+            }
+            idx = lo;
+        }
+
+        let lat, lon, riders;
+
+        // find previous station (last 4-element entry at or before idx)
+        let prevStIdx = idx;
+        while (prevStIdx > 0 && tl[prevStIdx].length < 4) prevStIdx--;
+
+        const prevSt = tl[prevStIdx];
+        riders = prevSt.length >= 4 ? prevSt[3] : 0;
+
+        // dwell check at the previous station
+        const nextAfterSt = tl[prevStIdx + 1];
+        const dwell = nextAfterSt ? Math.min(DWELL, nextAfterSt[0] - prevSt[0]) : DWELL;
+        const dwellEnd = prevSt[0] + dwell;
+
+        if (idx === prevStIdx && effSim < dwellEnd) {
+            // dwell phase: stationary, riders transition
+            lat = prevSt[1]; lon = prevSt[2];
+            let prevRiders = 0;
+            for (let j = prevStIdx - 1; j >= 0; j--) {
+                if (tl[j].length >= 4) { prevRiders = tl[j][3]; break; }
+            }
+            const f = dwell > 0 ? (effSim - prevSt[0]) / dwell : 1;
+            riders = prevRiders + f * (riders - prevRiders);
+        } else {
+            // travel phase: eased position along the full station-to-station chain
+
+            // find next station (next 4-element entry after prevStIdx)
+            let nextStIdx = prevStIdx + 1;
+            while (nextStIdx < tl.length && tl[nextStIdx].length < 4) nextStIdx++;
+            if (nextStIdx >= tl.length) nextStIdx = tl.length - 1;
+
+            const stTravelTime = tl[nextStIdx][0] - dwellEnd;
+
+            if (stTravelTime > 0 && effSim >= dwellEnd) {
+                const linearF = Math.min(1, (effSim - dwellEnd) / stTravelTime);
+                const easedF = easePosition(linearF, stTravelTime);
+
+                // cumulative distances along entries from prevStation to nextStation
+                const n = nextStIdx - prevStIdx; // number of segments
+                const dists = [0];
+                for (let k = 1; k <= n; k++) {
+                    const p = tl[prevStIdx + k - 1];
+                    const c = tl[prevStIdx + k];
+                    const d = Math.sqrt((c[1] - p[1]) ** 2 + (c[2] - p[2]) ** 2);
+                    dists.push(dists[k - 1] + d);
+                }
+                const totalDist = dists[n];
+                const targetDist = easedF * totalDist;
+
+                // find which segment of the chain we're in
+                let segK = 0;
+                for (let k = 1; k <= n; k++) {
+                    if (dists[k] >= targetDist) { segK = k - 1; break; }
+                    if (k === n) segK = n - 1;
+                }
+
+                const segStart = tl[prevStIdx + segK];
+                const segEnd = tl[prevStIdx + segK + 1];
+                const segDist = dists[segK + 1] - dists[segK];
+                const segF = segDist > 0 ? (targetDist - dists[segK]) / segDist : 0;
+
+                lat = segStart[1] + segF * (segEnd[1] - segStart[1]);
+                lon = segStart[2] + segF * (segEnd[2] - segStart[2]);
+            } else {
+                // before travel starts (shouldn't normally happen)
+                lat = prevSt[1]; lon = prevSt[2];
+            }
+        }
+
+        if (riders < 0.5) continue;
+
+        activeCount++;
+        totalRiders += riders;
+        if (currentByRoute) {
+            const baseR = BASE_ROUTE[train.route] || train.route;
+            if (baseR in currentByRoute) currentByRoute[baseR] += riders;
+        }
+
+        const radius = bubbleRadius(riders) * zoomScale * dotScale;
+        const ridersRound = Math.round(riders);
+        trainPositions.set(ti, [lon, lat, ridersRound]);
+
+        let color = ROUTE_COLORS[train.route] || train.color;
+        let stroke = ROUTE_STROKES[train.route] || darkenHex(train.color, 0.75);
+        let strokeWidth = 1.5;
+        const cap = ROUTE_CAPACITY[train.route];
+        if (cap && riders > cap) {
+            color = lightenHex(color, 0.2);
+            stroke = '#d01818';
+            strokeWidth = 3;
+        }
+
+        features.push({
+            type: 'Feature',
+            geometry: { type: 'Point', coordinates: [lon, lat] },
+            properties: { radius, color, stroke, strokeWidth, route: train.route, riders: ridersRound, ti, order: trainDrawOrder[ti] },
+        });
+    }
+
+    map.getSource('trains').setData({ type: 'FeatureCollection', features });
+    tooltipDirty = true;
+
+    // render transfer waiting bubbles (per-station, with smooth transitions)
+    if (showWaiting) {
+        const waitFeatures = [];
+        for (let si = 0; si < data.waiting.length; si++) {
+            const station = data.waiting[si];
+            const waiting = getStationWaiting(si);
+            if (waiting < 0.5) continue;
+
+            const radius = bubbleRadius(waiting) * zoomScale * dotScale;
+            waitFeatures.push({
+                type: 'Feature',
+                geometry: { type: 'Point', coordinates: [station.lon, station.lat] },
+                properties: { radius, si },
+            });
+        }
+        map.getSource('waiting').setData({ type: 'FeatureCollection', features: waitFeatures });
+    }
+
+    // render walking bubbles (transfer walks + origin walks + dest walks)
+    // Opacity fades so the far-from-station end is invisible:
+    //  - origin walks: fade in  (invisible at spawn → full opacity at station)
+    //  - dest walks:   fade out (full opacity at station → invisible at despawn)
+    //  - transfer walks: full opacity throughout (both endpoints are stations)
+    const WALK_PEAK_OPACITY = 0.6;
+    const walkFeatures = [];
+    const walkSources = showWalks ? [
+        { walks: data.transfer_walks, fade: 'none' },
+        { walks: data.origin_walks, fade: 'in' },
+        { walks: data.dest_walks, fade: 'out' },
+    ] : [];
+    for (const { walks, fade } of walkSources) {
+        if (!walks) continue;
+        // walks sorted by t0; binary search for first walk that could be active
+        let lo = 0, hi = walks.length;
+        while (lo < hi) {
+            const mid = (lo + hi) >> 1;
+            if (walks[mid][5] < simTime) lo = mid + 1; // t1 < simTime: already finished
+            else hi = mid;
+        }
+        for (let i = lo; i < walks.length; i++) {
+            const w = walks[i];
+            const t0 = w[4], t1 = w[5];
+            if (t0 > simTime) break; // haven't started yet (and all after are later)
+            if (t1 < simTime) continue; // already finished
+            const f = t1 > t0 ? (simTime - t0) / (t1 - t0) : 1;
+            const lon = w[0] + f * (w[2] - w[0]);
+            const lat = w[1] + f * (w[3] - w[1]);
+            const riders = w[6];
+            const radius = bubbleRadius(riders) * zoomScale * dotScale * 0.7;
+            let opacity = WALK_PEAK_OPACITY;
+            if (fade === 'in') opacity *= f;
+            else if (fade === 'out') opacity *= 1 - f;
+            walkFeatures.push({
+                type: 'Feature',
+                geometry: { type: 'Point', coordinates: [lon, lat] },
+                properties: { radius, opacity },
+            });
+        }
+    }
+    if (showWalks) {
+        map.getSource('walks').setData({ type: 'FeatureCollection', features: walkFeatures });
+    }
+
+    document.getElementById('train-count').innerHTML =
+        `${activeCount} trains<br>${Math.round(totalRiders).toLocaleString()} riders`;
+
+    if (currentByRoute) updateRidershipPanel(currentByRoute);
+}
+
+// update all tooltips (hover + locked) with live data
+map.on('render', () => {
+    // Skip if nothing relevant changed. Tooltips need updates only when trains
+    // re-rendered (positions moved) or the mouse moved. Pan/zoom fires 'render'
+    // too but popups track LngLat automatically.
+    if (!tooltipDirty) return;
+    tooltipDirty = false;
+    // re-query what's under the cursor so tooltips update as trains move
+    if (lastMousePoint) {
+        const trainFeats = map.getLayer('trains-layer') ? map.queryRenderedFeatures(lastMousePoint, { layers: ['trains-layer'] }) : [];
+        const waitFeats = map.getLayer('waiting-layer') ? map.queryRenderedFeatures(lastMousePoint, { layers: ['waiting-layer'] }) : [];
+        if (trainFeats.length > 0) {
+            const p = trainFeats[0].properties;
+            const coords = trainFeats[0].geometry.coordinates;
+            if (hoverType !== 'train' || !hoverTrain || hoverTrain.ti !== p.ti) {
+                hoverTrain = { ti: p.ti };
+                hoverType = 'train';
+                map.getCanvas().style.cursor = 'pointer';
+            }
+            hoverTooltip.setLngLat(coords).setHTML(trainTooltipHTML(p)).addTo(map);
+        } else if (waitFeats.length > 0) {
+            const p = waitFeats[0].properties;
+            const coords = waitFeats[0].geometry.coordinates;
+            if (hoverType !== 'station' || !hoverStation || hoverStation.si !== p.si) {
+                hoverStation = { si: p.si, lngLat: coords };
+                hoverType = 'station';
+                map.getCanvas().style.cursor = 'pointer';
+            }
+            hoverTooltip.setLngLat(coords).setHTML(stationTooltipHTML(p.si, Math.round(getStationWaiting(p.si)))).addTo(map);
+        } else if (hoverType) {
+            hoverTrain = null;
+            hoverStation = null;
+            hoverType = null;
+            hoverTooltip.remove();
+            map.getCanvas().style.cursor = '';
+        }
+    } else {
+        // mouse is outside the map — just update positions for locked tooltips
+        if (hoverType) {
+            hoverTrain = null;
+            hoverStation = null;
+            hoverType = null;
+            hoverTooltip.remove();
+            map.getCanvas().style.cursor = '';
+        }
+    }
+
+    // update locked tooltips
+    for (let i = lockedTooltips.length - 1; i >= 0; i--) {
+        const lt = lockedTooltips[i];
+        if (lt.type === 'train') {
+            const pos = trainPositions.get(lt.ti);
+            if (pos) {
+                const train = data.trains[lt.ti];
+                lt.popup.setLngLat(pos);
+                lt.popup.setHTML(trainTooltipHTML({ route: train.route, color: ROUTE_COLORS[train.route] || train.color, riders: pos[2] }));
+            } else {
+                lt.popup.remove();
+                lockedTooltips.splice(i, 1);
+            }
+        } else if (lt.type === 'station') {
+            const waiting = Math.round(getStationWaiting(lt.si));
+            if (waiting > 0) {
+                lt.popup.setHTML(stationTooltipHTML(lt.si, waiting));
+            }
+        }
+    }
+});
+
+
+// --- Static mode (daily aggregated stats) ---
+
+let staticMode = false;
+let staticData = null;        // contents of stats.json (lazy-loaded)
+let staticHourIdx = 0;        // 0 = all-day, 1..24 = hour 0..23
+let speedBeforeStatic = null;
+let staticFetchPromise = null;
+let clickedStatic = false;    // suppresses global-click drill-panel close
+
+const staticToggleBtn = document.getElementById('static-toggle-btn');
+staticToggleBtn.addEventListener('mousedown', (e) => e.preventDefault());
+staticToggleBtn.addEventListener('click', () => setStaticMode(!staticMode));
+
+async function setStaticMode(on) {
+    if (on === staticMode) return;
+    if (on && !staticData) {
+        if (!staticFetchPromise) {
+            staticFetchPromise = fetch('stats.json')
+                .then(r => r.json())
+                .catch(e => { console.error('stats.json failed:', e); return null; });
+        }
+        staticData = await staticFetchPromise;
+        if (!staticData) { staticFetchPromise = null; return; }
+        buildParentIndex();
+    }
+
+    staticMode = on;
+    staticToggleBtn.classList.toggle('active', on);
+
+    const animVis = on ? 'none' : 'visible';
+    map.setLayoutProperty('trains-layer', 'visibility', animVis);
+    if (showWaiting) map.setLayoutProperty('waiting-layer', 'visibility', animVis);
+    if (showWalks) map.setLayoutProperty('walks-layer', 'visibility', animVis);
+    map.setLayoutProperty('subway-lines-layer', 'visibility', on ? 'none' : 'visible');
+    map.setLayoutProperty('static-segments-layer', 'visibility', on ? 'visible' : 'none');
+    map.setLayoutProperty('static-stations-layer', 'visibility', on ? 'visible' : 'none');
+    map.setLayoutProperty('static-highlight-layer', 'visibility', on ? 'visible' : 'none');
+    map.setLayoutProperty('static-highlight-overlay-layer', 'visibility', on ? 'visible' : 'none');
+
+    document.getElementById('speed-buttons').style.display = on ? 'none' : '';
+    document.getElementById('static-speed-buttons').style.display = on ? '' : 'none';
+    document.getElementById('train-count').style.display = on ? 'none' : '';
+    if (on) {
+        // hide the live settings panel so it doesn't sit behind the static one
+        document.getElementById('settings-panel').classList.add('hidden');
+        document.getElementById('speed-expand-btn').classList.remove('active');
+    } else {
+        document.getElementById('drill-panel').classList.add('hidden');
+        clearHighlight();
+        currentSegmentDrill = null;
+        currentStationDrill = null;
+        currentLineDrill = null;
+        setStaticSpeed(0);
+        document.getElementById('static-settings-panel').classList.add('hidden');
+        document.getElementById('static-settings-btn').classList.remove('active');
+    }
+
+    if (on) {
+        if (speedMultiplier > 0) { speedBeforeStatic = speedMultiplier; setSpeed(0); }
+        slider.min = 0;
+        slider.max = 24;
+        slider.step = 1;
+        slider.value = staticHourIdx;
+        updateStaticTimeLabel();
+        renderCurrentStatic();
+    } else {
+        slider.min = LIVE_SLIDER_MIN;
+        slider.max = LIVE_SLIDER_MAX;
+        slider.step = 1;
+        slider.value = Math.floor(simTime / 60);
+        updateTimeLabel();
+        if (speedBeforeStatic) { setSpeed(speedBeforeStatic); speedBeforeStatic = null; }
+    }
+}
+
+function renderCurrentStatic() {
+    if (!staticData) return;
+    renderStaticSegments();
+    renderStaticStations();
+    if (currentSegmentDrill) renderHighlight();
+    if (currentLineDrill) renderLineDrill();
+}
+
+// --- Static-mode playback (auto-advance through hours) ---
+let staticDotScale = 1;
+let staticPlaySpeed = 0;          // 0 = paused, 1 = 1 hour/sec
+let staticAutoAdvanceTimer = null;
+
+function setStaticSpeed(s) {
+    staticPlaySpeed = s;
+    if (staticAutoAdvanceTimer) {
+        clearInterval(staticAutoAdvanceTimer);
+        staticAutoAdvanceTimer = null;
+    }
+    if (s > 0) {
+        // jump off the all-day total when starting playback so we cycle 1..24
+        if (staticHourIdx === 0) {
+            staticHourIdx = 1;
+            slider.value = staticHourIdx;
+            updateStaticTimeLabel();
+            renderCurrentStatic();
+        }
+        staticAutoAdvanceTimer = setInterval(() => {
+            let next = staticHourIdx + 1;
+            if (next > 24) next = 1;
+            staticHourIdx = next;
+            slider.value = staticHourIdx;
+            updateStaticTimeLabel();
+            renderCurrentStatic();
+        }, 1000);
+    }
+    document.querySelectorAll('#static-speed-buttons button[data-static-speed]').forEach(btn => {
+        btn.classList.toggle('active', Number(btn.dataset.staticSpeed) === s);
+    });
+}
+
+document.querySelectorAll('#static-speed-buttons button[data-static-speed]').forEach(btn => {
+    btn.addEventListener('mousedown', (e) => e.preventDefault());
+    btn.addEventListener('click', () => {
+        const s = Number(btn.dataset.staticSpeed);
+        if (s === 0) setStaticSpeed(staticPlaySpeed > 0 ? 0 : 1);
+        else setStaticSpeed(s);
+    });
+});
+
+const staticSettingsBtn = document.getElementById('static-settings-btn');
+const staticSettingsPanel = document.getElementById('static-settings-panel');
+staticSettingsBtn.addEventListener('mousedown', (e) => e.preventDefault());
+staticSettingsBtn.addEventListener('click', () => {
+    staticSettingsPanel.classList.toggle('hidden');
+    staticSettingsBtn.classList.toggle('active', !staticSettingsPanel.classList.contains('hidden'));
+});
+
+const staticDotSlider = document.getElementById('static-dot-slider');
+staticDotSlider.addEventListener('input', () => {
+    staticDotScale = parseInt(staticDotSlider.value) / 100;
+    if (staticData) renderCurrentStatic();
+});
+
+// parent-key (`route|dir|pf|pt`) -> [sub_segments] — for click highlight lookup.
+// Without segment subdivision (NYC has it for express/local on shared trunks;
+// London doesn't yet) parents always equals [[seg.from, seg.to]], so this index
+// effectively maps each segment to itself. Kept for parity in case subdivision
+// gets added later.
+const parentToSubs = new Map();
+function buildParentIndex() {
+    parentToSubs.clear();
+    if (!staticData) return;
+    for (const seg of staticData.segments) {
+        const ps = seg.parents || [[seg.from, seg.to]];
+        for (const [pf, pt] of ps) {
+            const k = `${seg.route}|${seg.direction}|${pf}|${pt}`;
+            if (!parentToSubs.has(k)) parentToSubs.set(k, []);
+            parentToSubs.get(k).push(seg);
+        }
+    }
+}
+
+// rendered segment features keyed by `route|from|to` so highlight can find geometry+offset
+const renderedSegmentFeatures = new Map();
+
+function clearHighlight() {
+    map.getSource('static-highlight').setData(emptyGeoJSON);
+}
+
+function collectSegmentDrillMatches() {
+    if (!currentSegmentDrill) return [];
+    const { fromStop, toStop } = currentSegmentDrill;
+    return staticData.segments.filter(s =>
+        (s.from === fromStop && s.to === toStop) ||
+        (s.from === toStop && s.to === fromStop));
+}
+
+function renderHighlight() {
+    if (!currentSegmentDrill) { clearHighlight(); return; }
+    const matches = collectSegmentDrillMatches();
+    if (matches.length === 0) { clearHighlight(); return; }
+
+    const parentKeys = new Set();
+    for (const m of matches) {
+        const ps = m.parents || [[m.from, m.to]];
+        for (const [pf, pt] of ps) {
+            parentKeys.add(`${m.route}|${m.direction}|${pf}|${pt}`);
+        }
+    }
+
+    const subKeys = new Set();
+    for (const pk of parentKeys) {
+        const subs = parentToSubs.get(pk) || [];
+        for (const s of subs) {
+            const a = s.from < s.to ? s.from : s.to;
+            const b = s.from < s.to ? s.to : s.from;
+            subKeys.add(`${s.route}|${a}|${b}`);
+        }
+    }
+
+    const features = [];
+    for (const subKey of subKeys) {
+        const f = renderedSegmentFeatures.get(subKey);
+        if (!f) continue;
+        features.push({
+            type: 'Feature',
+            geometry: f.geometry,
+            properties: {
+                base_width: f.properties.width,
+                outline_width: f.properties.width + 3.5,
+                offset: f.properties.offset,
+            },
+        });
+    }
+    map.getSource('static-highlight').setData({ type: 'FeatureCollection', features });
+}
+
+function fmtHour12(h) {
+    const ampm = h % 24 < 12 ? 'a' : 'p';
+    let hh = h % 24;
+    if (hh === 0) hh = 12;
+    else if (hh > 12) hh -= 12;
+    return hh + ampm;
+}
+
+function updateStaticTimeLabel() {
+    const lbl = document.getElementById('time-label');
+    if (staticHourIdx === 0) lbl.textContent = 'total';
+    else lbl.textContent = `${fmtHour12(staticHourIdx - 1)}m`;
+}
+
+function segmentValue(seg, hourIdx, metric) {
+    const bh = seg.by_hour;
+    if (metric === 'load') {
+        if (hourIdx === 0) {
+            let r = 0, n = 0;
+            for (let h = 0; h < 24; h++) { r += bh[h][0]; n += bh[h][1]; }
+            return n > 0 ? r / n : 0;
+        }
+        const e = bh[hourIdx - 1];
+        return e[1] > 0 ? e[0] / e[1] : 0;
+    }
+    if (hourIdx === 0) {
+        let s = 0;
+        for (let h = 0; h < 24; h++) s += bh[h][0];
+        return s;
+    }
+    return bh[hourIdx - 1][0];
+}
+
+// gap (in pixels) between adjacent routes that share a track segment
+const SEGMENT_GAP = 1.0;
+
+function renderStaticSegments() {
+    // step 1: collapse both directions per (route, sorted-stop-pair) keeping
+    // the busier direction's value
+    const combined = new Map();
+    for (const seg of staticData.segments) {
+        const a = seg.from < seg.to ? seg.from : seg.to;
+        const b = seg.from < seg.to ? seg.to : seg.from;
+        const key = `${seg.route}|${a}|${b}`;
+        const v = segmentValue(seg, staticHourIdx, 'riders');
+        const ex = combined.get(key);
+        if (ex) { if (v > ex.value) ex.value = v; }
+        else combined.set(key, { route: seg.route, coords: seg.coords, from: a, to: b, value: v });
+    }
+
+    // step 2: assign widths
+    let maxValue = 0;
+    for (const e of combined.values()) if (e.value > maxValue) maxValue = e.value;
+    for (const e of combined.values()) {
+        if (e.value < 0.5) { e.width = 0; continue; }
+        const norm = maxValue > 0 ? Math.pow(e.value / maxValue, 1.0) : 0;
+        e.width = (1 + norm * 14) * 0.6875 * staticDotScale;
+    }
+
+    // step 3: group by stop-pair (= shared trunk), assign perpendicular offsets
+    // sized by line thickness so wider lines get more separation. All features
+    // in a group share one canonical polyline so the offset direction stays
+    // consistent across routes.
+    const groups = new Map();
+    for (const e of combined.values()) {
+        if (e.width === 0) continue;
+        const k = `${e.from}|${e.to}`;
+        if (!groups.has(k)) groups.set(k, []);
+        groups.get(k).push(e);
+    }
+
+    const features = [];
+    renderedSegmentFeatures.clear();
+    for (const grp of groups.values()) {
+        grp.sort((a, b) => a.route < b.route ? -1 : a.route > b.route ? 1 : 0);
+        const canonCoords = grp[0].coords;
+
+        const totalW = grp.reduce((s, g) => s + g.width, 0) + SEGMENT_GAP * (grp.length - 1);
+        let cum = -totalW / 2;
+        for (const e of grp) {
+            const offset = cum + e.width / 2;
+            cum += e.width + SEGMENT_GAP;
+            const feat = {
+                type: 'Feature',
+                geometry: { type: 'LineString', coordinates: canonCoords },
+                properties: {
+                    color: ROUTE_COLORS[e.route] || '#888',
+                    width: e.width,
+                    offset,
+                    priority: LINE_PRIORITY[e.route] ?? 0,
+                    from: e.from,
+                    to: e.to,
+                },
+            };
+            features.push(feat);
+            renderedSegmentFeatures.set(`${e.route}|${e.from}|${e.to}`, feat);
+        }
+    }
+    map.getSource('static-segments').setData({ type: 'FeatureCollection', features });
+}
+
+function stationTotal(station, hourIdx, metric) {
+    // Column layout: [boardings, transfer_in, alightings, transfer_out].
+    // London is direct-route only so transfer columns are 0.
+    const valOf = metric === 'alightings' ? (v) => v[2] : (v) => v[0];
+    let total = 0;
+    if (hourIdx === 0) {
+        for (const r in station.by_route_hour) {
+            const arr = station.by_route_hour[r];
+            for (let h = 0; h < 24; h++) total += valOf(arr[h]);
+        }
+    } else {
+        const h = hourIdx - 1;
+        for (const r in station.by_route_hour) {
+            total += valOf(station.by_route_hour[r][h]);
+        }
+    }
+    return total;
+}
+
+let stationMaxValAllDay = 0;   // memoized all-day, boardings-only max for stable bubble scale
+function renderStaticStations() {
+    if (stationMaxValAllDay === 0) {
+        // Anchor to boardings since boardings ≈ alightings per station (every
+        // rider boards once and alights once), so the scale works for either
+        // metric without bubbles growing when toggled.
+        for (const s of staticData.stations) {
+            const v = stationTotal(s, 0, 'boardings');
+            if (v > stationMaxValAllDay) stationMaxValAllDay = v;
+        }
+    }
+    const maxVal = stationMaxValAllDay;
+    const hourScale = staticHourIdx === 0 ? 1 : 2;
+    const features = [];
+    for (const s of staticData.stations) {
+        const v = stationTotal(s, staticHourIdx, stationDrillMetric);
+        if (v < 0.5) continue;
+        const norm = maxVal > 0 ? Math.sqrt(v / maxVal) : 0;
+        const radius = (0.75 + norm * 16) * 1.15 * hourScale * staticDotScale;
+        features.push({
+            type: 'Feature',
+            geometry: { type: 'Point', coordinates: [s.lon, s.lat] },
+            properties: { complex_id: s.complex_id, radius, name: s.name },
+        });
+    }
+    map.getSource('static-stations').setData({ type: 'FeatureCollection', features });
+}
+
+
+// --- Drill-down panel ---
+
+const DRILL_CHART_W = 210;
+const DRILL_CHART_H = 31;
+let stationDrillMetric = 'boardings';   // 'boardings' | 'alightings'
+let segmentDrillMetric = 'riders';  // 'riders' | 'crowd'
+let lineDrillMetric = 'riders';     // 'riders' | 'crowd'
+let currentSegmentDrill = null;     // {fromStop, toStop} for re-render on metric change
+let currentStationDrill = null;     // complex_id for re-render on sub-metric change
+let currentLineDrill = null;        // route id when showing the per-route line diagram
+
+function buildDrillRow(route, arrow, valFn, maxVal, tipFn, refRatio, rowTotalText) {
+    const W = DRILL_CHART_W, H = DRILL_CHART_H;
+    const slot = W / 24;
+    const barW = Math.max(1, slot - 1.2);
+    const color = ROUTE_COLORS[route] || '#888';
+    let bars = '';
+    for (let h = 0; h < 24; h++) {
+        const v = valFn(h);
+        if (v <= 0 || maxVal <= 0) continue;
+        const barH = Math.max(1, (v / maxVal) * (H - 2));
+        const x = h * slot + (slot - barW) / 2;
+        const y = H - barH;
+        const tip = tipFn(h);
+        bars += `<rect data-tip="${tip}" x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${barW.toFixed(1)}" height="${barH.toFixed(1)}" fill="${color}" opacity="0.8"/>`;
+    }
+    let refLine = '';
+    if (refRatio != null && refRatio > 0 && refRatio <= 1) {
+        const y100 = (H - refRatio * (H - 2)).toFixed(1);
+        refLine = `<line x1="0" y1="${y100}" x2="${W}" y2="${y100}" stroke="#aaa" stroke-width="0.5" stroke-dasharray="2,2" opacity="0.7" pointer-events="none"/>`;
+    }
+    const baseLine = `<line x1="0" y1="${(H - 0.5).toFixed(1)}" x2="${W}" y2="${(H - 0.5).toFixed(1)}" stroke="#555" stroke-width="0.5" pointer-events="none"/>`;
+    const arrowEl = `<span class="drill-arrow">${arrow || ''}</span>`;
+    const totalEl = rowTotalText != null ? `<span class="drill-row-total">${rowTotalText}</span>` : '<span class="drill-row-total"></span>';
+    return `<div class="drill-row">${routeIconHTML(route)}${arrowEl}<svg class="drill-chart" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none">${baseLine}${bars}${refLine}</svg>${totalEl}</div>`;
+}
+
+const AXIS_LABELS = [[0,'12a'],[3,'3a'],[6,'6a'],[9,'9a'],[12,'12p'],[15,'3p'],[18,'6p'],[21,'9p']];
+const DRILL_AXIS_HTML = `<div class="drill-axis">${
+    AXIS_LABELS.map(([h, lbl]) =>
+        `<span style="left:${((h + 0.5) / 24 * 100).toFixed(2)}%">${lbl}</span>`).join('')
+}</div>`;
+
+function showDrillPanel(html, mode) {
+    const panel = document.getElementById('drill-panel');
+    panel.innerHTML = `<button class="drill-close" id="drill-close-btn" title="Close">&#10005;</button>${html}`;
+    panel.classList.remove('hidden');
+    panel.classList.toggle('line-mode', mode === 'line');
+    document.getElementById('drill-close-btn').onclick = () => {
+        panel.classList.add('hidden');
+        panel.classList.remove('line-mode');
+        currentSegmentDrill = null;
+        currentStationDrill = null;
+        currentLineDrill = null;
+        document.getElementById('drill-tooltip').classList.add('hidden');
+        clearHighlight();
+    };
+}
+
+const drillPanelEl = document.getElementById('drill-panel');
+const drillTooltipEl = document.getElementById('drill-tooltip');
+drillPanelEl.addEventListener('mousemove', (e) => {
+    const tip = e.target && e.target.dataset && e.target.dataset.tip;
+    if (!tip) { drillTooltipEl.classList.add('hidden'); return; }
+    drillTooltipEl.textContent = tip;
+    drillTooltipEl.style.left = (e.clientX + 12) + 'px';
+    drillTooltipEl.style.top = (e.clientY - 26) + 'px';
+    drillTooltipEl.classList.remove('hidden');
+});
+drillPanelEl.addEventListener('mouseleave', () => drillTooltipEl.classList.add('hidden'));
+
+// click on a route pill inside a drill row → open the per-route line diagram
+drillPanelEl.addEventListener('click', (e) => {
+    const icon = e.target.closest('.drill-row .route-icon[data-route]');
+    if (!icon || !staticData) return;
+    e.preventDefault();
+    e.stopPropagation();
+    openLineDrill(icon.dataset.route);
+});
+
+function openSegmentDrill(fromStop, toStop) {
+    currentSegmentDrill = { fromStop, toStop };
+    currentStationDrill = null;
+    currentLineDrill = null;
+    renderSegmentDrill();
+}
+
+function renderSegmentDrill() {
+    if (!staticData || !currentSegmentDrill) return;
+    const { fromStop, toStop } = currentSegmentDrill;
+    const stops = staticData.stops || {};
+    const fromMeta = stops[fromStop], toMeta = stops[toStop];
+    if (!fromMeta || !toMeta) return;
+
+    const matches = staticData.segments.filter(s =>
+        (s.from === fromStop && s.to === toStop) ||
+        (s.from === toStop && s.to === fromStop));
+    if (matches.length === 0) return;
+
+    const leftStop = fromMeta.lon <= toMeta.lon ? fromStop : toStop;
+    const leftName = stops[leftStop].name;
+    const rightName = stops[leftStop === fromStop ? toStop : fromStop].name;
+
+    matches.sort((a, b) => {
+        if (a.route !== b.route) return a.route < b.route ? -1 : 1;
+        return a.direction - b.direction;
+    });
+
+    const isCrowd = segmentDrillMetric === 'crowd';
+    const valOf = (seg) => {
+        if (isCrowd) {
+            const cap = ROUTE_CAPACITY[seg.route] || 1000;
+            return (h) => seg.by_hour[h][1] > 0
+                ? (seg.by_hour[h][0] / seg.by_hour[h][1]) / cap
+                : 0;
+        }
+        return (h) => seg.by_hour[h][0];
+    };
+
+    let maxVal = 0;
+    for (const seg of matches) {
+        const f = valOf(seg);
+        for (let h = 0; h < 24; h++) { const v = f(h); if (v > maxVal) maxVal = v; }
+    }
+    if (isCrowd) maxVal = Math.max(1, maxVal);
+
+    const tipForSeg = (seg) => {
+        if (isCrowd) {
+            const cap = ROUTE_CAPACITY[seg.route] || 1000;
+            return (h) => {
+                const n = seg.by_hour[h][1];
+                const avg = n > 0 ? seg.by_hour[h][0] / n : 0;
+                const pct = Math.round((avg / cap) * 100);
+                return `${fmtHour12(h)}–${fmtHour12(h + 1)}m · ${pct}% full · ${Math.round(avg).toLocaleString()} avg riders`;
+            };
+        }
+        return (h) => `${fmtHour12(h)}–${fmtHour12(h + 1)}m · ${Math.round(seg.by_hour[h][0]).toLocaleString()} riders`;
+    };
+
+    const refRatio = isCrowd ? 1 / maxVal : null;
+
+    const fmtN = (n) => Math.round(n).toLocaleString();
+    const segTotal = (seg) => {
+        let s = 0;
+        for (let h = 0; h < 24; h++) s += seg.by_hour[h][0];
+        return s;
+    };
+    let grandTotal = 0;
+    const rowTotals = new Map();
+    for (const seg of matches) {
+        const t = segTotal(seg);
+        rowTotals.set(seg, t);
+        grandTotal += t;
+    }
+
+    const rowsHTML = matches.map(seg => {
+        const arrow = (seg.from === leftStop) ? '&gt;' : '&lt;';
+        return buildDrillRow(seg.route, arrow, valOf(seg), maxVal, tipForSeg(seg),
+            refRatio, fmtN(rowTotals.get(seg)));
+    }).join('');
+
+    const btn = (key, label) =>
+        `<button class="drill-toggle-btn ${segmentDrillMetric === key ? 'active' : ''}" data-sm="${key}">${label}</button>`;
+    const totalEl = `<span class="drill-total">${fmtN(grandTotal)}</span>`;
+    const buttons = `<div class="drill-metric-buttons">${btn('riders', 'riders')}${btn('crowd', 'crowdedness')}${totalEl}</div>`;
+
+    showDrillPanel(`
+        <div class="drill-header">
+            <span class="drill-station-name left">${leftName}</span>
+            <span class="drill-sep"></span>
+            <span class="drill-station-name right">${rightName}</span>
+        </div>
+        ${buttons}
+        <div class="drill-rows">${rowsHTML}</div>
+        ${DRILL_AXIS_HTML}
+    `);
+
+    document.querySelectorAll('.drill-toggle-btn').forEach(b => {
+        b.addEventListener('mousedown', (e) => e.preventDefault());
+        b.onclick = () => {
+            segmentDrillMetric = b.dataset.sm;
+            renderSegmentDrill();
+        };
+    });
+
+    renderHighlight();
+}
+
+function openStationDrill(complexId) {
+    currentStationDrill = complexId;
+    currentSegmentDrill = null;
+    currentLineDrill = null;
+    renderStationDrill();
+}
+
+function renderStationDrill() {
+    if (!staticData || currentStationDrill === null) return;
+    clearHighlight();
+    const station = staticData.stations.find(s => s.complex_id === currentStationDrill);
+    if (!station) return;
+    const routes = Object.keys(station.by_route_hour).sort();
+    if (routes.length === 0) return;
+
+    const m = stationDrillMetric;
+    const unit = m === 'alightings' ? 'alightings' : 'boardings';
+    const cellVal = (v) => m === 'alightings' ? v[2] : v[0];
+
+    // lock max to whichever of boardings/alightings is bigger so switching
+    // metrics never grows bars — typically they're near-equal per station
+    let maxVal = 0;
+    for (const r of routes) {
+        const arr = station.by_route_hour[r];
+        for (let h = 0; h < 24; h++) {
+            const b = arr[h][0], a = arr[h][2];
+            const v = b > a ? b : a;
+            if (v > maxVal) maxVal = v;
+        }
+    }
+
+    const fmtN = (n) => Math.round(n).toLocaleString();
+    const rowTotal = (arr) => {
+        let s = 0;
+        for (let h = 0; h < 24; h++) s += cellVal(arr[h]);
+        return s;
+    };
+    let grandTotal = 0;
+    const totals = {};
+    for (const r of routes) {
+        const t = rowTotal(station.by_route_hour[r]);
+        totals[r] = t;
+        grandTotal += t;
+    }
+
+    const rowsHTML = routes.map(r => {
+        const arr = station.by_route_hour[r];
+        const tipFn = (h) => `${fmtHour12(h)}–${fmtHour12(h + 1)}m · ${Math.round(cellVal(arr[h])).toLocaleString()} ${unit}`;
+        return buildDrillRow(r, '', (h) => cellVal(arr[h]), maxVal, tipFn, null, fmtN(totals[r]));
+    }).join('');
+
+    const btn = (key, label) =>
+        `<button class="station-metric-btn ${m === key ? 'active' : ''}" data-sm="${key}">${label}</button>`;
+    const totalEl = `<span class="drill-total">${fmtN(grandTotal)}</span>`;
+    const subhead = `<div class="drill-metric-buttons">${btn('boardings', 'boardings')}${btn('alightings', 'alightings')}${totalEl}</div>`;
+
+    showDrillPanel(`
+        <div class="drill-header">
+            <span class="drill-station-name left">${station.name}</span>
+        </div>
+        ${subhead}
+        <div class="drill-rows">${rowsHTML}</div>
+        ${DRILL_AXIS_HTML}
+    `);
+
+    document.querySelectorAll('.station-metric-btn').forEach(b => {
+        b.addEventListener('mousedown', (e) => e.preventDefault());
+        b.onclick = () => {
+            stationDrillMetric = b.dataset.sm;
+            renderStationDrill();
+            renderStaticStations();
+        };
+    });
+}
+
+function openLineDrill(route) {
+    currentLineDrill = route;
+    currentSegmentDrill = null;
+    currentStationDrill = null;
+    clearHighlight();
+    renderLineDrill();
+}
+
+function abbrStopName(name) {
+    if (!name) return '';
+    if (name.length <= 16) return name;
+    return name.slice(0, 14) + '…';
+}
+
+function svgEscape(s) {
+    return String(s).replace(/[&<>"]/g, c =>
+        ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+}
+
+function renderLineDrill() {
+    if (!staticData || !currentLineDrill) return;
+    const route = currentLineDrill;
+    const stopMeta = staticData.stops || {};
+
+    // graph node = complex_id (collapses platforms so each station appears once)
+    const cidOf = (sid) => String(stopMeta[sid]?.complex_id ?? sid);
+    const routeSids = new Set();
+    for (const s of staticData.segments) {
+        if (s.route === route) { routeSids.add(s.from); routeSids.add(s.to); }
+    }
+    const stops = {};
+    for (const sid of routeSids) {
+        const meta = stopMeta[sid];
+        if (!meta) continue;
+        const cid = cidOf(sid);
+        if (!stops[cid]) stops[cid] = { ...meta, complex_id: cid };
+    }
+    for (const sid in stopMeta) {
+        const cid = cidOf(sid);
+        if (!stops[cid]) stops[cid] = { ...stopMeta[sid], complex_id: cid };
+    }
+    const labelOf = (cid) => stops[cid]?.name || cid;
+
+    // accumulate per (unordered) complex pair, by-direction hourly [riders, n_trains]
+    const pairKey = (a, b) => a < b ? `${a}|${b}` : `${b}|${a}`;
+    const pairDirAccum = new Map();
+    const allSegs = staticData.segments.filter(s => s.route === route);
+    for (const seg of allSegs) {
+        const u = cidOf(seg.from), v = cidOf(seg.to);
+        if (u === v) continue;
+        const k = pairKey(u, v);
+        let dirMap = pairDirAccum.get(k);
+        if (!dirMap) { dirMap = new Map(); pairDirAccum.set(k, dirMap); }
+        let acc = dirMap.get(seg.direction);
+        if (!acc) { acc = Array.from({length: 24}, () => [0, 0]); dirMap.set(seg.direction, acc); }
+        for (let h = 0; h < 24; h++) {
+            acc[h][0] += seg.by_hour[h][0];
+            acc[h][1] += seg.by_hour[h][1];
+        }
+    }
+
+    const pairRiders = new Map();
+    for (const [k, dirMap] of pairDirAccum) {
+        let total = 0;
+        for (const arr of dirMap.values()) {
+            for (let h = 0; h < 24; h++) total += arr[h][0];
+        }
+        pairRiders.set(k, total);
+    }
+    if (pairRiders.size === 0) {
+        showDrillPanel(`<div class="drill-header"><span class="drill-station-name left">${ROUTE_NAMES[route] || route}</span></div><div style="color:#888;font-size:11px;padding:8px 0">no segment data</div>`, 'line');
+        return;
+    }
+
+    const isCrowd = lineDrillMetric === 'crowd';
+    const isAllDay = staticHourIdx === 0;
+    const cap = ROUTE_CAPACITY[route] || 1000;
+    const hLo = isAllDay ? 0 : staticHourIdx - 1;
+    const hHi = isAllDay ? 24 : staticHourIdx;
+    const pairDisplay = new Map();
+    for (const [k, dirMap] of pairDirAccum) {
+        if (isCrowd) {
+            let peak = 0, peakH = hLo;
+            for (let h = hLo; h < hHi; h++) {
+                for (const arr of dirMap.values()) {
+                    if (arr[h][1] > 0) {
+                        const c = (arr[h][0] / arr[h][1]) / cap;
+                        if (c > peak) { peak = c; peakH = h; }
+                    }
+                }
+            }
+            pairDisplay.set(k, { value: peak, hour: peakH });
+        } else {
+            let total = 0;
+            for (const arr of dirMap.values()) {
+                for (let h = hLo; h < hHi; h++) total += arr[h][0];
+            }
+            pairDisplay.set(k, { value: total, hour: isAllDay ? null : hLo });
+        }
+    }
+
+    // maximum spanning tree from BOTH directions combined.
+    const dsuEdges = [...pairRiders.entries()].map(([k, w]) => {
+        const i = k.indexOf('|');
+        return { from: k.slice(0, i), to: k.slice(i + 1), weight: w };
+    });
+    dsuEdges.sort((a, b) => b.weight - a.weight);
+    const dsu = new Map();
+    const find = (n) => {
+        if (!dsu.has(n)) dsu.set(n, n);
+        let r = n;
+        while (dsu.get(r) !== r) r = dsu.get(r);
+        let cur = n;
+        while (dsu.get(cur) !== r) { const nxt = dsu.get(cur); dsu.set(cur, r); cur = nxt; }
+        return r;
+    };
+    const tAdj = new Map();
+    const droppedEdges = [];
+    for (const e of dsuEdges) {
+        const ra = find(e.from), rb = find(e.to);
+        if (ra === rb) { droppedEdges.push(e); continue; }
+        dsu.set(ra, rb);
+        if (!tAdj.has(e.from)) tAdj.set(e.from, new Map());
+        if (!tAdj.has(e.to)) tAdj.set(e.to, new Map());
+        tAdj.get(e.from).set(e.to, e.weight);
+        tAdj.get(e.to).set(e.from, e.weight);
+    }
+
+    function farthest(start) {
+        const dist = new Map([[start, 0]]);
+        const par = new Map();
+        const stack = [start];
+        while (stack.length) {
+            const u = stack.pop();
+            for (const [v, w] of tAdj.get(u) || []) {
+                if (dist.has(v)) continue;
+                dist.set(v, dist.get(u) + w);
+                par.set(v, u);
+                stack.push(v);
+            }
+        }
+        let best = start, bestD = 0;
+        for (const [n, d] of dist) if (d > bestD) { bestD = d; best = n; }
+        const path = [];
+        for (let n = best; n !== undefined; n = par.get(n)) path.unshift(n);
+        return { node: best, path };
+    }
+    const seedNode = tAdj.keys().next().value;
+    const trunkSeq = farthest(farthest(seedNode).node).path;
+
+    // orient: lower-longitude end on the LEFT
+    const lonOf = (sid) => stops[sid]?.lon;
+    const lonL = lonOf(trunkSeq[0]);
+    const lonR = lonOf(trunkSeq[trunkSeq.length - 1]);
+    if (lonL != null && lonR != null && lonL > lonR) trunkSeq.reverse();
+
+    // branches
+    const trunkSet = new Set(trunkSeq);
+    const claimed = new Set(trunkSeq);
+    function chainOut(start) {
+        function chainLen(n, prev) {
+            let best = 0;
+            for (const v of tAdj.get(n).keys()) {
+                if (v === prev || trunkSet.has(v)) continue;
+                best = Math.max(best, 1 + chainLen(v, n));
+            }
+            return best;
+        }
+        const path = [start];
+        let cur = start, prev = null;
+        claimed.add(start);
+        while (true) {
+            const choices = [...tAdj.get(cur).keys()]
+                .filter(v => v !== prev && !trunkSet.has(v) && !claimed.has(v));
+            if (choices.length === 0) break;
+            choices.sort((a, b) => chainLen(b, cur) - chainLen(a, cur));
+            prev = cur;
+            cur = choices[0];
+            claimed.add(cur);
+            path.push(cur);
+        }
+        return path;
+    }
+    const flatBranches = [];
+    for (const t of trunkSeq) {
+        for (const v of (tAdj.get(t)?.keys() || [])) {
+            if (trunkSet.has(v) || claimed.has(v)) continue;
+            flatBranches.push({ junctionStop: t, stops: chainOut(v) });
+        }
+    }
+
+    // rejoin detection (case A)
+    for (const branch of flatBranches) {
+        let bestRejoin = null, bestW = 0, bestIdx = -1;
+        for (let i = 0; i < branch.stops.length; i++) {
+            const stop = branch.stops[i];
+            for (const e of droppedEdges) {
+                const other = e.from === stop ? e.to : (e.to === stop ? e.from : null);
+                if (!other || !trunkSet.has(other) || other === branch.junctionStop) continue;
+                if (e.weight > bestW) { bestW = e.weight; bestRejoin = other; bestIdx = i; }
+            }
+        }
+        if (bestRejoin) {
+            branch.rejoinAt = bestRejoin;
+            branch.stops = branch.stops.slice(0, bestIdx + 1);
+        }
+    }
+    // rejoin detection (case B): two branches connected by a dropped edge
+    {
+        let i = 0;
+        while (i < flatBranches.length) {
+            const b1 = flatBranches[i];
+            if (b1.rejoinAt) { i++; continue; }
+            let bestPair = null;
+            for (let j = i + 1; j < flatBranches.length; j++) {
+                const b2 = flatBranches[j];
+                if (b2.rejoinAt) continue;
+                if (b2.junctionStop === b1.junctionStop) continue;
+                const b1Set = new Set(b1.stops);
+                const b2Set = new Set(b2.stops);
+                for (const e of droppedEdges) {
+                    const inB1 = b1Set.has(e.from) ? e.from : (b1Set.has(e.to) ? e.to : null);
+                    const inB2 = b2Set.has(e.from) ? e.from : (b2Set.has(e.to) ? e.to : null);
+                    if (!inB1 || !inB2) continue;
+                    if (!bestPair || e.weight > bestPair.weight) {
+                        bestPair = { j, weight: e.weight, inB1, inB2 };
+                    }
+                }
+            }
+            if (bestPair) {
+                const b2 = flatBranches[bestPair.j];
+                const b1End = b1.stops.indexOf(bestPair.inB1);
+                const b2End = b2.stops.indexOf(bestPair.inB2);
+                const combined = {
+                    junctionStop: b1.junctionStop,
+                    rejoinAt: b2.junctionStop,
+                    stops: [
+                        ...b1.stops.slice(0, b1End + 1),
+                        ...b2.stops.slice(0, b2End + 1).reverse(),
+                    ],
+                };
+                flatBranches.splice(bestPair.j, 1);
+                flatBranches[i] = combined;
+            }
+            i++;
+        }
+    }
+
+    // Absorb adjacent-rejoin branches into the trunk: if a rejoining branch's
+    // junction and rejoin sit at adjacent trunk indices, the branch is just a
+    // set of stations skipped by a faster service between two trunk neighbours.
+    // Inline them rather than rendering as a 1-stop "V" detour below the trunk
+    // (Acton Main Line between Ealing Broadway ↔ Paddington on the Elizabeth
+    // line is the canonical case — fast trains skip it, MaxST attaches it as
+    // a leaf, case A flags it as rejoining, but the all-stations topology
+    // really does run inline through it).
+    for (let i = flatBranches.length - 1; i >= 0; i--) {
+        const b = flatBranches[i];
+        if (!b.rejoinAt) continue;
+        const jIdx = trunkSeq.indexOf(b.junctionStop);
+        const rIdx = trunkSeq.indexOf(b.rejoinAt);
+        if (jIdx < 0 || rIdx < 0) continue;
+        if (Math.abs(jIdx - rIdx) !== 1) continue;
+        // b.stops[0] is connected to junctionStop. Insert in trunk order:
+        // if junction is to the left of rejoin, b.stops reads left→right;
+        // otherwise reverse it so it still reads in trunk direction.
+        const hi = Math.max(jIdx, rIdx);
+        const toInsert = jIdx < rIdx ? b.stops : [...b.stops].reverse();
+        trunkSeq.splice(hi, 0, ...toInsert);
+        flatBranches.splice(i, 1);
+    }
+
+    // "Loop trunk" split: detect when the trunk serializes a parallel branch
+    // pair. The Northern line is the canonical case — Bank branch and Charing
+    // Cross branch both run between Kennington and Camden Town/Euston, and
+    // MaxST keeps them as one long chain that the diameter walks
+    // Kennington → Bank → Euston → CX → Waterloo (then the closing edge
+    // Waterloo↔Kennington is dropped, since you can't have it in a tree).
+    // We spot the loop by looking at dropped edges connecting two trunk
+    // nodes that bracket a long stretch of trunk; the split point is a node
+    // with original-graph degree > 2 inside that stretch (= a real network
+    // junction like Euston). The far half gets pulled out as a parallel
+    // rejoining detour, leaving the trunk reading as one of the two paths.
+    {
+        const origDeg = new Map();
+        for (const k of pairRiders.keys()) {
+            const i = k.indexOf('|');
+            const a = k.slice(0, i), b = k.slice(i + 1);
+            origDeg.set(a, (origDeg.get(a) || 0) + 1);
+            origDeg.set(b, (origDeg.get(b) || 0) + 1);
+        }
+        let changed = true;
+        while (changed) {
+            changed = false;
+            const trunkIdx = new Map(trunkSeq.map((s, i) => [s, i]));
+            const cands = droppedEdges
+                .filter(e => trunkIdx.has(e.from) && trunkIdx.has(e.to))
+                .sort((a, b) => b.weight - a.weight);
+            for (const e of cands) {
+                const iA = trunkIdx.get(e.from);
+                const iB = trunkIdx.get(e.to);
+                const lo = Math.min(iA, iB), hi = Math.max(iA, iB);
+                if (hi - lo < 4) continue;
+                // Only handle loops that close at a trunk endpoint — those
+                // can be resolved by truncating one end. Mid-trunk loops
+                // would break trunk connectivity if we truncated.
+                const atEnd = hi === trunkSeq.length - 1;
+                const atStart = lo === 0;
+                if (!atEnd && !atStart) continue;
+                // Pick a split point inside the loop at a real-network
+                // junction (origDeg > 2). For Northern this picks Euston;
+                // chain stations on Bank/CX have origDeg == 2 so they're
+                // disqualified.
+                const splits = [];
+                for (let i = lo + 1; i < hi; i++) {
+                    if ((origDeg.get(trunkSeq[i]) || 0) > 2) splits.push(i);
+                }
+                if (splits.length === 0) continue;
+                const mid = (lo + hi) / 2;
+                splits.sort((a, b) =>
+                    Math.abs(a - mid) - Math.abs(b - mid));
+                const iC = splits[0];
+                let detourStops, removeFrom, removeCount, rejoinAt;
+                if (atEnd) {
+                    detourStops = trunkSeq.slice(iC + 1, hi + 1);
+                    removeFrom = iC + 1;
+                    removeCount = hi - iC;
+                    rejoinAt = trunkSeq[lo];
+                } else {
+                    // atStart: trunk[0..iC-1] gets pulled out, reversed so
+                    // the detour reads from the new trunk-start (trunkSeq[iC])
+                    // toward the rejoin endpoint (trunkSeq[hi]).
+                    detourStops = trunkSeq.slice(0, iC).reverse();
+                    removeFrom = 0;
+                    removeCount = iC;
+                    rejoinAt = trunkSeq[hi];
+                }
+                trunkSeq.splice(removeFrom, removeCount);
+                flatBranches.push({
+                    junctionStop: atEnd ? trunkSeq[trunkSeq.length - 1]
+                                        : trunkSeq[0],
+                    rejoinAt,
+                    stops: detourStops,
+                });
+                changed = true;
+                break;
+            }
+        }
+    }
+
+    const tree = { stops: trunkSeq, branches: [] };
+
+    const STOP_SPACING = 24;
+    const MARGIN_X = 24;
+    // LINE_Y gets bumped down below by however many above-trunk branch levels
+    // we end up using, so above-trunk label cascades fit in the panel.
+    let LINE_Y = 16;
+    const LABEL_AREA = 96;
+    const BRANCH_DY = LABEL_AREA + 6;
+    const BRANCH_DX = 14;
+    const LABEL_FONT = 10;
+    const LABEL_TILT = 55;
+
+    const trunkExtras = new Array(Math.max(0, tree.stops.length - 1)).fill(0);
+    for (const b of flatBranches) {
+        if (!b.rejoinAt) continue;
+        const jIdx = tree.stops.indexOf(b.junctionStop);
+        const rIdx = tree.stops.indexOf(b.rejoinAt);
+        if (jIdx < 0 || rIdx < 0 || jIdx === rIdx) continue;
+        const lo = Math.min(jIdx, rIdx), hi = Math.max(jIdx, rIdx);
+        const span = (hi - lo) * STOP_SPACING;
+        const need = (b.stops.length + 1) * STOP_SPACING;
+        const extra = need - span;
+        if (extra <= 0) continue;
+        const perGap = extra / (hi - lo);
+        for (let i = lo; i < hi; i++) {
+            if (perGap > trunkExtras[i]) trunkExtras[i] = perGap;
+        }
+    }
+    const mainXs = [MARGIN_X];
+    for (let i = 1; i < tree.stops.length; i++) {
+        mainXs.push(mainXs[i - 1] + STOP_SPACING + (trunkExtras[i - 1] || 0));
+    }
+    const trunkMid = (mainXs[0] + (mainXs[mainXs.length - 1] || mainXs[0])) / 2;
+
+    const branchLayouts = flatBranches.map(b => {
+        const jIdx = tree.stops.indexOf(b.junctionStop);
+        const jx = mainXs[jIdx] !== undefined ? mainXs[jIdx] : MARGIN_X;
+        if (b.rejoinAt) {
+            const rIdx = tree.stops.indexOf(b.rejoinAt);
+            const rx = mainXs[rIdx] !== undefined ? mainXs[rIdx] : jx;
+            const N = b.stops.length;
+            const xs = b.stops.map((_, i) => jx + (rx - jx) * (i + 1) / (N + 1));
+            const xLo = Math.min(jx, rx, ...xs);
+            const xHi = Math.max(jx, rx, ...xs);
+            return { ...b, jx, rx, jy: LINE_Y, ry: LINE_Y, xs, dir: 0, xLo, xHi };
+        }
+        const dir = jx < trunkMid ? -1 : 1;
+        const xs = b.stops.map((_, i) => jx + dir * (BRANCH_DX + i * STOP_SPACING));
+        const xLo = Math.min(jx, ...xs);
+        const xHi = Math.max(jx, ...xs);
+        return { ...b, jx, jy: LINE_Y, xs, dir, xLo, xHi };
+    });
+
+    // Stack overlapping branches vertically: greedy interval-packing assigns
+    // each branch the lowest Y level on which its x-range doesn't collide
+    // with already-placed branches. Without this, Windrush's two southern
+    // branches off Surrey Quays (one to New Cross, one curving via Peckham
+    // Rye → Clapham Junction) both want to occupy the same horizontal band
+    // and render directly on top of each other.
+    const sortedForLevels = [...branchLayouts].sort((a, b) => a.xLo - b.xLo);
+    const levelRanges = [];   // levelRanges[i] = [[xLo, xHi], ...]
+    for (const bl of sortedForLevels) {
+        let lvl = 0;
+        while (lvl < levelRanges.length) {
+            const conflict = levelRanges[lvl].some(([lo, hi]) =>
+                bl.xHi >= lo && bl.xLo <= hi);
+            if (!conflict) break;
+            lvl++;
+        }
+        if (lvl === levelRanges.length) levelRanges.push([]);
+        levelRanges[lvl].push([bl.xLo, bl.xHi]);
+        bl.level = lvl;
+    }
+    let maxBranchY = LINE_Y;
+    for (const bl of branchLayouts) {
+        bl.y = LINE_Y + BRANCH_DY * (1 + bl.level);
+        if (bl.y > maxBranchY) maxBranchY = bl.y;
+    }
+
+    let minX = mainXs[0], maxX = mainXs[mainXs.length - 1];
+    for (const bl of branchLayouts) for (const x of bl.xs) {
+        if (x < minX) minX = x;
+        if (x > maxX) maxX = x;
+    }
+    const shift = MARGIN_X - minX;
+    if (shift !== 0) {
+        for (let i = 0; i < mainXs.length; i++) mainXs[i] += shift;
+        for (const bl of branchLayouts) {
+            bl.jx += shift;
+            if (bl.rx !== undefined) bl.rx += shift;
+            for (let i = 0; i < bl.xs.length; i++) bl.xs[i] += shift;
+        }
+    }
+
+    const panelW = maxX + shift + MARGIN_X + 48;
+    const panelH = maxBranchY + LABEL_AREA + 8;
+
+    const pairValueOf = (k) => pairDisplay.get(k)?.value || 0;
+    let maxV = 0;
+    for (let i = 0; i < tree.stops.length - 1; i++) {
+        const v = pairValueOf(pairKey(tree.stops[i], tree.stops[i + 1]));
+        if (v > maxV) maxV = v;
+    }
+    for (const bl of branchLayouts) {
+        const allStops = [bl.junctionStop, ...bl.stops];
+        if (bl.rejoinAt) allStops.push(bl.rejoinAt);
+        for (let i = 0; i < allStops.length - 1; i++) {
+            const v = pairValueOf(pairKey(allStops[i], allStops[i + 1]));
+            if (v > maxV) maxV = v;
+        }
+    }
+    const denom = isCrowd ? 1 : maxV;
+    const widthFor = (v) => denom > 0 ? 1 + Math.pow(v / denom, 1.0) * 17 : 1;
+
+    const color = ROUTE_COLORS[route] || '#999';
+
+    const segTip = (a, b) => {
+        const nameA = svgEscape(labelOf(a));
+        const nameB = svgEscape(labelOf(b));
+        const d = pairDisplay.get(pairKey(a, b));
+        if (!d) return `${nameA} ↔ ${nameB}`;
+        if (isCrowd) {
+            const pct = Math.round(d.value * 100);
+            const hr = `${fmtHour12(d.hour)}–${fmtHour12(d.hour + 1)}`;
+            return isAllDay
+                ? `${nameA} ↔ ${nameB} · ${pct}% full at peak (${hr})`
+                : `${nameA} ↔ ${nameB} · ${pct}% full (${hr})`;
+        }
+        const n = Math.round(d.value).toLocaleString();
+        return isAllDay
+            ? `${nameA} ↔ ${nameB} · ${n} riders/day`
+            : `${nameA} ↔ ${nameB} · ${n} riders (${fmtHour12(d.hour)}–${fmtHour12(d.hour + 1)})`;
+    };
+
+    let segsSvg = '', stopsSvg = '', labelsSvg = '';
+
+    for (let i = 0; i < tree.stops.length - 1; i++) {
+        const a = tree.stops[i], b = tree.stops[i + 1];
+        const v = pairValueOf(pairKey(a, b));
+        segsSvg += `<line data-tip="${segTip(a, b)}" x1="${mainXs[i]}" y1="${LINE_Y}" x2="${mainXs[i + 1]}" y2="${LINE_Y}" stroke="${color}" stroke-width="${widthFor(v)}" stroke-linecap="round"/>`;
+    }
+    for (let i = 0; i < tree.stops.length; i++) {
+        const sid = tree.stops[i];
+        const x = mainXs[i];
+        stopsSvg += `<circle cx="${x}" cy="${LINE_Y}" r="3.2" fill="#0a0a0a" stroke="${color}" stroke-width="1.6"/>`;
+        const name = abbrStopName(labelOf(sid));
+        const ly = LINE_Y + 12;
+        labelsSvg += `<text x="${x}" y="${ly}" transform="rotate(${LABEL_TILT} ${x} ${ly})" fill="#ccc" font-size="${LABEL_FONT}" text-anchor="start" dominant-baseline="middle">${svgEscape(name)}</text>`;
+    }
+
+    for (const bl of branchLayouts) {
+        const tilt = bl.dir < 0 ? -LABEL_TILT : LABEL_TILT;
+        const anchor = bl.dir < 0 ? 'end' : 'start';
+
+        const v0 = pairValueOf(pairKey(bl.junctionStop, bl.stops[0]));
+        segsSvg += `<line data-tip="${segTip(bl.junctionStop, bl.stops[0])}" x1="${bl.jx}" y1="${bl.jy}" x2="${bl.xs[0]}" y2="${bl.y}" stroke="${color}" stroke-width="${widthFor(v0)}" stroke-linecap="round"/>`;
+        for (let i = 0; i < bl.stops.length - 1; i++) {
+            const a = bl.stops[i], b = bl.stops[i + 1];
+            const v = pairValueOf(pairKey(a, b));
+            segsSvg += `<line data-tip="${segTip(a, b)}" x1="${bl.xs[i]}" y1="${bl.y}" x2="${bl.xs[i + 1]}" y2="${bl.y}" stroke="${color}" stroke-width="${widthFor(v)}" stroke-linecap="round"/>`;
+        }
+        if (bl.rejoinAt) {
+            const lastStop = bl.stops[bl.stops.length - 1];
+            const vR = pairValueOf(pairKey(lastStop, bl.rejoinAt));
+            segsSvg += `<line data-tip="${segTip(lastStop, bl.rejoinAt)}" x1="${bl.xs[bl.xs.length - 1]}" y1="${bl.y}" x2="${bl.rx}" y2="${bl.ry}" stroke="${color}" stroke-width="${widthFor(vR)}" stroke-linecap="round"/>`;
+        }
+        for (let i = 0; i < bl.stops.length; i++) {
+            const sid = bl.stops[i];
+            const x = bl.xs[i];
+            stopsSvg += `<circle cx="${x}" cy="${bl.y}" r="3.2" fill="#0a0a0a" stroke="${color}" stroke-width="1.6"/>`;
+            const name = abbrStopName(labelOf(sid));
+            const ly = bl.y + 12;
+            labelsSvg += `<text x="${x}" y="${ly}" transform="rotate(${tilt} ${x} ${ly})" fill="#ccc" font-size="${LABEL_FONT}" text-anchor="${anchor}" dominant-baseline="middle">${svgEscape(name)}</text>`;
+        }
+    }
+
+    // total boardings on this route across the current hour window
+    let totalBoardings = 0;
+    for (const station of staticData.stations) {
+        const arr = station.by_route_hour[route];
+        if (!arr) continue;
+        for (let h = hLo; h < hHi; h++) {
+            totalBoardings += arr[h][0];
+        }
+    }
+
+    const btn = (key, label) =>
+        `<button class="drill-toggle-btn ${lineDrillMetric === key ? 'active' : ''}" data-lm="${key}">${label}</button>`;
+
+    const html = `
+        <div class="drill-header">
+            ${routeIconHTML(route)}
+            <div class="drill-metric-buttons">${btn('riders', 'riders')}${btn('crowd', 'crowdedness')}</div>
+            <span class="drill-total">${Math.round(totalBoardings).toLocaleString()}</span>
+        </div>
+        <div class="drill-line-wrap">
+            <svg width="${panelW}" height="${panelH}" viewBox="0 0 ${panelW} ${panelH}">
+                ${segsSvg}${stopsSvg}${labelsSvg}
+            </svg>
+        </div>
+    `;
+    showDrillPanel(html, 'line');
+
+    document.querySelectorAll('.drill-toggle-btn[data-lm]').forEach(b => {
+        b.addEventListener('mousedown', (e) => e.preventDefault());
+        b.onclick = () => {
+            lineDrillMetric = b.dataset.lm;
+            renderLineDrill();
+        };
+    });
+}
+
+// --- Static-layer interactions ---
+
+map.on('mouseenter', 'static-segments-layer', () => map.getCanvas().style.cursor = 'pointer');
+map.on('mouseleave', 'static-segments-layer', () => map.getCanvas().style.cursor = '');
+map.on('mouseenter', 'static-stations-layer', () => map.getCanvas().style.cursor = 'pointer');
+map.on('mouseleave', 'static-stations-layer', () => map.getCanvas().style.cursor = '');
+
+map.on('click', 'static-segments-layer', (e) => {
+    clickedStatic = true;
+    const p = e.features[0].properties;
+    openSegmentDrill(p.from, p.to);
+});
+map.on('click', 'static-stations-layer', (e) => {
+    clickedStatic = true;
+    const p = e.features[0].properties;
+    openStationDrill(p.complex_id);
+});
+
+
+// --- Controls ---
+const slider = document.getElementById('time-slider');
+// Live-mode slider bounds, restored when leaving static mode.
+const LIVE_SLIDER_MIN = parseInt(slider.min);
+const LIVE_SLIDER_MAX = parseInt(slider.max);
+slider.addEventListener('input', () => {
+    if (staticMode) {
+        staticHourIdx = parseInt(slider.value);
+        updateStaticTimeLabel();
+        renderCurrentStatic();
+        return;
+    }
+    simTime = parseInt(slider.value) * 60;
+    resetAnchor();
+    updateTimeLabel();
+});
+
+const dotSlider = document.getElementById('dot-slider');
+dotSlider.addEventListener('input', () => {
+    dotScale = parseInt(dotSlider.value) / 100;
+});
+
+// Walks off by default (GPU-heavy: thousands of extra circles); waiting on by
+// default for desktop, off on mobile (mobile GPUs struggle with hundreds of
+// dynamic circles).
+const isMobile = window.innerWidth <= 560;
+let showWaiting = !isMobile;
+let showWalks = false;
+if (isMobile) {
+    document.getElementById('toggle-waiting-cb').checked = false;
+}
+document.getElementById('toggle-waiting-cb').addEventListener('change', (e) => {
+    showWaiting = e.target.checked;
+    map.setLayoutProperty('waiting-layer', 'visibility', showWaiting ? 'visible' : 'none');
+    if (!showWaiting) map.getSource('waiting').setData(emptyGeoJSON);
+});
+document.getElementById('toggle-walks-cb').addEventListener('change', (e) => {
+    showWalks = e.target.checked;
+    map.setLayoutProperty('walks-layer', 'visibility', showWalks ? 'visible' : 'none');
+    if (!showWalks) map.getSource('walks').setData(emptyGeoJSON);
+});
+const ridershipToggleBtn = document.getElementById('ridership-toggle-btn');
+ridershipToggleBtn.addEventListener('mousedown', (e) => e.preventDefault());
+ridershipToggleBtn.addEventListener('click', () => {
+    const panel = document.getElementById('ridership-panel');
+    panel.classList.toggle('hidden');
+    ridershipPanelOpen = !panel.classList.contains('hidden');
+    ridershipToggleBtn.classList.toggle('active', ridershipPanelOpen);
+});
+
+const SPEED_STOPS = [0, 1/60, 0.05, 0.1, 0.2, 0.3, 0.5, 0.7, 1, 1.5, 2, 3, 5, 7, 10, 15, 20, 30, 50];
+function speedLabel(s) {
+    if (Math.abs(s - 1/60) < 1e-9) return 'real time';
+    return s + 'x';
+}
+function speedStopIndex(s) {
+    let best = 0, bestDiff = Infinity;
+    for (let i = 0; i < SPEED_STOPS.length; i++) {
+        const d = Math.abs(SPEED_STOPS[i] - s);
+        if (d < bestDiff) { bestDiff = d; best = i; }
+    }
+    return best;
+}
+
+function setSpeed(s) {
+    speedMultiplier = s;
+    if (s > 0) lastSpeed = s;
+    resetAnchor();
+    document.querySelectorAll('#speed-buttons button[data-speed]').forEach(btn => {
+        btn.classList.toggle('active', Number(btn.dataset.speed) === s);
+    });
+    const sl = document.getElementById('speed-slider');
+    const lb = document.getElementById('speed-slider-label');
+    if (sl) { sl.value = speedStopIndex(s); lb.textContent = speedLabel(s); }
+}
+
+document.querySelectorAll('#speed-buttons button[data-speed]').forEach(btn => {
+    btn.addEventListener('click', () => {
+        const s = Number(btn.dataset.speed);
+        if (s === 0) setSpeed(speedMultiplier > 0 ? 0 : lastSpeed);
+        else setSpeed(s);
+    });
+});
+
+const settingsPanel = document.getElementById('settings-panel');
+const speedSlider = document.getElementById('speed-slider');
+const speedSliderLabel = document.getElementById('speed-slider-label');
+const speedExpandBtn = document.getElementById('speed-expand-btn');
+speedExpandBtn.addEventListener('mousedown', (e) => e.preventDefault());
+speedExpandBtn.addEventListener('click', () => {
+    settingsPanel.classList.toggle('hidden');
+    speedExpandBtn.classList.toggle('active', !settingsPanel.classList.contains('hidden'));
+});
+speedSlider.addEventListener('input', () => {
+    const v = SPEED_STOPS[parseInt(speedSlider.value)];
+    speedSliderLabel.textContent = speedLabel(v);
+    setSpeed(v);
+});
+
+document.addEventListener('keydown', (e) => {
+    if (e.code === 'Space') {
+        e.preventDefault();
+        setSpeed(speedMultiplier > 0 ? 0 : lastSpeed);
+    }
+});
+
+
+// --- Tooltip ---
+function makePopup() {
+    return new maplibregl.Popup({
+        closeButton: false,
+        closeOnClick: false,
+        className: 'train-tooltip',
+        offset: 12,
+    });
+}
+
+const hoverTooltip = makePopup();
+let hoverTrain = null;   // { ti }
+let hoverStation = null;  // { lngLat }
+let hoverType = null;     // 'train' | 'station' | null
+const lockedTooltips = []; // [{ type, popup, ti?, lngLat? }]
+let lastMousePoint = null; // pixel coords for re-querying under cursor
+
+// Light line colours (yellow Circle, pink H&C, light Waterloo & City) get dark text.
+const DARK_TEXT_ROUTES = new Set(['CIR', 'HAM', 'WAC']);
+// TfL line names — London signage uses names, not letter codes.
+const ROUTE_NAMES = {
+    'BAK': 'Bakerloo', 'CEN': 'Central', 'CIR': 'Circle', 'DIS': 'District',
+    'HAM': 'Hammersmith & City', 'JUB': 'Jubilee', 'MET': 'Metropolitan',
+    'NOR': 'Northern', 'PIC': 'Piccadilly', 'VIC': 'Victoria',
+    'WAC': 'Waterloo & City', 'DLR': 'DLR', 'EZL': 'Elizabeth',
+    'NLL': 'Mildmay', 'ELL': 'Windrush', 'WEL': 'Lioness',
+    'GOB': 'Suffragette', 'URL': 'Liberty', 'WAG': 'Weaver',
+};
+
+function routeIconHTML(route) {
+    const color = ROUTE_COLORS[route] || '#999';
+    const textColor = DARK_TEXT_ROUTES.has(route) ? '#000' : '#fff';
+    const label = ROUTE_NAMES[route] || route;
+    return `<span class="route-icon" data-route="${route}" style="background:${color};color:${textColor}">${label}</span>`;
+}
+
+function trainTooltipHTML(p) {
+    return `${routeIconHTML(p.route)}<span style="color:#fff;white-space:nowrap">${p.riders}&nbsp;riders</span>`;
+}
+
+function stationTooltipHTML(si, riders) {
+    const station = data.waiting[si];
+    const routes = station.routes || [];
+    const icons = routes.map(r => routeIconHTML(r)).join('');
+    const iconsWrap = icons ? `<span class="route-icons">${icons}</span>` : '';
+    const nameLabel = station.name ? `<b style="white-space:nowrap">${station.name}</b>` : '';
+    return `${nameLabel}${iconsWrap}<span style="white-space:nowrap">${riders}&nbsp;waiting</span>`;
+}
+
+function clearAllLocked() {
+    for (const lt of lockedTooltips) lt.popup.remove();
+    lockedTooltips.length = 0;
+}
+
+map.on('mousemove', (e) => { lastMousePoint = e.point; tooltipDirty = true; });
+map.on('mouseout', () => { lastMousePoint = null; tooltipDirty = true; });
+
+map.on('mousemove', 'trains-layer', (e) => {
+    map.getCanvas().style.cursor = 'pointer';
+    const p = e.features[0].properties;
+    const coords = e.features[0].geometry.coordinates;
+    hoverTrain = { ti: p.ti };
+    hoverType = 'train';
+    hoverTooltip.setLngLat(coords)
+        .setHTML(trainTooltipHTML(p))
+        .addTo(map);
+});
+map.on('mouseleave', 'trains-layer', () => {
+    map.getCanvas().style.cursor = '';
+    if (hoverType === 'train') {
+        hoverTrain = null;
+        hoverType = null;
+        hoverTooltip.remove();
+    }
+});
+
+let clickedTrain = false;
+map.on('click', 'trains-layer', (e) => {
+    clickedTrain = true;
+    const p = e.features[0].properties;
+    const coords = e.features[0].geometry.coordinates;
+    const popup = makePopup();
+    popup.setLngLat(coords).setHTML(trainTooltipHTML(p)).addTo(map);
+    lockedTooltips.push({ type: 'train', popup, ti: p.ti });
+});
+
+map.on('mousemove', 'waiting-layer', (e) => {
+    if (hoverType === 'train') return;
+    map.getCanvas().style.cursor = 'pointer';
+    const p = e.features[0].properties;
+    const coords = e.features[0].geometry.coordinates;
+    hoverStation = { si: p.si, lngLat: coords };
+    hoverType = 'station';
+    hoverTooltip.setLngLat(coords)
+        .setHTML(stationTooltipHTML(p.si, Math.round(getStationWaiting(p.si))))
+        .addTo(map);
+});
+map.on('mouseleave', 'waiting-layer', () => {
+    map.getCanvas().style.cursor = '';
+    if (hoverType === 'station') {
+        hoverStation = null;
+        hoverType = null;
+        hoverTooltip.remove();
+    }
+});
+
+map.on('click', 'waiting-layer', (e) => {
+    if (clickedTrain) return; // train layer already handled this click
+    const p = e.features[0].properties;
+    const coords = e.features[0].geometry.coordinates;
+    const popup = makePopup();
+    popup.setLngLat(coords).setHTML(stationTooltipHTML(p.si, Math.round(getStationWaiting(p.si)))).addTo(map);
+    lockedTooltips.push({ type: 'station', popup, si: p.si });
+});
+
+map.on('click', (e) => {
+    if (!clickedStatic) {
+        document.getElementById('drill-panel').classList.add('hidden');
+        currentSegmentDrill = null;
+        currentStationDrill = null;
+        currentLineDrill = null;
+        clearHighlight();
+    }
+    clickedStatic = false;
+    clickedTrain = false;
+    document.getElementById('info-panel').classList.add('hidden');
+    if (lockedTooltips.length === 0) return;
+    const layers = ['trains-layer', 'waiting-layer'].filter(l => map.getLayer(l));
+    const features = layers.length ? map.queryRenderedFeatures(e.point, { layers }) : [];
+    if (features.length > 0) return;
+    clearAllLocked();
+});
+
+// --- Info panel ---
+const toggleInfo = () => document.getElementById('info-panel').classList.toggle('hidden');
+document.getElementById('info-btn').addEventListener('click', toggleInfo);
+document.getElementById('info-panel-close').addEventListener('click', () => {
+    document.getElementById('info-panel').classList.add('hidden');
+});
+if (window.innerWidth > 600) {
+    document.getElementById('info-panel').classList.remove('hidden');
+}
+
+</script>
+</body>
+</html>
