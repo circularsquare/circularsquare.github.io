@@ -10,7 +10,7 @@ permalink: /projects/
     - interactive 
         - <a href="/ancestrydots" data-thumb="/assets/thumbs/ancestrydots.png">ancestry dot map</a>
         - <a href="/nycriders" data-thumb="/assets/thumbs/nycriders.png">nyc riders</a>
-        - <a href="/londonriders">london riders</a>
+            - <a href="/londonriders">london riders</a>
         - <a href="https://graffiti.anita.garden/">graffiti nyc</a>
     - equal population maps
         - [asia in regions of 1 million people](/assets/maps/asia1meng.png) (in progress)

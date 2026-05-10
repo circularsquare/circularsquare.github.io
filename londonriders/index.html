@@ -687,9 +687,9 @@ body { background: #0a0a0a; color: #eee; font-family: 'Nunito', sans-serif; over
         <span id="info-panel-title">About</span>
         <button id="info-panel-close" title="Close">&#10005;</button>
     </div>
-    <p>This map shows TfL rail / London Tube trips taken on a typical weekday. The size of a train's bubble is proportional to the number of riders on it.</p>
-    <p>TfL publishes the <a href="https://crowding.data.tfl.gov.uk/" target="_blank">NUMBAT dataset</a>: 15-minute origin-destination ridership across the whole rail network, plus per-link train frequencies. Trains are derived from timetables. </p>
-    <p>Station coordinates from NUMBAT; track centrelines from <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> contributors (ODbL). Map built with <a href="https://maplibre.org" target="_blank">MapLibre GL</a> and <a href="https://carto.com/basemaps" target="_blank">CARTO</a> basemap tiles.</p>
+    <p>This map shows all the Transport for London (tube) system's trips taken on a typical weekday. The size of a train's bubble is proportional to the number of passengers on it.</p>
+    <p>The map uses the <a href="https://crowding.data.tfl.gov.uk/" target="_blank">NUMBAT dataset</a>, which has 15-minute origin-destination ridership. Trains are derived from timetables. </p>
+    <p>Station coordinates are from NUMBAT. Track lines from <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> contributors (ODbL). Map built with <a href="https://maplibre.org" target="_blank">MapLibre GL</a> and <a href="https://carto.com/basemaps" target="_blank">CARTO</a> basemap tiles.</p>
     <p>Made by <a href="https://anita.garden/projects" target="_blank">anita</a>!</p>
 </div>
 
@@ -2667,13 +2667,13 @@ function renderLineDrill() {
             const xs = b.stops.map((_, i) => jx + (rx - jx) * (i + 1) / (N + 1));
             const xLo = Math.min(jx, rx, ...xs);
             const xHi = Math.max(jx, rx, ...xs);
-            return { ...b, jx, rx, jy: LINE_Y, ry: LINE_Y, xs, dir: 0, xLo, xHi };
+            return { ...b, jx, rx, xs, dir: 0, xLo, xHi };
         }
         const dir = jx < trunkMid ? -1 : 1;
         const xs = b.stops.map((_, i) => jx + dir * (BRANCH_DX + i * STOP_SPACING));
         const xLo = Math.min(jx, ...xs);
         const xHi = Math.max(jx, ...xs);
-        return { ...b, jx, jy: LINE_Y, xs, dir, xLo, xHi };
+        return { ...b, jx, xs, dir, xLo, xHi };
     });
 
     // Stack overlapping branches vertically: greedy interval-packing assigns
@@ -2682,7 +2682,12 @@ function renderLineDrill() {
     // branches off Surrey Quays (one to New Cross, one curving via Peckham
     // Rye → Clapham Junction) both want to occupy the same horizontal band
     // and render directly on top of each other.
-    const sortedForLevels = [...branchLayouts].sort((a, b) => a.xLo - b.xLo);
+    // Sort by xLo (left edge); ties broken by length descending so longer
+    // branches get level 0 (below) where possible.
+    const sortedForLevels = [...branchLayouts].sort((a, b) => {
+        if (a.xLo !== b.xLo) return a.xLo - b.xLo;
+        return b.stops.length - a.stops.length;
+    });
     const levelRanges = [];   // levelRanges[i] = [[xLo, xHi], ...]
     for (const bl of sortedForLevels) {
         let lvl = 0;
@@ -2696,9 +2701,27 @@ function renderLineDrill() {
         levelRanges[lvl].push([bl.xLo, bl.xHi]);
         bl.level = lvl;
     }
+
+    // Alternate levels below/above the trunk: even levels (0, 2, ...) below,
+    // odd levels (1, 3, ...) above. A single overlap pair becomes one-below +
+    // one-above rather than stacking twice below. Bump LINE_Y down to make
+    // room for the topmost above branch's label cascade.
+    let maxLevel = 0;
+    for (const bl of branchLayouts) {
+        if (bl.level > maxLevel) maxLevel = bl.level;
+    }
+    const aboveLevelsUsed = Math.ceil(maxLevel / 2);
+    if (aboveLevelsUsed > 0) {
+        LINE_Y = aboveLevelsUsed * BRANCH_DY + LABEL_AREA + 8;
+    }
+
     let maxBranchY = LINE_Y;
     for (const bl of branchLayouts) {
-        bl.y = LINE_Y + BRANCH_DY * (1 + bl.level);
+        bl.jy = LINE_Y;
+        if (bl.rx !== undefined) bl.ry = LINE_Y;
+        const sign = bl.level % 2 === 0 ? 1 : -1;
+        const distance = Math.floor(bl.level / 2) + 1;
+        bl.y = LINE_Y + sign * BRANCH_DY * distance;
         if (bl.y > maxBranchY) maxBranchY = bl.y;
     }
 
@@ -2774,7 +2797,9 @@ function renderLineDrill() {
     }
 
     for (const bl of branchLayouts) {
-        const tilt = bl.dir < 0 ? -LABEL_TILT : LABEL_TILT;
+        const isAbove = bl.y < LINE_Y;
+        const tiltMag = bl.dir < 0 ? -LABEL_TILT : LABEL_TILT;
+        const tilt = isAbove ? -tiltMag : tiltMag;
         const anchor = bl.dir < 0 ? 'end' : 'start';
 
         const v0 = pairValueOf(pairKey(bl.junctionStop, bl.stops[0]));
@@ -2794,7 +2819,7 @@ function renderLineDrill() {
             const x = bl.xs[i];
             stopsSvg += `<circle cx="${x}" cy="${bl.y}" r="3.2" fill="#0a0a0a" stroke="${color}" stroke-width="1.6"/>`;
             const name = abbrStopName(labelOf(sid));
-            const ly = bl.y + 12;
+            const ly = isAbove ? bl.y - 12 : bl.y + 12;
             labelsSvg += `<text x="${x}" y="${ly}" transform="rotate(${tilt} ${x} ${ly})" fill="#ccc" font-size="${LABEL_FONT}" text-anchor="${anchor}" dominant-baseline="middle">${svgEscape(name)}</text>`;
         }
     }
