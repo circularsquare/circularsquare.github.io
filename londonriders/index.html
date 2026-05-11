@@ -224,6 +224,20 @@ body { background: #0a0a0a; color: #eee; font-family: 'Nunito', sans-serif; over
     font-size: 18px;
     color: #ccc;
     z-index: 20;
+    text-align: center;
+}
+#loading-bar {
+    width: 220px;
+    height: 3px;
+    background: rgba(255,255,255,0.12);
+    margin: 10px auto 0;
+    border-radius: 2px;
+    overflow: hidden;
+}
+#loading-bar-fill {
+    width: 0%;
+    height: 100%;
+    background: #ccc;
 }
 .train-tooltip .maplibregl-popup-content {
     background: rgba(10,10,10,0.9);
@@ -676,7 +690,7 @@ body { background: #0a0a0a; color: #eee; font-family: 'Nunito', sans-serif; over
 <body>
 <span id="map-title">londonriders</span>
 <div id="map"></div>
-<div id="loading">loading data...</div>
+<div id="loading"><div id="loading-text">loading data...</div><div id="loading-bar"><div id="loading-bar-fill"></div></div></div>
 
 <button id="info-btn" title="About this map">
     <span style="font-family:'Times New Roman',Times,serif;font-style:italic;font-size:19px;font-weight:bold;margin-left:-1px">i</span>
@@ -847,8 +861,7 @@ const TRAINS_URL = isLocalhost
     : 'https://pub-ae551368cea941f39101e13c84d60bde.r2.dev/londonriders/trains.json';
 
 map.on('load', () => {
-    fetch(TRAINS_URL)
-        .then(r => r.json())
+    fetchWithProgress(TRAINS_URL)
         .then(d => {
             data = d;
             preprocessData();
@@ -863,6 +876,46 @@ map.on('load', () => {
             document.getElementById('loading').textContent = 'Failed to load data: ' + e.message;
         });
 });
+
+// Stream the JSON response so we can update a progress bar with downloaded
+// bytes. Falls back silently to plain text+parse if the response body isn't
+// readable as a stream (very old browsers / extension proxies).
+async function fetchWithProgress(url) {
+    const resp = await fetch(url);
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    const text = document.getElementById('loading-text');
+    const fill = document.getElementById('loading-bar-fill');
+    const total = parseInt(resp.headers.get('Content-Length') || '0', 10);
+    if (!resp.body || !resp.body.getReader) {
+        return resp.json();
+    }
+    const reader = resp.body.getReader();
+    const chunks = [];
+    let received = 0;
+    // If Content-Length is the gzipped size while the browser auto-inflates
+    // the stream, received can exceed total. Clamp the bar at 100% in that
+    // case so it doesn't visually run off the right edge.
+    while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        chunks.push(value);
+        received += value.length;
+        if (total > 0) {
+            const pct = Math.min(100, Math.round(received / total * 100));
+            if (fill) fill.style.width = pct + '%';
+            if (text) text.textContent = `loading data... ${pct}%`;
+        } else if (text) {
+            text.textContent = `loading data... ${(received / 1048576).toFixed(1)} MB`;
+        }
+    }
+    if (fill) fill.style.width = '100%';
+    if (text) text.textContent = 'parsing…';
+    // Concatenate without copying into a single buffer first: Blob.text() lets
+    // the browser stitch the chunks itself, which is faster than allocating a
+    // ~100MB Uint8Array on the JS heap.
+    const blob = new Blob(chunks);
+    return JSON.parse(await blob.text());
+}
 
 let trainIndex = null; // sorted by startTime for binary-search scan
 let trainDrawOrder = null; // per-train random draw order
