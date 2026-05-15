@@ -116,6 +116,10 @@ a:active {
       padding: 5px 10px;
       margin-left: 0;
     }
+
+    .page-link:not(:last-child) {
+      margin-right: 0;
+    }
   }
 }
 .site-footer { border-top: 1px solid var(--teal); padding: 10px 0px; margin-top: auto;}
