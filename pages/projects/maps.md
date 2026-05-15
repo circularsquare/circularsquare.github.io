@@ -5,15 +5,15 @@ permalink: /maps/
 ---
 
 - city maps
-    - [nyc subway stations by population in catchment area](/assets/nycvoronoi.png) 
-    - [nyc simulated street trips heat map](/assets/nystreets.png) 
-    - [nyc bus lines by ridership](/assets/bus.png)
+    - <a href="/nycvoronoi/" data-thumb="/assets/thumbs/nycvoronoi.jpg">nyc subway stations by population in catchment area</a>
+    - <a href="/nystreets/" data-thumb="/assets/thumbs/nystreets.jpg">nyc simulated street trips heat map</a>
+    - <a href="/bus/" data-thumb="/assets/thumbs/bus.jpg">nyc bus lines by ridership</a>
 - equal population maps
-    - [europe in regions of 1 million people](/assets/euro1m.png) 
-    - [north america in regions of 1 million people](/assets/na1m.png) 
-    - [south america in regions of 1 million people](/assets/maps/sa1m.png) 
-    - [the world in regions of 10 million people](/assets/world10mfull.png)
-    - [fantasy world metro map](/assets/worldtrain.png)
+    - <a href="/euro1m/" data-thumb="/assets/thumbs/euro1m.jpg">europe in regions of 1 million people</a>
+    - <a href="/na1m/" data-thumb="/assets/thumbs/na1m.jpg">north america in regions of 1 million people</a>
+    - <a href="/sa1m/" data-thumb="/assets/thumbs/maps/sa1m.jpg">south america in regions of 1 million people</a>
+    - <a href="/world10mfull/" data-thumb="/assets/thumbs/world10mfull.jpg">the world in regions of 10 million people</a>
+    - <a href="/worldtrain/" data-thumb="/assets/thumbs/worldtrain.jpg">fantasy world metro map</a>
 
 (if you'd like to support my map making, you can donate [here](https://ko-fi.com/anitamaps)!)
 

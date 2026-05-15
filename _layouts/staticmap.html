@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="{{ page.lang | default: site.lang | default: "en" }}">
+<link rel="stylesheet" type="text/css" href="{{ site.baseurl }}/assets/main.css">
+
+  {%- include head.html -%}
+  <body class="staticmap-body">
+
+    {%- include header.html -%}
+
+    <main class="page-content staticmap-main" aria-label="Content">
+      <div class="staticmap-viewport" id="staticmap-viewport">
+        <div class="staticmap-scene" id="staticmap-scene">
+          <img class="staticmap-image" src="{{ page.image }}" alt="{{ page.title | escape }}">
+        </div>
+      </div>
+    </main>
+
+    {%- include footer.html -%}
+
+    <script src="https://unpkg.com/panzoom@9.4.0/dist/panzoom.min.js"></script>
+    <script>
+      (function() {
+        var scene = document.getElementById('staticmap-scene');
+        var viewport = document.getElementById('staticmap-viewport');
+        var img = scene.querySelector('.staticmap-image');
+
+        {% if page.pixelart %}
+        // Pixel-art source: pre-upscale UPSCALE× with nearest-neighbor into a
+        // canvas and swap it in for the original <img>. The browser then
+        // smooth-scales this already-blocky canvas at any zoom level, giving
+        // visibly chunkier pixels when zoomed in (without harsh aliasing).
+        // No extra storage required — only opt-in for pixel-art maps.
+        var UPSCALE = 2;
+        function swapInUpscaledCanvas() {
+          if (!img.naturalWidth) return;
+          var canvas = document.createElement('canvas');
+          canvas.width = img.naturalWidth * UPSCALE;
+          canvas.height = img.naturalHeight * UPSCALE;
+          canvas.className = img.className;
+          var ariaLabel = img.getAttribute('alt');
+          if (ariaLabel) canvas.setAttribute('aria-label', ariaLabel);
+          var ctx = canvas.getContext('2d');
+          ctx.imageSmoothingEnabled = false;
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+          img.parentNode.replaceChild(canvas, img);
+          img = canvas;
+        }
+        if (img.complete && img.naturalWidth) swapInUpscaledCanvas();
+        else img.addEventListener('load', swapInUpscaledCanvas);
+        {% endif %}
+
+        var instance = panzoom(scene, {
+          maxZoom: 10,
+          minZoom: 0.5,
+          smoothScroll: false,
+          beforeWheel: function(e) {
+            e.preventDefault();
+            return false;
+          }
+        });
+
+        // Loose clamp: after the user releases a drag (or wheel-zoom finishes),
+        // make sure at least MIN_VISIBLE pixels of the image stay inside the
+        // viewport on each axis. Lets cursor-anchored zoom work freely mid-gesture
+        // but stops the map from being lost off-screen.
+        var MIN_VISIBLE = 250;
+        function clampIntoView() {
+          var vpRect = viewport.getBoundingClientRect();
+          var scRect = scene.getBoundingClientRect();
+          var t = instance.getTransform();
+          var dx = 0, dy = 0;
+          if (scRect.right < vpRect.left + MIN_VISIBLE) {
+            dx = (vpRect.left + MIN_VISIBLE) - scRect.right;
+          } else if (scRect.left > vpRect.right - MIN_VISIBLE) {
+            dx = (vpRect.right - MIN_VISIBLE) - scRect.left;
+          }
+          if (scRect.bottom < vpRect.top + MIN_VISIBLE) {
+            dy = (vpRect.top + MIN_VISIBLE) - scRect.bottom;
+          } else if (scRect.top > vpRect.bottom - MIN_VISIBLE) {
+            dy = (vpRect.bottom - MIN_VISIBLE) - scRect.top;
+          }
+          if (dx !== 0 || dy !== 0) {
+            instance.smoothMoveTo(t.x + dx, t.y + dy);
+          }
+        }
+
+        instance.on('panend', clampIntoView);
+        instance.on('zoomend', clampIntoView);
+      })();
+    </script>
+  </body>
+
+</html>
