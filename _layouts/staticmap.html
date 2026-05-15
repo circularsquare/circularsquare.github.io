@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="{{ page.lang | default: site.lang | default: "en" }}">
-<link rel="stylesheet" type="text/css" href="{{ site.baseurl }}/assets/main.css">
+<link rel="stylesheet" type="text/css" href="{{ site.baseurl }}/assets/main.css?v={{ site.time | date: '%s' }}">
 
   {%- include head.html -%}
   <body class="staticmap-body">
@@ -50,7 +50,7 @@
         {% endif %}
 
         var instance = panzoom(scene, {
-          maxZoom: 20,
+          maxZoom: 30,
           minZoom: 0.5,
           smoothScroll: false,
           beforeWheel: function(e) {

@@ -166,6 +166,10 @@ table {border-spacing: 30px;}
   display: none;
 }
 
+.staticmap-body .site-header {
+  z-index: 100;
+}
+
 .staticmap-main {
   padding: 0 !important;
   display: flex;
@@ -196,7 +200,7 @@ table {border-spacing: 30px;}
   inset: 0;
   width: 100%;
   height: 100%;
-  object-fit: contain;
+  object-fit: cover;
   display: block;
   user-select: none;
   -webkit-user-drag: none;

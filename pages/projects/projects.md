@@ -22,7 +22,7 @@ permalink: /projects/
         - <a href="/worldtrain/" data-thumb="/assets/thumbs/worldtrain.jpg">fantasy world metro map</a>
     - city maps
         - <a href="/nycvoronoi/" data-thumb="/assets/thumbs/nycvoronoi.jpg">nyc subway stations by population in catchment area</a>
-            - <a href="/nycarea/" data-thumb="/assets/thumbs/maps/nycarea.jpg">+ regional rail stations</a> ([smaller image](/assets/maps/nycarea.jpg) here)
+            - <a href="/nycarea/" data-thumb="/assets/thumbs/maps/nycarea.jpg">+ regional rail stations</a> ([uncompressed version](/assets/maps/nycarea.png))
         - <a href="/nystreets/" data-thumb="/assets/thumbs/nystreets.jpg">nyc street trips heat map</a>
         - <a href="/bus/" data-thumb="/assets/thumbs/bus.jpg">nyc bus lines by ridership</a>
     - (if you'd like to support my map making, you can donate [here](https://ko-fi.com/anitamaps)!)<br><br>

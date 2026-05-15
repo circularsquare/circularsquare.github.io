@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="{{ page.lang | default: site.lang | default: "en" }}">
-<link rel="stylesheet" type="text/css" href="{{ site.baseurl }}/assets/main.css">
+<link rel="stylesheet" type="text/css" href="{{ site.baseurl }}/assets/main.css?v={{ site.time | date: '%s' }}">
 
   {%- include head.html -%}
   
