@@ -89,24 +89,25 @@
         });
 
         // Loose clamp: after the user releases a drag (or wheel-zoom finishes),
-        // make sure at least MIN_VISIBLE pixels of the image stay inside the
-        // viewport on each axis. Lets cursor-anchored zoom work freely mid-gesture
-        // but stops the map from being lost off-screen.
-        var MIN_VISIBLE = 250;
+        // make sure at least minVis pixels of the image stay inside the viewport
+        // on each axis. minVis shrinks as zoom increases — at high zoom you only
+        // need a tiny sliver to anchor, otherwise it'd prevent zooming in on
+        // edges (the corner can't be brought near the center of a narrow viewport).
         function clampIntoView() {
           var vpRect = viewport.getBoundingClientRect();
-          var scRect = scene.getBoundingClientRect();
+          var imRect = img.getBoundingClientRect();
           var t = instance.getTransform();
+          var minVis = Math.max(40, 250 / t.scale);
           var dx = 0, dy = 0;
-          if (scRect.right < vpRect.left + MIN_VISIBLE) {
-            dx = (vpRect.left + MIN_VISIBLE) - scRect.right;
-          } else if (scRect.left > vpRect.right - MIN_VISIBLE) {
-            dx = (vpRect.right - MIN_VISIBLE) - scRect.left;
+          if (imRect.right < vpRect.left + minVis) {
+            dx = (vpRect.left + minVis) - imRect.right;
+          } else if (imRect.left > vpRect.right - minVis) {
+            dx = (vpRect.right - minVis) - imRect.left;
           }
-          if (scRect.bottom < vpRect.top + MIN_VISIBLE) {
-            dy = (vpRect.top + MIN_VISIBLE) - scRect.bottom;
-          } else if (scRect.top > vpRect.bottom - MIN_VISIBLE) {
-            dy = (vpRect.bottom - MIN_VISIBLE) - scRect.top;
+          if (imRect.bottom < vpRect.top + minVis) {
+            dy = (vpRect.top + minVis) - imRect.bottom;
+          } else if (imRect.top > vpRect.bottom - minVis) {
+            dy = (vpRect.bottom - minVis) - imRect.top;
           }
           if (dx !== 0 || dy !== 0) {
             instance.smoothMoveTo(t.x + dx, t.y + dy);

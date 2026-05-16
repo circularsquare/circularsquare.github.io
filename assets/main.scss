@@ -187,6 +187,7 @@ table {border-spacing: 30px;}
   position: relative;
   touch-action: none;
   cursor: grab;
+  contain: paint;
 }
 
 .staticmap-viewport:active {
@@ -197,13 +198,17 @@ table {border-spacing: 30px;}
   position: absolute;
   inset: 0;
   transform-origin: 0 0;
+  will-change: transform;
 }
 
 .staticmap-image {
   position: absolute;
-  inset: 0;
+  top: 0;
+  left: 0;
   width: 100%;
   height: 100%;
+  max-width: none;
+  max-height: none;
   object-fit: cover;
   display: block;
   user-select: none;
