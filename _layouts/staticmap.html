@@ -45,9 +45,38 @@
           img.parentNode.replaceChild(canvas, img);
           img = canvas;
         }
-        if (img.complete && img.naturalWidth) swapInUpscaledCanvas();
-        else img.addEventListener('load', swapInUpscaledCanvas);
         {% endif %}
+
+        // Size the image element to "cover" the viewport (fills the shorter
+        // axis, overflows the longer one). CSS object-fit: cover crops at the
+        // image's display level, so the cropped pixels aren't in the rendered
+        // DOM and pan can't reveal them. Setting explicit width/height/left/top
+        // makes the overflow real, so the viewport's overflow: hidden clips it
+        // and pan unclips it.
+        function fitCover() {
+          var vw = viewport.clientWidth;
+          var vh = viewport.clientHeight;
+          var iw = img.naturalWidth || img.width;
+          var ih = img.naturalHeight || img.height;
+          if (!iw || !ih || !vw || !vh) return;
+          var coverScale = Math.max(vw / iw, vh / ih);
+          var w = iw * coverScale;
+          var h = ih * coverScale;
+          img.style.width = w + 'px';
+          img.style.height = h + 'px';
+          img.style.left = ((vw - w) / 2) + 'px';
+          img.style.top = ((vh - h) / 2) + 'px';
+        }
+
+        function onImageReady() {
+          {% if page.pixelart %}
+          swapInUpscaledCanvas();
+          {% endif %}
+          fitCover();
+        }
+        if (img.complete && img.naturalWidth) onImageReady();
+        else img.addEventListener('load', onImageReady);
+        window.addEventListener('resize', fitCover);
 
         var instance = panzoom(scene, {
           maxZoom: 30,
