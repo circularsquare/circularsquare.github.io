@@ -22,61 +22,62 @@
       (function() {
         var scene = document.getElementById('staticmap-scene');
         var viewport = document.getElementById('staticmap-viewport');
-        var img = scene.querySelector('.staticmap-image');
+        var originalImg = scene.querySelector('.staticmap-image');
+        var canvasEl = null;
+        // `img` always points to whichever element is currently visible
+        // (canvas at downscale, original img at upscale, for pixelart maps).
+        var img = originalImg;
 
         {% if page.pixelart %}
-        // Pixel-art source: pre-upscale UPSCALE× with nearest-neighbor into a
-        // canvas and swap it in for the original <img>. The browser then
-        // smooth-scales this already-blocky canvas at any zoom level, giving
-        // visibly chunkier pixels when zoomed in (without harsh aliasing).
-        // No extra storage required — only opt-in for pixel-art maps.
+        // Pixel-art source: create a 2× NN-upscaled canvas as a sibling of the
+        // original <img>. At downscale we show the canvas (gives a "chunky but
+        // softly downsampled" pixel-art look), at upscale we show the original
+        // img (single-pass smooth interpolation, less blurry than canvas+browser
+        // double smoothing).
         var UPSCALE = 2;
-        function swapInUpscaledCanvas() {
-          if (!img.naturalWidth) return;
-          var canvas = document.createElement('canvas');
-          canvas.width = img.naturalWidth * UPSCALE;
-          canvas.height = img.naturalHeight * UPSCALE;
-          canvas.className = img.className;
-          var ariaLabel = img.getAttribute('alt');
-          if (ariaLabel) canvas.setAttribute('aria-label', ariaLabel);
-          var ctx = canvas.getContext('2d');
+        function createUpscaledCanvas() {
+          if (!originalImg.naturalWidth) return;
+          canvasEl = document.createElement('canvas');
+          canvasEl.width = originalImg.naturalWidth * UPSCALE;
+          canvasEl.height = originalImg.naturalHeight * UPSCALE;
+          canvasEl.className = originalImg.className;
+          var ariaLabel = originalImg.getAttribute('alt');
+          if (ariaLabel) canvasEl.setAttribute('aria-label', ariaLabel);
+          var ctx = canvasEl.getContext('2d');
           ctx.imageSmoothingEnabled = false;
-          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-          img.parentNode.replaceChild(canvas, img);
-          img = canvas;
+          ctx.drawImage(originalImg, 0, 0, canvasEl.width, canvasEl.height);
+          scene.appendChild(canvasEl);
+          // Hide the original img by default — updateRendering will toggle as zoom changes.
+          originalImg.style.display = 'none';
+          img = canvasEl;
         }
         {% endif %}
 
-        // Size the image element to "cover" the viewport (fills the shorter
-        // axis, overflows the longer one). CSS object-fit: cover crops at the
+        // Size the element to "cover" the viewport (fills the shorter axis,
+        // overflows the longer one). CSS object-fit: cover crops at the
         // image's display level, so the cropped pixels aren't in the rendered
         // DOM and pan can't reveal them. Setting explicit width/height/left/top
         // makes the overflow real, so the viewport's overflow: hidden clips it
         // and pan unclips it.
-        function fitCover() {
+        function fitElement(el) {
+          if (!el) return;
           var vw = viewport.clientWidth;
           var vh = viewport.clientHeight;
-          var iw = img.naturalWidth || img.width;
-          var ih = img.naturalHeight || img.height;
+          var iw = el.naturalWidth || el.width;
+          var ih = el.naturalHeight || el.height;
           if (!iw || !ih || !vw || !vh) return;
           var coverScale = Math.max(vw / iw, vh / ih);
           var w = iw * coverScale;
           var h = ih * coverScale;
-          img.style.width = w + 'px';
-          img.style.height = h + 'px';
-          img.style.left = ((vw - w) / 2) + 'px';
-          img.style.top = ((vh - h) / 2) + 'px';
+          el.style.width = w + 'px';
+          el.style.height = h + 'px';
+          el.style.left = ((vw - w) / 2) + 'px';
+          el.style.top = ((vh - h) / 2) + 'px';
         }
-
-        function onImageReady() {
-          {% if page.pixelart %}
-          swapInUpscaledCanvas();
-          {% endif %}
-          fitCover();
+        function fitCover() {
+          fitElement(originalImg);
+          fitElement(canvasEl);
         }
-        if (img.complete && img.naturalWidth) onImageReady();
-        else img.addEventListener('load', onImageReady);
-        window.addEventListener('resize', fitCover);
 
         var instance = panzoom(scene, {
           maxZoom: 30,
@@ -87,6 +88,46 @@
             return false;
           }
         });
+
+        function onImageReady() {
+          {% if page.pixelart %}
+          createUpscaledCanvas();
+          {% endif %}
+          fitCover();
+          updateRendering();
+        }
+        if (originalImg.complete && originalImg.naturalWidth) onImageReady();
+        else originalImg.addEventListener('load', onImageReady);
+        window.addEventListener('resize', fitCover);
+
+        // Toggle which element is visible based on source-pixel-to-device-pixel
+        // ratio. At downscale (ratio < 1) the NN canvas + browser downsampling
+        // gives the soft-block pixel-art look. At upscale (ratio >= 1) we switch
+        // to the original img so the browser does a single smooth interpolation
+        // pass instead of smoothing the already-blocky canvas.
+        var currentMode = null;
+        function updateRendering() {
+          if (!canvasEl) return;
+          var t = instance.getTransform();
+          var sourceW = originalImg.naturalWidth;
+          var displayW = img.clientWidth || originalImg.clientWidth;
+          if (!sourceW || !displayW) return;
+          var dpr = window.devicePixelRatio || 1;
+          var ratio = (displayW * t.scale * dpr) / sourceW;
+          var mode = ratio >= 1 ? 'canvas' : 'img';
+          if (mode === currentMode) return;
+          if (mode === 'img') {
+            originalImg.style.display = '';
+            canvasEl.style.display = 'none';
+            img = originalImg;
+          } else {
+            canvasEl.style.display = '';
+            originalImg.style.display = 'none';
+            img = canvasEl;
+          }
+          currentMode = mode;
+        }
+        instance.on('transform', updateRendering);
 
         // Loose clamp: after the user releases a drag (or wheel-zoom finishes),
         // make sure at least minVis pixels of the image stay inside the viewport
