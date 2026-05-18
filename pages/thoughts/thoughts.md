@@ -27,4 +27,5 @@ assorted word vomit
 - [words](words/)
 - [winter](winter/)
 - [chapters](chapters/)
+- [pain](pain/)
 
