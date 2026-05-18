@@ -48,7 +48,9 @@
           ctx.drawImage(originalImg, 0, 0, canvasEl.width, canvasEl.height);
           scene.appendChild(canvasEl);
           // Hide the original img by default — updateRendering will toggle as zoom changes.
-          originalImg.style.display = 'none';
+          // Using `visibility` (not `display: none`) so the hidden element stays in the
+          // render tree and the swap doesn't trigger a first-paint stall at the threshold.
+          originalImg.style.visibility = 'hidden';
           img = canvasEl;
         }
         {% endif %}
@@ -122,12 +124,12 @@
           var mode = ratio >= 1 ? 'canvas' : 'img';
           if (mode === currentMode) return;
           if (mode === 'img') {
-            originalImg.style.display = '';
-            canvasEl.style.display = 'none';
+            originalImg.style.visibility = '';
+            canvasEl.style.visibility = 'hidden';
             img = originalImg;
           } else {
-            canvasEl.style.display = '';
-            originalImg.style.display = 'none';
+            canvasEl.style.visibility = '';
+            originalImg.style.visibility = 'hidden';
             img = canvasEl;
           }
           currentMode = mode;
