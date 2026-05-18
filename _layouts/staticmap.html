@@ -113,7 +113,12 @@
           var displayW = img.clientWidth || originalImg.clientWidth;
           if (!sourceW || !displayW) return;
           var dpr = window.devicePixelRatio || 1;
-          var ratio = (displayW * t.scale * dpr) / sourceW;
+          // On touch/mobile devices, halve the effective dpr so the switch to
+          // smooth-interp img mode happens at roughly the same visible zoom as
+          // desktop — otherwise high-DPR phones go blurry as soon as you pinch.
+          var isCoarsePointer = window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
+          var effectiveDpr = isCoarsePointer ? dpr / 2 : dpr;
+          var ratio = (displayW * t.scale * effectiveDpr) / sourceW;
           var mode = ratio >= 1 ? 'canvas' : 'img';
           if (mode === currentMode) return;
           if (mode === 'img') {
