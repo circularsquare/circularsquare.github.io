@@ -11,9 +11,9 @@ most of this website is lists, but this is a list of them.
 - [books](/books/)
 - [anime](/anime/)
 - [games](/games/)
+- [websites](/websites/)
 - [bubble tea](bubbletea/)
 - [elements](elements/)
-- [websites](/websites/)
 
 - [friends](/friends/)
 - [places](/places/)
