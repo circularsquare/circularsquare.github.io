@@ -1,0 +1,1315 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>japan rail flow — passenger throughput per segment</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { background: #07090d; color: #eee; font-family: 'Nunito', system-ui, sans-serif; overflow: hidden; }
+#map { width: 100vw; height: 100vh; }
+
+#title {
+    position: absolute;
+    top: 12px; left: 14px;
+    background: rgba(7,9,13,0.84);
+    border: 1px solid #2a2f38;
+    border-radius: 8px;
+    padding: 9px 13px;
+    z-index: 100;
+    max-width: 360px;
+    font-size: 13px;
+    line-height: 1.45;
+}
+#title .hdr { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+#title h1 { font-size: 15px; font-weight: 800; margin-bottom: 3px; }
+#title .sub { color: #8b939e; font-size: 11px; }
+#title a { color: #5bb6ff; text-decoration: none; }
+
+#langtoggle { flex: none; font-size: 11px; white-space: nowrap; }
+#langtoggle span { cursor: pointer; color: #8b939e; padding: 1px 5px; border-radius: 4px; }
+#langtoggle span.on { color: #fff; background: #2a2f38; }
+
+#bottomleft {
+    position: absolute;
+    bottom: 16px; left: 14px;
+    z-index: 100;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+}
+#legend {
+    position: relative;
+    background: rgba(7,9,13,0.84);
+    border: 1px solid #2a2f38;
+    border-radius: 8px;
+    padding: 9px 12px;
+    font-size: 11.5px;
+    line-height: 1.7;
+}
+#legend.hidden { display: none; }
+#legend .close {
+    position: absolute;
+    top: 2px; right: 6px;
+    color: #59616d;
+    cursor: pointer;
+    font-size: 16px;
+    line-height: 1;
+    padding: 3px 4px;
+    user-select: none;
+}
+#legend .close:hover { color: #d8dde3; }
+#ctrlbtn {
+    width: 32px; height: 32px;
+    background: rgba(7,9,13,0.84);
+    border: 1px solid #2a2f38;
+    border-radius: 50%;
+    color: #c0c5cc;
+    cursor: pointer;
+    user-select: none;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    transition: color .15s, border-color .15s;
+}
+#ctrlbtn svg { width: 18px; height: 18px; }
+#ctrlbtn:hover { color: #fff; border-color: #4a505c; }
+#ctrlbtn.show { display: flex; }
+#legend .hd { color: #8b939e; font-size: 10px; text-transform: uppercase; letter-spacing: .5px; margin-bottom: 3px; }
+#legend .row { display: flex; align-items: center; gap: 6px; }
+#legend .sw { width: 14px; height: 3px; border-radius: 2px; flex: none; }
+#legend .widths { margin-top: 7px; padding-top: 6px; border-top: 1px solid #2a2f38; }
+#legend .wrow { display: flex; align-items: center; gap: 6px; }
+#legend .wbar { background: #d8dde3; border-radius: 2px; flex: none; }
+#legend .thick { margin-top: 7px; width: 150px; }
+#legend .thick .val { color: #d8dde3; }
+#legend .thick input { width: 100%; margin-top: 5px; accent-color: #5bb6ff; cursor: pointer; }
+#legend .modetoggle { display: flex; gap: 4px; margin-bottom: 6px; }
+#legend .modetoggle span { cursor: pointer; color: #8b939e; padding: 2px 7px; border-radius: 4px; border: 1px solid #2a2f38; }
+#legend .modetoggle span.on { color: #fff; background: #2a2f38; }
+#legend .widths .modetoggle { margin-top: 8px; }
+#legend .stsec { margin-top: 7px; padding-top: 6px; border-top: 1px solid #2a2f38; }
+#aboutbtn {
+    position: absolute;
+    top: 80px; left: 14px;
+    z-index: 110;
+    width: 32px; height: 32px;
+    background: rgba(7,9,13,0.84);
+    border: 1px solid #2a2f38;
+    border-radius: 50%;
+    color: #c0c5cc;
+    font-size: 17px;
+    font-weight: 700;
+    line-height: 30px;
+    text-align: center;
+    cursor: pointer;
+    user-select: none;
+    transition: color .15s, border-color .15s;
+}
+#aboutbtn:hover { color: #fff; border-color: #4a505c; }
+#aboutbtn.on { color: #fff; background: #2a2f38; border-color: #5bb6ff; }
+#aboutpanel {
+    position: absolute;
+    bottom: 16px;
+    left: 215px;
+    width: 360px;
+    max-width: calc(100vw - 235px);
+    max-height: calc(80vh - 16px);
+    overflow-y: auto;
+    background: rgba(7,9,13,0.94);
+    border: 1px solid #3a414c;
+    border-radius: 8px;
+    padding: 14px 16px;
+    z-index: 105;
+    font-size: 11.5px;
+    line-height: 1.5;
+    color: #c0c5cc;
+    display: none;
+}
+#aboutpanel.open { display: block; }
+@media (max-width: 700px) {
+    #aboutpanel {
+        left: 14px; right: 14px;
+        width: auto; max-width: none;
+    }
+}
+#aboutpanel h2 { color: #fff; font-size: 13px; font-weight: 800; margin: 14px 0 5px; letter-spacing: .3px; }
+#aboutpanel h2:first-child { margin-top: 0; }
+#aboutpanel p { margin-top: 6px; }
+#aboutpanel p:first-of-type { margin-top: 0; }
+#aboutpanel b { color: #fff; }
+#aboutpanel a { color: #5bb6ff; text-decoration: none; }
+#legend .strow { display: flex; align-items: center; gap: 8px; width: 150px; }
+#legend .strow input[type=checkbox] { width: 13px; height: 13px; flex: none; margin: 0; accent-color: #5bb6ff; cursor: pointer; }
+#legend .strow input[type=range] { flex: 1; min-width: 0; accent-color: #5bb6ff; cursor: pointer; }
+
+#info {
+    position: absolute;
+    bottom: 16px; right: 14px;
+    background: rgba(7,9,13,0.92);
+    border: 1px solid #3a414c;
+    border-radius: 8px;
+    padding: 10px 13px;
+    z-index: 100;
+    font-size: 12.5px;
+    line-height: 1.5;
+    max-width: 320px;
+    display: none;
+}
+#info .ipline { font-weight: 800; font-size: 13.5px; margin-bottom: 3px; }
+#info .ipseg { color: #fff; margin-bottom: 5px; }
+#info .iprow { display: flex; justify-content: space-between; gap: 20px; color: #8b939e; }
+#info .iprow b { color: #eee; font-weight: 700; }
+#info .iphint { margin-top: 7px; color: #59616d; font-size: 10.5px; }
+
+#tooltip {
+    position: absolute;
+    pointer-events: none;
+    background: rgba(7,9,13,0.96);
+    border: 1px solid #3a414c;
+    border-radius: 6px;
+    padding: 6px 9px;
+    font-size: 12px;
+    line-height: 1.45;
+    z-index: 200;
+    display: none;
+    white-space: nowrap;
+}
+#tooltip .line { font-weight: 800; }
+#tooltip .seg { color: #fff; }
+#tooltip .ri { color: #ffd66b; font-weight: 800; }
+#tooltip .meta { color: #8b939e; font-size: 11px; }
+.resc { color: #8b939e; font-weight: 400; margin-left: 1px; }   /* rescued-name marker — name derived from geometry, not published label */
+
+.maplibregl-ctrl-attrib { font-size: 10px !important; }
+</style>
+</head>
+<body>
+<div id="map"></div>
+<div id="title">
+    <div class="hdr">
+        <h1 id="t-h1"></h1>
+        <div id="langtoggle"><span id="lang-en">EN</span><span id="lang-ja">日本語</span></div>
+    </div>
+    <div class="sub" id="t-sub"></div>
+</div>
+<div id="aboutbtn" title="about">?</div>
+<div id="bottomleft">
+    <div id="ctrlbtn" title="controls"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="17" x2="20" y2="17"/></svg></div>
+    <div id="legend"></div>
+</div>
+<div id="info"></div>
+<div id="tooltip"></div>
+<div id="aboutpanel"></div>
+
+<link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet" />
+<script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+<script>
+// ─────────────────────────── interface strings ───────────────────────────
+const STR = {
+    en: {
+        h1: 'japan rail flow',
+        sub1: 'line thickness = passenger throughput',
+        legLineColors: 'line colors',
+        modeOperator: 'by operator',
+        modeLine: 'by line',
+        legWidth: 'throughput (pax / day)',
+        tipThroughput: 'throughput',
+        tipCensus: 'per-segment shape: 2015 census',
+        toggleStations: 'station bubbles',
+        tipStationRiders: 'station traffic',
+        legSource: 'data view',
+        srcBase: 'national',
+        srcCensus: 'metro',
+        srcStitched: 'stitched',
+        aboutTitle: 'about',
+        aboutBody: `<h2>lines &amp; segments</h2><p>A <b>line</b> is a named route run by one operator end to end. A <b>segment</b> is the shortest piece of a line we have passenger throughput data for.</p><p><b>Left click</b> to highlight a line. <b>Right click</b> to highlight a segment.</p><h2>data views</h2><p><b>national</b>: each operator's published passenger throughput (passengers per day per km of track), the nationwide source.</p><p><b>metro</b>: per segment detail from the 2015 Metropolitan Transportation Census. Only exists inside the Tokyo, Nagoya, and Osaka census regions. The census is a weekday commuter snapshot, so it tends to undercount long distance and non commuter trips.</p><p><b>stitched</b>: inside the three census regions, the metro data is scaled to match each line's national total. Outside, lines stay at the national value. The gap between the metro census's total and the national total is added back as a uniform baseline, so the low commuter outskirts of metro areas blend smoothly into the national level rather than dipping below it.</p><h2>line thickness scale</h2><p>The <b>linear scale below</b> slider sets where line width switches from linear to log. Set it <b>high</b> to see fine differences inside busy metro areas. Set it <b>low</b> to see thin rural lines alongside thick urban ones, good for viewing the whole country at once.</p><h2>data sources</h2><p>Throughput: <a href="https://gtfs-gis.jp/railway_tsukajinin/">gtfs-gis.jp</a> (Akira Nishizawa, CC BY 4.0). Latest of FY2024 / FY2023.</p><p>Geometry: MLIT N02. Census: Metropolitan Transportation Census 2015.</p><p>Station bubbles: <a href="https://nlftp.mlit.go.jp/ksj/">MLIT S12</a>, mostly FY2021.</p>`,
+        legThickness: 'line thickness',
+        legFloor: 'log scale above',
+        scaleLog: 'log',
+        scaleLinear: 'linear',
+        panelLength: 'length',
+        panelSections: 'sections',
+        panelRange: 'throughput',
+        panelHint: 'left-click line · right-click segment · Esc clears',
+        km: 'km', perday: 'pax/day',
+    },
+    ja: {
+        h1: '日本 鉄道輸送密度',
+        sub1: '線の太さ ＝ 輸送密度',
+        legLineColors: 'ラインカラー',
+        modeOperator: '事業者別',
+        modeLine: '路線別',
+        legWidth: '輸送密度（人/日）',
+        tipThroughput: '輸送密度',
+        tipCensus: '区間形状: 2015年センサス',
+        toggleStations: '駅バブル',
+        tipStationRiders: '乗降客数',
+        legSource: 'データ表示',
+        srcBase: '全国',
+        srcCensus: '都市圏',
+        srcStitched: '統合',
+        aboutTitle: 'このマップについて',
+        aboutBody: `<h2>路線と区間</h2><p><b>路線</b>は一事業者が端から端まで運行する1本の路線。<b>区間</b>はその路線の中で輸送密度のデータがある最小の単位。</p><p><b>左クリック</b>で路線を、<b>右クリック</b>で区間をハイライト。</p><h2>データ表示</h2><p><b>全国</b>：各事業者が公表する輸送密度（人キロ/営業キロ/日）の全国データ。</p><p><b>都市圏</b>：2015年大都市交通センサスの駅間通過人員。首都圏・中京圏・近畿圏のみで利用可能。平日通勤を主体とした調査のため、長距離や非通勤の利用は過小評価される傾向がある。</p><p><b>統合</b>：3大都市圏内では都市圏データを各路線の全国公表値と一致するように再スケールしている。都市圏外は全国公表値のまま表示。都市圏内では、センサスの合計値と全国公表値との差分を均一なベースラインとして各区間に上乗せしているため、通勤需要が下がる都市圏の外縁でも全国レベルから極端に下回ることなく滑らかにつながる。</p><h2>線の太さスケール</h2><p><b>線形スケールの上限</b>スライダーは、線の太さが線形から対数に切り替わる閾値を設定する。<b>高く</b>すると混雑する都市圏路線間の細かい違いが見やすくなる。<b>低く</b>すると地方の閑散路線と都市の混雑路線を同時に比較しやすくなり、全国を一望するのに適している。</p><h2>データソース</h2><p>輸送密度：<a href="https://gtfs-gis.jp/railway_tsukajinin/">gtfs-gis.jp</a>（西澤明, CC BY 4.0）。最新年度 FY2024 / FY2023。</p><p>線形：国土数値情報 N02。センサス：大都市交通センサス 2015。</p><p>駅バブル：<a href="https://nlftp.mlit.go.jp/ksj/">国土数値情報 S12</a>、主にFY2021。</p>`,
+        legThickness: '線の太さ',
+        legFloor: '線形スケールの上限',
+        scaleLog: '対数',
+        scaleLinear: '線形',
+        panelLength: '営業キロ',
+        panelSections: '区間数',
+        panelRange: '輸送密度',
+        panelHint: '左クリックで路線 · 右クリックで区間 · Esc で解除',
+        km: 'km', perday: '人/日',
+    },
+};
+let lang = 'en';
+
+// ─────────────────────── operators: 6 JR companies ───────────────────────
+const JR = {
+    '北海道旅客鉄道': { color: '#7fd14f', en: 'JR Hokkaido', ja: 'JR北海道' },
+    '東日本旅客鉄道': { color: '#2eb35a', en: 'JR East',     ja: 'JR東日本' },
+    '東海旅客鉄道':   { color: '#f5821f', en: 'JR Central',  ja: 'JR東海'   },
+    '西日本旅客鉄道': { color: '#2f86d6', en: 'JR West',     ja: 'JR西日本' },
+    '四国旅客鉄道':   { color: '#22c3e6', en: 'JR Shikoku',  ja: 'JR四国'   },
+    '九州旅客鉄道':   { color: '#e8443b', en: 'JR Kyushu',   ja: 'JR九州'   },
+};
+const OTHER_COLOR = '#9aa0ab';   // private rail, third-sector, metro, trams
+
+// ───────────── canonical line colours, keyed LINE_COLORS[operator][line] ──────────
+// official ラインカラー from each operator (sourced via ja.wikipedia 日本の鉄道ラインカラー一覧).
+// dataset bundles some private-railway lines into one feature — those take the
+// headline line's colour; subway lines are each their own feature, so each gets
+// its exact official colour.
+const LINE_COLORS = {
+  // ── subways: every line its own official colour ──
+  '東京地下鉄': {  // Tokyo Metro
+    '3号線銀座線':'#ff9500', '4号線丸ノ内線':'#f62e36', '2号線日比谷線':'#b5b5ac',
+    '5号線東西線':'#009bbf', '9号線千代田線':'#00bb85', '8号線有楽町線':'#c1a470',
+    '11号線半蔵門線':'#8f76d6', '7号線南北線':'#00ac9b', '13号線副都心線':'#9c5e31',
+  },
+  '東京都': {  // Toei subway — Asakusa / Mita / Shinjuku / Oedo
+    '1号線浅草線':'#e85298', '6号線三田線':'#0079c2',
+    '10号線新宿線':'#6cbb5a', '12号線大江戸線':'#b6007a',
+  },
+  '横浜市': { '1号線・3号線':'#093f86', '4号線':'#00a15a' },  // Blue / Green Line
+  '大阪市高速電気軌道': {  // Osaka Metro
+    '1号線(御堂筋線)':'#e5171f', '2号線(谷町線)':'#522886', '3号線(四つ橋線)':'#0078ba',
+    '4号線(中央線)':'#019a66', '5号線(千日前線)':'#e44d93', '6号線(堺筋線)':'#814721',
+    '7号線(長堀鶴見緑地線)':'#a9cc51', '8号線（今里筋線）':'#ee7b1a', '南港ポートタウン線':'#00a0de',
+  },
+  '名古屋市': {  // Nagoya — 2016 revised colours
+    '東山線':'#fab123', '名城線・名港線':'#b074d6', '鶴舞線':'#009bbf',
+    '桜通線':'#c92f44', '上飯田線':'#ec78b4',
+  },
+  '札幌市': { '南北線':'#35a16b', '東西線':'#ff9900', '東豊線':'#0041ff' },
+  '京都市': { '烏丸線':'#3cb371', '東西線':'#ff4500' },
+  '神戸市': { '西神線・山手線・北神線':'#00ae8e', '海岸線':'#267dce' },
+  '仙台市': { '南北線・東西線':'#317c66' },          // bundled — Namboku green
+  '福岡市': { '空港線・箱崎線・七隈線':'#ee5511' },  // bundled — Kuko orange
+
+  // ── JR urban networks (rural JR lines keep the company colour) ──
+  '東日本旅客鉄道': {
+    '山手線':'#9acd32', '赤羽線':'#00ac9a', '根岸線':'#00b2e5', '中央線':'#f15a22',
+    '青梅線':'#f15a22', '五日市線':'#f15a22', '総武線':'#ffd400', '京葉線':'#c9252f',
+    '武蔵野線':'#f15a22', '南武線':'#ffd400', '鶴見線':'#ffd400', '横浜線':'#80c342',
+    '相模線':'#009793', '八高線':'#a8a39d', '川越線':'#a8a39d', '東海道線':'#f68b1e',
+    '横須賀線':'#0067c0', '常磐線':'#00b261', '成田線':'#00b261', '内房線':'#00b2e5',
+    '外房線':'#db4028', '東金線':'#f15a22', '鹿島線':'#c56e2e', '日光線':'#880022',
+    '久留里線':'#00b5ad', '烏山線':'#339966', '両毛線':'#ffd400', '信越線':'#9acd32',
+    '上越線':'#00b3e6', '吾妻線':'#0f5474', '高崎線':'#f68b1e', '東北線':'#f68b1e',
+  },
+  '西日本旅客鉄道': {  // JR West Urban Network line letters A–W
+    '東海道線':'#0072bc', '山陽線':'#0072bc', '北陸線':'#0072bc', '赤穂線':'#0072bc',
+    '関西空港線':'#0072bc', '湖西線':'#00acd1', '草津線':'#5a9934', '奈良線':'#aa731c',
+    '山陰線':'#878ddc', 'おおさか東線':'#347293', '福知山線':'#ffba00', '片町線':'#ff1493',
+    'JR東西線':'#ff1493', '加古川線':'#00baa5', '播但線':'#a52f5d', '姫新線':'#ff593e',
+    '舞鶴線':'#ff8e1f', '大阪環状線':'#e80000', '桜島線':'#0a318e', '関西線':'#00b178',
+    '阪和線':'#ff8e1f', '和歌山線':'#f79fba', '桜井線':'#b31c31', '紀勢線':'#00a6b4',
+  },
+
+  // ── major private railways ──
+  '東武鉄道': {
+    '伊勢崎線':'#0067c0', '亀戸線':'#0067c0', '大師線':'#0067c0', '佐野線':'#ed1a3d',
+    '小泉線':'#ed1a3d', '桐生線':'#ed1a3d', '日光線':'#ff8a00', '宇都宮線':'#ff8a00',
+    '鬼怒川線':'#ff8a00', '野田線':'#00bfff', '東上本線':'#004098', '越生線':'#004098',
+  },
+  '西武鉄道': {
+    '池袋線・西武秩父線':'#ff6600', '新宿線・拝島線':'#0099cc', '多摩湖線':'#ffcc33',
+    '山口線':'#ff3333', '多摩川線':'#ff6600',
+  },
+  '京王電鉄': { '京王線・高尾線・相模原線':'#dd0077', '井の頭線':'#000088' },
+  '小田急電鉄': { '小田原線・江ノ島線':'#2288cc', '多摩線':'#2288cc' },
+  '東急電鉄': {
+    '東横線':'#da0442', '目黒線':'#009cd2', '東急新横浜線':'#8a1186', '田園都市線':'#20a288',
+    '大井町線':'#f18c43', '池上線':'#ee86a7', '東急多摩川線':'#ae0378',
+    'こどもの国線':'#0068b7', '世田谷線':'#fcc70d',
+  },
+  '京浜急行電鉄': {
+    '本線':'#33c2e4', '空港線':'#33c2e4', '大師線':'#33c2e4',
+    '逗子線':'#33c2e4', '久里浜線':'#33c2e4',
+  },
+  '京成電鉄': {
+    '本線':'#0060b0', '東成田線':'#0060b0', '押上線':'#cd66ff', '金町線':'#ff0000',
+    '千葉線':'#ff1e56', '千原線':'#ff1e56', '成田空港線':'#ff8620',
+  },
+  '相模鉄道': { '本線・いずみ野線':'#041452' },          // YOKOHAMA NAVYBLUE
+  '横浜高速鉄道': { 'みなとみらい21線':'#09357f' },
+  '名古屋鉄道': { '名古屋本線':'#ce1929', '豊川線':'#ce1929', '瀬戸線':'#802990' },
+  '近畿日本鉄道': {
+    '名古屋・三重線':'#153f97', '大阪・京都・奈良線':'#d21644',
+    '生駒鋼索線':'#dd9966', '西信貴鋼索線':'#dd9966',
+  },
+  '南海電気鉄道': { '南海本線':'#0077ce', '高野線':'#11823c', '鋼索線':'#11823c' },
+  '京阪電気鉄道': {
+    '京阪本線・鴨東線・中之島線':'#009a44', '京津線・石山坂本線':'#0099ff', '鋼索線':'#009a44',
+  },
+  '阪急電鉄': {
+    '京都線・千里線・嵐山線':'#2a9b50', '神戸線・宝塚線・伊丹線':'#007ac4', '神戸高速線':'#007ac4',
+  },
+  '阪神電気鉄道': { '本線・阪神なんば線':'#00366e', '神戸高速線':'#00366e' },
+  '西日本鉄道': { '天神大牟田線':'#c30d23', '貝塚線':'#c30d23' },
+  '神戸電鉄': {
+    '有馬線':'#b22d00', '三田線':'#b22d00', '公園都市線':'#b22d00',
+    '粟生線':'#b22d00', '神戸高速線':'#b22d00',
+  },
+  '富山地方鉄道': {
+    '本線':'#3b82c5', '立山線':'#7fbe26', '不二越線':'#ed6d34', '上滝線':'#ed6d34',
+  },
+  '北陸鉄道': { '浅野川線':'#005d92', '石川線':'#00914c' },
+  '高松琴平電気鉄道': { '琴平線・志度線・長尾線':'#ffd400' },
+  '伊予鉄道': { '高浜線・横河原線・郡中線':'#9acd32' },
+  '箱根登山鉄道': { '鉄道線':'#f15a22', '鋼索線':'#f15a22' },
+
+  // ── third-sector railways, new transit & monorails ──
+  '首都圏新都市鉄道': { '常磐新線':'#003b83' },      // Tsukuba Express
+  '東葉高速鉄道': { '東葉高速線':'#3fb036' },
+  '北総鉄道': { '北総線':'#00bdf2' },
+  '新京成電鉄': { '新京成線':'#ef59a1' },
+  '北大阪急行電鉄': { '南北線':'#d42c25' },
+  '泉北高速鉄道': { '泉北高速鉄道線':'#007fff' },
+  'えちごトキめき鉄道': { '妙高はねうまライン':'#35c98e', '日本海ひすいライン':'#3782bd' },
+  '北越急行': { 'ほくほく線':'#6633ff' },
+  'あいの風とやま鉄道': { 'あいの風とやま鉄道線':'#00a556' },
+  'IRいしかわ鉄道': { 'IRいしかわ鉄道線':'#00a7e3' },
+  '肥薩おれんじ鉄道': { '肥薩おれんじ鉄道線':'#ff8c00' },
+  '千葉都市モノレール': { '1号線・2号線':'#2843ba' },
+  '多摩都市モノレール': { '多摩都市モノレール線':'#ff6633' },
+  '湘南モノレール': { '江の島線':'#e60012' },
+  '沖縄都市モノレール': { '沖縄都市モノレール線':'#e70f3f' },
+  '埼玉新都市交通': { '伊奈線':'#f4d500' },
+  'ゆりかもめ': { '東京臨海新交通臨海線':'#27404e' },
+  '横浜シーサイドライン': { '金沢シーサイドライン':'#f68b1e' },
+  '愛知高速交通': { '東部丘陵線':'#164ca2' },
+  '神戸新交通': { 'ポートアイランド線・六甲アイランド線':'#07502b' },
+};
+
+let colorMode = 'line';   // 'line' (official line colours) | 'operator' (JR by company)
+
+function colorOpFor(op) { return JR[op] ? JR[op].color : OTHER_COLOR; }
+function colorLineFor(op, ln) {
+    const m = LINE_COLORS[op];
+    if (m && m[ln]) return m[ln];
+    return JR[op] ? JR[op].color : OTHER_COLOR;   // rural JR → company colour; rest → grey
+}
+// english names for operators / lines / stations — loaded from data/names_en.json
+let NAMES = { operators: {}, lines: {}, stations: {}, remarks: {} };
+function opLabel(op) {
+    if (JR[op]) return JR[op][lang];
+    return lang === 'en' ? (NAMES.operators[op] || op) : op;
+}
+function lineLabel(op, line) {
+    return lang === 'en' ? (NAMES.lines[op + '||' + line] || line) : line;
+}
+function stnLabel(op, name) {
+    return lang === 'en' ? (NAMES.stations[op + '||' + name] || name) : name;
+}
+function remarkLabel(r) {
+    return lang === 'en' ? (NAMES.remarks[r] || r) : r;
+}
+
+// ───────────────────────────── width scale ───────────────────────────────
+const MIN_W = 0.2, MAX_W = 13.10;                  // hairline .. fattest line
+const W_RANGE = MAX_W - MIN_W;
+const W_CEIL = 1.3e6;                              // ceiling above Yamanote's ~1.19M peak
+const LOG_CEIL = Math.log10(W_CEIL);
+// the width curve is linear below a "knee" throughput and logarithmic above it,
+// with the slopes matched at the knee so there is no kink. sweeping the knee morphs
+// the whole scale: knee at the floor → pure log · knee at the ceiling → pure linear.
+const KNEE_MIN = 2, KNEE_MAX = LOG_CEIL;   // knee range, in log10(throughput)
+let knee = 6;                               // log10 of the knee throughput — default 1M
+// knee-derived constants — recomputed once per knee change, then baked into the GPU
+// paint expression. dragging the knee is a paint swap; the geometry never re-uploads.
+let kneeX, kneeA, kneeB, kneeC;
+function recalcKnee() {
+    kneeX = Math.pow(10, knee);                    // knee throughput
+    kneeA = 1 / (LOG_CEIL - knee + Math.LOG10E);   // log-branch slope factor
+    kneeB = kneeA * (Math.LOG10E - knee);          // log-branch offset
+    kneeC = kneeA * Math.LOG10E / kneeX;           // linear-branch slope
+}
+recalcKnee();
+function tFor(d) {   // normalised width 0..1 — log above the knee, linear below
+    const c = Math.min(W_CEIL, Math.max(1, d));
+    const t = c >= kneeX ? kneeA * Math.log10(c) + kneeB : kneeC * c;
+    return Math.max(0, Math.min(1, t));
+}
+function widthFor(d) { return MIN_W + W_RANGE * tFor(d); }   // px — used by legend swatches
+let widthMul = 1;   // thickness multiplier — scales only the data-driven part, so a
+                    // minimum-throughput line stays a hairline however far it's pushed
+// the linear end is far gentler than log, so blend in a ×1→×5 head-start with the
+// knee. linearness^2.5 rather than linear: a linear ramp double-boosts mid-range
+// lines that are still on the log branch around the slider midpoint (they bulge
+// thick before dropping onto the linear branch and thinning at the far end).
+// A super-quadratic ramp keeps effMul barely above 1× through the first half of
+// the slider (so log-branch lines don't blow up) and pushes the full 5× boost
+// into the last quarter where the linear branch needs it.
+function linearness() { return (knee - KNEE_MIN) / (KNEE_MAX - KNEE_MIN); }   // 0 log .. 1 linear
+// base scale 0.7: slider value of 1.0 now renders at what used to be 0.7.
+function effMul() { return 0.7 * widthMul * (1 + 4 * Math.pow(linearness(), 2.5)); }
+
+// width is computed GPU-side straight from each segment's `density` — so a knee or
+// thickness change is only a paint-property swap, never a geometry re-upload.
+// rendered width = zoomFactor · (MIN_W + m · W_RANGE · t),  t = the 0..1 curve above.
+function tExpr() {
+    // densityExpr() returns a fresh expression each call — picks d_base /
+    // d_census / density per the current sourceMode.
+    const c = () => ['min', W_CEIL, ['max', 1, densityExpr()]];
+    return ['max', 0, ['min', 1, ['case',
+        ['>=', c(), kneeX], ['+', ['*', kneeA, ['log10', c()]], kneeB],
+        ['*', kneeC, c()]]]];
+}
+const wExpr = (zf, m) => ['*', zf, ['+', MIN_W, ['*', m * W_RANGE, tExpr()]]];
+const coreWidth = (m = effMul()) => ['interpolate', ['linear'], ['zoom'],
+    4, wExpr(0.55, m), 7, wExpr(1, m), 11, wExpr(2.2, m)];
+const casingWidth = (m = effMul()) => ['interpolate', ['linear'], ['zoom'],
+    4, ['+', wExpr(0.55, m), 2.4], 7, ['+', wExpr(1, m), 3], 11, ['+', wExpr(2.2, m), 4.5]];
+
+function applyWidths() {
+    if (!map.getLayer('segs-line')) return;
+    map.setPaintProperty('segs-casing', 'line-width', casingWidth());
+    map.setPaintProperty('segs-line', 'line-width', coreWidth());
+}
+
+// knee / thickness changed — coalesced to about one apply per 2 frames so a fast
+// drag stays smooth; each apply reads the latest setting, not the interim ones.
+let widthRAF = 0;
+function refreshWidths() {
+    if (widthRAF) return;                  // an apply is already queued
+    widthRAF = requestAnimationFrame(() => requestAnimationFrame(() => {
+        widthRAF = 0;
+        recalcKnee();                      // reads the current setting, not an interim one
+        applyWidths();
+        refreshWidthSwatches();
+    }));
+}
+function refreshWidthSwatches() {
+    document.querySelectorAll('#legend .wbar').forEach(el => {
+        const w = widthFor(+el.dataset.d);
+        // sub-1px widths can't render thinner than 1px in CSS; fade the bar's
+        // opacity instead so the swatch looks like the faint hairline a thin
+        // antialiased line draws on the map, not a solid 1px block.
+        el.style.height = Math.max(w, 1).toFixed(1) + 'px';
+        el.style.opacity = Math.min(1, w).toFixed(2);
+    });
+}
+function fmtFloor(lf) {
+    const v = Math.pow(10, lf);
+    if (v >= 1e6)  return (v / 1e6).toFixed(1).replace(/\.0$/, '') + 'M';
+    if (v >= 1000) { const k = v / 1000; return (k >= 10 ? Math.round(k) : k.toFixed(1)) + 'k'; }
+    return String(Math.round(v));
+}
+// the log / linear buttons are presets — they snap the knee to either extreme
+function snapKnee(mode) {
+    const target = mode === 'linear' ? KNEE_MAX : KNEE_MIN;
+    if (target === knee) return;
+    knee = target;
+    recalcKnee();
+    applyWidths();      // a preset is one click — apply straight away
+    buildLegend();      // refresh slider position + button highlights
+}
+
+// ─────────────────────────── station bubbles ─────────────────────────────
+// JR station 乗降客数 (board + alight / day) drawn as circles on top of the
+// lines. Area ∝ riders, so radius ∝ √riders — the honest magnitude encoding.
+let showStations = true;
+let stationMul = 0.85;                             // bubble-size multiplier, legend slider
+// which density a feature renders by — every feature carries all three:
+//   'base'     = the operator's published whole-line / sub-section value.
+//                Uniform across every cut piece of a line. Census-direct lines
+//                (no operator value) hide.
+//   'census'   = the raw 2015 census passing volume, *unreshaped*. Only
+//                census-derived features have it; everything else hides
+//                (remainders, base features outside the metros, etc).
+//   'stitched' = the current display value (census × k + anchored remainders).
+// Toggle census ↔ stitched on a line to see the reshape factor k directly —
+// stitched is the same shape as census, uniformly scaled by k per line.
+// Default is stitched.
+let sourceMode = 'stitched';
+let aboutOpen = false;
+function densityExpr() {
+    if (sourceMode === 'base')   return ['coalesce', ['get', 'd_base'], 0];
+    if (sourceMode === 'census') return ['coalesce', ['get', 'd_census'], 0];
+    return ['get', 'density'];
+}
+// JS-side equivalent for tooltips, info-panel, sort key
+function modeValue(p) {
+    if (sourceMode === 'base')   return p.d_base ?? 0;
+    if (sourceMode === 'census') return p.d_census ?? 0;
+    return p.density;
+}
+function setSourceMode(m) {
+    if (m === sourceMode) return;
+    sourceMode = m;
+    applyWidths();
+    applyModeFilter();      // hide features the current mode has no value for
+    buildLegend();          // refresh button highlights
+    renderInfo();           // info-panel value follows mode
+}
+// Hide features the current mode has no value for, instead of drawing them at
+// the minimum width (a hairline at density 0). In stitched every feature has a
+// value; in base only features with d_base > 0; in census only features with
+// d_census > 0 (so remainders, anchors, and base features outside the metros
+// all disappear — the honest "what the census actually measured" view).
+function applyModeFilter() {
+    if (!map.getLayer('segs-line')) return;
+    let filter = null;
+    if (sourceMode === 'base')   filter = ['>', ['coalesce', ['get', 'd_base'], 0], 0];
+    if (sourceMode === 'census') filter = ['>', ['coalesce', ['get', 'd_census'], 0], 0];
+    map.setFilter('segs-line', filter);
+}
+const R_SCALE = 0.013;                             // px of radius per √(乗降客数)
+function radiusFor(r) { return Math.sqrt(Math.max(0, r)) * R_SCALE; }
+const circleRadius = (m = stationMul) => ['interpolate', ['linear'], ['zoom'],
+    4, ['*', ['get', 'r'], 0.6 * m], 7, ['*', ['get', 'r'], m], 11, ['*', ['get', 'r'], 2.1 * m]];
+
+function applyStationSize() {
+    if (map.getLayer('station-dots'))
+        map.setPaintProperty('station-dots', 'circle-radius', circleRadius());
+}
+
+const NO_MATCH = ['==', ['get', 'op'], ' '];   // filter that matches nothing
+
+// ──────────────────────────────── map ────────────────────────────────────
+const map = new maplibregl.Map({
+    container: 'map',
+    style: {
+        version: 8,
+        sources: {
+            'carto-dark': {
+                type: 'raster',
+                tiles: ['https://a.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}@2x.png'],
+                tileSize: 256,
+                attribution: '&copy; OSM &copy; CARTO',
+            },
+        },
+        layers: [{
+            id: 'carto-dark-layer',
+            type: 'raster',
+            source: 'carto-dark',
+            minzoom: 0, maxzoom: 18,
+            paint: { 'raster-brightness-max': 0.85, 'raster-brightness-min': 0.0, 'raster-saturation': -0.3 },
+        }],
+    },
+    center: [137.7, 37.6],
+    zoom: 4.8,
+    minZoom: 3.5,
+    attributionControl: true,
+});
+map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-right');
+
+let allFeats = [];
+let fcData = null;     // the loaded FeatureCollection — re-fed to the source on mode switch
+let selected = null;   // { mode:'line'|'segment', op, line, color, ... }
+let lineStations = new Map();   // "op||line" → Set<station name> (built from segment from/to)
+let sfcData = null;             // station FeatureCollection — kept for spatial filter
+let selStationIds = new Set();  // station feature ids on the selected line (name + spatial)
+function selLineKey() { return selected ? selected.op + '||' + selected.line : null; }
+function stationsOnSelectedLine() {
+    return selected ? (lineStations.get(selLineKey()) || new Set()) : new Set();
+}
+
+map.on('load', async () => {
+    const [fc, names] = await Promise.all([
+        fetch('data/segments.geojson').then(r => r.json()),
+        fetch('data/names_en.json').then(r => r.json()),
+    ]);
+    NAMES = names;
+    for (const f of fc.features) {
+        const p = f.properties;
+        p.colorOp = colorOpFor(p.op);              // JR-by-company colour
+        p.colorLine = colorLineFor(p.op, p.line);  // official line colour
+        p.color = colorMode === 'line' ? p.colorLine : p.colorOp;
+    }
+    fc.features.sort((a, b) => a.properties.density - b.properties.density);   // fat on top
+    allFeats = fc.features;
+    fcData = fc;
+
+    // index: line → station names (from segment endpoints) — used to highlight
+    // station bubbles that the selected line stops at
+    for (const f of allFeats) {
+        const p = f.properties;
+        const k = p.op + '||' + p.line;
+        let s = lineStations.get(k);
+        if (!s) { s = new Set(); lineStations.set(k, s); }
+        s.add(p.from); s.add(p.to);
+    }
+
+    map.addSource('segs', { type: 'geojson', data: fc });
+
+    // white casing — only the selected line (filter set on click)
+    map.addLayer({
+        id: 'segs-casing', type: 'line', source: 'segs',
+        filter: NO_MATCH,
+        paint: { 'line-color': '#fbfdff', 'line-width': casingWidth(), 'line-opacity': 0.92 },
+        layout: { 'line-cap': 'round', 'line-join': 'round' },
+    });
+    // crisp colored core
+    map.addLayer({
+        id: 'segs-line', type: 'line', source: 'segs',
+        paint: { 'line-color': ['get', 'color'], 'line-width': coreWidth(), 'line-opacity': 0.92 },
+        layout: { 'line-cap': 'round', 'line-join': 'round' },
+    });
+
+    // ── station ridership bubbles (all operators, one per station complex) ──
+    const sfc = await (await fetch('data/stations.geojson')).json();
+    sfc.features.forEach((f, i) => {
+        const p = f.properties;
+        p.color = colorLineFor(p.op, p.line);  // tooltip accent only — the dots are white
+        p.r = radiusFor(p.riders);
+        f.id = i + 1;   // stable id for feature-state highlight
+    });
+    sfcData = sfc;
+    map.addSource('stations', { type: 'geojson', data: sfc });
+    map.addLayer({
+        id: 'station-dots', type: 'circle', source: 'stations',
+        layout: { visibility: showStations ? 'visible' : 'none' },
+        paint: {
+            'circle-radius': circleRadius(),
+            'circle-color': '#ffffff',
+            'circle-opacity': 0.5,
+            'circle-stroke-color': '#ffffff',
+            'circle-stroke-width': 0,
+            // no transitions — paint changes for opacity / stroke must land on
+            // the same frame as the feature-state update, otherwise the bubbles
+            // flicker (fade through the "off" state before the highlight lands)
+            'circle-opacity-transition': { duration: 0 },
+            'circle-stroke-width-transition': { duration: 0 },
+            'circle-stroke-color-transition': { duration: 0 },
+        },
+    });
+
+    // hover tooltip
+    const tip = document.getElementById('tooltip');
+
+    // does this segs-line feature belong to the currently selected line/segment?
+    function matchesSelection(p) {
+        if (!selected) return false;
+        if (selected.op !== p.op || selected.line !== p.line) return false;
+        if (selected.mode === 'segment') {
+            // base mode groups by section (every cut piece of one operator-
+            // published unit); stitched/census group by per-piece endpoints.
+            const isBase = selected.sourceMode === 'base';
+            return isBase
+                ? (selected.from === p.base_from && selected.to === p.base_to)
+                : (selected.from === p.from && selected.to === p.to);
+        }
+        return true;
+    }
+    function showSegTip(p, pt, geom) {
+        const S = STR[lang];
+        tip.style.display = 'block';
+        tip.style.left = (pt.x + 14) + 'px';
+        tip.style.top = (pt.y + 14) + 'px';
+        const census = p.detail === 'census' ? ' · ' + S.tipCensus : '';
+        // In base mode the unit is the whole operator-published section, so
+        // hover labels match: endpoints = section endpoints, km = section km.
+        const isBase = sourceMode === 'base';
+        let fromS = isBase ? p.base_from : p.from;
+        let toS   = isBase ? p.base_to   : p.to;
+        let fromOp = p.op, toOp = p.op;
+        let fromStar = '', toStar = '';
+        const kmS   = isBase ? p.base_km   : p.km;
+        // non-base mode: rescue display from/to when upstream label is wrong
+        if (!isBase) {
+            const g = geomFromTo(p);
+            fromS = g.from; toS = g.to; fromOp = g.fromOp; toOp = g.toOp;
+            if (g.fromRescued) fromStar = '<span class="resc">*</span>';
+            if (g.toRescued)   toStar   = '<span class="resc">*</span>';
+        }
+        tip.innerHTML =
+            `<div class="line" style="color:${p.color}">${opLabel(p.op)} ${lineLabel(p.op, p.line)}</div>` +
+            `<div class="seg">${stnLabel(fromOp, fromS)}${fromStar} → ${stnLabel(toOp, toS)}${toStar}</div>` +
+            `<div class="ri">${Math.round(Number(modeValue(p))).toLocaleString()} ${S.perday}</div>` +
+            `<div class="meta">${S.tipThroughput} FY${p.year} · ${kmS} ${S.km}${p.remark ? ' · ' + remarkLabel(p.remark) : ''}${isBase ? '' : census}</div>`;
+    }
+
+    map.on('mousemove', 'segs-line', (e) => {
+        if (!e.features.length) return;
+        // if a line is selected, prefer the feature that matches it over
+        // whatever segment happens to be on top
+        const f = e.features.find(x => matchesSelection(x.properties)) || e.features[0];
+        showSegTip(f.properties, e.point, f.geometry);
+        map.getCanvas().style.cursor = 'pointer';
+    });
+    map.on('mouseleave', 'segs-line', () => {
+        tip.style.display = 'none';
+        map.getCanvas().style.cursor = '';
+    });
+
+    // station bubble hover — registered after segs-line, so a dot sitting on a
+    // line wins the tooltip when the cursor is over both. But if the selected
+    // line is also under the cursor, prefer it over the station bubble.
+    map.on('mousemove', 'station-dots', (e) => {
+        if (!e.features.length) return;
+        const p = e.features[0].properties;
+        const onSelLine = selected && selStationIds.has(e.features[0].id);
+        // if a line is selected and this station is NOT one of its stops, defer
+        // to the selected line's tooltip when it sits under the cursor
+        if (selected && !onSelLine) {
+            const segHits = map.queryRenderedFeatures(e.point, { layers: ['segs-line'] });
+            const selHit = segHits.find(x => matchesSelection(x.properties));
+            if (selHit) { showSegTip(selHit.properties, e.point, selHit.geometry); map.getCanvas().style.cursor = 'pointer'; return; }
+        }
+        const S = STR[lang];
+        tip.style.display = 'block';
+        tip.style.left = (e.point.x + 14) + 'px';
+        tip.style.top = (e.point.y + 14) + 'px';
+        const ops = Array.isArray(p.ops) ? p.ops : JSON.parse(p.ops || '[]');
+        const opStr = ops.length > 1
+            ? ops.map(opLabel).join(' · ')
+            : opLabel(p.op) + ' · ' + lineLabel(p.op, p.line);
+        tip.innerHTML =
+            `<div class="line" style="color:${p.color}">${stnLabel(p.op, p.station)}</div>` +
+            `<div class="seg">${opStr}</div>` +
+            `<div class="ri">${Number(p.riders).toLocaleString()} ${S.perday}</div>` +
+            `<div class="meta">${S.tipStationRiders} · FY${p.year}</div>`;
+        map.getCanvas().style.cursor = 'pointer';
+    });
+    map.on('mouseleave', 'station-dots', () => {
+        tip.style.display = 'none';
+        map.getCanvas().style.cursor = '';
+    });
+
+    // On mobile a tap fires synthetic mousemove (showing the tooltip at the
+    // tap point) but no mouseleave when the touch ends, so panning afterwards
+    // leaves the tooltip stuck at its original screen position. Hide on every
+    // map view change; the next hover re-shows it on desktop.
+    map.on('movestart', () => { tip.style.display = 'none'; });
+
+    // left-click: select a whole line   ·   right-click: select one segment
+    map.on('click', (e) => {
+        const hits = map.queryRenderedFeatures(e.point, { layers: ['segs-line'] });
+        if (hits.length) selectLine(hits[0].properties);
+        else clearSelection();
+    });
+    map.on('contextmenu', (e) => {
+        const hits = map.queryRenderedFeatures(e.point, { layers: ['segs-line'] });
+        if (hits.length) selectSegment(hits[0].properties);
+        else clearSelection();
+    });
+    map.getCanvasContainer().addEventListener('contextmenu', (ev) => ev.preventDefault());
+
+    applyWidths();
+});
+
+// ─────────────────────────── selection / info ────────────────────────────
+function selCond(s) {
+    const t = [['==', ['get', 'op'], s.op], ['==', ['get', 'line'], s.line]];
+    if (s.mode === 'segment') {
+        // base mode matches by section (base_from/base_to), so every cut
+        // piece of the section lights up together. census / stitched match
+        // by per-piece from/to like before.
+        const isBase = s.sourceMode === 'base';
+        const fk = isBase ? 'base_from' : 'from';
+        const tk = isBase ? 'base_to'   : 'to';
+        t.push(['==', ['get', fk], s.from], ['==', ['get', tk], s.to]);
+    }
+    return ['all', ...t];
+}
+
+// stations are considered "on" the selected line if the name matches a segment
+// endpoint AND the bubble is within ~400m of the line geometry. Name alone is
+// not enough: many station names repeat across Japan (and across operators).
+const STN_NEAR_DEG2 = 0.004 * 0.004;   // ≈ (400 m)² in degrees, lat-equator approx
+function flattenCoords(g) {
+    if (!g) return [];
+    if (g.type === 'MultiLineString') return g.coordinates.flat();
+    return g.coordinates;
+}
+// Across all sibling features sharing the same (op, line, from, to) label,
+// return the two endpoint coords that span the widest extent — and orient
+// them so A corresponds to `fromName` when we can tell. Used by both the
+// highlight and the display path so they always agree.
+//
+// Same label gets shared by two physically different things in this data:
+//  (a) parallel tracks — siblings are co-located, the farthest pair lands
+//      at the section's "real" start/end stations.
+//  (b) chained pieces with an inherited erroneous label (the Sanyo
+//      Shinkansen bug) — siblings extend the geographic span, and the
+//      farthest pair lands at the chain's true outer endpoints.
+function effectiveFromToCoords(siblings, fromName) {
+    const cs = [];
+    for (const f of siblings) {
+        const c = flattenCoords(f.geometry);
+        if (c.length >= 2) { cs.push(c[0]); cs.push(c[c.length - 1]); }
+    }
+    if (cs.length < 2) return null;
+    let bestD2 = -1, ai = 0, bi = 1;
+    for (let i = 0; i < cs.length; i++) {
+        for (let j = i + 1; j < cs.length; j++) {
+            const dx = cs[i][0] - cs[j][0], dy = cs[i][1] - cs[j][1];
+            const d2 = dx * dx + dy * dy;
+            if (d2 > bestD2) { bestD2 = d2; ai = i; bi = j; }
+        }
+    }
+    let A = cs[ai], B = cs[bi];
+    const NEAR = 0.012 * 0.012;
+    const atA = stationByNameNearPoint(fromName, A[0], A[1], NEAR);
+    const atB = stationByNameNearPoint(fromName, B[0], B[1], NEAR);
+    if (atB && !atA) { const t = A; A = B; B = t; }   // flip — from is at B
+    return [A, B];
+}
+function siblingPieces(p) {
+    return allFeats.filter(f =>
+        f.properties.op === p.op && f.properties.line === p.line
+        && f.properties.from === p.from && f.properties.to === p.to);
+}
+function geomFromTo(p) {
+    let from = p.from, fromOp = p.op, to = p.to, toOp = p.op;
+    let fromRescued = false, toRescued = false;
+    if (!sfcData) return { from, fromOp, fromRescued, to, toOp, toRescued };
+    const ends = effectiveFromToCoords(siblingPieces(p), p.from);
+    if (!ends) return { from, fromOp, fromRescued, to, toOp, toRescued };
+    const [A, B] = ends;
+    // KEEP_R is generous (~5.5 km) so we keep the published name as long as
+    // a same-named station exists anywhere near the corresponding endpoint —
+    // avoids snapping to incidental neighbours (e.g. the Toyohashi tram's 駅前
+    // stop happening to be a few meters closer to the Shinkansen geometry's
+    // end than JR 豊橋). Still tight enough to reject the Sanyo Shinkansen
+    // case where 姫路 is ~80 km from B (Okayama) under the bogus shared label.
+    // When we keep the published name we adopt the matched station's own op
+    // for the EN translation lookup — segments may use an op (e.g. JR Central)
+    // the EN names table doesn't key on for that station (S12 puts 新横浜
+    // under JR East).
+    const KEEP_R = 0.05 * 0.05;
+    const FB     = 0.012 * 0.012;
+    const fns = nearestSameNameStation(p.from, A[0], A[1]);
+    if (fns && fns.d2 < KEEP_R) {
+        fromOp = fns.f.properties.op;
+    } else {
+        const ns = nearestStationToPoint(A[0], A[1], FB, p.op);
+        if (ns) { from = ns.properties.station; fromOp = ns.properties.op; fromRescued = true; }
+    }
+    const tns = nearestSameNameStation(p.to, B[0], B[1]);
+    if (tns && tns.d2 < KEEP_R) {
+        toOp = tns.f.properties.op;
+    } else {
+        const ns = nearestStationToPoint(B[0], B[1], FB, p.op);
+        if (ns) { to = ns.properties.station; toOp = ns.properties.op; toRescued = true; }
+    }
+    return { from, fromOp, fromRescued, to, toOp, toRescued };
+}
+function nearestSameNameStation(name, sx, sy) {
+    let best = null, bestD2 = Infinity;
+    for (const f of sfcData.features) {
+        if (f.properties.station !== name) continue;
+        const [fx, fy] = f.geometry.coordinates;
+        const dx = fx - sx, dy = fy - sy;
+        const d2 = dx * dx + dy * dy;
+        if (d2 < bestD2) { best = f; bestD2 = d2; }
+    }
+    return best ? { f: best, d2: bestD2 } : null;
+}
+function stationByNameNearPoint(name, sx, sy, maxDeg2) {
+    let best = null, bestD2 = Infinity;
+    for (const f of sfcData.features) {
+        if (f.properties.station !== name) continue;
+        const [fx, fy] = f.geometry.coordinates;
+        const dx = fx - sx, dy = fy - sy;
+        const d2 = dx * dx + dy * dy;
+        if (d2 < bestD2 && d2 < maxDeg2) { best = f; bestD2 = d2; }
+    }
+    return best;
+}
+function nearestStationToPoint(sx, sy, maxDeg2, prefOp) {
+    // Prefer a station whose operator matches prefOp; only fall back to the
+    // absolutely-nearest station of any op when no prefOp station is in range.
+    // Stops us from snapping the JR Tokaido Shinkansen's 豊橋 endpoint onto
+    // the Toyohashi tram's 駅前 stop, which happens to sit ~50m closer.
+    let bestAny = null, bestAnyD2 = Infinity;
+    let bestPref = null, bestPrefD2 = Infinity;
+    for (const f of sfcData.features) {
+        const [fx, fy] = f.geometry.coordinates;
+        const dx = fx - sx, dy = fy - sy;
+        const d2 = dx * dx + dy * dy;
+        if (d2 >= maxDeg2) continue;
+        if (d2 < bestAnyD2) { bestAny = f; bestAnyD2 = d2; }
+        if (prefOp && f.properties.op === prefOp && d2 < bestPrefD2) {
+            bestPref = f; bestPrefD2 = d2;
+        }
+    }
+    return bestPref || bestAny;
+}
+// for a station name, find the same-named station that sits closest to any
+// point on the supplied LineString. handles same-name collisions, and is
+// robust to per-segment geometries that extend past the claimed endpoints
+function stationByNameNearLine(name, lineCoords, maxDeg2) {
+    let best = null, bestD2 = Infinity;
+    for (const f of sfcData.features) {
+        if (f.properties.station !== name) continue;
+        const [fx, fy] = f.geometry.coordinates;
+        let d2 = Infinity;
+        for (const c of lineCoords) {
+            const dx = c[0] - fx, dy = c[1] - fy;
+            const dd = dx * dx + dy * dy;
+            if (dd < d2) d2 = dd;
+        }
+        if (d2 < bestD2 && d2 < maxDeg2) { best = f; bestD2 = d2; }
+    }
+    return best;
+}
+function recomputeSelStationIds() {
+    selStationIds = new Set();
+    if (!selected || !sfcData) return;
+    // segment selection: find the stations named from/to that lie closest to
+    // the segment geometry. name-driven (not endpoint-driven) so it survives
+    // segments whose geometry sprawls past the claimed from/to
+    if (selected.mode === 'segment') {
+        // base mode selects a whole operator-published section (many cut
+        // pieces); match by base_from/base_to so we union every piece's
+        // coords for the proximity test.
+        const isBase = selected.sourceMode === 'base';
+        const pieces = allFeats.filter(f => {
+            const q = f.properties;
+            if (q.op !== selected.op || q.line !== selected.line) return false;
+            return isBase
+                ? (q.base_from === selected.from && q.base_to === selected.to)
+                : (q.from === selected.from && q.to === selected.to);
+        });
+        if (!pieces.length) return;
+        const coords = [];
+        for (const sg of pieces) for (const c of sg.geometry.coordinates) coords.push(c);
+        // Same combined-extent + generous keep-radius as geomFromTo so the
+        // highlighted stations always match the displayed from/to.
+        const ends = effectiveFromToCoords(pieces, selected.from);
+        if (!ends) return;
+        const [A, B] = ends;
+        const KEEP_R = 0.05 * 0.05, FB = 0.012 * 0.012;
+        const fns = nearestSameNameStation(selected.from, A[0], A[1]);
+        const sa = (fns && fns.d2 < KEEP_R) ? fns.f
+                 : nearestStationToPoint(A[0], A[1], FB, selected.op);
+        const tns = nearestSameNameStation(selected.to, B[0], B[1]);
+        const sb = (tns && tns.d2 < KEEP_R) ? tns.f
+                 : nearestStationToPoint(B[0], B[1], FB, selected.op);
+        if (sa) selStationIds.add(sa.id);
+        if (sb && (!sa || sb.id !== sa.id)) selStationIds.add(sb.id);
+        return;
+    }
+    // line selection: full set of stops, name + proximity to any segment
+    const names = stationsOnSelectedLine();
+    const segs = allFeats.filter(f =>
+        f.properties.op === selected.op && f.properties.line === selected.line);
+    if (!names.size || !segs.length) return;
+    // cache per-segment bbox once
+    for (const sg of segs) {
+        if (sg._bbox) continue;
+        let minx = Infinity, miny = Infinity, maxx = -Infinity, maxy = -Infinity;
+        for (const c of sg.geometry.coordinates) {
+            if (c[0] < minx) minx = c[0]; if (c[0] > maxx) maxx = c[0];
+            if (c[1] < miny) miny = c[1]; if (c[1] > maxy) maxy = c[1];
+        }
+        sg._bbox = [minx, miny, maxx, maxy];
+    }
+    const PAD = 0.005;
+    for (const f of sfcData.features) {
+        if (!names.has(f.properties.station)) continue;
+        const [sx, sy] = f.geometry.coordinates;
+        let hit = false;
+        for (const sg of segs) {
+            const [minx, miny, maxx, maxy] = sg._bbox;
+            if (sx < minx - PAD || sx > maxx + PAD || sy < miny - PAD || sy > maxy + PAD) continue;
+            for (const c of sg.geometry.coordinates) {
+                const dx = c[0] - sx, dy = c[1] - sy;
+                if (dx * dx + dy * dy < STN_NEAR_DEG2) { hit = true; break; }
+            }
+            if (hit) break;
+        }
+        if (hit) selStationIds.add(f.id);
+    }
+}
+function pushStationFeatureState() {
+    if (!sfcData) return;
+    for (const f of sfcData.features) {
+        const on = selStationIds.has(f.id);
+        map.setFeatureState({ source: 'stations', id: f.id }, { onLine: on });
+    }
+}
+
+function applySelection() {
+    if (!selected) {
+        map.setFilter('segs-casing', NO_MATCH);
+        map.setPaintProperty('segs-line', 'line-opacity', 0.92);
+        if (map.getLayer('station-dots')) {
+            map.setPaintProperty('station-dots', 'circle-opacity', 0.5);
+            map.setPaintProperty('station-dots', 'circle-stroke-width', 0);
+        }
+        selStationIds = new Set();
+        pushStationFeatureState();
+        return;
+    }
+    const cond = selCond(selected);
+    map.setFilter('segs-casing', cond);
+    map.setPaintProperty('segs-line', 'line-opacity', ['case', cond, 0.97, 0.13]);
+
+    recomputeSelStationIds();
+    pushStationFeatureState();
+
+    if (map.getLayer('station-dots')) {
+        const onLine = ['boolean', ['feature-state', 'onLine'], false];
+        map.setPaintProperty('station-dots', 'circle-opacity', ['case', onLine, 0.95, 0.08]);
+        map.setPaintProperty('station-dots', 'circle-stroke-color', selected.color);
+        map.setPaintProperty('station-dots', 'circle-stroke-width', ['case', onLine, 1.5, 0]);
+    }
+}
+
+function selectLine(p) {
+    if (selected && selected.mode === 'line' &&
+        selected.op === p.op && selected.line === p.line) { clearSelection(); return; }
+    selected = { mode: 'line', op: p.op, line: p.line, color: p.color };
+    applySelection();
+    renderInfo();
+}
+
+function selectSegment(p) {
+    // In base mode the right-click unit is the whole operator-published
+    // section, identified by base_from/base_to. Stitched/census stay per-piece.
+    const isBase = sourceMode === 'base';
+    const idFrom = isBase ? p.base_from : p.from;
+    const idTo   = isBase ? p.base_to   : p.to;
+    if (selected && selected.mode === 'segment'
+        && selected.sourceMode === sourceMode
+        && selected.op === p.op && selected.line === p.line
+        && selected.from === idFrom && selected.to === idTo) {
+        clearSelection(); return;
+    }
+    selected = { mode: 'segment', op: p.op, line: p.line,
+                 from: idFrom, to: idTo,
+                 color: p.color, density: p.density, d_base: p.d_base,
+                 d_census: p.d_census, km: p.km, base_km: p.base_km,
+                 detail: p.detail, sourceMode };
+    applySelection();
+    renderInfo();
+}
+
+function clearSelection() {
+    if (!selected) return;
+    selected = null;
+    applySelection();
+    document.getElementById('info').style.display = 'none';
+}
+
+// ─────────────────────────── colour mode ─────────────────────────────────
+function setColorMode(mode) {
+    if (mode === colorMode) return;
+    colorMode = mode;
+    for (const f of allFeats) {
+        const p = f.properties;
+        p.color = colorMode === 'line' ? p.colorLine : p.colorOp;
+    }
+    if (fcData) map.getSource('segs').setData(fcData);   // layers read ['get','color']
+    if (selected) {
+        const f = allFeats.find(x => x.properties.op === selected.op
+                                  && x.properties.line === selected.line);
+        if (f) selected.color = f.properties.color;
+        applySelection();   // refresh station stroke colour
+    }
+    buildLegend();
+    renderInfo();
+}
+
+function renderInfo() {
+    if (!selected) return;
+    const S = STR[lang];
+    const box = document.getElementById('info');
+    const head = `<div class="ipline" style="color:${selected.color}">` +
+                 `${opLabel(selected.op)} ${lineLabel(selected.op, selected.line)}</div>`;
+
+    if (selected.mode === 'segment') {
+        // base mode: section unit — sum km across every cut piece; suppress
+        // the per-piece census hint since the selection isn't one census row.
+        const isBase = selected.sourceMode === 'base';
+        let km = Number(selected.km) || 0;
+        if (isBase) {
+            km = Number(selected.base_km) || 0;
+            if (!km) {
+                km = 0;
+                for (const f of allFeats) {
+                    const q = f.properties;
+                    if (q.op === selected.op && q.line === selected.line
+                        && q.base_from === selected.from && q.base_to === selected.to)
+                        km += Number(q.km) || 0;
+                }
+            }
+        }
+        const census = (!isBase && selected.detail === 'census')
+            ? `<div class="iphint">${S.tipCensus}</div>` : '';
+        // non-base: rescue mislabeled from/to via combined sibling extent
+        let fromN = selected.from, toN = selected.to, fromOp = selected.op, toOp = selected.op;
+        let fromStar = '', toStar = '';
+        if (!isBase) {
+            const g = geomFromTo({ op: selected.op, line: selected.line,
+                                   from: selected.from, to: selected.to });
+            fromN = g.from; toN = g.to; fromOp = g.fromOp; toOp = g.toOp;
+            if (g.fromRescued) fromStar = '<span class="resc">*</span>';
+            if (g.toRescued)   toStar   = '<span class="resc">*</span>';
+        }
+        box.innerHTML = head +
+            `<div class="ipseg">${stnLabel(fromOp, fromN)}${fromStar} → ${stnLabel(toOp, toN)}${toStar}</div>` +
+            `<div class="iprow"><span>${S.panelLength}</span>` +
+                `<b>${Number(km).toFixed(1)} ${S.km}</b></div>` +
+            `<div class="iprow"><span>${S.panelRange}</span>` +
+                `<b>${Math.round(Number(modeValue(selected))).toLocaleString()} ${S.perday}</b></div>` +
+            census +
+            `<div class="iphint">${S.panelHint}</div>`;
+    } else {
+        const parts = allFeats.filter(f =>
+            f.properties.op === selected.op && f.properties.line === selected.line);
+        let km = 0, dmin = Infinity, dmax = -Infinity;
+        for (const f of parts) {
+            const q = f.properties;
+            km += Number(q.km) || 0;
+            const v = modeValue(q);
+            dmin = Math.min(dmin, v);
+            dmax = Math.max(dmax, v);
+        }
+        const range = dmin === dmax ? Math.round(dmin).toLocaleString()
+            : Math.round(dmin).toLocaleString() + ' – ' + Math.round(dmax).toLocaleString();
+        box.innerHTML = head +
+            `<div class="iprow"><span>${S.panelLength}</span><b>${km.toFixed(1)} ${S.km}</b></div>` +
+            `<div class="iprow"><span>${S.panelSections}</span><b>${parts.length}</b></div>` +
+            `<div class="iprow"><span>${S.panelRange}</span><b>${range} ${S.perday}</b></div>` +
+            `<div class="iphint">${S.panelHint}</div>`;
+    }
+    box.style.display = 'block';
+}
+
+window.addEventListener('keydown', (e) => { if (e.key === 'Escape') clearSelection(); });
+
+// ───────────────────────────── interface ─────────────────────────────────
+function buildLegend() {
+    const S = STR[lang];
+    let html = `<span class="close" id="lg-close" title="hide">×</span>` +
+        `<div class="hd">${S.legSource}</div>` +
+        `<div class="modetoggle dv">` +
+        `<span id="src-base" class="${sourceMode === 'base' ? 'on' : ''}">${S.srcBase}</span>` +
+        `<span id="src-census" class="${sourceMode === 'census' ? 'on' : ''}">${S.srcCensus}</span>` +
+        `</div>` +
+        `<div class="modetoggle dv">` +
+        `<span id="src-stitched" class="${sourceMode === 'stitched' ? 'on' : ''}">${S.srcStitched}</span>` +
+        `</div>`;
+    html += `<div class="hd" style="margin-top:7px">${S.legLineColors}</div>` +
+        `<div class="modetoggle">` +
+        `<span id="cm-op" class="${colorMode === 'operator' ? 'on' : ''}">${S.modeOperator}</span>` +
+        `<span id="cm-line" class="${colorMode === 'line' ? 'on' : ''}">${S.modeLine}</span></div>`;
+
+    html += `<div class="widths"><div class="hd">${S.legWidth}</div>`;
+    for (const [d, label] of [[1000, '1k'], [20000, '20k'], [200000, '200k'], [1000000, '1M']]) {
+        const w = widthFor(d);
+        const h = Math.max(w, 1).toFixed(1);
+        const op = Math.min(1, w).toFixed(2);
+        html += `<div class="wrow"><span class="wbar" data-d="${d}" style="width:34px;height:${h}px;opacity:${op}"></span>${label}</div>`;
+    }
+    html += `<div class="modetoggle">` +
+        `<span id="sm-log" class="${knee === KNEE_MIN ? 'on' : ''}">${S.scaleLog}</span>` +
+        `<span id="sm-lin" class="${knee === KNEE_MAX ? 'on' : ''}">${S.scaleLinear}</span></div>`;
+    html += '</div>';
+    html += `<div class="thick"><div class="hd">${S.legThickness} ` +
+            `<span class="val" id="thickVal">×${widthMul.toFixed(1)}</span></div>` +
+            `<input id="thickSlider" type="range" min="0.1" max="3" step="0.1" value="${widthMul}"></div>`;
+    html += `<div class="thick"><div class="hd">${S.legFloor} ` +
+            `<span class="val" id="floorVal">${fmtFloor(knee)}</span></div>` +
+            `<input id="floorSlider" type="range" min="${KNEE_MIN}" max="${KNEE_MAX}" step="0.01" value="${knee}"></div>`;
+
+    html += `<div class="stsec">` +
+            `<div class="hd">${S.toggleStations}</div>` +
+            `<div class="strow">` +
+            `<input type="checkbox" id="st-toggle"${showStations ? ' checked' : ''}>` +
+            `<input id="bubbleSlider" type="range" min="0.1" max="3" step="0.1" value="${stationMul}">` +
+            `</div></div>`;
+    document.getElementById('legend').innerHTML = html;
+
+    document.getElementById('lg-close').onclick = () => setLegendOpen(false);
+    document.getElementById('src-base').onclick = () => setSourceMode('base');
+    document.getElementById('src-census').onclick = () => setSourceMode('census');
+    document.getElementById('src-stitched').onclick = () => setSourceMode('stitched');
+    document.getElementById('cm-op').onclick = () => setColorMode('operator');
+    document.getElementById('cm-line').onclick = () => setColorMode('line');
+    document.getElementById('sm-log').onclick = () => snapKnee('log');
+    document.getElementById('sm-lin').onclick = () => snapKnee('linear');
+
+    const sl = document.getElementById('thickSlider');
+    sl.oninput = () => {
+        widthMul = parseFloat(sl.value);
+        document.getElementById('thickVal').textContent = '×' + widthMul.toFixed(1);
+        refreshWidths();
+    };
+    const fs = document.getElementById('floorSlider');
+    fs.oninput = () => {
+        knee = parseFloat(fs.value);
+        document.getElementById('floorVal').textContent = fmtFloor(knee);
+        document.getElementById('sm-log').classList.toggle('on', knee === KNEE_MIN);
+        document.getElementById('sm-lin').classList.toggle('on', knee === KNEE_MAX);
+        refreshWidths();
+    };
+    document.getElementById('st-toggle').onchange = (e) => {
+        showStations = e.target.checked;
+        if (map.getLayer('station-dots'))
+            map.setLayoutProperty('station-dots', 'visibility',
+                                  showStations ? 'visible' : 'none');
+    };
+    document.getElementById('bubbleSlider').oninput = (e) => {
+        stationMul = parseFloat(e.target.value);
+        applyStationSize();
+    };
+}
+
+function applyLang() {
+    const S = STR[lang];
+    document.title = S.h1 + ' — japan rail flow';
+    document.getElementById('t-h1').textContent = S.h1;
+    document.getElementById('t-sub').innerHTML = S.sub1;
+    document.getElementById('lang-en').classList.toggle('on', lang === 'en');
+    document.getElementById('lang-ja').classList.toggle('on', lang === 'ja');
+    document.getElementById('aboutbtn').title = S.aboutTitle;
+    document.getElementById('aboutpanel').innerHTML = S.aboutBody;
+    buildLegend();
+    renderInfo();
+}
+
+document.getElementById('lang-en').onclick = () => { lang = 'en'; applyLang(); };
+document.getElementById('lang-ja').onclick = () => { lang = 'ja'; applyLang(); };
+function setAboutOpen(v) {
+    if (aboutOpen === v) return;
+    aboutOpen = v;
+    document.getElementById('aboutbtn').classList.toggle('on', aboutOpen);
+    document.getElementById('aboutpanel').classList.toggle('open', aboutOpen);
+}
+let legendOpen = true;
+function setLegendOpen(v) {
+    if (legendOpen === v) return;
+    legendOpen = v;
+    document.getElementById('legend').classList.toggle('hidden', !legendOpen);
+    document.getElementById('ctrlbtn').classList.toggle('show', !legendOpen);
+}
+document.getElementById('ctrlbtn').onclick = () => setLegendOpen(true);
+document.getElementById('aboutbtn').onclick = (e) => {
+    e.stopPropagation();
+    setAboutOpen(!aboutOpen);
+};
+document.getElementById('aboutpanel').addEventListener('click', (e) => e.stopPropagation());
+// Clicking anywhere outside the panel or the toggle closes the panel.
+document.addEventListener('click', () => { if (aboutOpen) setAboutOpen(false); });
+applyLang();
+</script>
+</body>
+</html>
