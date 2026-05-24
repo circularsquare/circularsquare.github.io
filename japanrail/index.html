@@ -4,6 +4,13 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>japan rail flow — passenger throughput per segment</title>
+<meta property="og:title" content="japan rail flow" />
+<meta property="og:description" content="passenger throughput per segment across japan's rail network" />
+<meta property="og:image" content="index.png" />
+<meta property="og:type" content="website" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:image" content="index.png" />
+<link rel="icon" type="image/png" href="favicon.png" />
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
 body { background: #07090d; color: #eee; font-family: 'Nunito', system-ui, sans-serif; overflow: hidden; }
@@ -90,7 +97,8 @@ body { background: #07090d; color: #eee; font-family: 'Nunito', system-ui, sans-
 #legend .wbar { background: #d8dde3; border-radius: 2px; flex: none; }
 #legend .thick { margin-top: 7px; width: 150px; }
 #legend .thick .val { color: #d8dde3; }
-#legend .thick input { width: 100%; margin-top: 5px; accent-color: #5bb6ff; cursor: pointer; }
+#legend .thick input { width: 100%; margin-top: 0; accent-color: #5bb6ff; cursor: pointer; }
+#legend .thick .hd { margin-bottom: 0; }
 #legend .modetoggle { display: flex; gap: 4px; margin-bottom: 6px; }
 #legend .modetoggle span { cursor: pointer; color: #8b939e; padding: 2px 7px; border-radius: 4px; border: 1px solid #2a2f38; }
 #legend .modetoggle span.on { color: #fff; background: #2a2f38; }
@@ -229,7 +237,7 @@ const STR = {
         srcCensus: 'metro',
         srcStitched: 'stitched',
         aboutTitle: 'about',
-        aboutBody: `<h2>lines &amp; segments</h2><p>A <b>line</b> is a named route run by one operator end to end. A <b>segment</b> is the shortest piece of a line we have passenger throughput data for.</p><p><b>Left click</b> to highlight a line. <b>Right click</b> to highlight a segment.</p><h2>data views</h2><p><b>national</b>: each operator's published passenger throughput (passengers per day per km of track), the nationwide source.</p><p><b>metro</b>: per segment detail from the 2015 Metropolitan Transportation Census. Only exists inside the Tokyo, Nagoya, and Osaka census regions. The census is a weekday commuter snapshot, so it tends to undercount long distance and non commuter trips.</p><p><b>stitched</b>: inside the three census regions, the metro data is scaled to match each line's national total. Outside, lines stay at the national value. The gap between the metro census's total and the national total is added back as a uniform baseline, so the low commuter outskirts of metro areas blend smoothly into the national level rather than dipping below it.</p><h2>line thickness scale</h2><p>The <b>linear scale below</b> slider sets where line width switches from linear to log. Set it <b>high</b> to see fine differences inside busy metro areas. Set it <b>low</b> to see thin rural lines alongside thick urban ones, good for viewing the whole country at once.</p><h2>data sources</h2><p>Throughput: <a href="https://gtfs-gis.jp/railway_tsukajinin/">gtfs-gis.jp</a> (Akira Nishizawa, CC BY 4.0). Latest of FY2024 / FY2023.</p><p>Geometry: MLIT N02. Census: Metropolitan Transportation Census 2015.</p><p>Station bubbles: <a href="https://nlftp.mlit.go.jp/ksj/">MLIT S12</a>, mostly FY2021.</p>`,
+        aboutBody: `<h2>lines &amp; segments</h2><p>A <b>line</b> is a named route run by one operator end to end. A <b>segment</b> is the shortest piece of a line we have passenger throughput data for.</p><p><b>Left click</b> to highlight a line. <b>Right click</b> to highlight a segment.</p><h2>data views</h2><p><b>national</b>: each operator's published passenger throughput (passengers per day per km of track), the nationwide source.</p><p><b>metro</b>: per segment detail from the 2015 Metropolitan Transportation Census. Only exists inside the Tokyo, Nagoya, and Osaka census regions. The census is a weekday commuter snapshot, so it tends to undercount long distance and non commuter trips.</p><p><b>stitched</b>: inside the three census regions, the metro data is scaled to match each line's national total. Outside, lines stay at the national value. The gap between the metro census's total and the national total is added back as a uniform baseline, so the outskirts of metro areas blend smoothly into the national level.</p><h2>line thickness scale</h2><p>The <b>linear scale below</b> slider sets where line width switches from linear to logarithmic. Set it <b>high</b> to see fine differences inside busy metro areas. Set it <b>low</b> to see thin rural lines alongside thick urban ones, good for viewing the whole country at once.</p><h2>data sources</h2><p>National throughput: <a href="https://gtfs-gis.jp/railway_tsukajinin/">gtfs-gis.jp</a> (Akira Nishizawa, CC BY 4.0), 2024.</p><p>Census: Metropolitan Transportation Census 2015.</p><p>Geometry: MLIT N02.</p><p>Station ridership: <a href="https://nlftp.mlit.go.jp/ksj/">MLIT S12</a>, 2021.</p><p>Note: because the national and metropolitan census data are far apart in time, ridership numbers differ.</p>`,
         legThickness: 'line thickness',
         legFloor: 'log scale above',
         scaleLog: 'log',
@@ -249,7 +257,7 @@ const STR = {
         modeLine: '路線別',
         legWidth: '輸送密度（人/日）',
         tipThroughput: '輸送密度',
-        tipCensus: '区間形状: 2015年センサス',
+        tipCensus: '区間形状：2015年センサス',
         toggleStations: '駅バブル',
         tipStationRiders: '乗降客数',
         legSource: 'データ表示',
@@ -257,7 +265,7 @@ const STR = {
         srcCensus: '都市圏',
         srcStitched: '統合',
         aboutTitle: 'このマップについて',
-        aboutBody: `<h2>路線と区間</h2><p><b>路線</b>は一事業者が端から端まで運行する1本の路線。<b>区間</b>はその路線の中で輸送密度のデータがある最小の単位。</p><p><b>左クリック</b>で路線を、<b>右クリック</b>で区間をハイライト。</p><h2>データ表示</h2><p><b>全国</b>：各事業者が公表する輸送密度（人キロ/営業キロ/日）の全国データ。</p><p><b>都市圏</b>：2015年大都市交通センサスの駅間通過人員。首都圏・中京圏・近畿圏のみで利用可能。平日通勤を主体とした調査のため、長距離や非通勤の利用は過小評価される傾向がある。</p><p><b>統合</b>：3大都市圏内では都市圏データを各路線の全国公表値と一致するように再スケールしている。都市圏外は全国公表値のまま表示。都市圏内では、センサスの合計値と全国公表値との差分を均一なベースラインとして各区間に上乗せしているため、通勤需要が下がる都市圏の外縁でも全国レベルから極端に下回ることなく滑らかにつながる。</p><h2>線の太さスケール</h2><p><b>線形スケールの上限</b>スライダーは、線の太さが線形から対数に切り替わる閾値を設定する。<b>高く</b>すると混雑する都市圏路線間の細かい違いが見やすくなる。<b>低く</b>すると地方の閑散路線と都市の混雑路線を同時に比較しやすくなり、全国を一望するのに適している。</p><h2>データソース</h2><p>輸送密度：<a href="https://gtfs-gis.jp/railway_tsukajinin/">gtfs-gis.jp</a>（西澤明, CC BY 4.0）。最新年度 FY2024 / FY2023。</p><p>線形：国土数値情報 N02。センサス：大都市交通センサス 2015。</p><p>駅バブル：<a href="https://nlftp.mlit.go.jp/ksj/">国土数値情報 S12</a>、主にFY2021。</p>`,
+        aboutBody: `<h2>路線と区間</h2><p><b>路線</b>は事業者が端から端まで運行する一本のルート。<b>区間</b>はその中で輸送密度データが取れる最小の単位。</p><p><b>左クリック</b>で路線を、<b>右クリック</b>で区間をハイライト。</p><h2>データ表示</h2><p><b>全国</b>：各事業者が公表している輸送密度（人キロ/営業キロ/日）の全国データ。</p><p><b>都市圏</b>：2015年大都市交通センサスの駅間通過人員。首都圏・中京圏・近畿圏のみ。平日の通勤利用が中心の調査なので、長距離や非通勤の利用は少なめに出やすい。</p><p><b>統合</b>：3大都市圏では、都市圏データを各路線の全国公表値に合うように再スケール。都市圏外は全国公表値のまま。センサスの合計と全国公表値の差は一様なベースラインとして各区間に上乗せしているので、都市圏の外縁でも全国レベルに滑らかにつながる。</p><h2>線の太さスケール</h2><p><b>線形スケールの上限</b>スライダーは、線の太さが線形から対数に切り替わるポイントを決める。<b>高く</b>すると、混雑した都市圏の路線同士の細かい違いが見やすい。<b>低く</b>すると、地方の閑散路線と都市の混雑路線を一度に比べやすく、全国を一望するのに向いている。</p><h2>データソース</h2><p>全国輸送密度：<a href="https://gtfs-gis.jp/railway_tsukajinin/">gtfs-gis.jp</a>（西澤明, CC BY 4.0）、2024年。</p><p>センサス：大都市交通センサス 2015年。</p><p>線形：国土数値情報 N02。</p><p>駅乗降客数：<a href="https://nlftp.mlit.go.jp/ksj/">国土数値情報 S12</a>、2021年。</p><p>注：全国データと大都市交通センサスは年次が離れているので、数字には差がある。</p>`,
         legThickness: '線の太さ',
         legFloor: '線形スケールの上限',
         scaleLog: '対数',
@@ -270,7 +278,14 @@ const STR = {
         km: 'km', perday: '人/日',
     },
 };
-let lang = 'en';
+// device in Japan → default to Japanese. Timezone is the cleanest "where am I"
+// signal: navigator.language is the OS/browser locale, not the location.
+let lang = (() => {
+    try {
+        if (Intl.DateTimeFormat().resolvedOptions().timeZone === 'Asia/Tokyo') return 'ja';
+    } catch (e) {}
+    return 'en';
+})();
 
 // ─────────────────────── operators: 6 JR companies ───────────────────────
 const JR = {
@@ -312,8 +327,10 @@ const LINE_COLORS = {
   '札幌市': { '南北線':'#35a16b', '東西線':'#ff9900', '東豊線':'#0041ff' },
   '京都市': { '烏丸線':'#3cb371', '東西線':'#ff4500' },
   '神戸市': { '西神線・山手線・北神線':'#00ae8e', '海岸線':'#267dce' },
-  '仙台市': { '南北線・東西線':'#317c66' },          // bundled — Namboku green
-  '福岡市': { '空港線・箱崎線・七隈線':'#ee5511' },  // bundled — Kuko orange
+  '仙台市': { '南北線':'#008f4c', '東西線':'#0098a1' },     // Namboku green · Tozai jade
+  '福岡市': {  // each line has its own colour
+    '空港線':'#f08300', '箱崎線':'#009dce', '七隈線':'#80c342',
+  },
 
   // ── JR urban networks (rural JR lines keep the company colour) ──
   '東日本旅客鉄道': {
@@ -345,7 +362,7 @@ const LINE_COLORS = {
     '池袋線・西武秩父線':'#ff6600', '新宿線・拝島線':'#0099cc', '多摩湖線':'#ffcc33',
     '山口線':'#ff3333', '多摩川線':'#ff6600',
   },
-  '京王電鉄': { '京王線・高尾線・相模原線':'#dd0077', '井の頭線':'#000088' },
+  '京王電鉄': { '京王線・高尾線・相模原線':'#dd0077', '井の頭線':'#1414a8' },  // Ivy Blue, lifted for dark-bg visibility
   '小田急電鉄': { '小田原線・江ノ島線':'#2288cc', '多摩線':'#2288cc' },
   '東急電鉄': {
     '東横線':'#da0442', '目黒線':'#009cd2', '東急新横浜線':'#8a1186', '田園都市線':'#20a288',
@@ -360,12 +377,28 @@ const LINE_COLORS = {
     '本線':'#0060b0', '東成田線':'#0060b0', '押上線':'#cd66ff', '金町線':'#ff0000',
     '千葉線':'#ff1e56', '千原線':'#ff1e56', '成田空港線':'#ff8620',
   },
-  '相模鉄道': { '本線・いずみ野線':'#041452' },          // YOKOHAMA NAVYBLUE
+  '相模鉄道': { '本線・いずみ野線':'#102e78' },          // YOKOHAMA NAVYBLUE, lifted for dark-bg visibility
   '横浜高速鉄道': { 'みなとみらい21線':'#09357f' },
-  '名古屋鉄道': { '名古屋本線':'#ce1929', '豊川線':'#ce1929', '瀬戸線':'#802990' },
+  '名古屋鉄道': {  // Meitetsu Scarlet across the network; only Seto Line differs
+    '名古屋本線':'#ce1929', '豊川線':'#ce1929', '犬山線':'#ce1929',
+    '常滑線':'#ce1929', '空港線':'#ce1929', '河和線':'#ce1929',
+    '知多新線':'#ce1929', '三河線':'#ce1929', '西尾線':'#ce1929',
+    '蒲郡線':'#ce1929', '津島線':'#ce1929', '尾西線':'#ce1929',
+    '竹鼻線':'#ce1929', '各務原線':'#ce1929', '広見線':'#ce1929',
+    '小牧線':'#ce1929', '豊田線':'#ce1929',
+    '瀬戸線':'#802990',  // historically isolated network — keeps its own colour
+  },
   '近畿日本鉄道': {
     '名古屋・三重線':'#153f97', '大阪・京都・奈良線':'#d21644',
     '生駒鋼索線':'#dd9966', '西信貴鋼索線':'#dd9966',
+    // Osaka-network branches share the Osaka group red
+    '難波線':'#d21644', '橿原線':'#d21644', '天理線':'#d21644',
+    '田原本線':'#d21644', '御所線':'#d21644', '生駒線':'#d21644',
+    '信貴線':'#d21644', '道明寺線':'#d21644', '長野線':'#d21644',
+    '南大阪線':'#d21644', '吉野線':'#d21644', 'けいはんな線':'#d21644',
+    // Nagoya/Mie branches share the Nagoya group blue
+    '山田線':'#153f97', '鳥羽線':'#153f97', '志摩線':'#153f97',
+    '鈴鹿線':'#153f97', '湯の山線':'#153f97',
   },
   '南海電気鉄道': { '南海本線':'#0077ce', '高野線':'#11823c', '鋼索線':'#11823c' },
   '京阪電気鉄道': {
@@ -373,8 +406,11 @@ const LINE_COLORS = {
   },
   '阪急電鉄': {
     '京都線・千里線・嵐山線':'#2a9b50', '神戸線・宝塚線・伊丹線':'#007ac4', '神戸高速線':'#007ac4',
+    // Kobe-area branch lines share the Kobe/Takarazuka blue
+    '今津線':'#007ac4', '甲陽線':'#007ac4', '箕面線':'#007ac4',
   },
   '阪神電気鉄道': { '本線・阪神なんば線':'#00366e', '神戸高速線':'#00366e' },
+  '山陽電気鉄道': { '本線・網干線':'#ed1b23' },  // Sanyo Scarlet
   '西日本鉄道': { '天神大牟田線':'#c30d23', '貝塚線':'#c30d23' },
   '神戸電鉄': {
     '有馬線':'#b22d00', '三田線':'#b22d00', '公園都市線':'#b22d00',
@@ -416,7 +452,20 @@ let colorMode = 'line';   // 'line' (official line colours) | 'operator' (JR by 
 function colorOpFor(op) { return JR[op] ? JR[op].color : OTHER_COLOR; }
 function colorLineFor(op, ln) {
     const m = LINE_COLORS[op];
-    if (m && m[ln]) return m[ln];
+    if (m) {
+        if (m[ln]) return m[ln];
+        // Some entries are bundled keys ('京都線・千里線・嵐山線') matching the
+        // throughput dataset's grouping, while S12 stations carry the individual
+        // line name. Match any component. The bundled form sometimes elides the
+        // '線' suffix on non-final components ('大阪・京都・奈良線'), so try that
+        // too: 大阪 → 大阪線.
+        for (const k in m) {
+            if (!k.includes('・')) continue;
+            for (const part of k.split('・')) {
+                if (part === ln || part + '線' === ln) return m[k];
+            }
+        }
+    }
     return JR[op] ? JR[op].color : OTHER_COLOR;   // rural JR → company colour; rest → grey
 }
 // english names for operators / lines / stations — loaded from data/names_en.json
@@ -784,7 +833,7 @@ map.on('load', async () => {
             `<div class="line" style="color:${p.color}">${opLabel(p.op)} ${lineLabel(p.op, p.line)}</div>` +
             `<div class="seg">${stnLabel(fromOp, fromS)} → ${stnLabel(toOp, toS)}</div>` +
             `<div class="ri">${Math.round(Number(modeValue(p))).toLocaleString()} ${S.perday}</div>` +
-            `<div class="meta">${S.tipThroughput} FY${p.year} · ${kmS} ${S.km}${p.remark ? ' · ' + remarkLabel(p.remark) : ''}${isBase ? '' : census}</div>`;
+            `<div class="meta">${S.tipThroughput} ${p.year}${lang === 'ja' ? '年' : ''} · ${kmS} ${S.km}${p.remark ? ' · ' + remarkLabel(p.remark) : ''}${isBase ? '' : census}</div>`;
     }
 
     map.on('mousemove', 'segs-line', (e) => {
@@ -826,7 +875,7 @@ map.on('load', async () => {
             `<div class="line" style="color:${p.color}">${stnLabel(p.op, p.station)}</div>` +
             `<div class="seg">${opStr}</div>` +
             `<div class="ri">${Number(p.riders).toLocaleString()} ${S.perday}</div>` +
-            `<div class="meta">${S.tipStationRiders} · FY${p.year}</div>`;
+            `<div class="meta">${S.tipStationRiders} · ${p.year}${lang === 'ja' ? '年' : ''}</div>`;
         map.getCanvas().style.cursor = 'pointer';
     });
     map.on('mouseleave', 'station-dots', () => {
@@ -840,11 +889,28 @@ map.on('load', async () => {
     // map view change; the next hover re-shows it on desktop.
     map.on('movestart', () => { tip.style.display = 'none'; });
 
-    // left-click: select a whole line   ·   right-click: select one segment
+    // left-click: highlight the line on first click; clicking again anywhere on
+    // the same line drills into the segment under the cursor (mobile users have
+    // no right-click, so this is how they reach segments). Clicking off any line
+    // clears.   ·   right-click: still toggles a single segment directly.
     map.on('click', (e) => {
         const hits = map.queryRenderedFeatures(e.point, { layers: ['segs-line'] });
-        if (hits.length) selectLine(hits[0].properties);
-        else clearSelection();
+        if (!hits.length) { clearSelection(); return; }
+        // if the currently selected line is among the hits, prefer it — a click
+        // on the selected line should always drill into THAT line's segment,
+        // even when another line happens to render on top of it.
+        let f = hits[0];
+        if (selected) {
+            const same = hits.find(h => h.properties.op === selected.op
+                                     && h.properties.line === selected.line);
+            if (same) f = same;
+        }
+        const p = f.properties;
+        if (selected && selected.op === p.op && selected.line === p.line) {
+            setSegmentSelection(p);
+        } else {
+            setLineSelection(p);
+        }
     });
     map.on('contextmenu', (e) => {
         const hits = map.queryRenderedFeatures(e.point, { layers: ['segs-line'] });
@@ -1129,17 +1195,28 @@ function applySelection() {
     }
 }
 
-function selectLine(p) {
-    if (selected && selected.mode === 'line' &&
-        selected.op === p.op && selected.line === p.line) { clearSelection(); return; }
+function setLineSelection(p) {
     selected = { mode: 'line', op: p.op, line: p.line, color: p.color };
     applySelection();
     renderInfo();
 }
 
+function setSegmentSelection(p) {
+    // In base mode the segment unit is the whole operator-published section,
+    // identified by base_from/base_to. Stitched/census stay per-piece.
+    const isBase = sourceMode === 'base';
+    selected = { mode: 'segment', op: p.op, line: p.line,
+                 from: isBase ? p.base_from : p.from,
+                 to:   isBase ? p.base_to   : p.to,
+                 color: p.color, density: p.density, d_base: p.d_base,
+                 d_census: p.d_census, km: p.km, base_km: p.base_km,
+                 detail: p.detail, sourceMode };
+    applySelection();
+    renderInfo();
+}
+
+// right-click handler — toggles a segment off when clicking the same one again
 function selectSegment(p) {
-    // In base mode the right-click unit is the whole operator-published
-    // section, identified by base_from/base_to. Stitched/census stay per-piece.
     const isBase = sourceMode === 'base';
     const idFrom = isBase ? p.base_from : p.from;
     const idTo   = isBase ? p.base_to   : p.to;
@@ -1149,13 +1226,7 @@ function selectSegment(p) {
         && selected.from === idFrom && selected.to === idTo) {
         clearSelection(); return;
     }
-    selected = { mode: 'segment', op: p.op, line: p.line,
-                 from: idFrom, to: idTo,
-                 color: p.color, density: p.density, d_base: p.d_base,
-                 d_census: p.d_census, km: p.km, base_km: p.base_km,
-                 detail: p.detail, sourceMode };
-    applySelection();
-    renderInfo();
+    setSegmentSelection(p);
 }
 
 function clearSelection() {
@@ -1332,7 +1403,7 @@ function buildLegend() {
 
 function applyLang() {
     const S = STR[lang];
-    document.title = S.h1 + ' — japan rail flow';
+    document.title = S.h1;
     document.getElementById('t-h1').textContent = S.h1;
     // line 1 = tagline (+ AI-translated disclaimer for JA).
     // line 2 = link to the rest of my maps.
