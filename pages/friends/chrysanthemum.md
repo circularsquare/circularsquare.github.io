@@ -20,6 +20,7 @@ chrysanthemum sometimes grows in scary ways, impossible to contain. when they ge
 
 talking to chrysanthemum can be overwhelming. i don't necessarily see each little petal, but i feel their sum and it's wonderful.
 
+<img src="/assets/plants/chrysanthemum.jpg" width="70%">
 
 
 

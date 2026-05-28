@@ -14,7 +14,6 @@ we went to school in [sanba](/places/lakta/) together, where we sang in small pi
 
 i'm sorry for being impatient when you were following me. i really regret it. i am so grateful that you let me follow you back today.
 
-we are now in a chorus together!
+we were in a choir together for a while!
 
-
-
+<img src="/assets/photos/202605/PXL_20260502_171937552.jpg" width="80%">

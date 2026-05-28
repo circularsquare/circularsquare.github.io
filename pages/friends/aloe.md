@@ -21,5 +21,4 @@ aloe never leaves.
 please
 
 
-
-
+<img src="/assets/plants/aloe.jpg" width="90%">

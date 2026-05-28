@@ -12,3 +12,4 @@ lavender is a [community](/thoughts/community/) organizer. every once in a while
 
 lavender is very smart, on a similar wavelength as [chrysanthemum](/friends/chrysanthemum/). they have talked about *hegel*. lavender also has many interesting opinions regarding community and politics and the future. 
 
+<img src="/assets/plants/lavender.jpg" width="70%">

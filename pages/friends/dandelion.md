@@ -16,3 +16,4 @@ one summer, we entered [kozuloa](/places/kozuloa/) together, and met [pine](/fri
 
 thanks for being there when i was figuring myself out. (though i still am).
 
+<img src="/assets/plants/dandelion.jpg" width="70%">

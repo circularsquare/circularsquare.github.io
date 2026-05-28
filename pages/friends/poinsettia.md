@@ -19,3 +19,5 @@ where will you go?
 will it be into the body of a new victim or your own
 
 i watch in anticipation
+
+<img src="/assets/plants/poinsettia.jpg" width="70%">

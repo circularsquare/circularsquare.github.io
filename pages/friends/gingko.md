@@ -16,3 +16,4 @@ you're a builder. does it feel good to make something that people use? you're in
 
 looking back, i met you when i was softest... when i was most wary of the world. if it was anyone but you, maybe i would have been stuck there forever.
 
+<img src="/assets/photos/202605/PXL_20260406_172207738.jpg" width="70%">

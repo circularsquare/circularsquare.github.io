@@ -13,3 +13,5 @@ under the lamp of the hotel room, you look like you're about to blow everyone aw
 where are you now?
 
 i'm sorry for what i did
+
+<img src="/assets/plants/pine.jpg" width="70%">

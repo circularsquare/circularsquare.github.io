@@ -39,7 +39,7 @@ def compress_photos():
         print(f"\n=== {os.path.basename(photos_dir)} ===")
         photos = []
         for ext in ("*.jpg", "*.jpeg", "*.png"):
-            photos.extend(glob.glob(os.path.join(photos_dir, ext)))
+            photos.extend(glob.glob(os.path.join(photos_dir, "**", ext), recursive=True))
 
         for p in sorted(photos):
             name = os.path.basename(p)
