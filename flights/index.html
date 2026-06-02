@@ -587,10 +587,10 @@ map.on('load', async () => {
       const mLine = ['all', ['==',['get','a'],routeFocus.a], ['==',['get','b'],routeFocus.b]];
       return ['case', mLine, 0.95, 0.04];
     }
-    // unexpected mode: spotlight exactly the routes shown in the list (top mode
-    // leaves unexpHi empty, so this falls through to the normal flat opacity).
-    if (unexpMode && unexpHi.length){
-      return ['case', routeMatch(unexpHi), 0.95, 0.06];
+    // unexpected mode: opacity ramps linearly with the observed/predicted ratio,
+    // 0× → 0.04 (barely there) up through 60×+ → full opacity.
+    if (unexpMode){
+      return ['interpolate', ['linear'], ['get','ratio'], 0, 0.04, 60, 1];
     }
     return 0.72;
   }
@@ -1086,26 +1086,6 @@ map.on('load', async () => {
     for(const id of ['lines','hit']) map.setLayoutProperty(id,'visibility',v);
     e.target.textContent=on?'off':'on';
     e.target.classList.toggle('on',!on);
-  });
-
-  // ---- motion level-of-detail (perf) --------------------------------------
-  // Rasterising every route + the fat invisible hit layer on every frame is
-  // what spikes the GPU while dragging. So during camera motion we (a) hide the
-  // hit layer — it only exists for clicks, never needed mid-move — and (b) drop
-  // the faintest routes, which add lots of overdraw for little signal. Both are
-  // restored the moment the camera settles. Skipped when something is selected/
-  // highlighted, so a focused or unexpected route is never culled mid-flight.
-  const LOD_FLOOR = 4.5;   // log10 pax — while moving, show only routes above this
-  map.on('movestart', ()=>{
-    map.setLayoutProperty('hit','visibility','none');
-    if (!focus && !routeFocus && !unexpMode){
-      map.setFilter('lines', ['all', ['>=',['get','lpax'], Math.max(minLog, LOD_FLOOR)]]);
-    }
-  });
-  map.on('moveend', ()=>{
-    apply();   // restores the real lines + hit filters (and the route count)
-    if (document.getElementById('paths').textContent==='on')
-      map.setLayoutProperty('hit','visibility','visible');
   });
   document.getElementById('apt').addEventListener('click',e=>{
     aptVisible=!aptVisible;
