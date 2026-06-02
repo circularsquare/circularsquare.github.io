@@ -1,0 +1,1135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Global air traffic — estimated passengers</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;700;800&display=swap">
+<link href="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.css" rel="stylesheet">
+<script src="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.js"></script>
+<style>
+  html,body { margin:0; height:100%; background:#07090d; font-family:'Nunito',system-ui,-apple-system,Segoe UI,Roboto,sans-serif; }
+  #map { position:absolute; inset:0; }
+  .panel {
+    position:absolute; top:12px; left:12px; z-index:2;
+    background:rgba(7,9,13,.84); color:#eee; border:1px solid #2a2f38;
+    border-radius:8px; padding:12px 14px; width:240px; font-size:12px;
+  }
+  .panel h1 { font-size:13px; margin:0 0 2px; letter-spacing:.3px; font-weight:800; }
+  .panel .sub { color:#8b939e; font-size:11px; margin-bottom:10px; line-height:1.4; }
+  .row { display:flex; justify-content:space-between; align-items:center; margin:7px 0; }
+  .row label { color:#c0c5cc; }
+  input[type=range] { width:118px; accent-color:#5bb6ff; cursor:pointer; }
+  button {
+    background:#11151c; color:#e8ebf0; border:1px solid #2a2f38; border-radius:5px;
+    padding:4px 8px; font-size:11px; cursor:pointer;
+  }
+  button:hover { border-color:#3a414c; }
+  button.on { background:#2a2f38; color:#fff; border-color:#3a414c; }
+  .stat { color:#5bb6ff; font-variant-numeric:tabular-nums; }
+  #legend { margin-top:10px; }
+  #legend .bar { height:8px; border-radius:4px; margin:4px 0 2px;
+    background:linear-gradient(90deg,#3b3a8c,#5e2d8a,#832681,#b5367a,#e0506b,#fb8761,#fec98b); }
+  #legend .ends { display:flex; justify-content:space-between; color:#8b939e; font-size:10px; }
+  #pieoverlay { position:absolute; inset:0; z-index:1; pointer-events:none; }
+  .maplibregl-popup { z-index:3; }   /* above the pie overlay (z-index:1) */
+  .maplibregl-popup-content {
+    background:rgba(7,9,13,.92); color:#eee; border:1px solid #2a2f38; border-radius:7px;
+    font-family:'Nunito',system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+    font-size:12px; padding:9px 11px; box-shadow:0 4px 18px rgba(0,0,0,.6);
+  }
+  .maplibregl-popup-tip { display:none; }
+  .pop-route { font-size:13px; font-weight:800; margin-bottom:3px; }
+  .pop-pax { color:#5bb6ff; font-weight:700; }
+  .pop-line { color:#8b939e; }
+  .badge { display:inline-block; background:#2a2f38; color:#c0c5cc; font-size:9px;
+    padding:1px 5px; border-radius:3px; vertical-align:middle; margin-left:5px;
+    text-transform:uppercase; letter-spacing:.04em; }
+
+  .rpanel {
+    position:absolute; top:12px; right:12px; z-index:2;
+    background:rgba(7,9,13,.84); color:#eee; border:1px solid #2a2f38;
+    border-radius:8px; padding:12px 6px 12px 10px; width:290px; font-size:12px;
+    max-height:calc(100vh - 96px); overflow-y:auto;       /* clear the bottom-right attribution */
+    scrollbar-width:thin; scrollbar-color:#3a414c transparent;
+  }
+  .rpanel::-webkit-scrollbar { width:6px; }
+  .rpanel::-webkit-scrollbar-track { background:transparent; }
+  .rpanel::-webkit-scrollbar-thumb { background:#2a2f38; border-radius:3px; }
+  .rpanel::-webkit-scrollbar-thumb:hover { background:#3a414c; }
+  .rpanel h1 { font-size:13px; margin:0 0 2px; letter-spacing:.3px; font-weight:800; }
+  .rpanel .sub { color:#8b939e; font-size:11px; margin-bottom:10px; line-height:1.4; }
+  #scatcanvas {
+    display:block; margin:6px 0 10px; background:#07090d;
+    border:1px solid #2a2f38; border-radius:4px; cursor:zoom-in;
+    width:100%; box-sizing:border-box;     /* fill the panel; JS sizes the bitmap to match */
+  }
+  #scatcanvas:hover { border-color:#3a414c; }
+  .odd-item {
+    padding:6px 8px; margin:3px 0; background:#11151c;
+    border:1px solid #2a2f38; border-radius:5px; cursor:pointer;
+  }
+  .odd-item:hover { background:#1a1f28; border-color:#3a414c; }
+  .odd-mult { color:#5bb6ff; float:right; font-weight:700; }
+  .odd-pair { font-weight:700; }
+  .odd-meta { color:#8b939e; font-size:10px; margin-top:2px; }
+
+  #routeinfo {
+    display:none;
+    position:absolute; bottom:12px; right:360px; z-index:2;
+    background:rgba(7,9,13,.94); color:#eee;
+    border:1px solid #5bb6ff44; border-radius:8px;
+    padding:10px 12px; font-size:12px; max-width:320px;
+    gap:10px; align-items:center;
+  }
+  #routeinfo.on { display:flex; }
+  #routeinfo .info { flex:1; line-height:1.35; }
+  #routeinfo b { color:#5bb6ff; font-size:13px; }
+  #routeinfo .meta { color:#8b939e; display:block; margin-top:3px; font-size:11px; }
+  #routeinfo button { flex:none; padding:3px 7px; }
+
+  /* expanded scatter (passengers × distance) */
+  #scatmodal {
+    display:none; position:absolute; inset:0; z-index:5;
+    background:rgba(4,6,10,.6); align-items:center; justify-content:center;
+  }
+  #scatmodal.on { display:flex; }
+  .scatcard {
+    background:rgba(7,9,13,.97); color:#eee;
+    border:1px solid #2a2f38; border-radius:10px; padding:12px 14px;
+    box-shadow:0 8px 40px rgba(0,0,0,.6);
+  }
+  .scathead {
+    display:flex; justify-content:space-between; align-items:center;
+    font-size:13px; font-weight:800; margin-bottom:8px; gap:16px;
+  }
+  #scatbig {
+    display:block; background:#07090d; border:1px solid #2a2f38;
+    border-radius:6px; cursor:crosshair;
+  }
+  .scatnote { color:#8b939e; font-size:11px; margin-top:7px; }
+  #scattip {
+    display:none; position:absolute; z-index:6; pointer-events:none;
+    background:rgba(7,9,13,.96); color:#eee; border:1px solid #2a2f38; border-radius:7px;
+    font-size:12px; padding:8px 10px; max-width:240px;
+    box-shadow:0 4px 18px rgba(0,0,0,.6);
+  }
+  #scattip.on { display:block; }
+
+  /* about panel — methodology + attribution, anchored bottom-left above its toggle */
+  #aboutbtn {
+    position:absolute; bottom:12px; left:12px; z-index:5;
+    width:32px; height:32px; border-radius:50%;
+    background:rgba(7,9,13,.84); color:#c0c5cc; border:1px solid #2a2f38;
+    font-size:17px; font-weight:700; line-height:1; cursor:pointer;
+    display:flex; align-items:center; justify-content:center;
+  }
+  #aboutbtn:hover { color:#fff; border-color:#3a414c; }
+  #aboutbtn.on { color:#fff; background:#2a2f38; border-color:#5bb6ff; }
+  #about {
+    position:absolute; bottom:54px; left:12px; z-index:4;
+    width:330px; max-width:calc(100vw - 24px); max-height:calc(100vh - 78px); overflow-y:auto;
+    background:rgba(7,9,13,.94); color:#c0c5cc; border:1px solid #3a414c;
+    border-radius:8px; padding:14px 16px; font-size:11.5px; line-height:1.5; display:none;
+  }
+  #about.open { display:block; }
+  #about h2 { color:#fff; font-size:13px; font-weight:800; margin:14px 0 5px; letter-spacing:.3px; }
+  #about h2:first-child { margin-top:0; }
+  #about p { margin:6px 0 0; }
+  #about b { color:#fff; font-weight:700; }
+  #about a { color:#5bb6ff; text-decoration:none; }
+  #about a:hover { text-decoration:underline; }
+
+  #loading {
+    position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
+    z-index:10; pointer-events:none;
+    background:rgba(7,9,13,.88); color:#c0c5cc; border:1px solid #2a2f38;
+    border-radius:8px; padding:11px 18px; font-size:13px; letter-spacing:.2px;
+  }
+  #loading.hidden { display:none; }
+</style>
+</head>
+<body>
+<div id="map"></div>
+<canvas id="pieoverlay"></canvas>
+<div id="loading">loading flight data&hellip;</div>
+<div id="routeinfo">
+  <span class="info"></span>
+  <button id="routeinfoclear">reset</button>
+</div>
+<div id="scatmodal">
+  <div class="scatcard">
+    <div class="scathead">
+      <span>Routes &mdash; passengers vs distance</span>
+      <button id="scatclose">close</button>
+    </div>
+    <canvas id="scatbig" width="680" height="460"></canvas>
+    <div class="scatnote">Hover a dot for the route &middot; click to highlight it on the map &middot; Esc to close</div>
+  </div>
+</div>
+<div id="scattip"></div>
+<div class="rpanel" id="rpanel">
+  <h1 id="rtitle">Top routes by traffic</h1>
+  <div class="sub" id="rsub">20 busiest routes worldwide. Click any to focus.</div>
+  <div class="row" style="margin-top:0">
+    <label>Rank by</label><button id="modetoggle">top traffic</button>
+  </div>
+  <canvas id="scatcanvas" width="262" height="150"></canvas>
+  <div id="oddlist"></div>
+</div>
+<div class="panel">
+  <h1>Global air traffic</h1>
+  <div class="sub" id="sub">Estimated passengers/yr per route.</div>
+  <div class="row">
+    <label>Min passengers</label><span class="stat" id="minlbl">all</span>
+  </div>
+  <div class="row" style="margin-top:-2px">
+    <input type="range" id="minpax" min="0" max="7" step="0.1" value="0">
+  </div>
+  <div class="row">
+    <label>Width threshold</label><span class="stat" id="kneelbl">~100k</span>
+  </div>
+  <div class="row" style="margin-top:-2px">
+    <input type="range" id="knee" min="3" max="7" step="0.05" value="5">
+  </div>
+  <div class="row">
+    <label>Flight paths</label><button id="paths" class="on">on</button>
+  </div>
+  <div class="row">
+    <label>Airport bubbles</label><button id="apt" class="on">on</button>
+  </div>
+  <div class="row">
+    <label>Bubble style</label><button id="piemode">white</button>
+  </div>
+  <div class="row">
+    <label>Projection</label><button id="proj" class="on">globe</button>
+  </div>
+  <div id="legend">
+    <div class="bar"></div>
+    <div class="ends"><span id="leglo">~2k</span><span>passengers / year</span><span id="leghi">8M+</span></div>
+  </div>
+</div>
+
+<button id="aboutbtn" title="about">?</button>
+<div id="about">
+  <h2>what this is</h2>
+  <p>Estimated <b>passengers per year</b> on every commercial route worldwide. Each arc is one airport-to-airport pair; <b>brighter and thicker</b> means more passengers.</p>
+
+  <h2>the estimate</h2>
+  <p>passengers &asymp; <b>flights &times; seats &times; 0.80</b>. Flight counts and aircraft types are real; seat counts are a typical-per-type lookup and the 0.80 load factor is a flat assumption. It is built to <b>compare</b> routes, not to give exact totals.</p>
+
+  <h2>colour &amp; width</h2>
+  <p>Both encode passengers per year. The colour ramp's steps sit at <b>ink-weighted quantiles</b> of the data, so the busiest routes are the brightest and no single shade floods the map. The <b>width threshold</b> slider sets where line width turns from linear to logarithmic &mdash; high to tell busy routes apart, low to keep thin ones visible.</p>
+
+  <h2>top &amp; unexpected</h2>
+  <p>The right panel ranks routes two ways. <b>top traffic</b> is simply the busiest. <b>unexpected</b> finds routes carrying far more than a standard <b>gravity model</b> predicts from the two airports' size and distance &mdash; the diaspora corridors, migration links and historical ties this map was built to surface.</p>
+
+  <h2>exploring</h2>
+  <p><b>Click an airport</b> to isolate its routes; <b>click a route</b>, on the map or in the scatter, to focus and zoom to it. The scatter plots every route by <b>distance against passengers</b>. <b>Esc</b> clears.</p>
+  <p>The <b>min passengers</b> slider hides thinner routes; flight paths, airport bubbles and projection each toggle on the left.</p>
+
+  <h2>data</h2>
+  <p>One full UTC day, <b>16 May 2026</b>, annualised &times;365 &mdash; so day-of-week and seasonal swings are whatever that Saturday happened to hold.</p>
+  <p>Flight data: <a href="https://www.flightradar24.com" target="_blank" rel="noopener">Flightradar24</a>. Only aggregated estimates are shown; no raw flight records.</p>
+</div>
+
+<script>
+const R = 6371; // km
+const rad = d => d*Math.PI/180, deg = r => r*180/Math.PI;
+const fmt = n => n>=1e6 ? (n/1e6).toFixed(2)+'M' : Math.round(n/1e3)+'k';
+
+function haversine(lo1,la1,lo2,la2){
+  const dLa=rad(la2-la1), dLo=rad(lo2-lo1);
+  const a=Math.sin(dLa/2)**2 + Math.cos(rad(la1))*Math.cos(rad(la2))*Math.sin(dLo/2)**2;
+  return 2*R*Math.asin(Math.min(1,Math.sqrt(a)));
+}
+
+// great-circle polyline; longitudes unwrapped so the line never streaks across
+// the map at the antimeridian (works on both mercator and globe).
+function arc(lo1,la1,lo2,la2){
+  const d = haversine(lo1,la1,lo2,la2)/R;
+  if (d < 1e-6) return [[lo1,la1]];
+  const n = Math.max(8, Math.min(96, Math.round(d*40)));
+  const φ1=rad(la1),λ1=rad(lo1),φ2=rad(la2),λ2=rad(lo2), sd=Math.sin(d);
+  const pts=[]; let prev=null;
+  for (let i=0;i<=n;i++){
+    const f=i/n;
+    const A=Math.sin((1-f)*d)/sd, B=Math.sin(f*d)/sd;
+    const x=A*Math.cos(φ1)*Math.cos(λ1)+B*Math.cos(φ2)*Math.cos(λ2);
+    const y=A*Math.cos(φ1)*Math.sin(λ1)+B*Math.cos(φ2)*Math.sin(λ2);
+    const z=A*Math.sin(φ1)+B*Math.sin(φ2);
+    let lon=deg(Math.atan2(y,x)), lat=deg(Math.atan2(z,Math.hypot(x,y)));
+    if (prev!==null){ while(lon-prev>180)lon-=360; while(lon-prev<-180)lon+=360; }
+    prev=lon; pts.push([lon,lat]);
+  }
+  return pts;
+}
+
+// FR24-derived routes — the single dataset the viewer loads.
+const DATA_FILE = 'routes_fr24.json', DATA_LABEL = 'FR24';
+
+const map = new maplibregl.Map({
+  container:'map',
+  style:'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json',
+  center:[20,25], zoom:1.6, attributionControl:false,
+});
+map.addControl(new maplibregl.AttributionControl({compact:true}));
+// Zoom buttons omitted — they sat under the right-hand routes panel. Scroll /
+// pinch / double-click zoom still work on the globe.
+
+// set globe before the first frame paints (style.load fires ahead of 'load'),
+// so the map never flashes the flat mercator projection on startup.
+map.on('style.load', () => map.setProjection({type:'globe'}));
+
+map.on('load', async () => {
+
+  // ---- dataset state ------------------------------------------------------
+  let feats=[], traffic={}, rcount={}, airportInfo={};
+  let focus=null, routeFocus=null, minLog=0;
+  // airport-bubble state, shared with the pie overlay
+  let aptFeats=[], maxS=1, aptVisible=true, pieMode=false, isGlobe=true, pieRAF=0;
+
+  // ---- paint expressions (static) -----------------------------------------
+  // Magma ramp, lightness-monotonic so the busiest routes are unambiguously the
+  // brightest. The low anchor is lifted out of magma's near-black foot into a
+  // visible blue-violet so the quietest routes never disappear on the dark map.
+  const MAGMA = ['#3b3a8c','#5e2d8a','#832681','#b5367a','#e0506b','#fb8761','#fec98b'];
+  // Colour encodes log-traffic, but the stops are placed at QUANTILES of the
+  // route distribution rather than at fixed lpax values — and each route is
+  // weighted by its rendered line WIDTH, so the colour bands hold roughly equal
+  // *ink* instead of equal route counts. ~70% of routes cluster within half a
+  // log-decade of the median (fixed log stops paint nearly everything one
+  // mid-ramp mauve), and busy routes are also drawn thick — so an equal-count
+  // split still let the warm/peach end dominate the screen. Width-weighting
+  // spreads the colour resolution onto the thick routes and packs the many thin
+  // low-traffic routes into the dim end where they barely show. Rebuilt from
+  // `feats` (sorted ascending by pax) on each dataset load, using the default-
+  // knee width model so the colours don't shift when the width slider moves.
+  function colourRamp(){
+    const expr = ['interpolate',['linear'],['get','lpax']];
+    const n = feats.length;
+    if (!n){ expr.push(4, MAGMA[0], 7, MAGMA[MAGMA.length-1]); return expr; }
+    const wOf = pax => {                       // per-route width, mirrors tExpr()
+      const c = Math.min(W_CEIL, Math.max(1, pax));
+      const t = c >= kneeX ? kneeA*Math.log(c)+kneeB : kneeC*c;
+      return MIN_W + W_RANGE*Math.max(0, Math.min(1, t));
+    };
+    const w = feats.map(f => wOf(f.properties.pax));
+    const total = w.reduce((s,x)=>s+x, 0);
+    let cum = 0, gi = 0, prev = -Infinity;
+    for (let i=0; i<feats.length && gi<MAGMA.length; i++){
+      cum += w[i];                             // walk up the ink-weighted CDF
+      while (gi < MAGMA.length && cum >= gi/(MAGMA.length-1) * total){
+        let stop = feats[i].properties.lpax;
+        if (stop <= prev) stop = prev + 1e-4;  // stops must strictly increase
+        prev = stop; expr.push(stop, MAGMA[gi]); gi++;
+      }
+    }
+    while (gi < MAGMA.length){                 // flush any stop left by fp rounding
+      let stop = feats[feats.length-1].properties.lpax;
+      if (stop <= prev) stop = prev + 1e-4;
+      prev = stop; expr.push(stop, MAGMA[gi]); gi++;
+    }
+    return expr;
+  }
+  const colour = colourRamp();   // placeholder before data loads; reset in loadDataset
+  // Replicate the line-color ramp in JS so popups can tint text to match the
+  // route's rendered magma colour. Stops are captured from the active ramp;
+  // interpolation is linear per-channel in sRGB (matches MapLibre's default).
+  let colourStops = [];
+  const _hexRgb = h => [parseInt(h.slice(1,3),16),parseInt(h.slice(3,5),16),parseInt(h.slice(5,7),16)];
+  function captureStops(expr){
+    colourStops = [];
+    for (let i=3;i<expr.length;i+=2) colourStops.push([expr[i], _hexRgb(expr[i+1])]);
+  }
+  function lpaxColor(lpax){
+    const st=colourStops;
+    if (!st.length) return '#fec98b';
+    if (lpax<=st[0][0]) return `rgb(${st[0][1].join(',')})`;
+    const last=st[st.length-1];
+    if (lpax>=last[0]) return `rgb(${last[1].join(',')})`;
+    for (let i=0;i<st.length-1;i++){
+      const [x0,c0]=st[i],[x1,c1]=st[i+1];
+      if (lpax>=x0 && lpax<=x1){
+        const t=(lpax-x0)/((x1-x0)||1);
+        return `rgb(${Math.round(c0[0]+t*(c1[0]-c0[0]))},${Math.round(c0[1]+t*(c1[1]-c0[1]))},${Math.round(c0[2]+t*(c1[2]-c0[2]))})`;
+      }
+    }
+    return `rgb(${last[1].join(',')})`;
+  }
+  captureStops(colour);
+  // sqrt-like (decelerating) zoom curve; "zoom" must be the top-level input.
+  const ZSTOPS=[2,5,8,12], ZMULT=[1.0,2.3,3.2,3.9];
+  function zoomScaled(byFeature){
+    const e=['interpolate',['linear'],['zoom']];
+    ZSTOPS.forEach((z,i)=>e.push(z, byFeature(ZMULT[i])));
+    return e;
+  }
+  // Line width: width is a 0..1 curve t(pax) that is LINEAR below a "knee"
+  // throughput and NATURAL-LOG above it, with the slopes matched at the knee so
+  // there is no kink. The slider sweeps the knee: knee at the floor → pure log
+  // (busy routes compressed, ~the old look); knee at the ceiling → pure linear
+  // (only the very busiest routes fatten). Colour still uses raw lpax.
+  const MIN_W = 0.1, MAX_W = 2.7, W_RANGE = MAX_W - MIN_W;  // hairline .. fattest
+  const W_CEIL = 1e7;                                       // above the ~8.9M pax peak
+  // knee sweeps over log10(pax) 3..7 (= the #knee slider's min/max in the HTML).
+  let knee = 5;                                             // log10 of knee pax — default 100k
+  let kneeX, kneeA, kneeB, kneeC;
+  function recalcKnee(){
+    kneeX = Math.pow(10, knee);
+    kneeA = 1 / (Math.log(W_CEIL/kneeX) + 1);   // ln-branch slope factor
+    kneeB = kneeA * (1 - Math.log(kneeX));      // ln-branch offset
+    kneeC = kneeA / kneeX;                       // linear-branch slope (= dt/dc at the knee)
+  }
+  recalcKnee();
+  // 0..1 width curve, computed GPU-side from each route's pax — a knee change is
+  // just a paint-property swap, never a geometry re-upload.
+  function tExpr(){
+    const c = () => ['min', W_CEIL, ['max', 1, ['get','pax']]];
+    return ['max', 0, ['min', 1, ['case',
+      ['>=', c(), kneeX], ['+', ['*', kneeA, ['ln', c()]], kneeB],
+      ['*', kneeC, c()]]]];
+  }
+  const widthZoom = extra => zoomScaled(m =>
+    ['+', MIN_W*m*extra, ['*', W_RANGE*m*extra, tExpr()]]);
+  const width = widthZoom(1);
+  const aptRadius = maxS => zoomScaled(m => ['interpolate',['linear'],['get','s'],
+    0,0.5*m, Math.max(maxS,1),8.5*m]);
+
+  // ---- sources + layers (added once, data filled by loadDataset) ----------
+  const empty = {type:'FeatureCollection',features:[]};
+  map.addSource('routes',{type:'geojson',data:empty});
+  map.addSource('airports',{type:'geojson',data:empty});
+
+  map.addLayer({ id:'lines', type:'line', source:'routes', layout:{'line-cap':'round'},
+    paint:{'line-color':colour,'line-width':width,'line-opacity':0.72} });
+  map.addLayer({ id:'hit', type:'line', source:'routes', layout:{'line-cap':'round'},
+    paint:{'line-color':'#000','line-opacity':0,'line-width':14} });
+  map.addLayer({ id:'airports', type:'circle', source:'airports',
+    paint:{
+      'circle-radius':aptRadius(1),
+      'circle-color':'#cfe0ff','circle-opacity':0.40,
+      'circle-stroke-color':'#eaf2ff','circle-stroke-width':1.0,'circle-stroke-opacity':0.85,
+    } });
+
+  // ---- build route features from a dataset --------------------------------
+  function buildFeatures(data){
+    const ap=data.airports, fs=[];
+    for (const [a,b,pax,fpd,seats] of data.routes){
+      const A=ap[a], B=ap[b];
+      if(!A||!B) continue;
+      fs.push({
+        type:'Feature',
+        geometry:{type:'LineString',coordinates:arc(A[0],A[1],B[0],B[1])},
+        properties:{
+          a,b, ca:A[2], cb:B[2], na:A[3], nb:B[3],
+          pax, fpd, seats, lpax:Math.log10(Math.max(pax,1)),
+          dist:Math.round(haversine(A[0],A[1],B[0],B[1])),
+          intl: A[3]!==B[3] ? 1 : 0,
+        },
+      });
+    }
+    fs.sort((x,y)=>x.properties.pax-y.properties.pax);  // busiest drawn on top
+    return fs;
+  }
+
+  // ---- load the dataset ---------------------------------------------------
+  async function loadDataset(){
+    let data;
+    try {
+      const r = await fetch(DATA_FILE + '?t=' + Date.now());
+      if(!r.ok) throw new Error('HTTP '+r.status);
+      data = await r.json();
+    } catch(e){
+      document.getElementById('sub').textContent = 'Could not load '+DATA_FILE+' — '+e.message;
+      map.getSource('routes').setData(empty);
+      map.getSource('airports').setData(empty);
+      return;
+    }
+    airportInfo = data.airports;
+    feats = buildFeatures(data);
+    map.getSource('routes').setData({type:'FeatureCollection',features:feats});
+    // recolour against this dataset's distribution; label the legend with its
+    // real pax range (feats is sorted ascending by pax in buildFeatures).
+    const _ramp = colourRamp();
+    map.setPaintProperty('lines','line-color', _ramp);
+    captureStops(_ramp);
+    if (feats.length){
+      document.getElementById('leglo').textContent = '~'+fmt(feats[0].properties.pax);
+      document.getElementById('leghi').textContent = fmt(feats[feats.length-1].properties.pax);
+    }
+
+    // airport bubbles: traffic = sum of pax on every route touching the airport.
+    // fpdSum sums route-level flights/day — each route's fpd already counts both
+    // directions, so summing across routes through an airport = its daily throughput.
+    // also split each airport's pax into domestic vs international (for the pie
+    // overlay) using the same per-route intl flag that colours the scatter.
+    traffic={}; rcount={}; const fpdSum={}, domSum={}, intlSum={};
+    for (const f of feats){
+      const p=f.properties;
+      traffic[p.a]=(traffic[p.a]||0)+p.pax; rcount[p.a]=(rcount[p.a]||0)+1;
+      traffic[p.b]=(traffic[p.b]||0)+p.pax; rcount[p.b]=(rcount[p.b]||0)+1;
+      fpdSum[p.a] =(fpdSum[p.a] ||0)+p.fpd;
+      fpdSum[p.b] =(fpdSum[p.b] ||0)+p.fpd;
+      const bucket = p.intl ? intlSum : domSum;
+      bucket[p.a]=(bucket[p.a]||0)+p.pax; bucket[p.b]=(bucket[p.b]||0)+p.pax;
+    }
+    aptFeats=[]; maxS=1;
+    for (const code in traffic){
+      const A=airportInfo[code]; if(!A) continue;
+      const s=Math.sqrt(traffic[code]); if(s>maxS) maxS=s;
+      aptFeats.push({type:'Feature',geometry:{type:'Point',coordinates:[A[0],A[1]]},
+        properties:{code, city:A[2], country:A[3], t:traffic[code], s,
+                    rt:rcount[code], fpd:Math.round(fpdSum[code]),
+                    td:domSum[code]||0, ti:intlSum[code]||0}});
+    }
+    map.getSource('airports').setData({type:'FeatureCollection',features:aptFeats});
+    map.setPaintProperty('airports','circle-radius',aptRadius(maxS));
+    schedulePie();   // refresh pies for the new dataset if pie mode is on
+
+    document.getElementById('sub').textContent =
+      (data.meta && data.meta.source) ? data.meta.source : DATA_LABEL;
+    focus=null; routeFocus=null; applyFocus();
+    renderScatter();
+    unexpMode=false; applyMode();   // always re-render list + paint for the new data
+    apply();
+  }
+
+  // ---- route hover --------------------------------------------------------
+  // shared by the map popup and the expanded-scatter tooltip.
+  function routePopupHTML(p){
+    const col = lpaxColor(p.lpax);   // tint title + pax to match the route's line colour
+    return `<div class="pop-route" style="color:${col}">${p.a} – ${p.b}</div>`+
+      `<div class="pop-line">${p.ca}, ${p.na}<br>${p.cb}, ${p.nb}</div>`+
+      `<div style="margin-top:5px"><span class="pop-pax" style="color:${col}">~${fmt(p.pax)} pax/yr</span> &nbsp;est.</div>`+
+      `<div class="pop-line">~${p.fpd} flights/day · ~${p.seats} seats · ${p.dist.toLocaleString()} km</div>`;
+  }
+  const popup = new maplibregl.Popup({closeButton:false,closeOnMove:false,offset:8});
+  map.on('mousemove','hit', e=>{
+    const f=e.features[0]; if(!f) return;
+    map.getCanvas().style.cursor='pointer';
+    popup.setLngLat(e.lngLat).setHTML(routePopupHTML(f.properties)).addTo(map);
+  });
+  map.on('mouseleave','hit', ()=>{ map.getCanvas().style.cursor=''; popup.remove(); });
+
+  // ---- airport hover (registered AFTER the route hover so it wins when both
+  //      fire — busy airports always have lines passing under their bubble) --
+  map.on('mousemove','airports', e=>{
+    const f=e.features[0]; if(!f) return;
+    map.getCanvas().style.cursor='pointer';
+    const p=f.properties;
+    const dd=p.td||0, ii=p.ti||0, tt=dd+ii;
+    popup.setLngLat(e.lngLat).setHTML(
+      `<div class="pop-route">${p.code}</div>`+
+      `<div class="pop-line">${p.city}${p.country?', '+p.country:''}</div>`+
+      `<div style="margin-top:5px"><span class="pop-pax">~${fmt(p.t)} pax/yr</span> &nbsp;est.</div>`+
+      `<div class="pop-line">~${p.fpd.toLocaleString()} flights/day · ${p.rt} routes</div>`+
+      (tt ? `<div class="pop-line"><span style="color:#f06464">${Math.round(dd/tt*100)}% domestic</span> · `+
+            `<span style="color:#64a0ff">${Math.round(ii/tt*100)}% international</span></div>` : '')
+    ).addTo(map);
+  });
+  map.on('mouseleave','airports', ()=>{ map.getCanvas().style.cursor=''; popup.remove(); });
+
+  // ---- focus: click an airport to isolate its routes ----------------------
+  // airport focus and route focus are mutually exclusive and share the one
+  // persistent info box (#routeinfo, bottom-right); reset clears whichever is set.
+  const rinfo=document.getElementById('routeinfo');
+  document.getElementById('routeinfoclear').addEventListener('click', ()=>{
+    if (focus){ focus=null; applyFocus(); }
+    else if (routeFocus){ routeFocus=null; applyRouteFocus(); }
+  });
+  function applyFocus(){
+    if (focus){
+      const m=['any',['==',['get','a'],focus],['==',['get','b'],focus]];
+      map.setPaintProperty('lines','line-opacity',['case',m,0.92,0.04]);
+      map.setPaintProperty('airports','circle-color',
+        ['case',['==',['get','code'],focus],'#5bb6ff','#cfe0ff']);
+      map.setPaintProperty('airports','circle-opacity',
+        ['case',['==',['get','code'],focus],0.95,0.10]);
+      map.setPaintProperty('airports','circle-stroke-opacity',
+        ['case',['==',['get','code'],focus],1,0.15]);
+      const A=airportInfo[focus];
+      rinfo.querySelector('.info').innerHTML=`✈ <b>${focus}</b> — ${A?A[2]:''}`+
+        `<span class="meta">${rcount[focus]||0} routes · ~${fmt(traffic[focus]||0)} pax/yr</span>`;
+      rinfo.classList.add('on');
+    } else {
+      map.setPaintProperty('lines','line-opacity',0.72);
+      map.setPaintProperty('airports','circle-color','#cfe0ff');
+      map.setPaintProperty('airports','circle-opacity',0.40);
+      map.setPaintProperty('airports','circle-stroke-opacity',0.85);
+      rinfo.classList.remove('on');
+    }
+    // refresh the hit-layer filter so non-touching routes go inert
+    // (or become live again on deselect).
+    apply();
+    popup.remove();   // clear any stale route popup from before the focus change
+    if (pieMode && aptVisible) hidePieCircles();   // focus just re-set circle opacities
+    schedulePie();
+    renderScatter();   // highlight this airport's routes in the scatter
+  }
+  function setFocus(code){
+    if (unexpMode){ unexpMode=false; applyMode(); }  // mutually exclusive
+    if (routeFocus){ routeFocus=null; }              // ditto
+    focus=(focus===code)?null:code;
+    applyFocus();
+  }
+
+  // line-opacity depends on (unexp mode) × (route focus). Centralised here so
+  // applyMode and applyRouteFocus can't fall out of sync when both are active.
+  // routes in the current unexpected list, as [a,b] pairs, as a MapLibre match.
+  const routeMatch = pairs => ['any'].concat(
+    pairs.map(([a,b]) => ['all', ['==',['get','a'],a], ['==',['get','b'],b]]));
+
+  function linesOpacityExpr(){
+    if (routeFocus){
+      // a focused route is unambiguously bright; everything else dims uniformly.
+      const mLine = ['all', ['==',['get','a'],routeFocus.a], ['==',['get','b'],routeFocus.b]];
+      return ['case', mLine, 0.95, 0.04];
+    }
+    // unexpected mode: spotlight exactly the routes shown in the list (top mode
+    // leaves unexpHi empty, so this falls through to the normal flat opacity).
+    if (unexpMode && unexpHi.length){
+      return ['case', routeMatch(unexpHi), 0.95, 0.06];
+    }
+    return 0.72;
+  }
+  // width tracks the same highlight: give the spotlighted unexpected routes a
+  // floor so low-traffic (hairline) ones still read against the dimmed field.
+  function linesWidthExpr(){
+    if (!routeFocus && unexpMode && unexpHi.length){
+      return ['case', routeMatch(unexpHi), ['max', widthZoom(1), zoomScaled(m=>1.7*m)], widthZoom(1)];
+    }
+    return widthZoom(1);
+  }
+
+  // ---- route focus: highlight a single route, zoom to it, mark both endpoints.
+  // Coexists with unexpected mode — linesOpacityExpr() handles the combination.
+  function applyRouteFocus(){
+    if (routeFocus){
+      const {a, b} = routeFocus;
+      const mEnd = ['any',['==',['get','code'],a],['==',['get','code'],b]];
+      map.setPaintProperty('airports','circle-color',['case',mEnd,'#5bb6ff','#cfe0ff']);
+      map.setPaintProperty('airports','circle-opacity',['case',mEnd,0.95,0.10]);
+      map.setPaintProperty('airports','circle-stroke-opacity',['case',mEnd,1,0.15]);
+      // pan/zoom to fit both endpoints; unwrap longitude across antimeridian
+      // so a transpacific route takes the short way around the globe.
+      const A=airportInfo[a], B=airportInfo[b];
+      if (A && B){
+        let loA=A[0], loB=B[0];
+        if (loB - loA > 180) loA += 360;
+        else if (loA - loB > 180) loB += 360;
+        const bounds = [[Math.min(loA,loB), Math.min(A[1],B[1])],
+                        [Math.max(loA,loB), Math.max(A[1],B[1])]];
+        map.fitBounds(bounds, {padding:80, maxZoom:5, duration:800});
+      }
+      const ft = feats.find(f => f.properties.a===a && f.properties.b===b);
+      if (ft){
+        const p = ft.properties;
+        const col = lpaxColor(p.lpax);   // match the route's line colour
+        rinfo.querySelector('.info').innerHTML =
+          `✈ <b style="color:${col}">${p.a} – ${p.b}</b>` +
+          `<span class="meta"><span style="color:${col}">~${fmt(p.pax)} pax/yr</span> · ~${p.fpd} flt/day · ${p.dist.toLocaleString()} km<br>${p.ca} → ${p.cb}</span>`;
+        rinfo.classList.add('on');
+      }
+    } else {
+      map.setPaintProperty('airports','circle-color','#cfe0ff');
+      map.setPaintProperty('airports','circle-opacity',0.40);
+      map.setPaintProperty('airports','circle-stroke-opacity',0.85);
+      rinfo.classList.remove('on');
+    }
+    map.setPaintProperty('lines','line-opacity', linesOpacityExpr());
+    map.setPaintProperty('lines','line-width', linesWidthExpr());
+    apply();
+    popup.remove();
+    if (pieMode && aptVisible) hidePieCircles();   // route focus just re-set circle opacities
+    schedulePie();
+    renderScatter();   // highlight the picked route in the scatter (thumb + modal)
+  }
+
+  function setRouteFocus(a, b){
+    // NOT mutually exclusive with unexp mode — clicking a route there should
+    // zoom in while keeping the unexpectedness encoding on the other lines.
+    if (focus){ focus=null; }   // airport focus IS still mutually exclusive
+    const same = routeFocus && routeFocus.a===a && routeFocus.b===b;
+    routeFocus = same ? null : {a, b};
+    applyRouteFocus();
+  }
+
+  map.on('click', e=>{
+    closeAbout();   // any click on the map dismisses the about panel
+    const box=[[e.point.x-5,e.point.y-5],[e.point.x+5,e.point.y+5]];
+    const aptHits=map.queryRenderedFeatures(box,{layers:['airports']});
+    if (aptHits.length){
+      aptHits.sort((x,y)=>y.properties.t-x.properties.t);
+      setFocus(aptHits[0].properties.code); return;
+    }
+    const routeHits = map.queryRenderedFeatures(e.point,{layers:['hit']});
+    if (routeHits.length){
+      const r = routeHits[0].properties;
+      setRouteFocus(r.a, r.b); return;
+    }
+    // empty click: clear whichever focus is set
+    if (focus){ focus=null; applyFocus(); }
+    else if (routeFocus){ routeFocus=null; applyRouteFocus(); }
+  });
+  // right-click anywhere clears the current selection. A right-DRAG rotates the
+  // globe and MapLibre suppresses contextmenu for it, so this only fires on a
+  // genuine click — rotation gestures won't deselect.
+  map.on('contextmenu', ()=>{
+    if (focus){ focus=null; applyFocus(); }
+    else if (routeFocus){ routeFocus=null; applyRouteFocus(); }
+  });
+  // ---- about panel (methodology + attribution) ---------------------------
+  const aboutBtn = document.getElementById('aboutbtn');
+  const aboutPanel = document.getElementById('about');
+  function closeAbout(){ aboutPanel.classList.remove('open'); aboutBtn.classList.remove('on'); }
+  aboutBtn.addEventListener('click', ()=>{
+    aboutBtn.classList.toggle('on', aboutPanel.classList.toggle('open'));
+  });
+
+  window.addEventListener('keydown',e=>{
+    if (e.key!=='Escape') return;
+    if (aboutPanel.classList.contains('open')){ closeAbout(); }
+    else if (scatOpen){ closeScat(); }
+    else if (focus){ focus=null; applyFocus(); }
+    else if (routeFocus){ routeFocus=null; applyRouteFocus(); }
+  });
+
+  // ---- right-panel list + unexpected-routes mode -------------------------
+  // Two modes share the panel:
+  //   top traffic — list = 20 highest-pax routes, paint = default opacity.
+  //   unexpected — list = 20 highest residuals vs a standard gravity baseline
+  //                (β=1, γ=-1 fixed; only the intercept c is fit), paint =
+  //                per-route opacity ramped by the score.
+  // The OLS fit we tried first collapsed to β≈0.23 / γ≈-0.2 — i.e. mass and
+  // distance barely predicted anything, so "unexpected" just meant "absolutely
+  // big". Standard gravity is the right baseline for the diaspora-anomaly framing.
+  let unexpMode = false, maxUnexp = 1, intlFactor = 1, unexpHi = [];
+
+  // Background mass added to every airport's effective t — ~2000 pax/day
+  // worth of "traffic to nowhere". Negligible (<<1%) for busy hubs, but
+  // floors tiny single-route airports so their routes don't blow up the
+  // ratio just because t_a·t_b ≈ pax² is unrealistically small.
+  const BG_MASS = 2000 * 365;
+
+  // Floor for the unexpected list: routes below this many pax/yr are still used
+  // to fit the gravity baseline, but never surface as "unexpected corridors" —
+  // a handful of flights/yr between two small airports can post a huge ratio
+  // against a tiny predicted baseline without being a real diaspora link.
+  const UNEXP_MIN_PAX = 200000;
+
+  function computeUnexpectedness(){
+    const inputs = [];
+    for (const f of feats){
+      const p = f.properties;
+      const t1 = (traffic[p.a]||0) + BG_MASS;
+      const t2 = (traffic[p.b]||0) + BG_MASS;
+      if (!p.dist || !p.pax) { p.unexp = 0; p.ratio = 0; continue; }
+      inputs.push({t1, t2, dist:p.dist, pax:p.pax, intl:p.intl||0, f});
+    }
+    // Standard gravity + intl dummy:
+    //   log(pax) = c + log(t1·t2) − log(dist) + δ·intl
+    // β=1, γ=-1 held fixed; c and δ fit by OLS. δ captures how much intl vs
+    // domestic shifts expected pax for the same mass·distance — a border
+    // effect, basically. exp(δ) is exposed as `intlFactor` for display.
+    let n=0, sy=0, sx=0, sxy=0, sxx=0;
+    for (const r of inputs){
+      const y = Math.log(r.pax) - Math.log(r.t1*r.t2) + Math.log(r.dist);
+      const x = r.intl;
+      n++; sy+=y; sx+=x; sxy+=x*y; sxx+=x*x;
+    }
+    const my=sy/n, mx=sx/n;
+    const Sxx = sxx - n*mx*mx, Sxy = sxy - n*mx*my;
+    const delta = Sxx > 0 ? Sxy / Sxx : 0;
+    const c = my - delta * mx;
+    intlFactor = Math.exp(delta);
+    maxUnexp = 0;
+    for (const r of inputs){
+      const predLog = c + Math.log(r.t1*r.t2) - Math.log(r.dist) + delta*r.intl;
+      const ratio = r.pax / Math.exp(predLog);
+      // log(ratio) for the opacity ramp — keeps the long tail of ratios legible
+      // (sqrt would let the top route wash out everything else). Same ranking.
+      const u = Math.max(0, Math.log(ratio));
+      r.f.properties.unexp = u;
+      r.f.properties.ratio = ratio;
+      if (u > maxUnexp) maxUnexp = u;
+    }
+    for (const f of feats){
+      if (f.properties.unexp === undefined){ f.properties.unexp = 0; f.properties.ratio = 0; }
+    }
+    map.getSource('routes').setData({type:'FeatureCollection',features:feats});
+    return inputs;
+  }
+
+  function renderList(features, mode){
+    const el = document.getElementById('oddlist');
+    el.innerHTML = features.map(f => {
+      const p = f.properties;
+      const col = lpaxColor(p.lpax);   // route's line colour, shared with the popup
+      const head = mode === 'unexp' ? p.ratio.toFixed(1)+'&times;' : fmt(p.pax);
+      // top mode: the number IS pax → tint it; unexp mode: it's the ratio → keep accent
+      const headStyle = mode === 'unexp' ? '' : ` style="color:${col}"`;
+      const metaLead = mode === 'unexp' ? `~${fmt(p.pax)} pax/yr &middot; ` : '';
+      return `<div class="odd-item" data-a="${p.a}" data-b="${p.b}">
+        <span class="odd-mult"${headStyle}>${head}</span>
+        <div class="odd-pair" style="color:${col}">${p.a} &ndash; ${p.b}</div>
+        <div class="odd-meta">${metaLead}${p.dist.toLocaleString()} km<br>${p.ca} &rarr; ${p.cb}</div>
+      </div>`;
+    }).join('');
+    el.querySelectorAll('.odd-item').forEach(it => {
+      it.addEventListener('click', () => setRouteFocus(it.dataset.a, it.dataset.b));
+    });
+  }
+
+  function applyMode(){
+    const btn = document.getElementById('modetoggle');
+    const title = document.getElementById('rtitle');
+    const sub = document.getElementById('rsub');
+    if (unexpMode){
+      if (focus){ focus=null; applyFocus(); }     // paint conflict — exit focus
+      const inputs = computeUnexpectedness();
+      const top = inputs.map(r=>r.f)
+        .filter(f => f.properties.pax >= UNEXP_MIN_PAX)
+        .sort((a,b)=>b.properties.unexp - a.properties.unexp).slice(0,20);
+      renderList(top, 'unexp');
+      unexpHi = top.map(f => [f.properties.a, f.properties.b]);
+      btn.textContent='unexpected'; btn.classList.add('on');
+      title.textContent='Unexpectedly busy routes';
+      sub.textContent=`Top 20 by observed÷predicted under standard gravity (β=1, γ=−1) plus a fitted intl factor (intl ≈ ${intlFactor.toFixed(2)}× domestic at the same mass·distance), among routes carrying ≥${fmt(UNEXP_MIN_PAX)} pax/yr. Click to focus.`;
+    } else {
+      const top = [...feats].sort((a,b)=>b.properties.pax - a.properties.pax).slice(0,20);
+      renderList(top, 'top');
+      unexpHi = [];
+      btn.textContent='top traffic'; btn.classList.remove('on');
+      title.textContent='Top routes by traffic';
+      sub.textContent='20 busiest routes worldwide. Click any to focus.';
+    }
+    map.setPaintProperty('lines','line-opacity', linesOpacityExpr());
+    map.setPaintProperty('lines','line-width', linesWidthExpr());
+  }
+
+  document.getElementById('modetoggle').addEventListener('click', ()=>{
+    unexpMode = !unexpMode;
+    applyMode();
+  });
+
+  // ---- scatter (distance × pax, coloured by intl/dom) ---------------------
+  // Linear distance axis, log pax axis floored at 10k. Renders into either the
+  // panel thumbnail or the expanded modal canvas; the expanded version returns
+  // the plotted points so they can be hover/click hit-tested.
+  const X_MAX = 16000;                                   // km, linear axis ceiling (longest route ~15,341 km)
+  const Y_LO = Math.log10(1e4), Y_HI = Math.log10(2e7);  // 10k .. 20M pax
+  function drawScatter(canvas, big){
+    const W=canvas.width, H=canvas.height, ctx=canvas.getContext('2d');
+    ctx.clearRect(0,0,W,H);
+    const padL=big?42:30, padR=big?14:6, padT=big?14:8, padB=big?24:18;
+    const w=W-padL-padR, h=H-padT-padB;
+    const sx = d  => padL + (Math.min(d,X_MAX))/X_MAX * w;          // linear km
+    const sy = ly => padT + h - (ly - Y_LO)/(Y_HI - Y_LO) * h;      // log pax
+
+    ctx.strokeStyle='#2a2f38'; ctx.lineWidth=1;
+    ctx.fillStyle='#8b939e';   ctx.font=(big?11:9)+"px 'Nunito',sans-serif";
+    ctx.textAlign='right'; ctx.textBaseline='middle';
+    const yT=[4,5,6,7], yL=['10k','100k','1M','10M'];
+    yT.forEach((ly,i)=>{ const y=sy(ly);
+      ctx.beginPath(); ctx.moveTo(padL,y); ctx.lineTo(W-padR,y); ctx.stroke();
+      ctx.fillText(yL[i], padL-3, y); });
+    ctx.textBaseline='top';
+    const xT = big ? [0,4000,8000,12000,16000] : [0,8000,16000];
+    xT.forEach((d,i)=>{ const x=sx(d);
+      ctx.beginPath(); ctx.moveTo(x,padT); ctx.lineTo(x,padT+h); ctx.stroke();
+      // edge ticks align inward so neither '0' nor '20k km' clips off-canvas
+      ctx.textAlign = i===0 ? 'left' : (i===xT.length-1 ? 'right' : 'center');
+      ctx.fillText(d===0?'0':(d/1000)+'k km', x, padT+h+2); });
+
+    // points — fillRect is much faster than arc() at this density (~18k pts).
+    // When an airport or a route is selected, its matching routes are deferred
+    // and drawn last as expanded full-opacity dots while everything else dims —
+    // keeping the scatter in sync with the map's focus highlight.
+    const hot = focus
+      ? (p => p.a===focus || p.b===focus)
+      : routeFocus
+        ? (p => p.a===routeFocus.a && p.b===routeFocus.b)
+        : null;
+    const baseA = hot ? 0.1 : 0.4;
+    const pts = big ? [] : null;
+    const r = big ? 1.5 : 1;
+    const hotPts = [];
+    for (const f of feats){
+      const p=f.properties;
+      if (!p.dist || !p.pax || p.pax < 1e4) continue;     // below the 10k floor
+      const x = sx(p.dist);
+      const y = sy(Math.log10(Math.min(p.pax, 2e7)));
+      if (big) pts.push({x, y, f});
+      if (hot && hot(p)){ hotPts.push({x, y, intl:p.intl}); continue; }
+      ctx.fillStyle = p.intl ? `rgba(100,160,255,${baseA})` : `rgba(240,100,100,${baseA})`;
+      ctx.fillRect(x-r, y-r, 2*r, 2*r);
+    }
+    // selected routes on top: expanded full-opacity dots with a light ring
+    if (hotPts.length){
+      const hr = big ? 4.5 : 3;
+      for (const h of hotPts){
+        ctx.fillStyle = h.intl ? 'rgba(100,160,255,1)' : 'rgba(240,100,100,1)';
+        ctx.beginPath(); ctx.arc(h.x, h.y, hr, 0, 7); ctx.fill();
+        ctx.strokeStyle = 'rgba(255,255,255,0.9)'; ctx.lineWidth = big ? 1.5 : 1;
+        ctx.stroke();
+      }
+    }
+
+    // legend swatch — anchored top-right so it never sits over the busiest
+    // (short-haul, high-pax) points clustered in the upper-left.
+    ctx.font=(big?11:9)+"px 'Nunito',sans-serif"; ctx.textAlign='left'; ctx.textBaseline='middle';
+    const ly0=padT+(big?6:4), sw=6, gap=3, grp=12;
+    const wIntl=ctx.measureText('intl').width, wDom=ctx.measureText('dom').width;
+    let lx = W - padR - (sw+gap+wIntl + grp + sw+gap+wDom);
+    ctx.fillStyle='rgba(100,160,255,1)'; ctx.fillRect(lx, ly0, sw, sw);
+    ctx.fillStyle='#8b939e'; ctx.fillText('intl', lx+sw+gap, ly0+3);
+    lx += sw+gap+wIntl+grp;
+    ctx.fillStyle='rgba(240,100,100,1)'; ctx.fillRect(lx, ly0, sw, sw);
+    ctx.fillStyle='#8b939e'; ctx.fillText('dom', lx+sw+gap, ly0+3);
+    return pts;
+  }
+  function renderScatter(){
+    const thumb=document.getElementById('scatcanvas');
+    if (thumb){ thumb.width = thumb.clientWidth || 262; drawScatter(thumb, false); }
+    if (scatOpen) scatPts = drawScatter(scatBig, true);
+  }
+
+  // ---- expanded scatter: hover tooltip + click-to-highlight ---------------
+  const scatModal=document.getElementById('scatmodal');
+  const scatBig=document.getElementById('scatbig');
+  const scatTip=document.getElementById('scattip');
+  let scatOpen=false, scatPts=[];
+  function openScat(){ scatOpen=true; scatModal.classList.add('on'); scatPts=drawScatter(scatBig, true); }
+  function closeScat(){ scatOpen=false; scatModal.classList.remove('on'); scatTip.classList.remove('on'); }
+  function nearestScatPt(mx,my,maxd){
+    let best=null, bd=maxd*maxd;
+    for (const pt of scatPts){
+      const dx=pt.x-mx, dy=pt.y-my, d=dx*dx+dy*dy;
+      if (d<bd){ bd=d; best=pt; }
+    }
+    return best;
+  }
+  document.getElementById('scatcanvas').addEventListener('click', openScat);
+  document.getElementById('scatclose').addEventListener('click', closeScat);
+  scatModal.addEventListener('click', e=>{ if (e.target===scatModal) closeScat(); });
+  scatBig.addEventListener('mousemove', e=>{
+    const pt=nearestScatPt(e.offsetX, e.offsetY, 7);
+    if (!pt){ scatTip.classList.remove('on'); scatBig.style.cursor='crosshair'; return; }
+    scatTip.innerHTML=routePopupHTML(pt.f.properties);
+    const flip = e.clientX + 260 > window.innerWidth;
+    scatTip.style.left = (flip ? e.clientX - 250 : e.clientX + 14) + 'px';
+    scatTip.style.top  = (e.clientY + 14) + 'px';
+    scatTip.classList.add('on');
+    scatBig.style.cursor='pointer';
+  });
+  scatBig.addEventListener('mouseleave', ()=>{ scatTip.classList.remove('on'); });
+  scatBig.addEventListener('click', e=>{
+    const pt=nearestScatPt(e.offsetX, e.offsetY, 8);
+    if (pt) setRouteFocus(pt.f.properties.a, pt.f.properties.b);
+  });
+
+  // ---- airport pie overlay ------------------------------------------------
+  // Optional alternative to the plain white bubbles: a domestic-vs-international
+  // pie per airport (red = domestic, blue = international — same convention as
+  // the scatter). Pies are drawn on a 2D canvas laid over the WebGL map because
+  // a circle layer can't render wedges. The 'airports' circle layer stays
+  // present-but-transparent in pie mode so all the existing hover/click/focus
+  // hit-testing keeps working unchanged.
+  const PIE_DOM='#f06464', PIE_INTL='#64a0ff';
+  const pieCanvas=document.getElementById('pieoverlay');
+  const pieCtx=pieCanvas.getContext('2d');
+
+  // Replicate the 'airports' circle-radius expression in JS so a pie is exactly
+  // the size of the bubble it replaces. Radius = zoom-interp(m) applied to a
+  // linear s→radius ramp (0→0.5m, maxS→8.5m), matching aptRadius()/zoomScaled().
+  function pieRadius(s, zoom){
+    let m;
+    if (zoom<=ZSTOPS[0]) m=ZMULT[0];
+    else if (zoom>=ZSTOPS[ZSTOPS.length-1]) m=ZMULT[ZMULT.length-1];
+    else { m=ZMULT[0];
+      for (let i=0;i<ZSTOPS.length-1;i++){
+        if (zoom>=ZSTOPS[i] && zoom<=ZSTOPS[i+1]){
+          const t=(zoom-ZSTOPS[i])/(ZSTOPS[i+1]-ZSTOPS[i]);
+          m=ZMULT[i]+t*(ZMULT[i+1]-ZMULT[i]); break;
+        }
+      }
+    }
+    return 0.5*m + (Math.min(s,maxS)/Math.max(maxS,1))*(8.0*m);
+  }
+  function wedge(x,y,r,a0,a1,color){
+    if (a1<=a0) return;
+    pieCtx.beginPath(); pieCtx.moveTo(x,y);
+    pieCtx.arc(x,y,r,a0,a1); pieCtx.closePath();
+    pieCtx.fillStyle=color; pieCtx.fill();
+  }
+  // Globe backface culling (see drawPies). MapLibre culls its own layers, but
+  // the canvas overlay must do it itself. Measured as round-trip projection
+  // error in km: ~0 anywhere on the visible near face (incl. right at the limb),
+  // climbing once a point is behind the horizon.
+  const RIM_KEEP = 50;    // ≤ this: fully on the near face → full opacity
+  const RIM_CULL = 650;   // ≥ this: deep on the far side → hidden; between = fading rim
+  function drawPies(){
+    pieRAF=0;
+    const cont=map.getContainer();
+    const w=cont.clientWidth, h=cont.clientHeight, dpr=window.devicePixelRatio||1;
+    if (pieCanvas.width!==Math.round(w*dpr) || pieCanvas.height!==Math.round(h*dpr)){
+      pieCanvas.width=Math.round(w*dpr); pieCanvas.height=Math.round(h*dpr);
+      pieCanvas.style.width=w+'px'; pieCanvas.style.height=h+'px';
+    }
+    pieCtx.setTransform(dpr,0,0,dpr,0,0);
+    pieCtx.clearRect(0,0,w,h);
+    if (!aptVisible) return;
+    const sel = code => focus ? code===focus
+              : routeFocus ? (code===routeFocus.a || code===routeFocus.b) : false;
+    const hasSel = !!(focus || routeFocus);
+    // Draw the full pie field in pie mode; otherwise draw pies ONLY for the
+    // selected airport(s) — so a selection always reveals its dom/intl split
+    // instead of a flat blue circle, even with the white-bubble style on.
+    if (!pieMode && !hasSel) return;
+    const zoom=map.getZoom();
+    for (const f of aptFeats){
+      const p=f.properties, lng=f.geometry.coordinates[0], lat=f.geometry.coordinates[1];
+      const isSel = sel(p.code);
+      if (!pieMode && !isSel) continue;                  // white mode: selected pies only
+      const r=pieRadius(p.s, zoom);
+      if (r<0.6) continue;
+      const pt=map.project([lng,lat]);
+      if (pt.x<-r || pt.y<-r || pt.x>w+r || pt.y>h+r) continue;   // off-screen
+      // backface cull: a far-side airport projects onto a pixel that actually
+      // shows a near-side point, so the round-trip won't return its own coords.
+      let rim = 1;
+      if (isGlobe){
+        const back = map.unproject(pt);
+        const err = haversine(lng,lat, back.lng,back.lat);
+        if (err > RIM_CULL) continue;                              // deep far side: drop
+        if (err > RIM_KEEP) rim = 1 - (err-RIM_KEEP)/(RIM_CULL-RIM_KEEP);  // just past the limb: fade
+      }
+      // alpha mirrors the circle layer: 0.70 fill normally; with a selection the
+      // chosen bubble(s) go full-opacity while the rest dim to 0.10. The rim
+      // factor fades bubbles as they cross behind the horizon.
+      let alpha = (hasSel ? (isSel ? 1 : 0.10) : 0.70) * rim;
+      const dom=p.td||0, intl=p.ti||0, tot=dom+intl;
+      const domFrac = tot>0 ? dom/tot : 1;
+      pieCtx.globalAlpha=alpha;
+      const a0=-Math.PI/2, aSplit=a0+domFrac*2*Math.PI, aEnd=a0+2*Math.PI;
+      wedge(pt.x,pt.y,r, a0, aSplit, PIE_DOM);
+      wedge(pt.x,pt.y,r, aSplit, aEnd, PIE_INTL);
+      if (r>=2){
+        pieCtx.globalAlpha=Math.min(1, alpha*1.7); pieCtx.lineWidth=1;
+        pieCtx.strokeStyle='rgba(234,242,255,0.85)';
+        pieCtx.beginPath(); pieCtx.arc(pt.x,pt.y,r,0,7); pieCtx.stroke();
+      }
+    }
+    pieCtx.globalAlpha=1;
+  }
+  function schedulePie(){ if (!pieRAF) pieRAF=requestAnimationFrame(drawPies); }
+  function hidePieCircles(){
+    map.setPaintProperty('airports','circle-opacity',0);
+    map.setPaintProperty('airports','circle-stroke-opacity',0);
+  }
+  // restore the white-bubble paint for the current focus state, WITHOUT moving
+  // the camera (so it's safe to call on a style toggle — unlike applyRouteFocus).
+  function restoreCircles(){
+    if (focus){
+      map.setPaintProperty('airports','circle-color',['case',['==',['get','code'],focus],'#5bb6ff','#cfe0ff']);
+      map.setPaintProperty('airports','circle-opacity',['case',['==',['get','code'],focus],0.95,0.10]);
+      map.setPaintProperty('airports','circle-stroke-opacity',['case',['==',['get','code'],focus],1,0.15]);
+    } else if (routeFocus){
+      const mEnd=['any',['==',['get','code'],routeFocus.a],['==',['get','code'],routeFocus.b]];
+      map.setPaintProperty('airports','circle-color',['case',mEnd,'#5bb6ff','#cfe0ff']);
+      map.setPaintProperty('airports','circle-opacity',['case',mEnd,0.95,0.10]);
+      map.setPaintProperty('airports','circle-stroke-opacity',['case',mEnd,1,0.15]);
+    } else {
+      map.setPaintProperty('airports','circle-color','#cfe0ff');
+      map.setPaintProperty('airports','circle-opacity',0.40);
+      map.setPaintProperty('airports','circle-stroke-opacity',0.85);
+    }
+  }
+  function applyBubbleStyle(){
+    if (aptVisible && pieMode) hidePieCircles();   // hide circles, pies take over
+    else restoreCircles();                          // plain white bubbles
+    schedulePie();
+  }
+  // keep the overlay locked to the map: draw SYNCHRONOUSLY inside the map's own
+  // render frame, not via requestAnimationFrame — RAF defers to the next frame,
+  // so the pies would trail the basemap by a frame or two while dragging.
+  map.on('render', ()=>{ if (aptVisible && (pieMode || focus || routeFocus)) drawPies(); });
+
+  // ---- filters ------------------------------------------------------------
+  function apply(){
+    const f=['all',['>=',['get','lpax'],minLog]];
+    map.setFilter('lines',f);
+    // hit layer: when an airport is focused, only routes touching it stay
+    // interactive — hovering other lines does nothing, and clicking them falls
+    // through to the empty-space branch below, which deselects the airport.
+    const hf = focus
+      ? ['all', f, ['any', ['==',['get','a'],focus], ['==',['get','b'],focus]]]
+      : f;
+    map.setFilter('hit', hf);
+  }
+  document.getElementById('minpax').addEventListener('input',e=>{
+    minLog=+e.target.value;
+    document.getElementById('minlbl').textContent =
+      minLog<=0 ? 'all' : '~'+fmt(Math.pow(10,minLog));
+    apply();
+  });
+  document.getElementById('knee').addEventListener('input',e=>{
+    knee=+e.target.value;                    // log10 of knee pax
+    recalcKnee();
+    document.getElementById('kneelbl').textContent='~'+fmt(Math.pow(10,knee));
+    map.setPaintProperty('lines','line-width', linesWidthExpr());
+  });
+  document.getElementById('paths').addEventListener('click',e=>{
+    const on=e.target.textContent==='on', v=on?'none':'visible';
+    for(const id of ['lines','hit']) map.setLayoutProperty(id,'visibility',v);
+    e.target.textContent=on?'off':'on';
+    e.target.classList.toggle('on',!on);
+  });
+
+  // ---- motion level-of-detail (perf) --------------------------------------
+  // Rasterising every route + the fat invisible hit layer on every frame is
+  // what spikes the GPU while dragging. So during camera motion we (a) hide the
+  // hit layer — it only exists for clicks, never needed mid-move — and (b) drop
+  // the faintest routes, which add lots of overdraw for little signal. Both are
+  // restored the moment the camera settles. Skipped when something is selected/
+  // highlighted, so a focused or unexpected route is never culled mid-flight.
+  const LOD_FLOOR = 4.5;   // log10 pax — while moving, show only routes above this
+  map.on('movestart', ()=>{
+    map.setLayoutProperty('hit','visibility','none');
+    if (!focus && !routeFocus && !unexpMode){
+      map.setFilter('lines', ['all', ['>=',['get','lpax'], Math.max(minLog, LOD_FLOOR)]]);
+    }
+  });
+  map.on('moveend', ()=>{
+    apply();   // restores the real lines + hit filters (and the route count)
+    if (document.getElementById('paths').textContent==='on')
+      map.setLayoutProperty('hit','visibility','visible');
+  });
+  document.getElementById('apt').addEventListener('click',e=>{
+    aptVisible=!aptVisible;
+    map.setLayoutProperty('airports','visibility', aptVisible?'visible':'none');
+    e.target.textContent=aptVisible?'on':'off';
+    e.target.classList.toggle('on',aptVisible);
+    applyBubbleStyle();
+  });
+  document.getElementById('piemode').addEventListener('click',e=>{
+    pieMode=!pieMode;
+    e.target.textContent=pieMode?'pie':'white';
+    e.target.classList.toggle('on',pieMode);
+    applyBubbleStyle();
+  });
+  document.getElementById('proj').addEventListener('click',e=>{
+    const globe=e.target.textContent==='globe';
+    map.setProjection({type: globe?'mercator':'globe'});
+    isGlobe=!globe;
+    e.target.textContent=globe?'flat':'globe';
+    schedulePie();
+  });
+  await loadDataset();
+  document.getElementById('loading').classList.add('hidden');
+});
+</script>
+</body>
+</html>

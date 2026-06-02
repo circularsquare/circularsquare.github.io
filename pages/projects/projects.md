@@ -12,6 +12,7 @@ permalink: /projects/
         - <a href="/nycriders" data-thumb="/assets/thumbs/nycriders.png">nyc riders</a>
             - <a href="/londonriders">london riders</a>
             - <a href="/japanrail">japan rail</a>
+        - <a href="/flights">global air traffic</a>
         - <a href="https://graffiti.anita.garden/">graffiti nyc</a>
     - equal population maps
         - <a href="/asia1meng/" data-thumb="/assets/thumbs/maps/asia1meng.jpg">asia in regions of 1 million people</a> (in progress)
