@@ -510,6 +510,7 @@ function tFor(d) {   // normalised width 0..1 — log above the knee, linear bel
     return Math.max(0, Math.min(1, t));
 }
 function widthFor(d) { return MIN_W + W_RANGE * tFor(d); }   // px — used by legend swatches
+let widthSlider = 1;          // raw thickness-slider position (1:1 with widthMul below 3)
 let widthMul = 1;   // thickness multiplier — scales only the data-driven part, so a
                     // minimum-throughput line stays a hairline however far it's pushed
 // the linear end is far gentler than log, so blend in a ×1→×5 head-start with the
@@ -522,6 +523,21 @@ let widthMul = 1;   // thickness multiplier — scales only the data-driven part
 function linearness() { return (knee - KNEE_MIN) / (KNEE_MAX - KNEE_MIN); }   // 0 log .. 1 linear
 // base scale 0.7: slider value of 1.0 now renders at what used to be 0.7.
 function effMul() { return 0.7 * widthMul * (1 + 4 * Math.pow(linearness(), 2.5)); }
+
+// Size sliders run linear over 0.1‒2 (1:1, fine granularity preserved) then
+// bend onto an exponential top so the last stretch tacks on aggressive widening
+// for emphasis without losing low-end control. In the top zone slider position
+// ≠ multiplier; thickMap/bubbleMap convert position → effective multiplier.
+const SLIDER_LIN_MAX = 2;                          // end of the linear, granular zone
+const THICK_SLIDER_MAX = 5,  THICK_MUL_MAX  = 8;   // slider max → multiplier at the top
+const BUBBLE_SLIDER_MAX = 5, BUBBLE_MUL_MAX = 8;
+function logTopMap(s, mulMax, sliderMax) {
+    if (s <= SLIDER_LIN_MAX) return s;             // 1:1 — unchanged feel
+    const f = (s - SLIDER_LIN_MAX) / (sliderMax - SLIDER_LIN_MAX);   // 0..1 in top zone
+    return SLIDER_LIN_MAX * Math.pow(mulMax / SLIDER_LIN_MAX, f);    // exp ramp 2→mulMax
+}
+const thickMap  = s => logTopMap(s, THICK_MUL_MAX,  THICK_SLIDER_MAX);
+const bubbleMap = s => logTopMap(s, BUBBLE_MUL_MAX, BUBBLE_SLIDER_MAX);
 
 // width is computed GPU-side straight from each segment's `density` — so a knee or
 // thickness change is only a paint-property swap, never a geometry re-upload.
@@ -577,11 +593,27 @@ const casingWidth = (m = effMul()) => ['interpolate', ['exponential', ZOOM_BASE]
     3,  ['+', ['*', viewportScale * ZF_LO, wExpr(m)], 3],
     13, ['+', ['*', viewportScale * ZF_HI, wExpr(m)], 3]];
 
+// Invisible hit-area. Clicks/hover hit-test rendered pixels, so a 0.2px hairline
+// or a 1px dot is effectively impossible to tap. segs-hit/station-hit are fully
+// transparent layers whose size is the visible size floored to a finger-friendly
+// minimum — every feature, however faint, gets a usable target, while fat lines
+// stay clickable across their whole width (the floor never shrinks them).
+const HIT_LINE_MIN = 11;   // px — min clickable line band
+const HIT_DOT_MIN  = 9;    // px — min clickable bubble radius
+// Floor is baked into each zoom stop, not wrapped around the interpolate —
+// ['zoom'] may only sit at the top level of a step/interpolate, never nested
+// inside max(). Width grows monotonically with zoom and the floor is constant,
+// so flooring both endpoints floors the whole curve.
+const hitWidth = (m = effMul()) => ['interpolate', ['exponential', ZOOM_BASE], ['zoom'],
+    3,  ['max', HIT_LINE_MIN, ['*', viewportScale * ZF_LO, wExpr(m)]],
+    13, ['max', HIT_LINE_MIN, ['*', viewportScale * ZF_HI, wExpr(m)]]];
+
 function applyWidths() {
     if (!map.getLayer('segs-line')) return;
     viewportScale = computeViewportScale();
     map.setPaintProperty('segs-casing', 'line-width', casingWidth());
     map.setPaintProperty('segs-line', 'line-width', coreWidth());
+    if (map.getLayer('segs-hit')) map.setPaintProperty('segs-hit', 'line-width', hitWidth());
 }
 
 // knee / thickness changed — coalesced to about one apply per 2 frames so a fast
@@ -626,6 +658,7 @@ function snapKnee(mode) {
 // JR station 乗降客数 (board + alight / day) drawn as circles on top of the
 // lines. Area ∝ riders, so radius ∝ √riders — the honest magnitude encoding.
 let showStations = true;
+let stationSlider = 0.85;                          // raw bubble-slider position (1:1 with stationMul below 3)
 let stationMul = 0.85;                             // bubble-size multiplier, legend slider
 // which density a feature renders by — every feature carries all three:
 //   'base'     = the operator's published whole-line / sub-section value.
@@ -670,6 +703,8 @@ function applyModeFilter() {
     if (sourceMode === 'base')   filter = ['>', ['coalesce', ['get', 'd_base'], 0], 0];
     if (sourceMode === 'census') filter = ['>', ['coalesce', ['get', 'd_census'], 0], 0];
     map.setFilter('segs-line', filter);
+    // keep the hit-band in lockstep so mode-hidden lines aren't still clickable
+    if (map.getLayer('segs-hit')) map.setFilter('segs-hit', filter);
 }
 const R_SCALE = 0.013;                             // px of radius per √(乗降客数)
 function radiusFor(r) { return Math.sqrt(Math.max(0, r)) * R_SCALE; }
@@ -677,10 +712,15 @@ function radiusFor(r) { return Math.sqrt(Math.max(0, r)) * R_SCALE; }
 const circleRadius = (m = stationMul) => ['interpolate', ['exponential', ZOOM_BASE], ['zoom'],
     3,  ['*', ['get', 'r'], m * ZF_LO],
     13, ['*', ['get', 'r'], m * ZF_HI]];
+const hitRadius = (m = stationMul) => ['interpolate', ['exponential', ZOOM_BASE], ['zoom'],
+    3,  ['max', HIT_DOT_MIN, ['*', ['get', 'r'], m * ZF_LO]],
+    13, ['max', HIT_DOT_MIN, ['*', ['get', 'r'], m * ZF_HI]]];
 
 function applyStationSize() {
     if (map.getLayer('station-dots'))
         map.setPaintProperty('station-dots', 'circle-radius', circleRadius());
+    if (map.getLayer('station-hit'))
+        map.setPaintProperty('station-hit', 'circle-radius', hitRadius());
 }
 
 const NO_MATCH = ['==', ['get', 'op'], ' '];   // filter that matches nothing
@@ -724,10 +764,15 @@ function stationsOnSelectedLine() {
     return selected ? (lineStations.get(selLineKey()) || new Set()) : new Set();
 }
 
+// Cache-bust the data files — browsers cache these multi-MB fetch()es hard, so
+// a hard refresh alone won't pull a rebuilt segments.geojson. Bump on data change.
+const DATA_VERSION = '2026-06-01b';
+const dataURL = (name) => `data/${name}?v=${DATA_VERSION}`;
+
 map.on('load', async () => {
     const [fc, names] = await Promise.all([
-        fetch('data/segments.geojson').then(r => r.json()),
-        fetch('data/names_en.json').then(r => r.json()),
+        fetch(dataURL('segments.geojson')).then(r => r.json()),
+        fetch(dataURL('names_en.json')).then(r => r.json()),
     ]);
     NAMES = names;
     for (const f of fc.features) {
@@ -765,9 +810,16 @@ map.on('load', async () => {
         paint: { 'line-color': ['get', 'color'], 'line-width': coreWidth(), 'line-opacity': 0.92 },
         layout: { 'line-cap': 'round', 'line-join': 'round' },
     });
+    // transparent fat hit-band — all line hover/click hit-tests target this, so
+    // even a 0.2px hairline has a tappable target (see hitWidth above).
+    map.addLayer({
+        id: 'segs-hit', type: 'line', source: 'segs',
+        paint: { 'line-color': '#000', 'line-width': hitWidth(), 'line-opacity': 0 },
+        layout: { 'line-cap': 'round', 'line-join': 'round' },
+    });
 
     // ── station ridership bubbles (all operators, one per station complex) ──
-    const sfc = await (await fetch('data/stations.geojson')).json();
+    const sfc = await (await fetch(dataURL('stations.geojson'))).json();
     sfc.features.forEach((f, i) => {
         const p = f.properties;
         p.color = colorLineFor(p.op, p.line);  // tooltip accent only — the dots are white
@@ -792,6 +844,13 @@ map.on('load', async () => {
             'circle-stroke-width-transition': { duration: 0 },
             'circle-stroke-color-transition': { duration: 0 },
         },
+    });
+    // transparent hit-area for the dots — floored to a tappable radius so tiny
+    // stations are still selectable. Visibility mirrors the dots (toggle below).
+    map.addLayer({
+        id: 'station-hit', type: 'circle', source: 'stations',
+        layout: { visibility: showStations ? 'visible' : 'none' },
+        paint: { 'circle-radius': hitRadius(), 'circle-color': '#000', 'circle-opacity': 0 },
     });
 
     // hover tooltip
@@ -836,7 +895,7 @@ map.on('load', async () => {
             `<div class="meta">${S.tipThroughput} ${p.year}${lang === 'ja' ? '年' : ''} · ${kmS} ${S.km}${p.remark ? ' · ' + remarkLabel(p.remark) : ''}${isBase ? '' : census}</div>`;
     }
 
-    map.on('mousemove', 'segs-line', (e) => {
+    map.on('mousemove', 'segs-hit', (e) => {
         if (!e.features.length) return;
         // if a line is selected, prefer the feature that matches it over
         // whatever segment happens to be on top
@@ -844,7 +903,7 @@ map.on('load', async () => {
         showSegTip(f.properties, e.point, f.geometry);
         map.getCanvas().style.cursor = 'pointer';
     });
-    map.on('mouseleave', 'segs-line', () => {
+    map.on('mouseleave', 'segs-hit', () => {
         tip.style.display = 'none';
         map.getCanvas().style.cursor = '';
     });
@@ -852,14 +911,14 @@ map.on('load', async () => {
     // station bubble hover — registered after segs-line, so a dot sitting on a
     // line wins the tooltip when the cursor is over both. But if the selected
     // line is also under the cursor, prefer it over the station bubble.
-    map.on('mousemove', 'station-dots', (e) => {
+    map.on('mousemove', 'station-hit', (e) => {
         if (!e.features.length) return;
         const p = e.features[0].properties;
         const onSelLine = selected && selStationIds.has(e.features[0].id);
         // if a line is selected and this station is NOT one of its stops, defer
         // to the selected line's tooltip when it sits under the cursor
         if (selected && !onSelLine) {
-            const segHits = map.queryRenderedFeatures(e.point, { layers: ['segs-line'] });
+            const segHits = map.queryRenderedFeatures(e.point, { layers: ['segs-hit'] });
             const selHit = segHits.find(x => matchesSelection(x.properties));
             if (selHit) { showSegTip(selHit.properties, e.point, selHit.geometry); map.getCanvas().style.cursor = 'pointer'; return; }
         }
@@ -878,7 +937,7 @@ map.on('load', async () => {
             `<div class="meta">${S.tipStationRiders} · ${p.year}${lang === 'ja' ? '年' : ''}</div>`;
         map.getCanvas().style.cursor = 'pointer';
     });
-    map.on('mouseleave', 'station-dots', () => {
+    map.on('mouseleave', 'station-hit', () => {
         tip.style.display = 'none';
         map.getCanvas().style.cursor = '';
     });
@@ -894,7 +953,7 @@ map.on('load', async () => {
     // no right-click, so this is how they reach segments). Clicking off any line
     // clears.   ·   right-click: still toggles a single segment directly.
     map.on('click', (e) => {
-        const hits = map.queryRenderedFeatures(e.point, { layers: ['segs-line'] });
+        const hits = map.queryRenderedFeatures(e.point, { layers: ['segs-hit'] });
         if (!hits.length) { clearSelection(); return; }
         // if the currently selected line is among the hits, prefer it — a click
         // on the selected line should always drill into THAT line's segment,
@@ -913,7 +972,7 @@ map.on('load', async () => {
         }
     });
     map.on('contextmenu', (e) => {
-        const hits = map.queryRenderedFeatures(e.point, { layers: ['segs-line'] });
+        const hits = map.queryRenderedFeatures(e.point, { layers: ['segs-hit'] });
         if (hits.length) selectSegment(hits[0].properties);
         else clearSelection();
     });
@@ -930,6 +989,7 @@ map.on('load', async () => {
         viewportScale = newScale;
         map.setPaintProperty('segs-casing', 'line-width', casingWidth());
         map.setPaintProperty('segs-line', 'line-width', coreWidth());
+        map.setPaintProperty('segs-hit', 'line-width', hitWidth());
     });
 
     applyWidths();
@@ -1349,7 +1409,7 @@ function buildLegend() {
     html += '</div>';
     html += `<div class="thick"><div class="hd">${S.legThickness} ` +
             `<span class="val" id="thickVal">×${widthMul.toFixed(1)}</span></div>` +
-            `<input id="thickSlider" type="range" min="0.1" max="3" step="0.1" value="${widthMul}"></div>`;
+            `<input id="thickSlider" type="range" min="0.1" max="${THICK_SLIDER_MAX}" step="0.1" value="${widthSlider}"></div>`;
     html += `<div class="thick"><div class="hd">${S.legFloor} ` +
             `<span class="val" id="floorVal">${fmtFloor(knee)}</span></div>` +
             `<input id="floorSlider" type="range" min="${KNEE_MIN}" max="${KNEE_MAX}" step="0.01" value="${knee}"></div>`;
@@ -1358,7 +1418,7 @@ function buildLegend() {
             `<div class="hd">${S.toggleStations}</div>` +
             `<div class="strow">` +
             `<input type="checkbox" id="st-toggle"${showStations ? ' checked' : ''}>` +
-            `<input id="bubbleSlider" type="range" min="0.1" max="3" step="0.1" value="${stationMul}">` +
+            `<input id="bubbleSlider" type="range" min="0.1" max="${BUBBLE_SLIDER_MAX}" step="0.1" value="${stationSlider}">` +
             `</div></div>`;
     document.getElementById('legend').innerHTML = html;
 
@@ -1377,7 +1437,8 @@ function buildLegend() {
 
     const sl = document.getElementById('thickSlider');
     sl.oninput = () => {
-        widthMul = parseFloat(sl.value);
+        widthSlider = parseFloat(sl.value);
+        widthMul = thickMap(widthSlider);
         document.getElementById('thickVal').textContent = '×' + widthMul.toFixed(1);
         refreshWidths();
     };
@@ -1391,12 +1452,15 @@ function buildLegend() {
     };
     document.getElementById('st-toggle').onchange = (e) => {
         showStations = e.target.checked;
+        const vis = showStations ? 'visible' : 'none';
         if (map.getLayer('station-dots'))
-            map.setLayoutProperty('station-dots', 'visibility',
-                                  showStations ? 'visible' : 'none');
+            map.setLayoutProperty('station-dots', 'visibility', vis);
+        if (map.getLayer('station-hit'))
+            map.setLayoutProperty('station-hit', 'visibility', vis);
     };
     document.getElementById('bubbleSlider').oninput = (e) => {
-        stationMul = parseFloat(e.target.value);
+        stationSlider = parseFloat(e.target.value);
+        stationMul = bubbleMap(stationSlider);
         applyStationSize();
     };
 }
