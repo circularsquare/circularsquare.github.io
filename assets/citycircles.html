@@ -9,6 +9,7 @@ permalink: /circles/
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Proximity City Quiz</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5/dist/maplibre-gl.css"/>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{--bg:#e3ffe0;--surface:#ffffff;--surface2:#e8f1e0;--border:#aacc9f;--border2:#648f5d;--text:#3a411e;--muted:#7f9363;--radius:2px;--fs-lg:16px;--fs-md:13px;--fs-sm:11px}
@@ -168,6 +169,8 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:Georgia
   </div>
 </div>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/maplibre-gl@5/dist/maplibre-gl.js"></script>
+<script src="https://unpkg.com/@maplibre/maplibre-gl-leaflet@0.1.3/leaflet-maplibre-gl.js"></script>
 <script src="/assets/games/cities_data.js"></script>
 <script>
 
@@ -320,9 +323,15 @@ let circleLayerGroup=L.layerGroup();
 
 // ── Map ──
 const map=L.map('map',{center:[20,10],zoom:3,minZoom:3,maxZoom:12,worldCopyJump:false,maxBounds:[[-80,-500],[80,500]],maxBoundsViscosity:1.0});
-L.tileLayer('https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png',{
-  attribution:'© OpenStreetMap © CARTO',subdomains:'abcd',maxZoom:19,keepBuffer:10
-}).addTo(map);
+// OpenFreeMap vector basemap via maplibre-gl-leaflet (keyless). Positron with
+// all label (symbol) layers stripped, to match the old CARTO light_nolabels look.
+fetch('https://tiles.openfreemap.org/styles/positron')
+  .then(r=>r.json())
+  .then(style=>{
+    style.layers=style.layers.filter(l=>l.type!=='symbol');
+    L.maplibreGL({style,attribution:'© OpenStreetMap'}).addTo(map);
+  })
+  .catch(e=>console.warn('basemap load failed:',e));
 circleLayerGroup.addTo(map);
 // One Leaflet pane per tier; higher z-index = renders on top.
 // TIERS[0] is the largest cities, so it gets the highest z-index (410).

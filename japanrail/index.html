@@ -728,24 +728,7 @@ const NO_MATCH = ['==', ['get', 'op'], ' '];   // filter that matches nothing
 // ──────────────────────────────── map ────────────────────────────────────
 const map = new maplibregl.Map({
     container: 'map',
-    style: {
-        version: 8,
-        sources: {
-            'carto-dark': {
-                type: 'raster',
-                tiles: ['https://a.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}@2x.png'],
-                tileSize: 256,
-                attribution: '&copy; OSM &copy; CARTO',
-            },
-        },
-        layers: [{
-            id: 'carto-dark-layer',
-            type: 'raster',
-            source: 'carto-dark',
-            minzoom: 0, maxzoom: 18,
-            paint: { 'raster-brightness-max': 0.85, 'raster-brightness-min': 0.0, 'raster-saturation': -0.3 },
-        }],
-    },
+    style: 'https://tiles.openfreemap.org/styles/dark',
     center: [137.7, 37.6],
     zoom: 4.8,
     minZoom: 3.5,

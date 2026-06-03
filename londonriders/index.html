@@ -703,7 +703,7 @@ body { background: #0a0a0a; color: #eee; font-family: 'Nunito', sans-serif; over
     </div>
     <p>This map shows all the Transport for London (tube) system's trips taken on a typical weekday. The size of a train's bubble is proportional to the number of passengers on it.</p>
     <p>The map uses the <a href="https://crowding.data.tfl.gov.uk/" target="_blank">NUMBAT dataset</a>, which has 15-minute origin-destination ridership. Trains are derived from timetables. </p>
-    <p>Station coordinates are from NUMBAT. Track lines from <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> contributors (ODbL). Map built with <a href="https://maplibre.org" target="_blank">MapLibre GL</a> and <a href="https://carto.com/basemaps" target="_blank">CARTO</a> basemap tiles.</p>
+    <p>Station coordinates are from NUMBAT. Track lines from <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> contributors (ODbL). Map built with <a href="https://maplibre.org" target="_blank">MapLibre GL</a> and <a href="https://openfreemap.org" target="_blank">OpenFreeMap</a> basemap tiles (&copy; OpenStreetMap).</p>
     <p>Made by <a href="https://anita.garden/projects" target="_blank">anita</a>!</p>
 </div>
 
@@ -759,24 +759,7 @@ body { background: #0a0a0a; color: #eee; font-family: 'Nunito', sans-serif; over
 <script>
 const map = new maplibregl.Map({
     container: 'map',
-    style: {
-        version: 8,
-        sources: {
-            'carto-dark': {
-                type: 'raster',
-                tiles: ['https://a.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png'],
-                tileSize: 256,
-                attribution: '&copy; OSM &copy; CARTO',
-            }
-        },
-        layers: [{
-            id: 'carto-dark-layer',
-            type: 'raster',
-            source: 'carto-dark',
-            minzoom: 0,
-            maxzoom: 18,
-        }],
-    },
+    style: 'https://tiles.openfreemap.org/styles/dark',
     center: [-0.118, 51.515],
     zoom: 10.6,
     minZoom: 9,

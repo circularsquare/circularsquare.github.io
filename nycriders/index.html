@@ -703,7 +703,7 @@ body { background: #0a0a0a; color: #eee; font-family: 'Nunito', sans-serif; over
     <p>The riders use the <a href="https://www.microsoft.com/en-us/research/wp-content/uploads/2012/01/raptor_alenex.pdf" target="_blank">RAPTOR</a> algorithm to navigate, finding the fastest possible route. All trains are assumed to run on time. Origin-destination data is hourly, so the exact departure time of a rider within the hour is randomly chosen. There is no cap on the number of riders on a train.</p>
     <p>Trains' speed is based on their timetables. Sometimes the timetables are a bit wonky, which is why trains sometimes go weirdly fast or slow.</p>
     <p>If the display is slow, you can hide station and walking bubbles in the settings to improve performance. </p>
-    <p>Route geometry from <a href="https://new.mta.info/developers" target="_blank">MTA GTFS</a>. Map built with <a href="https://maplibre.org" target="_blank">MapLibre GL</a> and <a href="https://carto.com/basemaps" target="_blank">CARTO</a> basemap tiles. Visuals inspired by <a href="https://subwaybuilder.com" target="_blank">subwaybuilder</a>.</p>
+    <p>Route geometry from <a href="https://new.mta.info/developers" target="_blank">MTA GTFS</a>. Map built with <a href="https://maplibre.org" target="_blank">MapLibre GL</a> and <a href="https://openfreemap.org" target="_blank">OpenFreeMap</a> basemap tiles (&copy; OpenStreetMap). Visuals inspired by <a href="https://subwaybuilder.com" target="_blank">subwaybuilder</a>.</p>
     <p>Made by <a href="https://anita.garden/projects" target="_blank">anita</a>!</p>
 </div>
 
@@ -712,8 +712,8 @@ body { background: #0a0a0a; color: #eee; font-family: 'Nunito', sans-serif; over
         <div id="speed-buttons">
             <button id="speed-expand-btn" title="Settings"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915"/><circle cx="12" cy="12" r="3"/></svg></button>
             <button data-speed="0"><svg width="10" height="12" viewBox="0 0 10 12"><rect x="0" y="0" width="3" height="12" fill="currentColor"/><rect x="7" y="0" width="3" height="12" fill="currentColor"/></svg></button>
-            <button data-speed="1">1x</button>
-            <button data-speed="2" class="active">2x</button>
+            <button data-speed="1" class="active">1x</button>
+            <button data-speed="2">2x</button>
         </div>
         <div id="static-speed-buttons" style="display:none;">
             <button id="static-settings-btn" title="Settings"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915"/><circle cx="12" cy="12" r="3"/></svg></button>
@@ -729,8 +729,8 @@ body { background: #0a0a0a; color: #eee; font-family: 'Nunito', sans-serif; over
     <div id="settings-panel" class="hidden">
         <div class="settings-row" id="speed-slider-row">
             <span class="settings-label">time speed</span>
-            <input type="range" id="speed-slider" min="0" max="18" value="10" step="1">
-            <span id="speed-slider-label">2x</span>
+            <input type="range" id="speed-slider" min="0" max="18" value="8" step="1">
+            <span id="speed-slider-label">1x</span>
         </div>
         <div class="settings-row">
             <div id="dot-size-wrap">
@@ -759,28 +759,7 @@ body { background: #0a0a0a; color: #eee; font-family: 'Nunito', sans-serif; over
 <script>
 const map = new maplibregl.Map({
     container: 'map',
-    style: {
-        version: 8,
-        sources: {
-            'carto-dark': {
-                type: 'raster',
-                tiles: ['https://a.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png'],
-                tileSize: 256,
-                attribution: '&copy; OSM &copy; CARTO',
-            }
-        },
-        layers: [{
-            id: 'carto-dark-layer',
-            type: 'raster',
-            source: 'carto-dark',
-            minzoom: 0,
-            maxzoom: 18,
-            paint: {
-                'raster-brightness-max': 1.0,
-                'raster-brightness-min': 0.05,
-            },
-        }],
-    },
+    style: 'https://tiles.openfreemap.org/styles/dark',
     center: [-73.95, 40.735],
     zoom: 11.38,
     minZoom: 10,
@@ -845,8 +824,8 @@ const ROUTE_CAPACITY = {
 
 let data = null;
 let simTime = 7 * 3600;
-let speedMultiplier = 2;
-let lastSpeed = 2; // last non-zero speed for spacebar toggle
+let speedMultiplier = 1;
+let lastSpeed = 1; // last non-zero speed for spacebar toggle
 let dotScale = 1.2;
 let animFrame = null;
 let anchorWall = 0;   // wall-clock ms when current playback segment started
