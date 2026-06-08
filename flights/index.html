@@ -14,24 +14,49 @@
   .panel {
     position:absolute; top:12px; left:12px; z-index:2;
     background:rgba(7,9,13,.84); color:#eee; border:1px solid #2a2f38;
-    border-radius:8px; padding:12px 14px; width:240px; font-size:12px;
+    border-radius:8px; padding:12px 14px; width:200px; font-size:12px; box-sizing:border-box;
   }
   .panel h1 { font-size:13px; margin:0 0 2px; letter-spacing:.3px; font-weight:800; }
+  .phead { display:flex; align-items:center; justify-content:space-between; gap:10px; cursor:pointer; }
+  #lcaret { color:#8b939e; flex:none; display:flex; align-items:center; transform:rotate(90deg); }
+  .phead:hover #lcaret { color:#c0c5cc; }
+  .panel.collapsed h1 { margin-bottom:0; }
+  .panel.collapsed #lbody { display:none; }
+  .panel.collapsed #lcaret { transform:rotate(0deg); }
+  /* very narrow screens: shrink both panels so they can't overlap */
+  @media (max-width: 420px){
+    .panel  { width:42vw; }
+    .rpanel { width:46vw; }
+  }
   .panel .sub { color:#8b939e; font-size:11px; margin-bottom:10px; line-height:1.4; }
   .row { display:flex; justify-content:space-between; align-items:center; margin:7px 0; }
   .row label { color:#c0c5cc; }
-  input[type=range] { width:118px; accent-color:#5bb6ff; cursor:pointer; }
+  input[type=range] { width:100%; accent-color:#5bb6ff; cursor:pointer; }
   button {
     background:#11151c; color:#e8ebf0; border:1px solid #2a2f38; border-radius:5px;
     padding:4px 8px; font-size:11px; cursor:pointer;
   }
   button:hover { border-color:#3a414c; }
   button.on { background:#2a2f38; color:#fff; border-color:#3a414c; }
+  button:disabled { opacity:.4; cursor:not-allowed; }
+  button:disabled:hover { border-color:#2a2f38; }
   .stat { color:#5bb6ff; font-variant-numeric:tabular-nums; }
+  select {
+    background:#11151c; color:#e8ebf0; border:1px solid #2a2f38; border-radius:5px;
+    padding:4px 8px; font-size:11px; cursor:pointer; font-variant-numeric:tabular-nums;
+  }
+  select:hover { border-color:#3a414c; }
   #legend { margin-top:10px; }
   #legend .bar { height:8px; border-radius:4px; margin:4px 0 2px;
     background:linear-gradient(90deg,#3b3a8c,#5e2d8a,#832681,#b5367a,#e0506b,#fb8761,#fec98b); }
   #legend .ends { display:flex; justify-content:space-between; color:#8b939e; font-size:10px; }
+  #commlegend { margin-top:10px; display:grid; grid-template-columns:1fr 1fr; gap:3px 8px; }
+  #commlegend .ci { display:flex; align-items:center; gap:5px; color:#c0c5cc; font-size:10.5px;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  #commlegend .sw { width:9px; height:9px; border-radius:2px; flex:none; }
+  #moremaps { margin-top:11px; color:#8b939e; font-size:10.5px; }
+  #moremaps a { color:#5bb6ff; text-decoration:none; }
+  #moremaps a:hover { text-decoration:underline; }
   #pieoverlay { position:absolute; inset:0; z-index:1; pointer-events:none; }
   .maplibregl-popup { z-index:3; }   /* above the pie overlay (z-index:1) */
   .maplibregl-popup-content {
@@ -50,7 +75,7 @@
   .rpanel {
     position:absolute; top:12px; right:12px; z-index:2;
     background:rgba(7,9,13,.84); color:#eee; border:1px solid #2a2f38;
-    border-radius:8px; padding:12px 6px 12px 10px; width:290px; font-size:12px;
+    border-radius:8px; padding:12px 6px 12px 10px; width:188px; font-size:12px; box-sizing:border-box;
     max-height:calc(100vh - 96px); overflow-y:auto;       /* clear the bottom-right attribution */
     scrollbar-width:thin; scrollbar-color:#3a414c transparent;
   }
@@ -58,7 +83,22 @@
   .rpanel::-webkit-scrollbar-track { background:transparent; }
   .rpanel::-webkit-scrollbar-thumb { background:#2a2f38; border-radius:3px; }
   .rpanel::-webkit-scrollbar-thumb:hover { background:#3a414c; }
-  .rpanel h1 { font-size:13px; margin:0 0 2px; letter-spacing:.3px; font-weight:800; }
+  .rpanel.closed { display:none; }
+  #rtoggle {           /* reopen handle — shown by JS only while the panel is closed */
+    position:absolute; top:12px; right:12px; z-index:6;
+    width:38px; height:38px; padding:0; border-radius:8px;
+    background:rgba(7,9,13,.84); color:#c0c5cc; border:1px solid #2a2f38; cursor:pointer;
+    display:none; align-items:center; justify-content:center;
+  }
+  #rtoggle:hover { color:#fff; border-color:#3a414c; }
+  #rclose {            /* X in the panel's own corner while it's open */
+    position:absolute; top:9px; right:8px; z-index:1; padding:0;
+    width:22px; height:22px; border-radius:5px; line-height:1;
+    background:transparent; color:#8b939e; border:1px solid transparent;
+    font-size:17px; cursor:pointer; display:flex; align-items:center; justify-content:center;
+  }
+  #rclose:hover { color:#fff; background:#11151c; border-color:#3a414c; }
+  .rpanel h1 { font-size:13px; margin:0 0 2px; letter-spacing:.3px; font-weight:800; padding-right:30px; }
   .rpanel .sub { color:#8b939e; font-size:11px; margin-bottom:10px; line-height:1.4; }
   #scatcanvas {
     display:block; margin:6px 0 10px; background:#07090d;
@@ -77,10 +117,10 @@
 
   #routeinfo {
     display:none;
-    position:absolute; bottom:12px; right:360px; z-index:2;
+    position:absolute; bottom:12px; left:50%; transform:translateX(-50%); z-index:2;
     background:rgba(7,9,13,.94); color:#eee;
     border:1px solid #5bb6ff44; border-radius:8px;
-    padding:10px 12px; font-size:12px; max-width:320px;
+    padding:10px 12px; font-size:12px; max-width:min(340px, calc(100vw - 24px));
     gap:10px; align-items:center;
   }
   #routeinfo.on { display:flex; }
@@ -91,24 +131,14 @@
 
   /* expanded scatter (passengers × distance) */
   #scatmodal {
-    display:none; position:absolute; inset:0; z-index:5;
+    display:none; position:fixed; inset:0; z-index:5;
     background:rgba(4,6,10,.6); align-items:center; justify-content:center;
   }
   #scatmodal.on { display:flex; }
-  .scatcard {
-    background:rgba(7,9,13,.97); color:#eee;
-    border:1px solid #2a2f38; border-radius:10px; padding:12px 14px;
-    box-shadow:0 8px 40px rgba(0,0,0,.6);
-  }
-  .scathead {
-    display:flex; justify-content:space-between; align-items:center;
-    font-size:13px; font-weight:800; margin-bottom:8px; gap:16px;
-  }
   #scatbig {
     display:block; background:#07090d; border:1px solid #2a2f38;
-    border-radius:6px; cursor:crosshair;
+    border-radius:8px; cursor:crosshair; box-shadow:0 10px 50px rgba(0,0,0,.65);
   }
-  .scatnote { color:#8b939e; font-size:11px; margin-top:7px; }
   #scattip {
     display:none; position:absolute; z-index:6; pointer-events:none;
     background:rgba(7,9,13,.96); color:#eee; border:1px solid #2a2f38; border-radius:7px;
@@ -116,6 +146,19 @@
     box-shadow:0 4px 18px rgba(0,0,0,.6);
   }
   #scattip.on { display:block; }
+
+  /* cluster legend hover tooltip (left-panel swatches) */
+  #legendtip {
+    display:none; position:fixed; z-index:6; pointer-events:none;
+    background:rgba(7,9,13,.96); color:#eee; border:1px solid #2a2f38; border-radius:7px;
+    font-size:11.5px; line-height:1.45; padding:8px 10px; max-width:230px;
+    box-shadow:0 4px 18px rgba(0,0,0,.6);
+  }
+  #legendtip.on { display:block; }
+  #legendtip b { color:#5bb6ff; }
+  #commlegend .ci { cursor:pointer; }
+  #commlegend .ci.sel { color:#fff; font-weight:700; }
+  #commlegend .ci.sel .sw { outline:1.5px solid #fff; outline-offset:1px; }
 
   /* about panel — methodology + attribution, anchored bottom-left above its toggle */
   #aboutbtn {
@@ -128,7 +171,7 @@
   #aboutbtn:hover { color:#fff; border-color:#3a414c; }
   #aboutbtn.on { color:#fff; background:#2a2f38; border-color:#5bb6ff; }
   #about {
-    position:absolute; bottom:54px; left:12px; z-index:4;
+    position:absolute; bottom:54px; left:12px; z-index:4; box-sizing:border-box;
     width:330px; max-width:calc(100vw - 24px); max-height:calc(100vh - 78px); overflow-y:auto;
     background:rgba(7,9,13,.94); color:#c0c5cc; border:1px solid #3a414c;
     border-radius:8px; padding:14px 16px; font-size:11.5px; line-height:1.5; display:none;
@@ -159,79 +202,95 @@
   <button id="routeinfoclear">reset</button>
 </div>
 <div id="scatmodal">
-  <div class="scatcard">
-    <div class="scathead">
-      <span>Routes &mdash; passengers vs distance</span>
-      <button id="scatclose">close</button>
-    </div>
-    <canvas id="scatbig" width="680" height="460"></canvas>
-    <div class="scatnote">Hover a dot for the route &middot; click to highlight it on the map &middot; Esc to close</div>
-  </div>
+  <canvas id="scatbig" width="680" height="460"></canvas>
 </div>
 <div id="scattip"></div>
+<div id="legendtip"></div>
 <div class="rpanel" id="rpanel">
-  <h1 id="rtitle">Top routes by traffic</h1>
-  <div class="sub" id="rsub">20 busiest routes worldwide. Click any to focus.</div>
-  <div class="row" style="margin-top:0">
-    <label>Rank by</label><button id="modetoggle">top traffic</button>
+  <button id="rclose" title="close" aria-label="close top routes">&times;</button>
+  <h1 id="rtitle">top routes by traffic</h1>
+  <div class="row" style="margin-top:8px">
+    <label>rank by</label><button id="modetoggle">top traffic</button>
   </div>
+  <div class="sub" id="rsub"></div>
   <canvas id="scatcanvas" width="262" height="150"></canvas>
   <div id="oddlist"></div>
 </div>
-<div class="panel">
-  <h1>Global air traffic</h1>
-  <div class="sub" id="sub">Estimated passengers/yr per route.</div>
-  <div class="row">
-    <label>Min passengers</label><span class="stat" id="minlbl">all</span>
+<button id="rtoggle" title="top routes" aria-label="toggle top routes">
+  <svg width="19" height="19" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+    <rect x="1"   y="9"   width="3" height="6"    rx="1"/>
+    <rect x="6.5" y="3.5" width="3" height="11.5" rx="1"/>
+    <rect x="12"  y="6.5" width="3" height="8.5"  rx="1"/>
+  </svg>
+</button>
+<div class="panel" id="lpanel">
+  <div class="phead" id="lhead">
+    <h1>flight traffic map</h1>
+    <span id="lcaret"><svg width="16" height="16" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="4 2 8 6 4 10"/></svg></span>
   </div>
-  <div class="row" style="margin-top:-2px">
+  <div id="lbody">
+  <div class="row">
+    <label>min passengers</label><span class="stat" id="minlbl">all</span>
+  </div>
+  <div class="row" style="margin-top:-6px">
     <input type="range" id="minpax" min="0" max="7" step="0.1" value="0">
   </div>
   <div class="row">
-    <label>Width threshold</label><span class="stat" id="kneelbl">~100k</span>
+    <label>log scale above</label><span class="stat" id="kneelbl">100k</span>
   </div>
-  <div class="row" style="margin-top:-2px">
+  <div class="row" style="margin-top:-6px">
     <input type="range" id="knee" min="3" max="7" step="0.05" value="5">
   </div>
   <div class="row">
-    <label>Flight paths</label><button id="paths" class="on">on</button>
+    <label>flight paths</label><button id="paths" class="on">on</button>
   </div>
   <div class="row">
-    <label>Airport bubbles</label><button id="apt" class="on">on</button>
+    <label>airport bubbles</label><button id="apt" class="on">on</button>
   </div>
   <div class="row">
-    <label>Bubble style</label><button id="piemode">white</button>
+    <label>bubble style</label><button id="piemode">white</button>
   </div>
   <div class="row">
-    <label>Projection</label><button id="proj" class="on">globe</button>
+    <label>colour by cluster</label><button id="cluster">off</button>
+  </div>
+  <div class="row" id="resrow" style="display:none">
+    <label>cluster detail</label><select id="resselect"></select>
+  </div>
+  <div class="row">
+    <label>projection</label><button id="proj" class="on">globe</button>
   </div>
   <div id="legend">
     <div class="bar"></div>
-    <div class="ends"><span id="leglo">~2k</span><span>passengers / year</span><span id="leghi">8M+</span></div>
+    <div class="ends"><span id="leglo">2k</span><span>pax / year</span><span id="leghi">8M+</span></div>
+  </div>
+  <div id="commlegend" style="display:none"></div>
+  <div id="moremaps">see more maps <a href="https://anita.garden/projects/" target="_blank" rel="noopener">here</a>!</div>
   </div>
 </div>
+<script>
+  // collapse the panels up-front on small screens so they don't flash open
+  // before the deferred map 'load' handler runs.
+  if (window.innerWidth <= 640) {
+    document.getElementById('lpanel').classList.add('collapsed');
+    document.getElementById('rpanel').classList.add('closed');
+    document.getElementById('rtoggle').style.display = 'flex';
+  }
+</script>
 
 <button id="aboutbtn" title="about">?</button>
 <div id="about">
-  <h2>what this is</h2>
-  <p>Estimated <b>passengers per year</b> on every commercial route worldwide. Each arc is one airport-to-airport pair; <b>brighter and thicker</b> means more passengers.</p>
-
-  <h2>the estimate</h2>
-  <p>passengers &asymp; <b>flights &times; seats &times; 0.80</b>. Flight counts and aircraft types are real; seat counts are a typical-per-type lookup and the 0.80 load factor is a flat assumption. It is built to <b>compare</b> routes, not to give exact totals.</p>
-
-  <h2>colour &amp; width</h2>
-  <p>Both encode passengers per year. The colour ramp's steps sit at <b>ink-weighted quantiles</b> of the data, so the busiest routes are the brightest and no single shade floods the map. The <b>width threshold</b> slider sets where line width turns from linear to logarithmic &mdash; high to tell busy routes apart, low to keep thin ones visible.</p>
-
-  <h2>top &amp; unexpected</h2>
-  <p>The right panel ranks routes two ways. <b>top traffic</b> is simply the busiest. <b>unexpected</b> finds routes carrying far more than a standard <b>gravity model</b> predicts from the two airports' size and distance &mdash; the diaspora corridors, migration links and historical ties this map was built to surface.</p>
-
-  <h2>exploring</h2>
-  <p><b>Click an airport</b> to isolate its routes; <b>click a route</b>, on the map or in the scatter, to focus and zoom to it. The scatter plots every route by <b>distance against passengers</b>. <b>Esc</b> clears.</p>
-  <p>The <b>min passengers</b> slider hides thinner routes; flight paths, airport bubbles and projection each toggle on the left.</p>
+  <h2>flight map </h2>
+  <p>This map shows estimated passengers traffic on every commercial route. Thicker and brighter lines have more traffic.
+  The estimate assumes all flights are all 80% full. Cargo carriers and private jets are filtered out.
 
   <h2>data</h2>
-  <p>One full UTC day, <b>16 May 2026</b>, annualised &times;365 &mdash; so day-of-week and seasonal swings are whatever that Saturday happened to hold.</p>
-  <p>Flight data: <a href="https://www.flightradar24.com" target="_blank" rel="noopener">Flightradar24</a>. Only aggregated estimates are shown; no raw flight records.</p>
+  <p>Flights come from <a href="https://www.flightradar24.com" target="_blank" rel="noopener">Flightradar24</a>, which tracks planes worldwide by fusing ADS-B, radar, satellite, and airline schedules. We pull every commercial departure over two full days: Friday and Saturday, 15-16 May 2026 and scale up to a year. Only two days are pulled because it's expensive. FR24 data has gaps for several countries, including Uzbekistan and Kuwait, and these were manually filled with data from flightsfrom.com. </p>
+  <h2>top routes</h2>
+  The busiest routes are shown on the right side of the screen. When ranking by "unexpected", it shows routes that are unexpectedly busy relative to the traffic at either endpoint and the distance between them.
+
+  <h2>colour by cluster</h2>
+  <p>This setting groups airports into <a href="https://en.wikipedia.org/wiki/Louvain_method" target="_blank" rel="noopener">Louvain </a> clusters that fly with each other more than with the outside world. </p>
+
 </div>
 
 <script>
@@ -287,6 +346,16 @@ map.on('load', async () => {
   // ---- dataset state ------------------------------------------------------
   let feats=[], traffic={}, rcount={}, airportInfo={};
   let focus=null, routeFocus=null, minLog=0;
+  let commMode=false, commMeta=[], commStats={}, clusterFocus=null;   // cluster ("colour by cluster") mode
+  // multiple cluster sets precomputed offline (build_clusters.py) at a range of
+  // Louvain resolutions; the slider picks one live. Each airport's slot [4] is
+  // an array of cluster ids parallel to `resolutions`; resIdx selects which.
+  let resolutions=[], clusterSets=[], resIdx=0;
+  const commOf = A => {           // resolution-aware cluster id of an airport entry
+    if (!A) return -1;
+    const c = A[4];
+    return Array.isArray(c) ? (c[resIdx] ?? -1) : (typeof c === 'number' ? c : -1);
+  };
   // airport-bubble state, shared with the pie overlay
   let aptFeats=[], maxS=1, aptVisible=true, pieMode=false, isGlobe=true, pieRAF=0;
 
@@ -405,7 +474,7 @@ map.on('load', async () => {
   map.addLayer({ id:'lines', type:'line', source:'routes', layout:{'line-cap':'round'},
     paint:{'line-color':colour,'line-width':width,'line-opacity':0.72} });
   map.addLayer({ id:'hit', type:'line', source:'routes', layout:{'line-cap':'round'},
-    paint:{'line-color':'#000','line-opacity':0,'line-width':14} });
+    paint:{'line-color':'#000','line-opacity':0,'line-width':7} });
   map.addLayer({ id:'airports', type:'circle', source:'airports',
     paint:{
       'circle-radius':aptRadius(1),
@@ -413,17 +482,167 @@ map.on('load', async () => {
       'circle-stroke-color':'#eaf2ff','circle-stroke-width':1.0,'circle-stroke-opacity':0.85,
     } });
 
+  // ---- cluster colouring ("colour by cluster") ----------------------------
+  // Clusters are precomputed offline (build_clusters.py, weighted Louvain) and
+  // baked into the data: each airport carries a cluster id as its 5th element,
+  // and meta.clusters holds the labels. Here we just paint by it.
+  // Categorical palette, dark-bg friendly; id 0 is the heaviest cluster, and
+  // -1 ("other": the tiny clusters) falls through to grey.
+  const COMM_PAL = ['#4f9dff','#ff6b6b','#ffd24d','#5fd38b','#c08bff','#ff7a33',
+                    '#4dd6d6','#ff7fc4','#9fd34d','#7d8cff','#d98b5f','#cf6bd6',
+                    '#2bb89a','#e6a91f','#e05780','#9aa635'];
+  const COMM_OTHER = '#828d9c';   // cross-cluster bridges + tiny clusters — real routes, kept legible
+  let lineRamp = colour;             // magma line-colour ramp (refreshed per load)
+  const commColorOf = id => (id>=0 && id<COMM_PAL.length) ? COMM_PAL[id] : COMM_OTHER;
+  function commColorExpr(){          // MapLibre match on a feature's 'comm' prop
+    const e = ['match', ['get','comm']];
+    for (let i=0;i<COMM_PAL.length;i++) e.push(i, COMM_PAL[i]);
+    e.push(COMM_OTHER);
+    return e;
+  }
+  // base (non-selected) colour for bubbles/routes: cluster colours in cluster
+  // mode, else the default light blue.
+  const aptBaseColor = () => commMode ? commColorExpr() : '#cfe0ff';
+  // selected bubble colour: blue highlight normally, but in cluster mode keep the
+  // airport's cluster colour (selection reads through opacity instead) so a
+  // picked airport / route endpoint isn't recoloured or given a pie.
+  const aptSelColor = () => commMode ? commColorExpr() : '#5bb6ff';
+  function applyLineColor(){
+    map.setPaintProperty('lines','line-color', commMode ? commColorExpr() : lineRamp);
+  }
+  // per-cluster traffic split: a route is "internal" if both endpoints share
+  // the cluster, "crossing" if exactly one endpoint is in it. The within-%
+  // (internal / total passenger-flow touching the cluster) is a legible read
+  // on how self-contained — i.e. how strong — each cluster is.
+  function computeCommStats(){
+    commStats = {};
+    for (const c of commMeta) commStats[c.id] = {intRoutes:0, crossRoutes:0, intPax:0, crossPax:0};
+    for (const f of feats){
+      const p = f.properties;
+      const A = airportInfo[p.a], B = airportInfo[p.b];
+      const ca = commOf(A), cb = commOf(B);
+      if (ca===cb && ca>=0){
+        const s = commStats[ca]; if (s){ s.intRoutes++; s.intPax += p.pax; }
+      } else {
+        const sa = commStats[ca], sb = commStats[cb];
+        if (sa){ sa.crossRoutes++; sa.crossPax += p.pax; }
+        if (sb){ sb.crossRoutes++; sb.crossPax += p.pax; }
+      }
+    }
+  }
+  function legendTipHTML(c){
+    const s = commStats[c.id] || {intRoutes:0, crossRoutes:0, intPax:0, crossPax:0};
+    const tot = s.intPax + s.crossPax;
+    const within = tot>0 ? Math.round(s.intPax/tot*100) : 0;
+    return `<div style="font-weight:700;color:${commColorOf(c.id)};margin-bottom:3px">${c.hubCity} cluster</div>`+
+      `<div class="pop-line">${c.n} airports · ${s.intRoutes.toLocaleString()} internal routes</div>`+
+      `<div class="pop-line"><b>${within}%</b> of traffic stays within the cluster</div>`;
+  }
+  function buildCommLegend(){
+    const el = document.getElementById('commlegend');
+    if (!el) return;
+    el.innerHTML = commMeta.map(c =>
+      `<div class="ci" data-cid="${c.id}">`+
+      `<span class="sw" style="background:${commColorOf(c.id)}"></span>${c.hubCity}</div>`
+    ).join('') +
+      `<div class="ci" title="small clusters, shown grey"><span class="sw" style="background:${COMM_OTHER}"></span>other</div>`;
+    // wire the hover tooltip for each coloured cluster row
+    const tip = document.getElementById('legendtip');
+    const place = e => {
+      const flip = e.clientX + 250 > window.innerWidth;
+      tip.style.left = (flip ? e.clientX - 240 : e.clientX + 14) + 'px';
+      tip.style.top  = (e.clientY + 14) + 'px';
+    };
+    el.querySelectorAll('.ci[data-cid]').forEach(it => {
+      const c = commMeta.find(x => x.id == it.dataset.cid);
+      it.addEventListener('mouseenter', e => { tip.innerHTML = legendTipHTML(c); tip.classList.add('on'); place(e); });
+      it.addEventListener('mousemove', place);
+      it.addEventListener('mouseleave', () => tip.classList.remove('on'));
+      it.addEventListener('click', () => setClusterFocus(+it.dataset.cid));
+    });
+  }
+
+  // ---- resolution slider: switch between precomputed cluster sets ----------
+  // Each set is a full Louvain run at a different resolution (higher = more,
+  // smaller clusters). Switching re-derives every route/airport's cluster id
+  // from the new set — no refetch, the data for all resolutions is already here.
+  function setupResControl(){
+    // populate the dropdown; visibility is handled by applyColorMode (only shown
+    // while cluster mode is on). A dropdown — not a slider — because each switch
+    // rebuilds every feature, too heavy to drag through.
+    const sel=document.getElementById('resselect');
+    sel.innerHTML = resolutions.map((r,i) =>
+      `<option value="${i}"${i===resIdx?' selected':''}>${r}</option>`
+    ).join('');
+  }
+  // whether the resolution dropdown should be visible right now
+  const resAvailable = () => clusterSets.length > 1;
+  function applyResolution(idx){
+    if (!clusterSets.length || idx===resIdx) return;
+    resIdx = idx;
+    commMeta = clusterSets[idx].clusters;
+    // re-derive cluster id for every route + airport from the new set
+    for (const f of feats){
+      const ca=commOf(airportInfo[f.properties.a]), cb=commOf(airportInfo[f.properties.b]);
+      f.properties.comm = (ca===cb && ca>=0) ? ca : -1;
+    }
+    map.getSource('routes').setData({type:'FeatureCollection',features:feats});
+    for (const af of aptFeats) af.properties.comm = commOf(airportInfo[af.properties.code]);
+    map.getSource('airports').setData({type:'FeatureCollection',features:aptFeats});
+    computeCommStats();
+    buildCommLegend();
+    clusterFocus=null; markClusterSel();   // cluster ids changed; drop any isolation
+    if (commMode){                          // refresh colours + clear any focus dim
+      applyLineColor();
+      map.setPaintProperty('lines','line-opacity', linesOpacityExpr());
+      applyBubbleStyle();
+    }
+    apply();
+  }
+  document.getElementById('resselect').addEventListener('change', e => applyResolution(+e.target.value));
+
+  // ---- cluster focus: click a legend swatch to isolate that cluster --------
+  // dims every route/airport not in the cluster; only valid in cluster mode.
+  function applyClusterFocus(){
+    const m = ['==', ['get','comm'], clusterFocus];
+    map.setPaintProperty('lines','line-opacity', ['case', m, 0.92, 0.05]);
+    map.setPaintProperty('airports','circle-opacity', ['case', m, 0.95, 0.07]);
+    map.setPaintProperty('airports','circle-stroke-opacity', ['case', m, 0.9, 0.06]);
+  }
+  function markClusterSel(){
+    document.querySelectorAll('#commlegend .ci').forEach(it =>
+      it.classList.toggle('sel', clusterFocus!=null && +it.dataset.cid===clusterFocus));
+  }
+  function setClusterFocus(id){
+    if (!commMode) return;
+    focus=null; routeFocus=null; rinfo.classList.remove('on');   // mutually exclusive
+    clusterFocus = (clusterFocus===id) ? null : id;
+    markClusterSel();
+    if (clusterFocus==null){
+      map.setPaintProperty('lines','line-opacity', linesOpacityExpr());
+      restoreCircles();
+    } else {
+      applyClusterFocus();
+    }
+    apply();          // refresh the hit-layer filter
+    popup.remove();
+  }
+
   // ---- build route features from a dataset --------------------------------
   function buildFeatures(data){
     const ap=data.airports, fs=[];
     for (const [a,b,pax,fpd,seats] of data.routes){
       const A=ap[a], B=ap[b];
       if(!A||!B) continue;
+      // a route's cluster = its endpoints' shared cluster (else -1), so
+      // intra-cluster routes take the cluster colour and bridges go grey.
+      const cmA=commOf(A), cmB=commOf(B);
+      const comm=(cmA===cmB && cmA>=0) ? cmA : -1;
       fs.push({
         type:'Feature',
         geometry:{type:'LineString',coordinates:arc(A[0],A[1],B[0],B[1])},
         properties:{
-          a,b, ca:A[2], cb:B[2], na:A[3], nb:B[3],
+          a,b, ca:A[2], cb:B[2], na:A[3], nb:B[3], comm,
           pax, fpd, seats, lpax:Math.log10(Math.max(pax,1)),
           dist:Math.round(haversine(A[0],A[1],B[0],B[1])),
           intl: A[3]!==B[3] ? 1 : 0,
@@ -442,21 +661,34 @@ map.on('load', async () => {
       if(!r.ok) throw new Error('HTTP '+r.status);
       data = await r.json();
     } catch(e){
-      document.getElementById('sub').textContent = 'Could not load '+DATA_FILE+' — '+e.message;
+      document.getElementById('loading').textContent = 'Could not load '+DATA_FILE+' — '+e.message;
       map.getSource('routes').setData(empty);
       map.getSource('airports').setData(empty);
       return;
     }
     airportInfo = data.airports;
+    // resolution sets: pick the dataset's default before building features (comm
+    // ids depend on resIdx). Datasets without clusterSets (e.g. OpenSky) leave
+    // these empty and the resolution slider hides.
+    const meta = data.meta || {};
+    resolutions = meta.resolutions || [];
+    clusterSets = meta.clusterSets || [];
+    resIdx = (clusterSets.length && meta.clusterDefault!=null) ? meta.clusterDefault : 0;
+    setupResControl();
     feats = buildFeatures(data);
     map.getSource('routes').setData({type:'FeatureCollection',features:feats});
     // recolour against this dataset's distribution; label the legend with its
     // real pax range (feats is sorted ascending by pax in buildFeatures).
     const _ramp = colourRamp();
+    lineRamp = _ramp;
     map.setPaintProperty('lines','line-color', _ramp);
     captureStops(_ramp);
+    commMeta = clusterSets.length ? clusterSets[resIdx].clusters : (meta.clusters || []);
+    computeCommStats();
+    buildCommLegend();
+    applyLineColor();   // honour cluster mode if it's already on
     if (feats.length){
-      document.getElementById('leglo').textContent = '~'+fmt(feats[0].properties.pax);
+      document.getElementById('leglo').textContent = fmt(feats[0].properties.pax);
       document.getElementById('leghi').textContent = fmt(feats[feats.length-1].properties.pax);
     }
 
@@ -480,7 +712,8 @@ map.on('load', async () => {
       const A=airportInfo[code]; if(!A) continue;
       const s=Math.sqrt(traffic[code]); if(s>maxS) maxS=s;
       aptFeats.push({type:'Feature',geometry:{type:'Point',coordinates:[A[0],A[1]]},
-        properties:{code, city:A[2], country:A[3], t:traffic[code], s,
+        properties:{code, city:A[2], country:A[3], comm:commOf(A),
+                    t:traffic[code], s,
                     rt:rcount[code], fpd:Math.round(fpdSum[code]),
                     td:domSum[code]||0, ti:intlSum[code]||0}});
     }
@@ -488,25 +721,35 @@ map.on('load', async () => {
     map.setPaintProperty('airports','circle-radius',aptRadius(maxS));
     schedulePie();   // refresh pies for the new dataset if pie mode is on
 
-    document.getElementById('sub').textContent =
-      (data.meta && data.meta.source) ? data.meta.source : DATA_LABEL;
     focus=null; routeFocus=null; applyFocus();
     renderScatter();
     unexpMode=false; applyMode();   // always re-render list + paint for the new data
     apply();
+    document.getElementById('loading').classList.add('hidden');
   }
 
   // ---- route hover --------------------------------------------------------
   // shared by the map popup and the expanded-scatter tooltip.
   function routePopupHTML(p){
-    const col = lpaxColor(p.lpax);   // tint title + pax to match the route's line colour
+    // tint to match the route's line colour — cluster colour in cluster mode.
+    const col = commMode ? commColorOf(p.comm) : lpaxColor(p.lpax);
     return `<div class="pop-route" style="color:${col}">${p.a} – ${p.b}</div>`+
       `<div class="pop-line">${p.ca}, ${p.na}<br>${p.cb}, ${p.nb}</div>`+
-      `<div style="margin-top:5px"><span class="pop-pax" style="color:${col}">~${fmt(p.pax)} pax/yr</span> &nbsp;est.</div>`+
-      `<div class="pop-line">~${p.fpd} flights/day · ~${p.seats} seats · ${p.dist.toLocaleString()} km</div>`;
+      `<div style="margin-top:5px"><span class="pop-pax" style="color:${col}">${fmt(p.pax)} pax/yr</span> &nbsp;est.</div>`+
+      `<div class="pop-line">${p.fpd} flights/day · ${p.seats} seats · ${p.dist.toLocaleString()} km</div>`;
   }
   const popup = new maplibregl.Popup({closeButton:false,closeOnMove:false,offset:8});
+  // In globe view the feature hit-test still unprojects an off-sphere cursor to a
+  // (clamped) lng/lat, so layer mousemove events fire for points in empty space
+  // around the globe. Guard: round-trip e.lngLat back to screen pixels; if it
+  // lands far from the actual cursor, the cursor isn't on the globe → ignore.
+  function offGlobe(e){
+    if (!isGlobe) return false;
+    const p = map.project(e.lngLat);
+    return Math.hypot(p.x-e.point.x, p.y-e.point.y) > 4;
+  }
   map.on('mousemove','hit', e=>{
+    if (offGlobe(e)){ map.getCanvas().style.cursor=''; popup.remove(); return; }
     const f=e.features[0]; if(!f) return;
     map.getCanvas().style.cursor='pointer';
     popup.setLngLat(e.lngLat).setHTML(routePopupHTML(f.properties)).addTo(map);
@@ -516,6 +759,7 @@ map.on('load', async () => {
   // ---- airport hover (registered AFTER the route hover so it wins when both
   //      fire — busy airports always have lines passing under their bubble) --
   map.on('mousemove','airports', e=>{
+    if (offGlobe(e)){ map.getCanvas().style.cursor=''; popup.remove(); return; }
     const f=e.features[0]; if(!f) return;
     map.getCanvas().style.cursor='pointer';
     const p=f.properties;
@@ -523,8 +767,8 @@ map.on('load', async () => {
     popup.setLngLat(e.lngLat).setHTML(
       `<div class="pop-route">${p.code}</div>`+
       `<div class="pop-line">${p.city}${p.country?', '+p.country:''}</div>`+
-      `<div style="margin-top:5px"><span class="pop-pax">~${fmt(p.t)} pax/yr</span> &nbsp;est.</div>`+
-      `<div class="pop-line">~${p.fpd.toLocaleString()} flights/day · ${p.rt} routes</div>`+
+      `<div style="margin-top:5px"><span class="pop-pax">${fmt(p.t)} pax/yr</span> &nbsp;est.</div>`+
+      `<div class="pop-line">${p.fpd.toLocaleString()} flights/day · ${p.rt} routes</div>`+
       (tt ? `<div class="pop-line"><span style="color:#f06464">${Math.round(dd/tt*100)}% domestic</span> · `+
             `<span style="color:#64a0ff">${Math.round(ii/tt*100)}% international</span></div>` : '')
     ).addTo(map);
@@ -544,19 +788,19 @@ map.on('load', async () => {
       const m=['any',['==',['get','a'],focus],['==',['get','b'],focus]];
       map.setPaintProperty('lines','line-opacity',['case',m,0.92,0.04]);
       map.setPaintProperty('airports','circle-color',
-        ['case',['==',['get','code'],focus],'#5bb6ff','#cfe0ff']);
+        ['case',['==',['get','code'],focus],aptSelColor(),aptBaseColor()]);
       map.setPaintProperty('airports','circle-opacity',
         ['case',['==',['get','code'],focus],0.95,0.10]);
       map.setPaintProperty('airports','circle-stroke-opacity',
         ['case',['==',['get','code'],focus],1,0.15]);
       const A=airportInfo[focus];
       rinfo.querySelector('.info').innerHTML=`✈ <b>${focus}</b> — ${A?A[2]:''}`+
-        `<span class="meta">${rcount[focus]||0} routes · ~${fmt(traffic[focus]||0)} pax/yr</span>`;
+        `<span class="meta">${rcount[focus]||0} routes · ${fmt(traffic[focus]||0)} pax/yr</span>`;
       rinfo.classList.add('on');
     } else {
       map.setPaintProperty('lines','line-opacity',0.72);
-      map.setPaintProperty('airports','circle-color','#cfe0ff');
-      map.setPaintProperty('airports','circle-opacity',0.40);
+      map.setPaintProperty('airports','circle-color',aptBaseColor());
+      map.setPaintProperty('airports','circle-opacity',0.50);
       map.setPaintProperty('airports','circle-stroke-opacity',0.85);
       rinfo.classList.remove('on');
     }
@@ -564,13 +808,15 @@ map.on('load', async () => {
     // (or become live again on deselect).
     apply();
     popup.remove();   // clear any stale route popup from before the focus change
-    if (pieMode && aptVisible) hidePieCircles();   // focus just re-set circle opacities
+    if (!commMode && pieMode && aptVisible) hidePieCircles();   // focus just re-set circle opacities
     schedulePie();
     renderScatter();   // highlight this airport's routes in the scatter
+    if (!unexpMode) renderTopList();   // list the focused airport's routes (or global top)
   }
   function setFocus(code){
     if (unexpMode){ unexpMode=false; applyMode(); }  // mutually exclusive
     if (routeFocus){ routeFocus=null; }              // ditto
+    if (clusterFocus!=null){ clusterFocus=null; markClusterSel(); }
     focus=(focus===code)?null:code;
     applyFocus();
   }
@@ -609,7 +855,7 @@ map.on('load', async () => {
     if (routeFocus){
       const {a, b} = routeFocus;
       const mEnd = ['any',['==',['get','code'],a],['==',['get','code'],b]];
-      map.setPaintProperty('airports','circle-color',['case',mEnd,'#5bb6ff','#cfe0ff']);
+      map.setPaintProperty('airports','circle-color',['case',mEnd,aptSelColor(),aptBaseColor()]);
       map.setPaintProperty('airports','circle-opacity',['case',mEnd,0.95,0.10]);
       map.setPaintProperty('airports','circle-stroke-opacity',['case',mEnd,1,0.15]);
       // pan/zoom to fit both endpoints; unwrap longitude across antimeridian
@@ -629,12 +875,12 @@ map.on('load', async () => {
         const col = lpaxColor(p.lpax);   // match the route's line colour
         rinfo.querySelector('.info').innerHTML =
           `✈ <b style="color:${col}">${p.a} – ${p.b}</b>` +
-          `<span class="meta"><span style="color:${col}">~${fmt(p.pax)} pax/yr</span> · ~${p.fpd} flt/day · ${p.dist.toLocaleString()} km<br>${p.ca} → ${p.cb}</span>`;
+          `<span class="meta"><span style="color:${col}">${fmt(p.pax)} pax/yr</span> · ${p.fpd} flt/day · ${p.dist.toLocaleString()} km<br>${p.ca} → ${p.cb}</span>`;
         rinfo.classList.add('on');
       }
     } else {
-      map.setPaintProperty('airports','circle-color','#cfe0ff');
-      map.setPaintProperty('airports','circle-opacity',0.40);
+      map.setPaintProperty('airports','circle-color',aptBaseColor());
+      map.setPaintProperty('airports','circle-opacity',0.50);
       map.setPaintProperty('airports','circle-stroke-opacity',0.85);
       rinfo.classList.remove('on');
     }
@@ -642,15 +888,17 @@ map.on('load', async () => {
     map.setPaintProperty('lines','line-width', linesWidthExpr());
     apply();
     popup.remove();
-    if (pieMode && aptVisible) hidePieCircles();   // route focus just re-set circle opacities
+    if (!commMode && pieMode && aptVisible) hidePieCircles();   // route focus just re-set circle opacities
     schedulePie();
     renderScatter();   // highlight the picked route in the scatter (thumb + modal)
+    if (!unexpMode) renderTopList();
   }
 
   function setRouteFocus(a, b){
     // NOT mutually exclusive with unexp mode — clicking a route there should
     // zoom in while keeping the unexpectedness encoding on the other lines.
     if (focus){ focus=null; }   // airport focus IS still mutually exclusive
+    if (clusterFocus!=null){ clusterFocus=null; markClusterSel(); }
     const same = routeFocus && routeFocus.a===a && routeFocus.b===b;
     routeFocus = same ? null : {a, b};
     applyRouteFocus();
@@ -672,6 +920,7 @@ map.on('load', async () => {
     // empty click: clear whichever focus is set
     if (focus){ focus=null; applyFocus(); }
     else if (routeFocus){ routeFocus=null; applyRouteFocus(); }
+    else if (clusterFocus!=null){ setClusterFocus(clusterFocus); }   // toggles off
   });
   // right-click anywhere clears the current selection. A right-DRAG rotates the
   // globe and MapLibre suppresses contextmenu for it, so this only fires on a
@@ -679,6 +928,7 @@ map.on('load', async () => {
   map.on('contextmenu', ()=>{
     if (focus){ focus=null; applyFocus(); }
     else if (routeFocus){ routeFocus=null; applyRouteFocus(); }
+    else if (clusterFocus!=null){ setClusterFocus(clusterFocus); }
   });
   // ---- about panel (methodology + attribution) ---------------------------
   const aboutBtn = document.getElementById('aboutbtn');
@@ -694,6 +944,7 @@ map.on('load', async () => {
     else if (scatOpen){ closeScat(); }
     else if (focus){ focus=null; applyFocus(); }
     else if (routeFocus){ routeFocus=null; applyRouteFocus(); }
+    else if (clusterFocus!=null){ setClusterFocus(clusterFocus); }
   });
 
   // ---- right-panel list + unexpected-routes mode -------------------------
@@ -706,6 +957,10 @@ map.on('load', async () => {
   // distance barely predicted anything, so "unexpected" just meant "absolutely
   // big". Standard gravity is the right baseline for the diaspora-anomaly framing.
   let unexpMode = false, maxUnexp = 1, intlFactor = 1, unexpHi = [];
+  // list paging (both top-traffic and unexpected): render LIST_PAGE rows, grow
+  // LIST_PAGE more each time the panel is scrolled near its bottom.
+  const LIST_PAGE = 20;
+  let listPool = [], listShown = 0, listMode = 'top';
 
   // Background mass added to every airport's effective t — ~2000 pax/day
   // worth of "traffic to nowhere". Negligible (<<1%) for busy hubs, but
@@ -770,7 +1025,7 @@ map.on('load', async () => {
       const head = mode === 'unexp' ? p.ratio.toFixed(1)+'&times;' : fmt(p.pax);
       // top mode: the number IS pax → tint it; unexp mode: it's the ratio → keep accent
       const headStyle = mode === 'unexp' ? '' : ` style="color:${col}"`;
-      const metaLead = mode === 'unexp' ? `~${fmt(p.pax)} pax/yr &middot; ` : '';
+      const metaLead = mode === 'unexp' ? `${fmt(p.pax)} pax/yr &middot; ` : '';
       return `<div class="odd-item" data-a="${p.a}" data-b="${p.b}">
         <span class="odd-mult"${headStyle}>${head}</span>
         <div class="odd-pair" style="color:${col}">${p.a} &ndash; ${p.b}</div>
@@ -782,6 +1037,41 @@ map.on('load', async () => {
     });
   }
 
+  // top-traffic list: the global 20 busiest routes, OR — when an airport is
+  // focused — that airport's own routes (busiest first), mirroring the fan of
+  // arcs on the map.
+  function renderTopList(){
+    const title = document.getElementById('rtitle');
+    const sub = document.getElementById('rsub');
+    let pool = feats, t = 'top routes by traffic', subTxt = '';
+    if (focus){
+      pool = feats.filter(f => f.properties.a===focus || f.properties.b===focus);
+      t = `routes through ${focus}`;
+      subTxt = `${pool.length} route${pool.length===1?'':'s'} · busiest first`;
+    }
+    listMode = 'top';
+    listPool = [...pool].sort((a,b)=>b.properties.pax - a.properties.pax);
+    listShown = Math.min(LIST_PAGE, listPool.length);
+    renderList(listPool.slice(0, listShown), 'top');
+    title.textContent = t;
+    sub.textContent = subTxt;
+    sub.style.display = subTxt ? '' : 'none';
+  }
+
+  // grow the active list when the panel is scrolled near its bottom. In
+  // unexpected mode the width-floor highlight (unexpHi) tracks the shown rows.
+  document.getElementById('rpanel').addEventListener('scroll', () => {
+    if (listShown >= listPool.length) return;
+    const el = document.getElementById('rpanel');
+    if (el.scrollTop + el.clientHeight >= el.scrollHeight - 40){
+      listShown = Math.min(listShown + LIST_PAGE, listPool.length);
+      renderList(listPool.slice(0, listShown), listMode);
+      if (listMode === 'unexp'){
+        unexpHi = listPool.slice(0, listShown).map(f => [f.properties.a, f.properties.b]);
+        map.setPaintProperty('lines','line-width', linesWidthExpr());
+      }
+    }
+  });
   function applyMode(){
     const btn = document.getElementById('modetoggle');
     const title = document.getElementById('rtitle');
@@ -789,21 +1079,21 @@ map.on('load', async () => {
     if (unexpMode){
       if (focus){ focus=null; applyFocus(); }     // paint conflict — exit focus
       const inputs = computeUnexpectedness();
-      const top = inputs.map(r=>r.f)
+      listMode = 'unexp';
+      listPool = inputs.map(r=>r.f)
         .filter(f => f.properties.pax >= UNEXP_MIN_PAX)
-        .sort((a,b)=>b.properties.unexp - a.properties.unexp).slice(0,20);
-      renderList(top, 'unexp');
-      unexpHi = top.map(f => [f.properties.a, f.properties.b]);
+        .sort((a,b)=>b.properties.unexp - a.properties.unexp);
+      listShown = Math.min(LIST_PAGE, listPool.length);
+      renderList(listPool.slice(0, listShown), 'unexp');
+      sub.style.display='';
+      unexpHi = listPool.slice(0, listShown).map(f => [f.properties.a, f.properties.b]);
       btn.textContent='unexpected'; btn.classList.add('on');
-      title.textContent='Unexpectedly busy routes';
-      sub.textContent=`Top 20 by observed÷predicted under standard gravity (β=1, γ=−1) plus a fitted intl factor (intl ≈ ${intlFactor.toFixed(2)}× domestic at the same mass·distance), among routes carrying ≥${fmt(UNEXP_MIN_PAX)} pax/yr. Click to focus.`;
+      title.textContent='unexpectedly busy routes';
+      sub.textContent=`Routes that account for a high fraction of the traffic at their endpoint airports, especially long-distance ones. Uses a standard gravity model with a fitted adjustment for international vs. domestic flights.`;
     } else {
-      const top = [...feats].sort((a,b)=>b.properties.pax - a.properties.pax).slice(0,20);
-      renderList(top, 'top');
       unexpHi = [];
       btn.textContent='top traffic'; btn.classList.remove('on');
-      title.textContent='Top routes by traffic';
-      sub.textContent='20 busiest routes worldwide. Click any to focus.';
+      renderTopList();
     }
     map.setPaintProperty('lines','line-opacity', linesOpacityExpr());
     map.setPaintProperty('lines','line-width', linesWidthExpr());
@@ -820,10 +1110,16 @@ map.on('load', async () => {
   // the plotted points so they can be hover/click hit-tested.
   const X_MAX = 16000;                                   // km, linear axis ceiling (longest route ~15,341 km)
   const Y_LO = Math.log10(1e4), Y_HI = Math.log10(2e7);  // 10k .. 20M pax
+  // is this route part of the current selection (airport focus or route focus)?
+  function scatHot(p){
+    return focus ? (p.a===focus || p.b===focus)
+         : routeFocus ? (p.a===routeFocus.a && p.b===routeFocus.b)
+         : false;
+  }
   function drawScatter(canvas, big){
     const W=canvas.width, H=canvas.height, ctx=canvas.getContext('2d');
     ctx.clearRect(0,0,W,H);
-    const padL=big?42:30, padR=big?14:6, padT=big?14:8, padB=big?24:18;
+    const padL=big?54:30, padR=big?14:6, padT=big?14:8, padB=big?24:18;
     const w=W-padL-padR, h=H-padT-padB;
     const sx = d  => padL + (Math.min(d,X_MAX))/X_MAX * w;          // linear km
     const sy = ly => padT + h - (ly - Y_LO)/(Y_HI - Y_LO) * h;      // log pax
@@ -841,18 +1137,24 @@ map.on('load', async () => {
       ctx.beginPath(); ctx.moveTo(x,padT); ctx.lineTo(x,padT+h); ctx.stroke();
       // edge ticks align inward so neither '0' nor '20k km' clips off-canvas
       ctx.textAlign = i===0 ? 'left' : (i===xT.length-1 ? 'right' : 'center');
-      ctx.fillText(d===0?'0':(d/1000)+'k km', x, padT+h+2); });
+      ctx.fillText(d===0?'0':(big?d+' km':(d/1000)+'k km'), x, padT+h+2); });
+
+    // y-axis label (expanded view only)
+    if (big){
+      ctx.save();
+      ctx.translate(13, padT + h/2);
+      ctx.rotate(-Math.PI/2);
+      ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillStyle='#8b939e';
+      ctx.fillText('passengers / year', 0, 0);
+      ctx.restore();
+    }
 
     // points — fillRect is much faster than arc() at this density (~18k pts).
     // When an airport or a route is selected, its matching routes are deferred
     // and drawn last as expanded full-opacity dots while everything else dims —
     // keeping the scatter in sync with the map's focus highlight.
-    const hot = focus
-      ? (p => p.a===focus || p.b===focus)
-      : routeFocus
-        ? (p => p.a===routeFocus.a && p.b===routeFocus.b)
-        : null;
-    const baseA = hot ? 0.1 : 0.4;
+    const hasSel = !!(focus || routeFocus);
+    const baseA = hasSel ? 0.1 : 0.4;
     const pts = big ? [] : null;
     const r = big ? 1.5 : 1;
     const hotPts = [];
@@ -862,7 +1164,7 @@ map.on('load', async () => {
       const x = sx(p.dist);
       const y = sy(Math.log10(Math.min(p.pax, 2e7)));
       if (big) pts.push({x, y, f});
-      if (hot && hot(p)){ hotPts.push({x, y, intl:p.intl}); continue; }
+      if (hasSel && scatHot(p)){ hotPts.push({x, y, intl:p.intl}); continue; }
       ctx.fillStyle = p.intl ? `rgba(100,160,255,${baseA})` : `rgba(240,100,100,${baseA})`;
       ctx.fillRect(x-r, y-r, 2*r, 2*r);
     }
@@ -882,7 +1184,7 @@ map.on('load', async () => {
     ctx.font=(big?11:9)+"px 'Nunito',sans-serif"; ctx.textAlign='left'; ctx.textBaseline='middle';
     const ly0=padT+(big?6:4), sw=6, gap=3, grp=12;
     const wIntl=ctx.measureText('intl').width, wDom=ctx.measureText('dom').width;
-    let lx = W - padR - (sw+gap+wIntl + grp + sw+gap+wDom);
+    let lx = W - padR - 14 - (sw+gap+wIntl + grp + sw+gap+wDom);
     ctx.fillStyle='rgba(100,160,255,1)'; ctx.fillRect(lx, ly0, sw, sw);
     ctx.fillStyle='#8b939e'; ctx.fillText('intl', lx+sw+gap, ly0+3);
     lx += sw+gap+wIntl+grp;
@@ -901,18 +1203,26 @@ map.on('load', async () => {
   const scatBig=document.getElementById('scatbig');
   const scatTip=document.getElementById('scattip');
   let scatOpen=false, scatPts=[];
-  function openScat(){ scatOpen=true; scatModal.classList.add('on'); scatPts=drawScatter(scatBig, true); }
+  function sizeScatBig(){
+    // fit within the viewport (minus card chrome); cap at the original 680x460.
+    scatBig.width  = Math.min(680, Math.round(window.innerWidth  * 0.9));
+    scatBig.height = Math.min(460, Math.round(window.innerHeight * 0.9));
+  }
+  function openScat(){ scatOpen=true; scatModal.classList.add('on'); sizeScatBig(); scatPts=drawScatter(scatBig, true); }
   function closeScat(){ scatOpen=false; scatModal.classList.remove('on'); scatTip.classList.remove('on'); }
   function nearestScatPt(mx,my,maxd){
-    let best=null, bd=maxd*maxd;
+    // selected dots are drawn larger, so give them a wider catch radius and
+    // prefer them when they overlap an unselected (faint) dot near the cursor.
+    const hotMax=maxd+5;
+    let best=null, bd=maxd*maxd, bestHot=null, bhd=hotMax*hotMax;
     for (const pt of scatPts){
       const dx=pt.x-mx, dy=pt.y-my, d=dx*dx+dy*dy;
-      if (d<bd){ bd=d; best=pt; }
+      if (scatHot(pt.f.properties)){ if (d<bhd){ bhd=d; bestHot=pt; } }
+      else if (d<bd){ bd=d; best=pt; }
     }
-    return best;
+    return bestHot || best;
   }
   document.getElementById('scatcanvas').addEventListener('click', openScat);
-  document.getElementById('scatclose').addEventListener('click', closeScat);
   scatModal.addEventListener('click', e=>{ if (e.target===scatModal) closeScat(); });
   scatBig.addEventListener('mousemove', e=>{
     const pt=nearestScatPt(e.offsetX, e.offsetY, 7);
@@ -925,9 +1235,13 @@ map.on('load', async () => {
     scatBig.style.cursor='pointer';
   });
   scatBig.addEventListener('mouseleave', ()=>{ scatTip.classList.remove('on'); });
+  window.addEventListener('resize', ()=>{ if (scatOpen){ sizeScatBig(); scatPts=drawScatter(scatBig, true); } });
   scatBig.addEventListener('click', e=>{
     const pt=nearestScatPt(e.offsetX, e.offsetY, 8);
-    if (pt) setRouteFocus(pt.f.properties.a, pt.f.properties.b);
+    if (pt){ setRouteFocus(pt.f.properties.a, pt.f.properties.b); return; }
+    // empty click → clear any selection, back to the default high-opacity view
+    if (focus){ focus=null; applyFocus(); }
+    else if (routeFocus){ routeFocus=null; applyRouteFocus(); }
   });
 
   // ---- airport pie overlay ------------------------------------------------
@@ -980,7 +1294,7 @@ map.on('load', async () => {
     }
     pieCtx.setTransform(dpr,0,0,dpr,0,0);
     pieCtx.clearRect(0,0,w,h);
-    if (!aptVisible) return;
+    if (!aptVisible || commMode) return;   // cluster mode: circles carry the colour, no pies
     const sel = code => focus ? code===focus
               : routeFocus ? (code===routeFocus.a || code===routeFocus.b) : false;
     const hasSel = !!(focus || routeFocus);
@@ -1033,23 +1347,24 @@ map.on('load', async () => {
   // the camera (so it's safe to call on a style toggle — unlike applyRouteFocus).
   function restoreCircles(){
     if (focus){
-      map.setPaintProperty('airports','circle-color',['case',['==',['get','code'],focus],'#5bb6ff','#cfe0ff']);
+      map.setPaintProperty('airports','circle-color',['case',['==',['get','code'],focus],aptSelColor(),aptBaseColor()]);
       map.setPaintProperty('airports','circle-opacity',['case',['==',['get','code'],focus],0.95,0.10]);
       map.setPaintProperty('airports','circle-stroke-opacity',['case',['==',['get','code'],focus],1,0.15]);
     } else if (routeFocus){
       const mEnd=['any',['==',['get','code'],routeFocus.a],['==',['get','code'],routeFocus.b]];
-      map.setPaintProperty('airports','circle-color',['case',mEnd,'#5bb6ff','#cfe0ff']);
+      map.setPaintProperty('airports','circle-color',['case',mEnd,aptSelColor(),aptBaseColor()]);
       map.setPaintProperty('airports','circle-opacity',['case',mEnd,0.95,0.10]);
       map.setPaintProperty('airports','circle-stroke-opacity',['case',mEnd,1,0.15]);
     } else {
-      map.setPaintProperty('airports','circle-color','#cfe0ff');
-      map.setPaintProperty('airports','circle-opacity',0.40);
+      map.setPaintProperty('airports','circle-color',aptBaseColor());
+      map.setPaintProperty('airports','circle-opacity',0.50);
       map.setPaintProperty('airports','circle-stroke-opacity',0.85);
     }
   }
   function applyBubbleStyle(){
-    if (aptVisible && pieMode) hidePieCircles();   // hide circles, pies take over
-    else restoreCircles();                          // plain white bubbles
+    // cluster mode always uses plain (cluster-coloured) circles, never pies.
+    if (!commMode && aptVisible && pieMode) hidePieCircles();   // hide circles, pies take over
+    else restoreCircles();                                       // plain bubbles
     schedulePie();
   }
   // keep the overlay locked to the map: draw SYNCHRONOUSLY inside the map's own
@@ -1072,13 +1387,13 @@ map.on('load', async () => {
   document.getElementById('minpax').addEventListener('input',e=>{
     minLog=+e.target.value;
     document.getElementById('minlbl').textContent =
-      minLog<=0 ? 'all' : '~'+fmt(Math.pow(10,minLog));
+      minLog<=0 ? 'all' : fmt(Math.pow(10,minLog));
     apply();
   });
   document.getElementById('knee').addEventListener('input',e=>{
     knee=+e.target.value;                    // log10 of knee pax
     recalcKnee();
-    document.getElementById('kneelbl').textContent='~'+fmt(Math.pow(10,knee));
+    document.getElementById('kneelbl').textContent=fmt(Math.pow(10,knee));
     map.setPaintProperty('lines','line-width', linesWidthExpr());
   });
   document.getElementById('paths').addEventListener('click',e=>{
@@ -1100,6 +1415,22 @@ map.on('load', async () => {
     e.target.classList.toggle('on',pieMode);
     applyBubbleStyle();
   });
+  // cluster colouring applier: keeps the button, legend and pie state in sync.
+  function applyColorMode(){
+    clusterFocus=null; markClusterSel();   // a mode switch clears any cluster isolation
+    const cb=document.getElementById('cluster');
+    cb.textContent=commMode?'on':'off'; cb.classList.toggle('on',commMode);
+    document.getElementById('legend').style.display     = commMode?'none':'';
+    document.getElementById('commlegend').style.display = commMode?'':'none';
+    document.getElementById('resrow').style.display = (commMode && resAvailable())?'':'none';
+    document.getElementById('piemode').disabled = commMode;   // no pies in cluster mode
+    applyLineColor();      // routes: cluster colours ↔ magma ramp
+    map.setPaintProperty('lines','line-opacity', linesOpacityExpr());   // clear any cluster-focus dim
+    applyBubbleStyle();    // bubbles: cluster colours ↔ white/pie (clears pies)
+  }
+  document.getElementById('cluster').addEventListener('click',()=>{
+    commMode=!commMode; applyColorMode();
+  });
   document.getElementById('proj').addEventListener('click',e=>{
     const globe=e.target.textContent==='globe';
     map.setProjection({type: globe?'mercator':'globe'});
@@ -1107,8 +1438,33 @@ map.on('load', async () => {
     e.target.textContent=globe?'flat':'globe';
     schedulePie();
   });
+  // ---- top-routes panel: collapsible, starts closed on narrow/mobile screens
+  const rpanelEl = document.getElementById('rpanel');
+  const rtoggleEl = document.getElementById('rtoggle');
+  function setRpanel(open){
+    rpanelEl.classList.toggle('closed', !open);
+    rtoggleEl.style.display = open ? 'none' : 'flex';   // bars handle only while closed
+    if (open) renderScatter();   // panel had zero width while hidden — size + redraw
+    else if (unexpMode){ unexpMode=false; applyMode(); }   // don't sit in unexpected mode while hidden
+  }
+  document.getElementById('lhead').addEventListener('click', ()=>{
+    document.getElementById('lpanel').classList.toggle('collapsed');
+  });
+  rtoggleEl.addEventListener('click', ()=> setRpanel(true));
+  document.getElementById('rclose').addEventListener('click', ()=> setRpanel(false));
+  setRpanel(window.innerWidth > 640);
+
+  // small screens: start the left panel collapsed too
+  if (window.innerWidth <= 640) document.getElementById('lpanel').classList.add('collapsed');
+
+  // default bubble style: pie on desktop, plain white on mobile (the pie overlay
+  // is a per-frame canvas redraw — fine on desktop, heavier on phones).
+  pieMode = window.innerWidth > 640;
+  { const pmBtn=document.getElementById('piemode');
+    pmBtn.textContent = pieMode ? 'pie' : 'white'; pmBtn.classList.toggle('on', pieMode); }
+  applyBubbleStyle();
+
   await loadDataset();
-  document.getElementById('loading').classList.add('hidden');
 });
 </script>
 </body>
