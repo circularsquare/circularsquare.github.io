@@ -9,9 +9,9 @@ permalink: /projects/
 - maps
     - interactive 
         - <a href="/ancestrydots" data-thumb="/assets/thumbs/ancestrydots.png">ancestry dot map</a>
+        - <a href="/japanrail" data-thumb="/assets/thumbs/japanrail.png">japan rail</a>
         - <a href="/nycriders" data-thumb="/assets/thumbs/nycriders.png">nyc riders</a>
             - <a href="/londonriders">london riders</a>
-            - <a href="/japanrail">japan rail</a>
         - <a href="/flights" data-thumb="/assets/thumbs/flights.jpg">flight traffic</a>
         - <a href="https://graffiti.anita.garden/">graffiti nyc</a>
     - equal population maps
