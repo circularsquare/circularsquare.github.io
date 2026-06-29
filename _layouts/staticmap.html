@@ -30,23 +30,45 @@
         // DOM and pan can't reveal them. Setting explicit width/height/left/top
         // makes the overflow real, so the viewport's overflow: hidden clips it
         // and pan unclips it.
-        function fitElement(el) {
-          if (!el) return;
-          var vw = viewport.clientWidth;
-          var vh = viewport.clientHeight;
-          var iw = el.naturalWidth || el.width;
-          var ih = el.naturalHeight || el.height;
+        // Cached cover-fit geometry (viewport CSS px). Lets us place the map from
+        // the pan/zoom transform alone — no per-frame layout reads, and no need for
+        // the <img> to stay in the DOM (we drop it after uploading the texture).
+        var natW = 0, natH = 0;
+        var fit = { w: 0, h: 0, left: 0, top: 0, vw: 0, vh: 0 };
+
+        function applyFit(el) {
+          el.style.width = fit.w + 'px';
+          el.style.height = fit.h + 'px';
+          el.style.left = fit.left + 'px';
+          el.style.top = fit.top + 'px';
+        }
+        // Size to "cover" the viewport (fills the shorter axis, overflows the
+        // longer). Explicit width/height/left/top make the overflow real, so the
+        // viewport's overflow:hidden clips it and pan unclips it.
+        function fitCover() {
+          var vw = viewport.clientWidth, vh = viewport.clientHeight;
+          var iw = natW || (img && (img.naturalWidth || img.width));
+          var ih = natH || (img && (img.naturalHeight || img.height));
           if (!iw || !ih || !vw || !vh) return;
           var coverScale = Math.max(vw / iw, vh / ih);
-          var w = iw * coverScale;
-          var h = ih * coverScale;
-          el.style.width = w + 'px';
-          el.style.height = h + 'px';
-          el.style.left = ((vw - w) / 2) + 'px';
-          el.style.top = ((vh - h) / 2) + 'px';
+          fit.w = iw * coverScale;
+          fit.h = ih * coverScale;
+          fit.left = (vw - fit.w) / 2;
+          fit.top = (vh - fit.h) / 2;
+          fit.vw = vw; fit.vh = vh;
+          if (img) applyFit(img);
+          if (typeof fallbackImg !== 'undefined' && fallbackImg) applyFit(fallbackImg);
         }
-        function fitCover() {
-          fitElement(img);
+        // The map's on-screen rect (viewport-relative CSS px) under the current
+        // transform: a scene-local point p maps to scale*p + translate.
+        function imgScreenRect() {
+          var t = instance.getTransform();
+          return {
+            left: t.x + t.scale * fit.left,
+            top: t.y + t.scale * fit.top,
+            width: t.scale * fit.w,
+            height: t.scale * fit.h
+          };
         }
 
         var instance = panzoom(scene, {
@@ -60,6 +82,7 @@
         });
 
         function onImageReady() {
+          if (img) { natW = img.naturalWidth; natH = img.naturalHeight; }
           fitCover();
           {% if page.pixelart %}
           setupRenderer();
@@ -133,46 +156,29 @@ void main(){
           gl.compileShader(s);
           if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) {
             console.warn('[staticmap] shader compile failed:', gl.getShaderInfoLog(s));
-            console.warn('[staticmap] shader source was:\n' + src);
             return null;
           }
           return s;
         }
 
-        function setupRenderer() {
-          glCanvas = document.createElement('canvas');
-          glCanvas.style.position = 'absolute';
-          glCanvas.style.inset = '0';
-          glCanvas.style.pointerEvents = 'none';   // let pan/zoom events fall through to the scene
-          var alt = img.getAttribute('alt');
-          if (alt) glCanvas.setAttribute('aria-label', alt);
-          viewport.appendChild(glCanvas);
-
-          gl = glCanvas.getContext('webgl2', { antialias: false, premultipliedAlpha: false });
-          console.log('[staticmap] webgl2 ctx:', !!gl);
-          if (!gl) { viewport.removeChild(glCanvas); gl = null; console.warn('[staticmap] FALLBACK: no webgl2'); return; }
-
-          var maxTex = gl.getParameter(gl.MAX_TEXTURE_SIZE);
-          console.log('[staticmap] MAX_TEXTURE_SIZE:', maxTex, '| image:', img.naturalWidth, 'x', img.naturalHeight);
-          if (img.naturalWidth > maxTex || img.naturalHeight > maxTex) {     // too big for one texture
-            viewport.removeChild(glCanvas); gl = null;
-            console.warn('[staticmap] FALLBACK: image exceeds MAX_TEXTURE_SIZE');
-            return;
-          }
-
+        // (Re)create all GL objects on the current context: program, quad buffer,
+        // and the source texture (uploaded from srcImg). Split out from
+        // setupRenderer so it can run again after the GPU context is lost and
+        // restored. Returns true on success.
+        function buildGLResources(srcImg) {
           var vs = compileShader(gl.VERTEX_SHADER, VERT_SRC);
           var fs = compileShader(gl.FRAGMENT_SHADER, FRAG_SRC);
-          if (!vs || !fs) { viewport.removeChild(glCanvas); gl = null; console.warn('[staticmap] FALLBACK: shader compile failed'); return; }
+          if (!vs || !fs) return false;
           var prog = gl.createProgram();
           gl.attachShader(prog, vs);
           gl.attachShader(prog, fs);
           gl.linkProgram(prog);
           if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) {
-            console.warn('[staticmap] FALLBACK: program link failed:', gl.getProgramInfoLog(prog));
-            viewport.removeChild(glCanvas); gl = null; return;
+            console.warn('[staticmap] program link failed:', gl.getProgramInfoLog(prog));
+            return false;
           }
           gl.useProgram(prog);
-          gl.uniform2f(gl.getUniformLocation(prog, 'uTexSize'), img.naturalWidth, img.naturalHeight);
+          gl.uniform2f(gl.getUniformLocation(prog, 'uTexSize'), natW, natH);
           gl.uniform1f(gl.getUniformLocation(prog, 'uRegion'), 0.5 - 0.5 / PIXEL_SCALE);
 
           // Interleaved quad buffer: [clipX, clipY, u, v] x 6 verts, refilled each frame.
@@ -191,47 +197,116 @@ void main(){
           gl.bindTexture(gl.TEXTURE_2D, tex);
           // No UNPACK_FLIP_Y: texture row 0 = image top, and the quad maps v=0 to
           // its top edge, so the two already agree. Flipping here inverts the map.
-          gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8, gl.RGBA, gl.UNSIGNED_BYTE, img);
+          gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8, gl.RGBA, gl.UNSIGNED_BYTE, srcImg);
           gl.generateMipmap(gl.TEXTURE_2D);                                  // WebGL2 allows NPOT mipmaps
           gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
           gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
           gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
           gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-          var glErr = gl.getError();
-          if (glErr !== gl.NO_ERROR) console.warn('[staticmap] GL error after texture upload:', glErr);
-
           gl.clearColor(0, 0, 0, 0);
+          return true;
+        }
+
+        // Original source + alt, kept so we can reload pixels for the context-loss
+        // fallback and to rebuild the texture after a restore (the decoded <img> is
+        // dropped after upload). fallbackImg is the soft <img> shown while the GPU
+        // context is gone.
+        var imgSrc = img ? img.getAttribute('src') : null;
+        var imgAlt = img ? img.getAttribute('alt') : null;
+        var fallbackImg = null;
+
+        function showFallbackImg() {
+          if (!fallbackImg) {
+            fallbackImg = document.createElement('img');
+            fallbackImg.className = 'staticmap-image';
+            if (imgAlt) fallbackImg.alt = imgAlt;
+            fallbackImg.addEventListener('load', function() { applyFit(fallbackImg); });
+            fallbackImg.src = imgSrc;
+            scene.appendChild(fallbackImg);   // in the scene, so panzoom still drives it
+            if (fallbackImg.complete && fallbackImg.naturalWidth) applyFit(fallbackImg);
+          }
+          fallbackImg.style.visibility = '';
+        }
+        function removeFallbackImg() {
+          if (fallbackImg) {
+            if (fallbackImg.parentNode) fallbackImg.parentNode.removeChild(fallbackImg);
+            fallbackImg = null;   // drop its decode again
+          }
+        }
+
+        function setupRenderer() {
+          glCanvas = document.createElement('canvas');
+          glCanvas.style.position = 'absolute';
+          glCanvas.style.inset = '0';
+          glCanvas.style.pointerEvents = 'none';   // let pan/zoom events fall through to the scene
+          if (imgAlt) glCanvas.setAttribute('aria-label', imgAlt);
+          viewport.appendChild(glCanvas);
+
+          gl = glCanvas.getContext('webgl2', { antialias: false, premultipliedAlpha: false });
+          if (!gl) { viewport.removeChild(glCanvas); gl = null; return; }   // no WebGL2 -> keep smooth img
+
+          var maxTex = gl.getParameter(gl.MAX_TEXTURE_SIZE);
+          if (natW > maxTex || natH > maxTex) {     // too big for one texture -> keep smooth img
+            viewport.removeChild(glCanvas); gl = null; return;
+          }
+
+          // GPU context loss (common on mobile under memory pressure / backgrounding):
+          // show a soft <img> so the map degrades to visible instead of going blank,
+          // then rebuild the texture and resume sharp rendering once it's restored.
+          glCanvas.addEventListener('webglcontextlost', function(e) {
+            e.preventDefault();              // required, or the context never restores
+            glReady = false;
+            glCanvas.style.visibility = 'hidden';
+            showFallbackImg();
+          }, false);
+          glCanvas.addEventListener('webglcontextrestored', function() {
+            var finish = function(srcImg) {
+              if (buildGLResources(srcImg)) {
+                glReady = true;
+                glCanvas.style.visibility = '';
+                removeFallbackImg();
+                render();
+              }
+            };
+            // Reuse the already-loaded fallback image if present, else reload pixels.
+            if (fallbackImg && fallbackImg.complete && fallbackImg.naturalWidth) {
+              finish(fallbackImg);
+            } else {
+              var tmp = new Image();
+              tmp.onload = function() { finish(tmp); };
+              tmp.src = imgSrc;
+            }
+          }, false);
+
+          if (!buildGLResources(img)) { viewport.removeChild(glCanvas); gl = null; return; }
           glReady = true;
-          img.style.visibility = 'hidden';   // canvas shows the map now; img stays laid out for geometry
-          console.log('[staticmap] GL renderer ACTIVE (nearest-neighbor diagnostic)');
+          // Free the decoded <img>: remove it from the DOM and drop the reference so
+          // its bitmap can be GC'd. Geometry now comes from `fit` + the transform,
+          // and the pixels already live in the GPU texture -- roughly halves peak
+          // memory (no CPU-side decode kept alongside the texture + mipmaps).
+          if (img && img.parentNode) img.parentNode.removeChild(img);
+          img = null;
         }
 
         function render() {
-          if (!glReady) return;
-          var vpRect = viewport.getBoundingClientRect();
+          if (!glReady || !fit.vw) return;
           var dpr = Math.min(window.devicePixelRatio || 1, 2);
-          var cw = Math.max(1, Math.round(vpRect.width * dpr));
-          var ch = Math.max(1, Math.round(vpRect.height * dpr));
+          var cw = Math.max(1, Math.round(fit.vw * dpr));
+          var ch = Math.max(1, Math.round(fit.vh * dpr));
           if (glCanvas.width !== cw || glCanvas.height !== ch) {
             glCanvas.width = cw;
             glCanvas.height = ch;
-            glCanvas.style.width = vpRect.width + 'px';
-            glCanvas.style.height = vpRect.height + 'px';
+            glCanvas.style.width = fit.vw + 'px';
+            glCanvas.style.height = fit.vh + 'px';
           }
           gl.viewport(0, 0, cw, ch);
           gl.clear(gl.COLOR_BUFFER_BIT);
 
-          // Position the textured quad exactly where the (hidden) img sits on screen,
-          // so panzoom's transform drives it for free.
-          var r = img.getBoundingClientRect();
-          if (!render._logged) {
-            render._logged = true;
-            console.log('[staticmap] canvas backing:', cw, 'x', ch, '| dpr:', dpr,
-                        '| img on screen:', Math.round(r.width), 'x', Math.round(r.height));
-          }
-          var sx = r.left - vpRect.left, sy = r.top - vpRect.top, sw = r.width, sh = r.height;
-          var x0 = (sx / vpRect.width) * 2 - 1, x1 = ((sx + sw) / vpRect.width) * 2 - 1;
-          var y0 = 1 - (sy / vpRect.height) * 2, y1 = 1 - ((sy + sh) / vpRect.height) * 2;
+          // Place the textured quad where the map sits on screen, from the cached
+          // fit + current transform (no layout read needed).
+          var r = imgScreenRect();
+          var x0 = (r.left / fit.vw) * 2 - 1, x1 = ((r.left + r.width) / fit.vw) * 2 - 1;
+          var y0 = 1 - (r.top / fit.vh) * 2, y1 = 1 - ((r.top + r.height) / fit.vh) * 2;
           var verts = new Float32Array([
             x0, y0, 0, 0,   x1, y0, 1, 0,   x0, y1, 0, 1,
             x0, y1, 0, 1,   x1, y0, 1, 0,   x1, y1, 1, 1
@@ -251,20 +326,21 @@ void main(){
         // need a tiny sliver to anchor, otherwise it'd prevent zooming in on
         // edges (the corner can't be brought near the center of a narrow viewport).
         function clampIntoView() {
-          var vpRect = viewport.getBoundingClientRect();
-          var imRect = img.getBoundingClientRect();
+          if (!fit.vw) return;
+          var im = imgScreenRect();          // viewport-relative; viewport is (0,0,vw,vh)
           var t = instance.getTransform();
           var minVis = Math.max(40, 250 / t.scale);
+          var right = im.left + im.width, bottom = im.top + im.height;
           var dx = 0, dy = 0;
-          if (imRect.right < vpRect.left + minVis) {
-            dx = (vpRect.left + minVis) - imRect.right;
-          } else if (imRect.left > vpRect.right - minVis) {
-            dx = (vpRect.right - minVis) - imRect.left;
+          if (right < minVis) {
+            dx = minVis - right;
+          } else if (im.left > fit.vw - minVis) {
+            dx = (fit.vw - minVis) - im.left;
           }
-          if (imRect.bottom < vpRect.top + minVis) {
-            dy = (vpRect.top + minVis) - imRect.bottom;
-          } else if (imRect.top > vpRect.bottom - minVis) {
-            dy = (vpRect.bottom - minVis) - imRect.top;
+          if (bottom < minVis) {
+            dy = minVis - bottom;
+          } else if (im.top > fit.vh - minVis) {
+            dy = (fit.vh - minVis) - im.top;
           }
           if (dx !== 0 || dy !== 0) {
             instance.smoothMoveTo(t.x + dx, t.y + dy);
