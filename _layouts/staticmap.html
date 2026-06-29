@@ -22,38 +22,7 @@
       (function() {
         var scene = document.getElementById('staticmap-scene');
         var viewport = document.getElementById('staticmap-viewport');
-        var originalImg = scene.querySelector('.staticmap-image');
-        var canvasEl = null;
-        // `img` always points to whichever element is currently visible
-        // (canvas at downscale, original img at upscale, for pixelart maps).
-        var img = originalImg;
-
-        {% if page.pixelart %}
-        // Pixel-art source: create a 2× NN-upscaled canvas as a sibling of the
-        // original <img>. At downscale we show the canvas (gives a "chunky but
-        // softly downsampled" pixel-art look), at upscale we show the original
-        // img (single-pass smooth interpolation, less blurry than canvas+browser
-        // double smoothing).
-        var UPSCALE = 2;
-        function createUpscaledCanvas() {
-          if (!originalImg.naturalWidth) return;
-          canvasEl = document.createElement('canvas');
-          canvasEl.width = originalImg.naturalWidth * UPSCALE;
-          canvasEl.height = originalImg.naturalHeight * UPSCALE;
-          canvasEl.className = originalImg.className;
-          var ariaLabel = originalImg.getAttribute('alt');
-          if (ariaLabel) canvasEl.setAttribute('aria-label', ariaLabel);
-          var ctx = canvasEl.getContext('2d');
-          ctx.imageSmoothingEnabled = false;
-          ctx.drawImage(originalImg, 0, 0, canvasEl.width, canvasEl.height);
-          scene.appendChild(canvasEl);
-          // Hide the original img by default — updateRendering will toggle as zoom changes.
-          // Using `visibility` (not `display: none`) so the hidden element stays in the
-          // render tree and the swap doesn't trigger a first-paint stall at the threshold.
-          originalImg.style.visibility = 'hidden';
-          img = canvasEl;
-        }
-        {% endif %}
+        var img = scene.querySelector('.staticmap-image');
 
         // Size the element to "cover" the viewport (fills the shorter axis,
         // overflows the longer one). CSS object-fit: cover crops at the
@@ -77,8 +46,7 @@
           el.style.top = ((vh - h) / 2) + 'px';
         }
         function fitCover() {
-          fitElement(originalImg);
-          fitElement(canvasEl);
+          fitElement(img);
         }
 
         var instance = panzoom(scene, {
@@ -92,49 +60,190 @@
         });
 
         function onImageReady() {
-          {% if page.pixelart %}
-          createUpscaledCanvas();
-          {% endif %}
           fitCover();
-          updateRendering();
+          {% if page.pixelart %}
+          setupRenderer();
+          render();
+          {% endif %}
         }
-        if (originalImg.complete && originalImg.naturalWidth) onImageReady();
-        else originalImg.addEventListener('load', onImageReady);
-        window.addEventListener('resize', fitCover);
+        window.addEventListener('resize', function() {
+          fitCover();
+          {% if page.pixelart %}render();{% endif %}
+        });
 
-        // Toggle which element is visible based on source-pixel-to-device-pixel
-        // ratio. At downscale (ratio < 1) the NN canvas + browser downsampling
-        // gives the soft-block pixel-art look. At upscale (ratio >= 1) we switch
-        // to the original img so the browser does a single smooth interpolation
-        // pass instead of smoothing the already-blocky canvas.
-        var currentMode = null;
-        function updateRendering() {
-          if (!canvasEl) return;
-          var t = instance.getTransform();
-          var sourceW = originalImg.naturalWidth;
-          var displayW = img.clientWidth || originalImg.clientWidth;
-          if (!sourceW || !displayW) return;
-          var dpr = window.devicePixelRatio || 1;
-          // On touch/mobile devices, halve the effective dpr so the switch to
-          // smooth-interp img mode happens at roughly the same visible zoom as
-          // desktop — otherwise high-DPR phones go blurry as soon as you pinch.
-          var isCoarsePointer = window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
-          var effectiveDpr = isCoarsePointer ? dpr / 2 : dpr;
-          var ratio = (displayW * t.scale * effectiveDpr) / sourceW;
-          var mode = ratio >= 1 ? 'canvas' : 'img';
-          if (mode === currentMode) return;
-          if (mode === 'img') {
-            originalImg.style.visibility = '';
-            canvasEl.style.visibility = 'hidden';
-            img = originalImg;
-          } else {
-            canvasEl.style.visibility = '';
-            originalImg.style.visibility = 'hidden';
-            img = canvasEl;
+        {% if page.pixelart %}
+        // ===== Sharp-bilinear WebGL2 renderer =====
+        // Renders the map through a fragment shader that keeps each source pixel's
+        // interior a flat color and smooths only a ~1px seam at texel borders
+        // ("sharp bilinear", the emulator-standard pixel-art filter). The source is
+        // sampled at draw time from a single GPU texture at its native resolution —
+        // no upscaled bitmap is ever materialized, so memory is ~one decode
+        // regardless of zoom, and there's no threshold swap to stall on.
+        //
+        // When magnifying we apply the sharp remap; when minifying we fall through
+        // to plain trilinear (mipmapped) sampling so the zoomed-out view doesn't
+        // alias. Falls back to the plain <img> (smooth scaling) if WebGL2 is
+        // unavailable or the image exceeds the GPU's max texture size. (Splitting
+        // the largest maps across several textures for low-cap phones is a TODO.)
+        var gl = null, glCanvas = null, vao = null, quadBuf = null, glReady = false;
+
+        // Sharpness knob: the look of NN-upscaling the source by this factor and
+        // then smoothly resampling. 1.0 = plain bilinear (softest), 2.0 = the old
+        // 2x-canvas equivalent, large = pure nearest (hard pixels). Tune to taste.
+        var PIXEL_SCALE = 2.0;
+
+        var VERT_SRC = `#version 300 es
+in vec2 aPos;
+in vec2 aUv;
+out vec2 vUv;
+void main(){ vUv = aUv; gl_Position = vec4(aPos, 0.0, 1.0); }`;
+
+        // Parametric sharp filter. Each source texel keeps a flat center of
+        // half-width uRegion and blends over the remaining edge, so transitions
+        // span a fixed (2*(0.5-uRegion)) fraction of a source texel regardless of
+        // zoom -- exactly reproducing "NN-upscale then smooth". uRegion = 0 is
+        // plain bilinear, -> 0.5 is nearest-neighbor. We only remap when magnifying;
+        // when minifying we pass the plain coord so mipmaps/textureGrad anti-alias
+        // the zoomed-out view.
+        var FRAG_SRC = `#version 300 es
+precision highp float;
+uniform sampler2D uTex;
+uniform vec2 uTexSize;
+uniform float uRegion;
+in vec2 vUv;
+out vec4 outColor;
+void main(){
+  vec2 texel = vUv * uTexSize;
+  vec2 dx = dFdx(texel);
+  vec2 dy = dFdy(texel);
+  vec2 dudv = abs(dx) + abs(dy);
+  vec2 tf = floor(texel);
+  vec2 cd = (texel - tf) - 0.5;
+  vec2 excess = max(abs(cd) - uRegion, 0.0);
+  vec2 ramp = excess / max(0.5 - uRegion, 1e-5);
+  vec2 f = 0.5 + sign(cd) * 0.5 * ramp;
+  vec2 sharpTexel = tf + f;
+  vec2 finalTexel = mix(sharpTexel, texel, step(1.0, dudv));
+  outColor = textureGrad(uTex, finalTexel / uTexSize, dx / uTexSize, dy / uTexSize);
+}`;
+
+        function compileShader(type, src) {
+          var s = gl.createShader(type);
+          gl.shaderSource(s, src);
+          gl.compileShader(s);
+          if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) {
+            console.warn('[staticmap] shader compile failed:', gl.getShaderInfoLog(s));
+            console.warn('[staticmap] shader source was:\n' + src);
+            return null;
           }
-          currentMode = mode;
+          return s;
         }
-        instance.on('transform', updateRendering);
+
+        function setupRenderer() {
+          glCanvas = document.createElement('canvas');
+          glCanvas.style.position = 'absolute';
+          glCanvas.style.inset = '0';
+          glCanvas.style.pointerEvents = 'none';   // let pan/zoom events fall through to the scene
+          var alt = img.getAttribute('alt');
+          if (alt) glCanvas.setAttribute('aria-label', alt);
+          viewport.appendChild(glCanvas);
+
+          gl = glCanvas.getContext('webgl2', { antialias: false, premultipliedAlpha: false });
+          console.log('[staticmap] webgl2 ctx:', !!gl);
+          if (!gl) { viewport.removeChild(glCanvas); gl = null; console.warn('[staticmap] FALLBACK: no webgl2'); return; }
+
+          var maxTex = gl.getParameter(gl.MAX_TEXTURE_SIZE);
+          console.log('[staticmap] MAX_TEXTURE_SIZE:', maxTex, '| image:', img.naturalWidth, 'x', img.naturalHeight);
+          if (img.naturalWidth > maxTex || img.naturalHeight > maxTex) {     // too big for one texture
+            viewport.removeChild(glCanvas); gl = null;
+            console.warn('[staticmap] FALLBACK: image exceeds MAX_TEXTURE_SIZE');
+            return;
+          }
+
+          var vs = compileShader(gl.VERTEX_SHADER, VERT_SRC);
+          var fs = compileShader(gl.FRAGMENT_SHADER, FRAG_SRC);
+          if (!vs || !fs) { viewport.removeChild(glCanvas); gl = null; console.warn('[staticmap] FALLBACK: shader compile failed'); return; }
+          var prog = gl.createProgram();
+          gl.attachShader(prog, vs);
+          gl.attachShader(prog, fs);
+          gl.linkProgram(prog);
+          if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) {
+            console.warn('[staticmap] FALLBACK: program link failed:', gl.getProgramInfoLog(prog));
+            viewport.removeChild(glCanvas); gl = null; return;
+          }
+          gl.useProgram(prog);
+          gl.uniform2f(gl.getUniformLocation(prog, 'uTexSize'), img.naturalWidth, img.naturalHeight);
+          gl.uniform1f(gl.getUniformLocation(prog, 'uRegion'), 0.5 - 0.5 / PIXEL_SCALE);
+
+          // Interleaved quad buffer: [clipX, clipY, u, v] x 6 verts, refilled each frame.
+          quadBuf = gl.createBuffer();
+          vao = gl.createVertexArray();
+          gl.bindVertexArray(vao);
+          gl.bindBuffer(gl.ARRAY_BUFFER, quadBuf);
+          var posLoc = gl.getAttribLocation(prog, 'aPos');
+          var uvLoc = gl.getAttribLocation(prog, 'aUv');
+          gl.enableVertexAttribArray(posLoc);
+          gl.vertexAttribPointer(posLoc, 2, gl.FLOAT, false, 16, 0);
+          gl.enableVertexAttribArray(uvLoc);
+          gl.vertexAttribPointer(uvLoc, 2, gl.FLOAT, false, 16, 8);
+
+          var tex = gl.createTexture();
+          gl.bindTexture(gl.TEXTURE_2D, tex);
+          // No UNPACK_FLIP_Y: texture row 0 = image top, and the quad maps v=0 to
+          // its top edge, so the two already agree. Flipping here inverts the map.
+          gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8, gl.RGBA, gl.UNSIGNED_BYTE, img);
+          gl.generateMipmap(gl.TEXTURE_2D);                                  // WebGL2 allows NPOT mipmaps
+          gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
+          gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+          gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+          gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+          var glErr = gl.getError();
+          if (glErr !== gl.NO_ERROR) console.warn('[staticmap] GL error after texture upload:', glErr);
+
+          gl.clearColor(0, 0, 0, 0);
+          glReady = true;
+          img.style.visibility = 'hidden';   // canvas shows the map now; img stays laid out for geometry
+          console.log('[staticmap] GL renderer ACTIVE (nearest-neighbor diagnostic)');
+        }
+
+        function render() {
+          if (!glReady) return;
+          var vpRect = viewport.getBoundingClientRect();
+          var dpr = Math.min(window.devicePixelRatio || 1, 2);
+          var cw = Math.max(1, Math.round(vpRect.width * dpr));
+          var ch = Math.max(1, Math.round(vpRect.height * dpr));
+          if (glCanvas.width !== cw || glCanvas.height !== ch) {
+            glCanvas.width = cw;
+            glCanvas.height = ch;
+            glCanvas.style.width = vpRect.width + 'px';
+            glCanvas.style.height = vpRect.height + 'px';
+          }
+          gl.viewport(0, 0, cw, ch);
+          gl.clear(gl.COLOR_BUFFER_BIT);
+
+          // Position the textured quad exactly where the (hidden) img sits on screen,
+          // so panzoom's transform drives it for free.
+          var r = img.getBoundingClientRect();
+          if (!render._logged) {
+            render._logged = true;
+            console.log('[staticmap] canvas backing:', cw, 'x', ch, '| dpr:', dpr,
+                        '| img on screen:', Math.round(r.width), 'x', Math.round(r.height));
+          }
+          var sx = r.left - vpRect.left, sy = r.top - vpRect.top, sw = r.width, sh = r.height;
+          var x0 = (sx / vpRect.width) * 2 - 1, x1 = ((sx + sw) / vpRect.width) * 2 - 1;
+          var y0 = 1 - (sy / vpRect.height) * 2, y1 = 1 - ((sy + sh) / vpRect.height) * 2;
+          var verts = new Float32Array([
+            x0, y0, 0, 0,   x1, y0, 1, 0,   x0, y1, 0, 1,
+            x0, y1, 0, 1,   x1, y0, 1, 0,   x1, y1, 1, 1
+          ]);
+          gl.bindVertexArray(vao);
+          gl.bindBuffer(gl.ARRAY_BUFFER, quadBuf);
+          gl.bufferData(gl.ARRAY_BUFFER, verts, gl.DYNAMIC_DRAW);
+          gl.drawArrays(gl.TRIANGLES, 0, 6);
+        }
+
+        instance.on('transform', render);
+        {% endif %}
 
         // Loose clamp: after the user releases a drag (or wheel-zoom finishes),
         // make sure at least minVis pixels of the image stay inside the viewport
@@ -164,6 +273,14 @@
 
         instance.on('panend', clampIntoView);
         instance.on('zoomend', clampIntoView);
+
+        // Kick off rendering LAST, so every var (shader sources, etc.) above has
+        // been assigned before onImageReady -> setupRenderer runs. If the image is
+        // already cached, complete is true and we run synchronously; otherwise wait
+        // for load. (Running this earlier hit the var-hoisting trap where cached
+        // loads called setupRenderer before VERT_SRC/FRAG_SRC were assigned.)
+        if (img.complete && img.naturalWidth) onImageReady();
+        else img.addEventListener('load', onImageReady);
       })();
     </script>
   </body>
