@@ -16,6 +16,7 @@ these are in chronological order.
   - [strawberry tree](strawberrytree/)
   - [dandelion](dandelion/)
   - [russula](russula/)
+  - [linden](linden/)
   - [sundew](sundew/)
   - [birch](birch/)
   - [azalea](azalea/)
