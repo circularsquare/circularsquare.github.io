@@ -983,7 +983,7 @@
       //  and drop the 'source-layer' below.)
       const isLocal = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
       const tilesUrl = isLocal
-        ? 'pmtiles://data/processed/combined.pmtiles'
+        ? 'pmtiles://data/processed/na_combined_1per100.pmtiles'
         : 'pmtiles://https://pub-ae551368cea941f39101e13c84d60bde.r2.dev/na_combined_1per100.pmtiles';
       map.addSource('dots', {
         type: 'vector',
