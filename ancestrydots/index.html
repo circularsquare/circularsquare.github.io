@@ -543,7 +543,7 @@
       </div>
       <div id="size-row">
         <span>dot size</span>
-        <input type="range" id="size-slider" min="0.5" max="2" step="0.05" value="0.65">
+        <input type="range" id="size-slider" min="0.5" max="2" step="0.05" value="0.9">
       </div>
     </div>
     <div id="legend-scroll"></div>
@@ -970,9 +970,9 @@
     const map = new maplibregl.Map({
       container: 'map',
       style: 'https://tiles.openfreemap.org/styles/dark',
-      center: [-73.93, 40.724],
-      zoom: 11,
-      minZoom: 5,
+      center: [-79.9, 40.44],
+      zoom: 4.4,
+      minZoom: 4.4,
     });
 
     map.on('load', () => {
