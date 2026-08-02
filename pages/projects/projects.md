@@ -15,8 +15,8 @@ permalink: /projects/
         - <a href="/flights" data-thumb="/assets/thumbs/flights.jpg">flight traffic</a>
         - <a href="https://graffiti.anita.garden/">graffiti nyc</a>
     - equal population maps
-        - <a href="/asia1meng/" data-thumb="/assets/thumbs/maps/asia1mloc.jpg">asia in regions of 1 million people</a> (in progress)
-            - <a href="/asia1mloc/" data-thumb="/assets/thumbs/maps/asia1meng.jpg">with english/latin text labels</a>
+        - <a href="/asia1mloc/" data-thumb="/assets/thumbs/maps/asia1mloc.jpg">asia in regions of 1 million people</a> (in progress)
+            - <a href="/asia1meng/" data-thumb="/assets/thumbs/maps/asia1meng.jpg">with english/latin text labels</a>
         - <a href="/euro1m/" data-thumb="/assets/thumbs/euro1m.jpg">europe in regions of 1 million people</a>
         - <a href="/na1m/" data-thumb="/assets/thumbs/na1m.jpg">north america in regions of 1 million people</a>
         - <a href="/sa1m/" data-thumb="/assets/thumbs/maps/sa1m.jpg">south america in regions of 1 million people</a>
