@@ -1,7 +1,7 @@
 ---
 layout: page
 title: mice
-permalink: /shonei/mice
+permalink: /shonei/mice/
 ---
 
 mice are the main inhabitants of [shonei](/shonei/). 

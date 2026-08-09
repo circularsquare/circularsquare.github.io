@@ -1,7 +1,7 @@
 ---
 layout: page
 title: work
-permalink: /shonei/work
+permalink: /shonei/work/
 ---
 
 [mice](/shonei/mice/) can have a job. the jobs in the game include 

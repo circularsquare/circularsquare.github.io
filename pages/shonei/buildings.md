@@ -1,7 +1,7 @@
 ---
 layout: page
 title: buildings
-permalink: /shonei/buildings
+permalink: /shonei/buildings/
 ---
 
 buildings, or structures, are things that can be constructed in [shonei](/shonei/).

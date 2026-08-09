@@ -1,7 +1,7 @@
 ---
 layout: page
 title: plants
-permalink: /shonei/plants
+permalink: /shonei/plants/
 ---
 
 the plants of [shonei](/shonei/) include 
