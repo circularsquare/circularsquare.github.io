@@ -128,8 +128,26 @@
     updateCounter();
   }
 
-  // Restore bunnies from localStorage, or create one in the middle of the screen
-  const saved = JSON.parse(localStorage.getItem('bunnies') || '[]');
+  // Restore bunnies from localStorage, or create one in the middle of the screen.
+  // A big pile persists while you're clicking around, but shouldn't still be
+  // there days later for someone who never found the clear button.
+  const resetCount = 50;
+  const resetIdleMs = 2 * 24 * 60 * 60 * 1000; // two days
+
+  const saved = (function loadBunnies() {
+    let stored;
+    try {
+      stored = JSON.parse(localStorage.getItem('bunnies') || 'null');
+    } catch (e) {
+      return [];
+    }
+    // Old format was a bare array with no timestamp — treat it as ancient.
+    const list = Array.isArray(stored) ? stored : (stored && stored.bunnies) || [];
+    const savedAt = (stored && stored.savedAt) || 0;
+    if (list.length > resetCount && Date.now() - savedAt > resetIdleMs) return [];
+    return list;
+  })();
+
   if (saved.length > 0) {
     for (const { x, y, facingLeft } of saved) {
       createBunny(x, y, facingLeft);
@@ -144,9 +162,10 @@
   function saveBunnies() {
     sessionStorage.setItem('mouseX', mouseX);
     sessionStorage.setItem('mouseY', mouseY);
-    localStorage.setItem('bunnies', JSON.stringify(
-      bunnies.map(b => ({ x: b.x, y: b.y, facingLeft: b.facingLeft }))
-    ));
+    localStorage.setItem('bunnies', JSON.stringify({
+      savedAt: Date.now(),
+      bunnies: bunnies.map(b => ({ x: b.x, y: b.y, facingLeft: b.facingLeft })),
+    }));
   }
 
   window.addEventListener('beforeunload', saveBunnies);

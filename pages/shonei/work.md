@@ -14,7 +14,7 @@ permalink: /shonei/work
 - woodworker 
 - cook
 - clothier 
-- scientist 
+- [scientist](/shonei/research/) 
 - scribe 
 - mender
 - merchant
