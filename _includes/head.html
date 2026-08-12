@@ -5,7 +5,8 @@
   {%- seo -%}
   <link rel="stylesheet" href="{{ "/assets/main.css" | relative_url }}?v={{ site.time | date: '%s' }}">
   <link rel="icon" type="image/png" sizes="32x32" href="/favicon.png">
-  {%- feed_meta -%}
+  <link rel="alternate" type="application/atom+xml" title="{{ site.title | xml_escape }}" href="{{ '/feed.xml' | absolute_url }}">
+
   {%- if jekyll.environment == 'production' and site.google_analytics -%}
     {%- include google-analytics.html -%}
   {%- endif -%}

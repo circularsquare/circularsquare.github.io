@@ -1,7 +1,7 @@
 ---
 layout: page
 title: research
-permalink: /shonei/research
+permalink: /shonei/research/
 ---
 
 research is carried out by [scientists](/shonei/work/) in [shonei](/shonei/).

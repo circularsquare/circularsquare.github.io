@@ -34,6 +34,10 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          # The feed's dates come from git history, so the build needs the whole
+          # log rather than the default single-commit shallow clone.
+          fetch-depth: 0
       - name: Setup Ruby
         uses: ruby/setup-ruby@v1 # v1.127.0
         with:
@@ -43,6 +47,8 @@ jobs:
       - name: Setup Pages
         id: pages
         uses: actions/configure-pages@v5
+      - name: Build feed data from git history
+        run: python3 scripts/build_feed_data.py
       - name: Build with Jekyll
         # Outputs to the './_site' directory by default
         run: bundle exec jekyll build --baseurl "${{ steps.pages.outputs.base_path }}"

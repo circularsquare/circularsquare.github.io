@@ -1,0 +1,37 @@
+---
+permalink: /feed.xml
+layout: null
+sitemap: false
+---
+{%- assign entries = site.data.feed_entries -%}
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+  <title type="text">{{ site.title | xml_escape }}</title>
+  <subtitle>{{ site.description | strip_newlines | strip | xml_escape }}</subtitle>
+  <link rel="self" type="application/atom+xml" href="{{ '/feed.xml' | absolute_url | xml_escape }}"/>
+  <link rel="alternate" type="text/html" href="{{ '/' | absolute_url | xml_escape }}"/>
+  <id>{{ '/feed.xml' | absolute_url | xml_escape }}</id>
+  <updated>{% if entries and entries.first %}{{ entries.first.date }}{% else %}{{ site.time | date_to_xmlschema }}{% endif %}</updated>
+  <author>
+    <name>{{ site.author | default: site.title | xml_escape }}</name>
+    <email>{{ site.email | xml_escape }}</email>
+  </author>
+  <generator uri="{{ '/' | absolute_url }}">scripts/build_feed_data.py</generator>
+{%- for entry in entries %}
+  {%- comment -%}
+    The id carries the event date, not just the URL. Readers dedupe on id, so a
+    permanently stable one would make substantial edits land silently. Folding
+    the date in means a rewrite arrives as a genuinely new item, while the feed
+    itself only ever carries each page's most recent event.
+  {%- endcomment -%}
+  {%- assign day = entry.date | slice: 0, 10 -%}
+  <entry>
+    <title type="text">{{ entry.title | xml_escape }}{% if entry.kind == 'updated' %} (updated){% endif %}</title>
+    <link rel="alternate" type="text/html" href="{{ entry.url | absolute_url | xml_escape }}"/>
+    <id>tag:{{ site.url | remove: 'https://' | remove: 'http://' }},{{ day }}:{{ entry.url | xml_escape }}</id>
+    <published>{{ entry.date }}</published>
+    <updated>{{ entry.date }}</updated>
+    <summary type="text">{{ entry.excerpt | xml_escape }}</summary>
+  </entry>
+{%- endfor %}
+</feed>

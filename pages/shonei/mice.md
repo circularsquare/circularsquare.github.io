@@ -16,7 +16,7 @@ a mouse decides what to do by considering the urgency of each candidate task.
 
 - eating urgency scales with hunger, with the highest possible urgency of any task. 
 - sleep urgency scales with tiredness, and also with the time of day, peaking shortly after midnight. 
-- leisure: there are several leisure activities, which fulfill different desires. the urgency of each available activity depends on how unsatisfied the desire is. 
+- leisure: there are several leisure activities, which fulfill different desires. the urgency of leisure is dependent on time of day, reaching its height in the evening. the urgency of each available activity depends on how unsatisfied the desire is. 
 - work: there are many work activities. to choose between them, a mouse will consider 
     - distance
         - a work task that is far (> ~32 tiles) from both the mouse and the mouse's work anchor (by default, the mouse's home) will not be considered. this range can be seen in the mouse's info panel. 

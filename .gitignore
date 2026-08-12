@@ -1,4 +1,8 @@
 _site
+# Derived from git history at build time by scripts/build_feed_data.py.
+# Committing it would mean every content commit needs a second commit to
+# refresh the feed, so CI regenerates it instead.
+_data/feed_entries.yml
 .sass-cache
 .jekyll-cache
 .jekyll-metadata
