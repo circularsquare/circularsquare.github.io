@@ -2,7 +2,10 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- maximum-scale/user-scalable: pinching on mobile was zooming the PAGE rather than the map,
+     shrinking the whole UI to a corner of a white field. Every panel here is fixed to the
+     viewport, so page zoom has nothing useful to do -- pinch belongs to the map. -->
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <title>city history</title>
 <meta property="og:title" content="city history">
 <meta property="og:description" content="Every city in the world, sized by population, from 3000 BC to today.">
@@ -62,8 +65,6 @@
     font-size:10px; font-variant-numeric:tabular-nums; }
   .rn { position:relative; flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .rp { position:relative; color:#aaa; flex:none; font-size:11px; font-variant-numeric:tabular-nums; }
-  #ncities { margin-top:7px; padding-top:6px; border-top:1px solid #262626;
-    font-size:11px; color:#777; font-variant-numeric:tabular-nums; }
 
   /* bottom time scrubber */
   #timebar {
@@ -192,7 +193,20 @@
     #timebar, #timebar.big { bottom:8px; gap:7px; padding:8px 10px; width:calc(100vw - 16px); }
     #yearbig { width:82px; font-size:17px; }
     #tgraph { bottom:62px; }
-    #info-panel { bottom:56px; left:4px; padding:8px 9px; max-width:calc(100vw - 32px); font-size:13px; }
+    /* the info button sat on top of the year readout once the timebar went full-bleed; the
+       top-left corner is free here because #map-title is hidden, so move button and panel up */
+    #info-btn { top:8px; left:8px; bottom:auto; }
+    /* maplibre's bottom-right stack ends up under the timebar and graph, which on a phone cover
+       the whole bottom of the screen. Move it beside the info button and drop the zoom buttons —
+       pinch already zooms, and the attribution has to stay reachable. */
+    /* width:max-content + float:left because the container is a display:block strip whose
+       children float RIGHT — left:52px alone just moved the box, leaving the "i" at its far
+       edge, back on top of the leaderboard. */
+    .maplibregl-ctrl-bottom-right { bottom:auto; right:auto; top:4px; left:52px; width:max-content; }
+    .maplibregl-ctrl-bottom-right .maplibregl-ctrl { float:left; }
+    .maplibregl-ctrl-bottom-right .maplibregl-ctrl-group { display:none; }
+    #info-panel { top:48px; bottom:auto; left:4px; padding:8px 9px;
+      max-width:calc(100vw - 32px); max-height:calc(100vh - 60px); font-size:13px; }
   }
 </style>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700&display=swap">
@@ -227,7 +241,6 @@
 <div class="panel" id="toplist-panel">
   <div class="panel-title">Largest cities</div>
   <ol id="toplist"></ol>
-  <div id="ncities"></div>
   <button id="settingsbtn" title="Settings">
     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915"/><circle cx="12" cy="12" r="3"/></svg>
     <span>Settings</span>
@@ -249,6 +262,10 @@
   <div class="settings-row">
     <span class="settings-label">big-city contrast</span>
     <input type="range" id="expslider" min="0.22" max="0.42" step="0.01" value="0.29">
+  </div>
+  <div class="settings-row">
+    <span class="settings-label">play speed <span id="speedval">1.0x</span></span>
+    <input type="range" id="speedslider" min="0.5" max="5" step="0.1" value="1">
   </div>
   <div class="seg-group">
     <div class="seg-label">colour by</div>
@@ -278,7 +295,15 @@
 // ---------- map ----------
 // Zooming out is capped at the point where one world copy fills the viewport width — any
 // further and you just get repeated worlds and a lot of empty ocean.
-function worldFitZoom(){ return Math.log2(innerWidth / 512); }
+// The bubble canvas is projected by hand (see view()), so it needs the MAP's viewport, not the
+// window's. On mobile those differ -- innerHeight counts the strip under the browser's collapsing
+// URL bar, while #map is inset:0 inside a height:100% body and does not. The canvas was being
+// sized from innerHeight and drawn centred on innerHeight/2, which put every bubble low on the
+// screen by half the difference. Read the map element instead and the two always agree.
+const mapBox = document.getElementById('map');   // NB not map.getCanvas()'s parent
+function vpW(){ return mapBox.clientWidth  || innerWidth; }
+function vpH(){ return mapBox.clientHeight || innerHeight; }
+function worldFitZoom(){ return Math.log2(vpW() / 512); }
 
 // Real vector basemap, same source as japanrail. This replaces a Natural Earth coastline drawn
 // on its own 2D canvas -- that existed because a single big geojson fill would not render as a
@@ -288,8 +313,15 @@ const map = new maplibregl.Map({
   container: 'map',
   style: 'https://tiles.openfreemap.org/styles/dark',
   center: [20, 30], zoom: worldFitZoom(), minZoom: worldFitZoom(), maxZoom: 9,
-  renderWorldCopies: true, attributionControl: false
+  renderWorldCopies: true, attributionControl: false,
+  // view() is a flat affine -- north-up, no perspective -- so it cannot follow a rotated or
+  // tilted map, and right-drag used to spin the basemap out from under bubbles that stayed put.
+  // Turn the gestures off rather than reimplement the projection: a world population map gains
+  // nothing from bearing or pitch, and matching maplibre's perspective per frame for 20k bubbles
+  // is exactly the per-point map.project() cost the affine exists to avoid.
+  dragRotate: false, pitchWithRotate: false, touchPitch: false, maxPitch: 0
 });
+map.touchZoomRotate.disableRotation();   // ...and the two-finger twist on touch
 map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'bottom-right');
 // Compact (an "i" that opens on hover) rather than the default full bar: expanded, the timebar
 // runs to 100vw-62px and the full bar sits right on top of the scrub track and the 1900 tick.
@@ -439,18 +471,18 @@ function mercNorm(lng, lat){
 function view(){
   const c = map.getCenter(), z = map.getZoom(), ws = 512 * Math.pow(2, z);
   const cn = mercNorm(c.lng, c.lat);
-  return { ws, cxn: cn[0], cyn: cn[1], W: innerWidth, H: innerHeight,
-           kR: Math.ceil((innerWidth / ws) / 2) + 1 };   // # of world-copies to tile across
+  const W = vpW(), H = vpH();
+  return { ws, cxn: cn[0], cyn: cn[1], W, H,
+           kR: Math.ceil((W / ws) / 2) + 1 };   // # of world-copies to tile across
 }
 
 // ---------- canvas sizing ----------
 function resize(){
   const dpr = Math.min(window.devicePixelRatio || 1, 2);
-  for (const [c, x] of [[cv, ctx]]){
-    c.width = innerWidth * dpr; c.height = innerHeight * dpr;
-    c.style.width = innerWidth + 'px'; c.style.height = innerHeight + 'px';
-    x.setTransform(dpr,0,0,dpr,0,0);
-  }
+  const W = vpW(), H = vpH();
+  cv.width = W * dpr; cv.height = H * dpr;
+  cv.style.width = W + 'px'; cv.style.height = H + 'px';
+  ctx.setTransform(dpr,0,0,dpr,0,0);
   map.setMinZoom(worldFitZoom());   // keep the cap tied to the current window width
   resizeGraph();
   draw();
@@ -460,9 +492,9 @@ function resize(){
 // ---------- draw ----------
 function draw(){
   if (!DATA) return;
-  ctx.clearRect(0,0,innerWidth,innerHeight);
+  ctx.clearRect(0, 0, vpW(), vpH());
   projected.length = 0;
-  const BASE = 0.21 * sizeMul, W = innerWidth, H = innerHeight;
+  const BASE = 0.21 * sizeMul, W = vpW(), H = vpH();
 
   // rank every city alive & above the floor this year (global ranking, not viewport)
   const cand = [];
@@ -510,7 +542,6 @@ function draw(){
     ctx.strokeText(p.name, p.x, p.y - p.r - 6);
     ctx.fillStyle = '#fff'; ctx.fillText(p.name, p.x, p.y - p.r - 6);
   }
-  document.getElementById('ncities').textContent = n.toLocaleString() + ' cities ≥ 5,000';
 
   // largest-cities panel — the bar behind each row is that city's share of the #1 city
   let rows = '';
@@ -802,7 +833,7 @@ function updateGLabel(){
   const el = document.getElementById('tglabel');
   el.innerHTML = selCity
     ? `<b>${selCity.n}</b> · <span class="clear">clear</span>`
-    : 'top-10 cities over time · thin = interpolated · click a city to trace it';
+    : 'top-10 cities over time';
 }
 function selectCity(c){
   if (c === selCity) return;
@@ -827,13 +858,13 @@ function setYear(y, fromScrub){
 }
 
 // ---------- play loop (advances the slider fraction at constant speed -> time-warp) ----------
-const PLAY_SPEED = 0.016;   // fractions of the scrubber track per second
-let lastT = null, playS = 0;
+const PLAY_SPEED = 0.024;   // fractions of the scrubber track per second, at 1x
+let lastT = null, playS = 0, speedMul = 1;
 function tick(t){
   if (!playing){ lastT = null; return; }
   if (lastT != null){
     const dt = (t - lastT)/1000;
-    playS += PLAY_SPEED * dt;
+    playS += PLAY_SPEED * speedMul * dt;
     if (playS >= 1){ playS = 1; setYear(DATA.yearMax); setPlaying(false); }
     else { setYear(sToYear(playS)); scrub.value = Math.round(playS * 1000); }
   }
@@ -858,6 +889,12 @@ playbtn.onclick = () => setPlaying(!playing);
 scrub.oninput = () => { if (playing) setPlaying(false); setYear(sToYear(+scrub.value / 1000), true); };
 document.getElementById('sizeslider').oninput = e => { sizeMul = +e.target.value; draw(); };
 document.getElementById('expslider').oninput  = e => { expo = +e.target.value; draw(); };
+// Speed only scales the play loop, so nothing needs redrawing -- tick() reads it next frame.
+const speedval = document.getElementById('speedval');
+document.getElementById('speedslider').oninput = e => {
+  speedMul = +e.target.value;
+  speedval.textContent = speedMul.toFixed(1) + 'x';
+};
 
 const settingsPanel = document.getElementById('settings-panel'), settingsBtn = document.getElementById('settingsbtn');
 settingsBtn.onclick = () => {
