@@ -1,0 +1,1019 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>city history</title>
+<meta property="og:title" content="city history">
+<meta property="og:description" content="Every city in the world, sized by population, from 3000 BC to today.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://anita.garden/cityhistory/">
+<!-- Absolute, not the relative "index.png" the other map pages use: several crawlers
+     (Facebook's among them) will not resolve a relative og:image against the page URL and
+     just drop the card. Regenerate index.png from a 1600x900 screenshot cropped to 1200x630. -->
+<meta property="og:image" content="https://anita.garden/cityhistory/index.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://anita.garden/cityhistory/index.png">
+<link rel="icon" type="image/png" href="/favicon.png">
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html,body { height:100%; background:#0a0a0a; overflow:hidden;
+    font-family:'Nunito',system-ui,-apple-system,Segoe UI,Roboto,sans-serif; color:#eee; }
+  #map { position:absolute; inset:0; }
+  #bubbles { position:absolute; inset:0; pointer-events:none; z-index:2; }
+
+  #map-title {
+    position:absolute; top:20px; left:20px; z-index:3;
+    color:#ccc; font-size:22px; font-weight:700; letter-spacing:.04em;
+    text-shadow:0 1px 3px #000; pointer-events:none;
+  }
+
+  /* shared panel chrome */
+  .panel {
+    background:rgba(10,10,10,.85); border:1px solid #333; border-radius:8px;
+  }
+  .panel-title {
+    font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.06em;
+    color:#888; margin-bottom:8px;
+  }
+
+  /* ghost buttons */
+  .btn {
+    background:none; border:1px solid #555; color:#ccc; border-radius:4px;
+    width:30px; height:30px; padding:0; cursor:pointer; flex:none;
+    display:flex; align-items:center; justify-content:center;
+    font-size:12px; font-family:inherit; line-height:1;
+  }
+  @media (hover:hover) { .btn:hover { border-color:#6889a8; color:#eee; } }
+  .btn.active { border-color:#6889a8; color:#6889a8; }
+
+  /* top-right largest cities */
+  #toplist-panel {
+    position:absolute; top:12px; right:12px; z-index:3;
+    width:232px; max-width:calc(100vw - 24px); padding:10px 12px; color:#ccc;
+  }
+  #toplist { list-style:none; }
+  .rrow {
+    position:relative; display:flex; align-items:center; gap:7px;
+    height:17px; margin-bottom:4px; font-size:12px;
+  }
+  .rbar { position:absolute; left:0; bottom:-1px; height:2px; border-radius:1px; opacity:.8; }
+  .rk { position:relative; color:#666; width:13px; text-align:right; flex:none;
+    font-size:10px; font-variant-numeric:tabular-nums; }
+  .rn { position:relative; flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .rp { position:relative; color:#aaa; flex:none; font-size:11px; font-variant-numeric:tabular-nums; }
+  #ncities { margin-top:7px; padding-top:6px; border-top:1px solid #262626;
+    font-size:11px; color:#777; font-variant-numeric:tabular-nums; }
+
+  /* bottom time scrubber */
+  #timebar {
+    position:absolute; left:50%; transform:translateX(-50%); bottom:16px; z-index:3;
+    display:flex; align-items:center; gap:10px;
+    padding:8px 12px; width:min(720px, 92vw);
+  }
+  /* Expanded, the timebar stretches to just inside the two things that share its row: the info
+     button bottom-left (16px + 31px wide) and maplibre's zoom control bottom-right (10px + 29px).
+     62px of clearance each side clears both. The graph follows automatically -- positionGraph()
+     pins it to the scrub track, which is flex:1 inside here. */
+  #timebar.big { width:calc(100vw - 124px); }
+  #scrubwrap { flex:1; min-width:0; position:relative; height:26px; }
+  #scrub {
+    width:100%; height:14px; margin-top:1px; position:relative; z-index:1;
+    -webkit-appearance:none; appearance:none; background:transparent; cursor:pointer;
+  }
+  #scrub::-webkit-slider-runnable-track { height:3px; background:#555; border-radius:2px; }
+  #scrub::-moz-range-track { height:3px; background:#555; border-radius:2px; }
+  #scrub::-webkit-slider-thumb { -webkit-appearance:none; width:3px; height:14px;
+    background:#cfd9e4; border:none; border-radius:1px; margin-top:-5.5px; }
+  #scrub::-moz-range-thumb { width:3px; height:14px; background:#cfd9e4; border:none; border-radius:1px; }
+  .seg { position:absolute; top:2px; width:1px; height:11px; background:#3d3d3d; pointer-events:none; }
+  .seg span { position:absolute; top:12px; left:50%; transform:translateX(-50%);
+    font-size:11px; color:#666; font-variant-numeric:tabular-nums; white-space:nowrap; }
+  #yearbig { flex:none; width:96px; text-align:center; font-size:20px; font-weight:700;
+    color:#ccc; font-variant-numeric:tabular-nums; }
+
+  /* settings popover, opens under the largest-cities panel (top set in JS) */
+  #settings-panel {
+    position:absolute; right:12px; z-index:4;
+    width:222px; padding:10px 12px;
+    display:flex; flex-direction:column; gap:9px;
+  }
+  .settings-row { display:flex; align-items:center; gap:10px; }
+  .settings-label { font-size:12px; color:#ccc; flex:none; min-width:96px; }
+  .settings-row input[type=range] { flex:1; min-width:0; accent-color:#6889a8; }
+  .settings-row input[type=checkbox] { accent-color:#6889a8; margin:0; }
+  /* segmented selector (japanrail-style); NB: .seg is taken by the scrubber ticks, so .segsel */
+  .seg-group { display:flex; flex-direction:column; gap:5px; }
+  .seg-label { font-size:12px; color:#ccc; }
+  .segsel { display:flex; gap:5px; }
+  .segsel span { flex:1; text-align:center; cursor:pointer; color:#aaa; padding:4px 6px;
+    border:1px solid #333; border-radius:5px; font-size:12px; user-select:none; }
+  .segsel span:hover { border-color:#6889a8; color:#eee; }
+  .segsel span.on { color:#fff; background:#2a2f38; border-color:#6889a8; }
+  /* settings toggle, sits under the leaderboard */
+  #settingsbtn { margin-top:9px; width:100%; display:flex; align-items:center; justify-content:center;
+    gap:6px; background:none; border:1px solid #333; color:#aaa; border-radius:5px;
+    padding:6px; cursor:pointer; font-family:inherit; font-size:12px; }
+  #settingsbtn:hover { border-color:#6889a8; color:#eee; }
+  #settingsbtn.active { border-color:#6889a8; color:#6889a8; }
+
+  /* trajectory graph, sits above the scrubber and is time-aligned to it */
+  #tgraph {
+    position:absolute; left:50%; transform:translateX(-50%); bottom:70px; z-index:3;
+    width:min(720px, 92vw); height:142px; padding:6px 8px;
+  }
+  /* Taller only -- never wider. The x axis is pinned to the scrub track by positionGraph(), so
+     widening the panel would slide the plot out of step with the timeline under it. The cap
+     keeps it clear of the timebar on short windows. */
+  #tgraph.big { height:min(40vh, calc(100vh - 150px)); }
+  #tgraph.hidden, #settings-panel.hidden, #info-panel.hidden { display:none; }
+  #tgraphcv { width:100%; height:100%; display:block; }
+  #tgsize {
+    position:absolute; top:6px; right:11px; z-index:1; font-size:12px; color:#8a929c;
+    cursor:pointer; border-bottom:1px solid #444; user-select:none;
+  }
+  #tgsize:hover { color:#eee; }
+  #tglabel { position:absolute; top:6px; left:11px; right:64px; font-size:12px; color:#777;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  #tglabel b { color:#eef3f8; font-weight:700; }
+  #tglabel .clear { color:#8a929c; cursor:pointer; border-bottom:1px solid #444; }
+  #tglabel .clear:hover { color:#eee; }
+
+  /* info */
+  #info-btn {
+    position:absolute; bottom:16px; left:16px; z-index:4;
+    width:31px; height:31px; border-radius:50%; border:none;
+    background:#ddd; color:#111; cursor:pointer;
+    display:flex; align-items:center; justify-content:center;
+  }
+  #info-btn:hover { background:#fff; }
+  #info-panel {
+    position:absolute; bottom:64px; left:16px; z-index:4;
+    background:rgba(20,20,20,.758); max-width:min(384px, 100vw - 40px);
+    max-height:calc(100vh - 90px); overflow-y:auto;
+    padding:11px 13px; border-radius:8px; font-size:12px; color:#ccc; line-height:1.5;
+  }
+  #info-panel-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:5px; }
+  #info-panel-close { background:none; border:none; color:#888; font-size:18px;
+    cursor:pointer; padding:0; line-height:1; }
+  #info-panel-close:hover { color:#fff; }
+  #info-panel p { margin-bottom:8px; }
+  #info-panel p:last-child { margin-bottom:0; }
+  a { color:#89b4fa; }
+
+  /* hover tooltip */
+  #tip {
+    position:absolute; z-index:5; pointer-events:none; display:none;
+    background:rgba(10,10,10,.9); border:1px solid #444; border-radius:4px;
+    padding:5px 9px; font-size:13px; white-space:nowrap; transform:translate(-50%, -125%);
+  }
+  #tip .tn { color:#eee; }
+  #tip .tp { color:#aaa; font-size:13px; margin-top:1px; font-variant-numeric:tabular-nums; }
+
+  #loading { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
+    z-index:20; color:#ccc; font-size:18px; }
+
+  /* maplibre zoom control, toned down to match */
+  .maplibregl-ctrl-group { background:rgba(10,10,10,.85)!important; border:1px solid #333!important;
+    border-radius:4px!important; box-shadow:none!important; }
+  .maplibregl-ctrl-group button+button { border-top:1px solid #333!important; }
+  .maplibregl-ctrl-group button .maplibregl-ctrl-icon { filter:invert(.75); }
+  .maplibregl-ctrl-group button:hover { background:rgba(255,255,255,.06)!important; }
+  /* attribution: same dark chrome as the panels, rather than maplibre's white pill */
+  .maplibregl-ctrl-attrib { background:rgba(10,10,10,.85)!important; border:1px solid #333;
+    border-radius:4px; font-size:11px; }
+  .maplibregl-ctrl-attrib a { color:#8a929c!important; }
+  .maplibregl-ctrl-attrib a:hover { color:#eee!important; }
+  .maplibregl-ctrl-attrib-button { filter:invert(.75); }
+
+  @media (max-width:640px) {
+    #map-title { display:none; }
+    #toplist-panel { width:176px; top:8px; right:8px; }
+    #timebar, #timebar.big { bottom:8px; gap:7px; padding:8px 10px; width:calc(100vw - 16px); }
+    #yearbig { width:82px; font-size:17px; }
+    #tgraph { bottom:62px; }
+    #info-panel { bottom:56px; left:4px; padding:8px 9px; max-width:calc(100vw - 32px); font-size:13px; }
+  }
+</style>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700&display=swap">
+<link href="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.css" rel="stylesheet">
+<script src="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.js"></script>
+</head>
+<body>
+<span id="map-title">city history</span>
+<div id="map"></div>
+<canvas id="bubbles"></canvas>
+<div id="tip"></div>
+<div id="loading">loading cities…</div>
+
+<button id="info-btn" title="About this map">
+  <span style="font-family:'Times New Roman',Times,serif;font-style:italic;font-size:19px;font-weight:bold;margin-left:-1px">i</span>
+</button>
+
+<div id="info-panel" class="hidden">
+  <div id="info-panel-header">
+    <span class="panel-title" style="margin:0">About</span>
+    <button id="info-panel-close" title="Close">&#10005;</button>
+  </div>
+  <p>Track city populations through history!</p>
+  <p>Clicking a city traces its history on the graph. A line is full thickness where there is a population estimate near that year, and thins where it is interpolating between distant estimates. A distant interpolated city has its bubble on the map drawn at half opacity. For very long intervals, we disappear the bubble.</p>
+  <p>The timeline is stretched out for recent times and compressed for the distant past.</p>
+  <p>Historical populations from <a href="https://github.com/Confoederatio/Stadester" target="_blank">Stadestér</a>, which compiles Chandler, Bairoch/Buringh, de Vries, Populstat and others. Figures before 1800 are estimates and often disagree between sources. The modern era comes from <a href="https://population.un.org/wup/" target="_blank">UN WUP 2025</a>.</p>
+  <p>Populstat usually measures the metro area population of a city, while WUP measures the connected urban area above a density threshold. This definition difference is responsible for a jump near the year 2000, which is drawn on the graph as a dashed line.</p>
+  <p>Basemap by <a href="https://openfreemap.org/" target="_blank">OpenFreeMap</a> from <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> data, built with <a href="https://maplibre.org" target="_blank">MapLibre GL</a>.</p>
+  <p>Made by <a href="https://anita.garden/projects" target="_blank">anita</a>!</p>
+</div>
+
+<div class="panel" id="toplist-panel">
+  <div class="panel-title">Largest cities</div>
+  <ol id="toplist"></ol>
+  <div id="ncities"></div>
+  <button id="settingsbtn" title="Settings">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915"/><circle cx="12" cy="12" r="3"/></svg>
+    <span>Settings</span>
+  </button>
+</div>
+
+<div class="panel hidden" id="tgraph">
+  <div id="tglabel"></div>
+  <div id="tgsize" title="Taller graph">expand</div>
+  <canvas id="tgraphcv"></canvas>
+</div>
+
+<div class="panel hidden" id="settings-panel">
+  <div class="panel-title">Settings</div>
+  <div class="settings-row">
+    <span class="settings-label">bubble size</span>
+    <input type="range" id="sizeslider" min="0.4" max="2.4" step="0.05" value="1">
+  </div>
+  <div class="settings-row">
+    <span class="settings-label">big-city contrast</span>
+    <input type="range" id="expslider" min="0.22" max="0.42" step="0.01" value="0.29">
+  </div>
+  <div class="seg-group">
+    <div class="seg-label">colour by</div>
+    <div class="segsel" id="colormode">
+      <span data-v="pop" class="on">population</span>
+      <span data-v="region">continent</span>
+    </div>
+  </div>
+  <div class="settings-row">
+    <label class="settings-label" for="graphtoggle" style="cursor:pointer">line graph</label>
+    <input type="checkbox" id="graphtoggle" checked>
+  </div>
+</div>
+
+<div class="panel" id="timebar">
+  <div id="yearbig">–</div>
+  <button class="btn" id="playbtn" title="Play"></button>
+  <div id="scrubwrap">
+    <input type="range" id="scrub" min="0" max="1000" step="1" value="750">
+    <div class="seg" id="seg-ad1"><span>AD 1</span></div>
+    <div class="seg" style="left:50%"><span>1400</span></div>
+    <div class="seg" style="left:75%"><span>1900</span></div>
+  </div>
+</div>
+
+<script>
+// ---------- map ----------
+// Zooming out is capped at the point where one world copy fills the viewport width — any
+// further and you just get repeated worlds and a lot of empty ocean.
+function worldFitZoom(){ return Math.log2(innerWidth / 512); }
+
+// Real vector basemap, same source as japanrail. This replaces a Natural Earth coastline drawn
+// on its own 2D canvas -- that existed because a single big geojson fill would not render as a
+// maplibre layer, which a TILED style sidesteps entirely. Losing it also drops
+// ne_50m_land.geojson (1.6MB) from what has to ship.
+const map = new maplibregl.Map({
+  container: 'map',
+  style: 'https://tiles.openfreemap.org/styles/dark',
+  center: [20, 30], zoom: worldFitZoom(), minZoom: worldFitZoom(), maxZoom: 9,
+  renderWorldCopies: true, attributionControl: false
+});
+map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'bottom-right');
+// Compact (an "i" that opens on hover) rather than the default full bar: expanded, the timebar
+// runs to 100vw-62px and the full bar sits right on top of the scrub track and the 1900 tick.
+// compact:true forces the collapsed form at any width instead of only under 640px.
+map.addControl(new maplibregl.AttributionControl({ compact: true }), 'bottom-right');
+// ...and compact:true still renders it OPEN on first load, collapsing only once the "i" is
+// clicked, so collapse it up front. Sources are also credited in full in the About panel.
+map.once('load', () => document.querySelector('.maplibregl-ctrl-attrib')
+                        ?.classList.remove('maplibregl-compact-show'));
+
+// ---------- state ----------
+const cv = document.getElementById('bubbles'), ctx = cv.getContext('2d');
+let DATA = null, year = 1900, playing = false, sizeMul = 1, expo = 0.29;
+const MINPOP = 5000;   // only draw cities at/above this population
+let projected = [];   // {x,y,r,name,pop,type} from last draw, for hover hit-testing
+
+const ICON_PLAY  = '<svg width="10" height="12" viewBox="0 0 10 12"><path d="M0 0 L10 6 L0 12 Z" fill="currentColor"/></svg>';
+const ICON_PAUSE = '<svg width="10" height="12" viewBox="0 0 10 12"><rect x="0" y="0" width="3" height="12" fill="currentColor"/><rect x="7" y="0" width="3" height="12" fill="currentColor"/></svg>';
+
+// line graph state (on by default; ?graph=0 or the settings toggle hides it)
+const gcv = document.getElementById('tgraphcv'), gx2 = gcv.getContext('2d');
+let GLINES = [], GALL = [], curTopSet = new Set(), gW = 0, gH = 0, graphOn = true, hoverLine = null;
+let selCity = null, selLine = null, gKey = '', gLayoutKey = '';   // clicked city: traced thick, on top of the graph
+const G_LOGLO = Math.log10(5000), G_LOGHI = Math.log10(4.5e7), G_PADT = 20, G_PADB = 6;
+
+// ---------- helpers ----------
+function fmtYear(y){ y = Math.round(y); return y < 0 ? (-y) + ' BC' : 'AD ' + y; }
+function fmtPop(p){
+  p = Math.round(p);
+  if (p >= 1e6) return (p/1e6).toFixed(p >= 1e7 ? 0 : 1) + 'M';
+  if (p >= 1e3) return (p/1e3).toFixed(p >= 1e5 ? 0 : 1) + 'k';
+  return p.toLocaleString();
+}
+// interpolate a city's population at a (possibly fractional) year, log-linear
+function popAt(c, y){
+  const p = c.p, n = p.length;
+  if (y < p[0][0] || y > p[n-1][0]) return 0;
+  let lo = 0, hi = n - 1;
+  while (hi - lo > 1){ const m = (lo+hi)>>1; if (p[m][0] <= y) lo = m; else hi = m; }
+  const a = p[lo], b = p[hi];
+  if (b[0] === a[0]) return a[1];
+  const f = (y - a[0]) / (b[0] - a[0]);
+  return Math.pow(10, Math.log10(a[1]) + (Math.log10(b[1]) - Math.log10(a[1])) * f);
+}
+// viridis: small cities dark, big cities bright (log-population)
+const VIRIDIS = ['#440154','#46327e','#365c8d','#277f8e','#1fa187',
+                 '#4ac16d','#a0da39','#fde725'];
+const COLOR_LO = 40/256; // start ~blue on viridis (dark violet is unreadable on the dark map)
+function colorFor(pop){
+  let t = Math.max(0, Math.min(1, (Math.log10(pop) - 3.7) / 3.6));  // ~5k -> ~20M
+  t = COLOR_LO + (1 - COLOR_LO) * t;
+  const x = t * (VIRIDIS.length - 1), i = Math.floor(x);
+  if (i >= VIRIDIS.length - 1) return VIRIDIS[VIRIDIS.length - 1];
+  return mix(VIRIDIS[i], VIRIDIS[i+1], x - i);
+}
+function mix(a,b,f){
+  const pa=[parseInt(a.slice(1,3),16),parseInt(a.slice(3,5),16),parseInt(a.slice(5,7),16)];
+  const pb=[parseInt(b.slice(1,3),16),parseInt(b.slice(3,5),16),parseInt(b.slice(5,7),16)];
+  return 'rgb('+pa.map((v,i)=>Math.round(v+(pb[i]-v)*f)).join(',')+')';
+}
+function rgba(hex, a){
+  return `rgba(${parseInt(hex.slice(1,3),16)},${parseInt(hex.slice(3,5),16)},${parseInt(hex.slice(5,7),16)},${a})`;
+}
+// accepts either form the palettes produce ('#rrggbb' from the tables, 'rgb(...)' from mix())
+function parseCol(c){
+  return c[0] === '#'
+    ? [parseInt(c.slice(1,3),16), parseInt(c.slice(3,5),16), parseInt(c.slice(5,7),16)]
+    : c.slice(4, -1).split(',').map(Number);
+}
+function lighten(c, f){
+  return 'rgb(' + parseCol(c).map(v => Math.round(v + (255 - v) * f)).join(',') + ')';
+}
+
+// ---------- continent / region coloring ----------
+// Rough lat/lon classification (no country data in cities.json). "Middle East" is the
+// custom bucket the map wants: Egypt, Turkey, Iran and everything between. Approximate at
+// borders (e.g. the Mediterranean and the Panama isthmus) but good enough for coloring.
+const REGION_COLORS = {                 // (legend order: Americas/Europe/Africa/ME | Asias/Oceania)
+  'North America': '#46a6c9',   // green-blue
+  'South America': '#57bf5a',   // grass green
+  'Europe':        '#6d72d6',   // blue-violet
+  'Africa':        '#e8912c',   // orange
+  'Middle East':   '#e6c34a',   // yellow
+  'Central Asia':  '#b558d1',   // same purple as South Asia (stans, Afghanistan, Mongolia, Siberia)
+  'South Asia':    '#b558d1',   // violet-magenta (India, Pakistan, Bangladesh, Afghanistan)
+  'Southeast Asia':'#d06b9c',   // saturated mauve-rose
+  'East Asia':     '#d94f4f',   // red (China, Korea, Japan)
+  'Oceania':       '#38c6a0',   // teal-green
+};
+function regionOf(la, lo){
+  // Central/eastern Pacific islands (Hawaii, Tahiti, Samoa) -- tested before the Americas cutoff
+  if (lo <= -120 && la <= 30 && la >= -55) return 'Oceania';
+  // Americas (cutoff at -34 keeps the Azores/Cape Verde in the Old World; Recife is -34.9)
+  if (lo <= -34){
+    if (la >= 13 || (la >= 7 && lo <= -77)) return 'North America';  // incl the Central-American isthmus
+    return 'South America';
+  }
+  // Oceania: Australia (lat<=-11 so Timor/Kupang stay SE Asian), New Guinea, Guam/Micronesia,
+  // NZ, Pacific. The la<30 on the far-Pacific clause keeps the Russian Far East out.
+  if ((la <= -11 && lo >= 112) || (lo >= 141 && la <= 25) || (lo >= 155 && la < 30)) return 'Oceania';
+  // Middle East (Egypt, Turkey, Iran + between). lon>=26 pulls in W. Turkey (Canakkale, Izmir),
+  // lat<=42 keeps Bulgaria/Russia out; minus the African side of the Red Sea (Sudan, N. Ethiopia).
+  if (lo >= 26 && lo <= 63 && la >= 12 && la <= 42){
+    const redSea = 33 + (30 - la) * 0.59;                            // approx Red Sea longitude by latitude
+    if (!(la < 22 && lo < redSea)) return 'Middle East';
+  }
+  // Europe / Africa across the Mediterranean; coasts & islands need explicit rescue
+  if (lo >= -34 && lo <= 60){
+    if (la < 38 && lo >= 6 && lo <= 11.5) return 'Africa';           // N. Tunisia tip (Bizerte), E. Algeria
+    if (la >= 37) return 'Europe';
+    if (la >= 36 && lo <= -0.5) return 'Europe';                     // southern Iberia
+    if (la >= 35.8 && lo >= 11 && lo <= 19) return 'Europe';         // Sicily, Malta
+    if (la >= 34 && lo >= 20 && lo <= 26) return 'Europe';           // Crete, western Aegean
+    if (la >= -38) return 'Africa';                                  // incl Indian Ocean islands (Mauritius, Reunion)
+  }
+  // Asia, split
+  if (lo >= 60 && lo <= 92 && la >= 4 && la <= 37) return 'South Asia';        // India/Pakistan/Bangladesh
+  if (lo >= 92 && lo <= 95 && la >= 22 && la <= 30) return 'South Asia';       // NE India (Assam/Nagaland/Manipur)
+  if (lo >= 92 && lo <= 141 && la >= -11 && la < 22) return 'Southeast Asia';
+  if (lo >= 95 && lo <= 98 && la >= 22 && la <= 28) return 'Southeast Asia';   // northern Myanmar
+  if (lo >= 98 && lo <= 146 && la >= 22 && la <= 54) return 'East Asia';       // China/Korea/Japan
+  if (lo >= 130 && lo <= 180 && la >= 22 && la <= 60) return 'East Asia';      // Russian Far East (Kamchatka)
+  return 'Central Asia';                                             // stans, Afghanistan(→S.Asia), Mongolia, Siberia
+}
+let colorMode = 'pop';   // 'pop' = viridis by size, 'region' = by continent
+function cityColor(c, pop){
+  return colorMode === 'region' ? (REGION_COLORS[c.reg] || '#888') : colorFor(pop);
+}
+// the selected city's trace: its bubble colour, lightened so it reads apart from the ordinary
+// top-10 line in the same colour. Falls back to the city's peak while you're scrubbing outside
+// its lifetime, so the trace doesn't go dark just because the bubble isn't on the map.
+function selColor(){
+  if (!selCity) return '#fff';
+  const p = popAt(selCity, year);
+  return lighten(cityColor(selCity, p >= MINPOP ? p : selLine.peak), 0.65);
+}
+
+// ---------- fast projection ----------
+// Precompute each point's normalized web-mercator coord once; per frame it's just a
+// multiply-add (no trig, no map.project() call) — that's what keeps panning smooth with
+// the detailed coastline. Matches maplibre's transform (we use no bearing/pitch).
+function mercNorm(lng, lat){
+  lat = Math.max(-85.051, Math.min(85.051, lat));
+  const s = Math.sin(lat * Math.PI / 180);
+  return [(lng + 180) / 360, 0.5 - Math.log((1 + s) / (1 - s)) / (4 * Math.PI)];
+}
+function view(){
+  const c = map.getCenter(), z = map.getZoom(), ws = 512 * Math.pow(2, z);
+  const cn = mercNorm(c.lng, c.lat);
+  return { ws, cxn: cn[0], cyn: cn[1], W: innerWidth, H: innerHeight,
+           kR: Math.ceil((innerWidth / ws) / 2) + 1 };   // # of world-copies to tile across
+}
+
+// ---------- canvas sizing ----------
+function resize(){
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  for (const [c, x] of [[cv, ctx]]){
+    c.width = innerWidth * dpr; c.height = innerHeight * dpr;
+    c.style.width = innerWidth + 'px'; c.style.height = innerHeight + 'px';
+    x.setTransform(dpr,0,0,dpr,0,0);
+  }
+  map.setMinZoom(worldFitZoom());   // keep the cap tied to the current window width
+  resizeGraph();
+  draw();
+}
+
+
+// ---------- draw ----------
+function draw(){
+  if (!DATA) return;
+  ctx.clearRect(0,0,innerWidth,innerHeight);
+  projected.length = 0;
+  const BASE = 0.21 * sizeMul, W = innerWidth, H = innerHeight;
+
+  // rank every city alive & above the floor this year (global ranking, not viewport)
+  const cand = [];
+  for (const c of DATA.cities){
+    const p = c.p;
+    if (year < p[0][0] || year > p[p.length-1][0]) continue;
+    const pop = popAt(c, year);
+    if (pop < MINPOP) continue;
+    cand.push({ c, pop, interp: isInterp(c, year) });
+  }
+  cand.sort((a,b) => b.pop - a.pop);
+  const n = cand.length;
+
+  // draw smallest-first so bigger bubbles land on top. A city with no data point near this
+  // year is drawn at half opacity -- the same claim the graph makes with line weight: we are
+  // guessing its size from anchors centuries away.
+  const v = view();
+  for (let i = n - 1; i >= 0; i--){
+    const c = cand[i].c, pop = cand[i].pop;
+    const sy = (c.my - v.cyn) * v.ws + H/2;
+    if (sy < -40 || sy > H + 40) continue;
+    ctx.globalAlpha = cand[i].interp ? 0.325 : 0.65;
+    const r = Math.max(1.0, BASE * Math.pow(pop, expo));
+    const col = cityColor(c, pop), baseX = (c.mx - v.cxn) * v.ws + W/2;
+    for (let k = -v.kR; k <= v.kR; k++){
+      const sx = baseX + k * v.ws;
+      if (sx < -40 || sx > W + 40) continue;
+      ctx.beginPath();
+      ctx.arc(sx, sy, r, 0, 6.2832);
+      ctx.fillStyle = col;
+      ctx.fill();
+      projected.push({ x: sx, y: sy, r, name: c.n, pop, type: c.t, c });
+    }
+  }
+  ctx.globalAlpha = 1;
+
+  // selected city: ring (in the trace's colour) + name, so you can see what the line belongs to
+  if (selCity) for (const p of projected){
+    if (p.c !== selCity) continue;
+    ctx.beginPath(); ctx.arc(p.x, p.y, p.r + 3.5, 0, 6.2832);
+    ctx.strokeStyle = selColor(); ctx.lineWidth = 1.6; ctx.stroke();
+    ctx.font = "700 12px Nunito,system-ui,sans-serif";
+    ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+    ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(0,0,0,.85)';
+    ctx.strokeText(p.name, p.x, p.y - p.r - 6);
+    ctx.fillStyle = '#fff'; ctx.fillText(p.name, p.x, p.y - p.r - 6);
+  }
+  document.getElementById('ncities').textContent = n.toLocaleString() + ' cities ≥ 5,000';
+
+  // largest-cities panel — the bar behind each row is that city's share of the #1 city
+  let rows = '';
+  const top = cand.length ? cand[0].pop : 1;
+  for (let i = 0; i < Math.min(10, cand.length); i++){
+    const pop = cand[i].pop;
+    rows += `<li class="rrow"><span class="rbar" style="width:${(pop/top*100).toFixed(1)}%;`+
+            `background:${cityColor(cand[i].c, pop)}"></span>`+
+            `<span class="rk">${i+1}</span><span class="rn">${cand[i].c.n}</span>`+
+            `<span class="rp">${fmtPop(pop)}</span></li>`;
+  }
+  document.getElementById('toplist').innerHTML = rows;
+
+  curTopSet = new Set();
+  for (let i = 0; i < Math.min(10, cand.length); i++) curTopSet.add(cand[i].c);
+  drawGraph();
+}
+
+// ---------- trajectory graph ----------
+// x-axis is time-aligned to the scrubber below (mapped through the same yearToS warp, using
+// the scrub track's actual on-screen geometry); y-axis is log population. Draws the trajectory
+// of every city that is ever in the top 10, so smear/placeholder artifacts stand out as lines.
+// A city's history is cut into stretches that are either DATA (a real control point is close
+// enough that the curve there is measured) or INTERPOLATION (pure guesswork between distant
+// anchors). How close counts depends on the era, because the sources do: a modern census pins a
+// year to within a few, a 17th-century estimate to a couple of decades, an ancient one to a
+// century. Drives both the graph's line weight and the map bubble's opacity.
+function solidTol(y){ return y >= 1900 ? 5 : (y >= 1400 ? 20 : 100); }
+// merged windows of "we have data here", cached per city. Skips the fade-floor fillers build.py
+// plants across long gaps -- those are the absence of data, not a measurement of it.
+function winsFor(c){
+  if (c._W) return c._W;
+  const p = c.p, yA = p[0][0], yB = p[p.length-1][0], wins = [];
+  for (const q of p){
+    if (q[1] < MINPOP) continue;
+    // c.hx: this city's record stops there and build.py holds the last value forward so the
+    // town does not blink out of the modern map. The held run is not a measurement, so it is
+    // kept out of the data windows -- which dims the bubble and thins the line for free.
+    if (c.hx !== undefined && q[0] > c.hx) continue;
+    const t = solidTol(q[0]);
+    const a = Math.max(yA, q[0] - t), b = Math.min(yB, q[0] + t);
+    const last = wins[wins.length - 1];
+    if (last && a <= last[1]) last[1] = Math.max(last[1], b); else wins.push([a, b]);
+  }
+  return (c._W = wins);
+}
+function isInterp(c, y){
+  const W = winsFor(c);
+  for (const w of W) if (y >= w[0] && y <= w[1]) return false;
+  return true;
+}
+// The source handover is one year wide (populstat's last row, then WUP's first), so on a track
+// where a year is under two pixels it draws as a vertical cliff. HANDOVER_YEARS spreads that one
+// segment across a wider span and draws it in its own style, so it reads as "the source changes
+// here" rather than as a population collapse.
+//
+// This is a DRAWING change and nothing else -- popAt(), the readout, the bubbles and the tooltip
+// all still use the hard switch, and every value in the data is exactly what build.py emitted.
+// It is emphatically not the geometric blend that §3.7 rejected: that one rewrote the VALUES
+// across 1975-2000 and drew the result solid, so 358 cities were asserted to be declining. Keep
+// the span short and the style distinct and it stays a visual join rather than a claim; widen it
+// and it starts making the same false claim in a new place.
+const HANDOVER_YEARS = 8;
+function mkLine(c){
+  if (c._L) return c._L;
+  const p = c.p, yA = p[0][0], yB = p[p.length-1][0], wins = winsFor(c);
+  // vertices: every control point, every window edge (so the weight switches land exactly on
+  // the boundary), and the AD 1 / 1400 / 1900 kinks in the x warp
+  const ys = new Set();
+  for (const q of p) ys.add(q[0]);
+  for (const w of wins){ ys.add(w[0]); ys.add(w[1]); }
+  for (const b of [1, 1400, 1900]) if (b > yA && b < yB) ys.add(b);
+  let hoA = null, hoB = null;
+  if (c.sw !== undefined && c.sw < yB){
+    hoA = c.sw; hoB = Math.min(c.sw + HANDOVER_YEARS, yB);
+    ys.add(hoA); ys.add(hoB);
+  }
+  let V = [...ys].sort((a,b) => a-b).map(y => [y, popAt(c, y)]);
+  // drop the vertices the handover spans, so it draws as one clean join instead of the cliff
+  // plus the first few WUP points
+  if (hoA !== null && hoB > hoA) V = V.filter(q => !(q[0] > hoA && q[0] < hoB));
+  // walk the vertices, collecting maximal runs of one dash state; a segment with either end
+  // below the display floor is a break (a gap reads truer than a plunge to zero)
+  const runs = [];
+  let cur = null;
+  for (let i = 0; i < V.length - 1; i++){
+    const a = V[i], b = V[i+1];
+    if (a[1] < MINPOP || b[1] < MINPOP){ cur = null; continue; }
+    const mid = (a[0] + b[0]) / 2;
+    let d = 1;
+    for (const w of wins) if (mid >= w[0] && mid <= w[1]){ d = 0; break; }
+    if (hoA !== null && a[0] === hoA && b[0] === hoB) d = 2;     // the handover join
+    if (!cur || cur.d !== d){ cur = { d, v: [a] }; runs.push(cur); }
+    cur.v.push(b);
+  }
+  return (c._L = { c, runs, peak: Math.max(...p.map(q => q[1])) });
+}
+// ---------- smooth path through the vertices ----------
+// The line used to be a raw polyline, which reads as spiky: every control point is a corner, and
+// at this scale most cities are mostly corners. This draws a monotone cubic (Fritsch-Carlson)
+// through the SAME vertices instead. It passes exactly through every one of them, so no value is
+// moved -- only the shape between them changes, and that was an arbitrary straight line anyway.
+//
+// Monotone specifically, not Catmull-Rom: the monotone tangent rule cannot overshoot, so the
+// curve never rises above the higher of two neighbouring points or dips below the lower one. A
+// plain spline would invent peaks the data does not have, which on this map would be indistinguishable
+// from the defects the whole pipeline exists to remove. At a local maximum the tangent is forced
+// to zero, so a spike keeps its exact height and merely stops being a needle.
+function smoothInto(path, v, gx){
+  const n = v.length, X = new Array(n), Y = new Array(n);
+  for (let i = 0; i < n; i++){ X[i] = gx(v[i][0]); Y[i] = gY(v[i][1]); }
+  path.moveTo(X[0], Y[0]);
+  if (n === 2){ path.lineTo(X[1], Y[1]); return; }
+  const d = new Array(n - 1), m = new Array(n);
+  for (let i = 0; i < n - 1; i++){
+    const h = X[i+1] - X[i];
+    d[i] = h === 0 ? 0 : (Y[i+1] - Y[i]) / h;
+  }
+  m[0] = d[0]; m[n-1] = d[n-2];
+  for (let i = 1; i < n - 1; i++) m[i] = d[i-1] * d[i] <= 0 ? 0 : (d[i-1] + d[i]) / 2;
+  for (let i = 0; i < n - 1; i++){
+    if (d[i] === 0){ m[i] = 0; m[i+1] = 0; continue; }
+    const a = m[i] / d[i], b = m[i+1] / d[i], s = a*a + b*b;
+    if (s > 9){ const t = 3 / Math.sqrt(s); m[i] = t * a * d[i]; m[i+1] = t * b * d[i]; }
+  }
+  for (let i = 0; i < n - 1; i++){
+    const h = X[i+1] - X[i];
+    if (h === 0){ path.lineTo(X[i+1], Y[i+1]); continue; }
+    path.bezierCurveTo(X[i] + h/3, Y[i] + m[i]*h/3,
+                       X[i+1] - h/3, Y[i+1] - m[i+1]*h/3, X[i+1], Y[i+1]);
+  }
+}
+function computeTopEver(){
+  const SAMPLES = 240, set = new Set();
+  for (let i = 0; i <= SAMPLES; i++){
+    const yr = sToYear(i / SAMPLES), cand = [];
+    for (const c of DATA.cities){
+      const p = c.p;
+      if (yr < p[0][0] || yr > p[p.length-1][0]) continue;
+      const pop = popAt(c, yr);
+      if (pop >= MINPOP) cand.push({ c, pop });
+    }
+    cand.sort((a,b) => b.pop - a.pop);
+    for (let k = 0; k < Math.min(10, cand.length); k++) set.add(cand[k].c);
+  }
+  GLINES = [...set].map(mkLine);
+  GLINES.sort((a,b) => a.peak - b.peak);   // biggest drawn last (on top)
+  GALL = GLINES; gKey = '';
+}
+// keep the graph panel spanning exactly from the timebar's left edge to the scrub track's
+// right edge -- so the plot fills it and there's no dead panel area (or stray hover) out past
+// where the timeline actually ends, over the year readout.
+function positionGraph(){
+  const tb = document.getElementById('timebar').getBoundingClientRect();
+  const sr = scrub.getBoundingClientRect(), tg = document.getElementById('tgraph');
+  tg.style.left = (sr.left - 48) + 'px';           // small gutter for y-axis labels; left edge floats free
+  tg.style.transform = 'none';
+  tg.style.width = Math.max(220, tb.right - (sr.left - 48)) + 'px';   // right edge aligns with the timebar
+}
+function resizeGraph(){
+  positionGraph();
+  const dpr = Math.min(window.devicePixelRatio || 1, 2), r = gcv.getBoundingClientRect();
+  gW = r.width; gH = r.height;
+  gcv.width = r.width * dpr; gcv.height = r.height * dpr;
+  gx2.setTransform(dpr, 0, 0, dpr, 0, 0);
+  gKey = '';
+}
+function gY(pop){
+  const l = Math.max(G_LOGLO, Math.min(G_LOGHI, Math.log10(pop)));
+  return G_PADT + (1 - (l - G_LOGLO) / (G_LOGHI - G_LOGLO)) * (gH - G_PADT - G_PADB);
+}
+function gXfn(){   // returns year->x mapped onto the scrub track's screen position
+  const sr = scrub.getBoundingClientRect(), gr = gcv.getBoundingClientRect(), off = sr.left - gr.left;
+  return yr => off + yearToS(yr) * sr.width;
+}
+function drawGraph(){
+  if (!DATA || !GLINES.length || !graphOn) return;
+  // nothing here depends on the map view, so skip the repaint while panning/zooming
+  const key = year + '|' + colorMode + '|' + gW + 'x' + gH +
+              '|' + (hoverLine ? hoverLine.c.n : '') + '|' + (selCity ? selCity.n : '');
+  if (key === gKey) return;
+  gKey = key;
+  gx2.clearRect(0, 0, gW, gH);
+  const gx = gXfn(), x0 = gx(yStart()), x1 = gx(DATA.yearMax);
+  gLayoutKey = gW + 'x' + gH + '|' + x0.toFixed(1) + '|' + x1.toFixed(1);
+  gx2.lineJoin = 'round'; gx2.lineCap = 'round';
+  gx2.font = '11px system-ui,sans-serif'; gx2.textBaseline = 'middle';
+  for (const gp of [1e4, 1e5, 1e6, 1e7]){                 // log gridlines + right-aligned labels
+    const y = gY(gp);
+    gx2.strokeStyle = 'rgba(255,255,255,.06)'; gx2.lineWidth = 1;
+    gx2.beginPath(); gx2.moveTo(x0, y); gx2.lineTo(x1, y); gx2.stroke();
+    gx2.fillStyle = '#8a929c'; gx2.textAlign = 'right'; gx2.fillText(fmtPop(gp), x0 - 6, y);
+  }
+  gx2.textAlign = 'left';
+  // Draw one city's trajectory. Interpolated runs are the same line at QUARTER weight -- solid,
+  // so it doesn't read as a broken line, just as a thinner one where the data thins out. The
+  // floor keeps the faint background lines from vanishing entirely once quartered. The two
+  // weights are each collected into a single path, so it's two strokes per city, not one per run.
+  // Paths are cached per layout rather than rebuilt every frame: the geometry only depends on
+  // the canvas size and the scrub track, not on the year, so scrubbing now reuses them.
+  const paths = (L) => {
+    if (L._pk !== gLayoutKey){
+      L._pk = gLayoutKey;
+      L._paths = [null, null, null];
+      for (let d = 0; d <= 2; d++){
+        let path = null;
+        for (const run of L.runs){
+          if (run.d !== d) continue;
+          if (!path) path = new Path2D();
+          smoothInto(path, run.v, gx);
+        }
+        L._paths[d] = path;
+      }
+    }
+    return L._paths;
+  };
+  const stroke = (L, style, w) => {
+    gx2.strokeStyle = style;
+    const P = paths(L);
+    for (let d = 0; d <= 2; d++){
+      if (!P[d]) continue;
+      // interpolated runs are quarter weight; the handover join is HALF, because the dashes
+      // already carry "not a measurement" and at quarter weight the dashes broke it up so far
+      // that the join stopped reading as a connection at all
+      gx2.lineWidth = d === 0 ? w : Math.max(0.5, w * (d === 2 ? 0.5 : 0.25));
+      if (d === 2) gx2.setLineDash([3, 3]);
+      gx2.stroke(P[d]);
+      if (d === 2) gx2.setLineDash([]);
+    }
+  };
+  const sel = selLine;
+  const MUTE = 0.55;   // how far the rest of the field drops back while a city is selected
+  const dimStyle = (L, a) => colorMode === 'region'
+    ? rgba(REGION_COLORS[L.c.reg] || '#888', a * 0.32) : `rgba(150,162,176,${a * 0.22})`;
+  if (sel){
+    // a selection mutes everything else -- same background style for all of them, no colour and
+    // no extra weight for the current top 10, so the traced city is the only thing to read
+    for (const L of GLINES) if (L !== sel && L !== hoverLine) stroke(L, dimStyle(L, MUTE), 0.9);
+  } else {
+    for (const L of GLINES) if (L !== hoverLine && !curTopSet.has(L.c)) stroke(L, dimStyle(L, 1), 0.9);
+    for (const L of GLINES) if (L !== hoverLine && curTopSet.has(L.c))
+      stroke(L, cityColor(L.c, popAt(L.c, year)), 2.0);
+  }
+  if (hoverLine && hoverLine !== sel) stroke(hoverLine, '#eef3f8', 2.4);   // hovered line: bright
+  if (sel){                                                // selected city: thickest, on top
+    stroke(sel, 'rgba(8,9,11,.8)', 5.4);                   // dark halo lifts it off the pack
+    stroke(sel, selColor(), 3.2);
+  }
+  const cx = gx(year);                                     // current-year cursor
+  gx2.strokeStyle = '#cfd9e4'; gx2.lineWidth = 1;
+  gx2.beginPath(); gx2.moveTo(cx, G_PADT - 4); gx2.lineTo(cx, gH - G_PADB); gx2.stroke();
+}
+
+// ---------- year / scrubber (segmented timeline: warps play so recent years pass slower) ----------
+// slider fraction s in [0,1] maps piecewise-linearly to year across 4 segments: 1400 sits at
+// 50% of the track and 1900 at 75%, and the first half is split at AD 1 so everything before
+// AD 1 runs at twice the years-per-unit of AD 1-1400.
+// This warp is also the project's "adjusted time" -- build.py measures data gaps along it
+// (ADJ_EDGES / _adj_frac there), so segY() and segS() must stay in step with those.
+const scrub = document.getElementById('scrub');
+const NSEG = 4;
+// start the scrubber at 3500 BC (Eridu/Larak/Uruk) rather than the lone-Eridu 3700 BC point
+function yStart(){ return Math.max(DATA.yearMin, -3500); }
+function segY(){ return [yStart(), 1, 1400, 1900, DATA.yearMax]; }
+function segS(){
+  const Y = segY(), a = (Y[1] - Y[0]) / 2, b = Y[2] - Y[1];   // pre-AD 1 counted at half rate
+  return [0, 0.5 * a / (a + b), 0.5, 0.75, 1];
+}
+function sToYear(s){
+  const Y = segY(), S = segS(); s = Math.max(0, Math.min(1, s));
+  for (let i = 0; i < NSEG; i++)
+    if (s <= S[i+1]){
+      const f = (s - S[i]) / (S[i+1] - S[i]);
+      return Y[i] + f * (Y[i+1] - Y[i]);
+    }
+  return Y[NSEG];
+}
+function yearToS(y){
+  const Y = segY(), S = segS(); y = Math.max(Y[0], Math.min(Y[NSEG], y));
+  for (let i = 0; i < NSEG; i++)
+    if (y <= Y[i+1]){
+      const f = (y - Y[i]) / (Y[i+1] - Y[i]);
+      return S[i] + f * (S[i+1] - S[i]);
+    }
+  return 1;
+}
+// ---------- selection ----------
+function updateGLabel(){
+  const el = document.getElementById('tglabel');
+  el.innerHTML = selCity
+    ? `<b>${selCity.n}</b> · <span class="clear">clear</span>`
+    : 'top-10 cities over time · thin = interpolated · click a city to trace it';
+}
+function selectCity(c){
+  if (c === selCity) return;
+  selCity = c;
+  selLine = c ? mkLine(c) : null;
+  GALL = selLine && !GLINES.includes(selLine) ? GLINES.concat([selLine]) : GLINES;
+  if (c && !graphOn) setGraph(true);        // no point selecting into a hidden graph
+  updateGLabel();
+  gKey = '';
+  draw();
+}
+document.getElementById('tglabel').onclick = e => {
+  if (e.target.classList.contains('clear')) selectCity(null);
+};
+addEventListener('keydown', e => { if (e.key === 'Escape') selectCity(null); });
+
+function setYear(y, fromScrub){
+  year = Math.max(yStart(), Math.min(DATA.yearMax, y));
+  document.getElementById('yearbig').textContent = fmtYear(year);
+  if (!fromScrub) scrub.value = Math.round(yearToS(year) * 1000);
+  draw();
+}
+
+// ---------- play loop (advances the slider fraction at constant speed -> time-warp) ----------
+const PLAY_SPEED = 0.016;   // fractions of the scrubber track per second
+let lastT = null, playS = 0;
+function tick(t){
+  if (!playing){ lastT = null; return; }
+  if (lastT != null){
+    const dt = (t - lastT)/1000;
+    playS += PLAY_SPEED * dt;
+    if (playS >= 1){ playS = 1; setYear(DATA.yearMax); setPlaying(false); }
+    else { setYear(sToYear(playS)); scrub.value = Math.round(playS * 1000); }
+  }
+  lastT = t;
+  if (playing) requestAnimationFrame(tick);
+}
+function setPlaying(p){
+  playing = p;
+  const b = document.getElementById('playbtn');
+  b.innerHTML = p ? ICON_PAUSE : ICON_PLAY;
+  b.title = p ? 'Pause' : 'Play';
+  if (p){
+    playS = year >= DATA.yearMax ? 0 : yearToS(year);
+    lastT = null; requestAnimationFrame(tick);
+  }
+}
+
+// ---------- wire up ----------
+const playbtn = document.getElementById('playbtn');
+playbtn.innerHTML = ICON_PLAY;
+playbtn.onclick = () => setPlaying(!playing);
+scrub.oninput = () => { if (playing) setPlaying(false); setYear(sToYear(+scrub.value / 1000), true); };
+document.getElementById('sizeslider').oninput = e => { sizeMul = +e.target.value; draw(); };
+document.getElementById('expslider').oninput  = e => { expo = +e.target.value; draw(); };
+
+const settingsPanel = document.getElementById('settings-panel'), settingsBtn = document.getElementById('settingsbtn');
+settingsBtn.onclick = () => {
+  const show = settingsPanel.classList.contains('hidden');
+  if (show){                                       // anchor just below the leaderboard panel
+    const r = document.getElementById('toplist-panel').getBoundingClientRect();
+    settingsPanel.style.top = (r.bottom + 8) + 'px';
+  }
+  settingsPanel.classList.toggle('hidden', !show);
+  settingsBtn.classList.toggle('active', show);
+};
+const graphtoggle = document.getElementById('graphtoggle');
+function setGraph(on){
+  graphOn = on;
+  graphtoggle.checked = on;
+  document.getElementById('tgraph').classList.toggle('hidden', !on);
+  if (on){ resizeGraph(); DATA ? draw() : drawGraph(); }   // via draw() so curTopSet is current
+}
+graphtoggle.onchange = e => setGraph(e.target.checked);
+// Taller graph. Height only -- see the .big rule. resizeGraph() re-reads the canvas box and
+// clears gKey, and gH is part of gLayoutKey, so the cached paths rebuild at the new scale.
+const tgsize = document.getElementById('tgsize');
+let graphBig = false;
+function setGraphBig(big){
+  graphBig = big;
+  document.getElementById('tgraph').classList.toggle('big', big);
+  // the timebar widens with it, so the plot has more x to spread over and stays time-aligned
+  document.getElementById('timebar').classList.toggle('big', big);
+  tgsize.textContent = big ? 'shrink' : 'expand';
+  tgsize.title = big ? 'Shorter graph' : 'Taller graph';
+  resizeGraph();
+  DATA ? drawGraph() : null;
+}
+tgsize.onclick = () => setGraphBig(!graphBig);
+document.querySelectorAll('#colormode span').forEach(s => s.onclick = () => {
+  colorMode = s.dataset.v;
+  document.querySelectorAll('#colormode span').forEach(x => x.classList.toggle('on', x === s));
+  draw();
+});
+
+const infoPanel = document.getElementById('info-panel');
+document.getElementById('info-btn').onclick = () => infoPanel.classList.toggle('hidden');
+document.getElementById('info-panel-close').onclick = () => infoPanel.classList.add('hidden');
+
+// hover a trajectory to identify it (uses the shared tooltip) and highlight its whole line.
+// Only within the plot's actual x-range. Ties go to whichever line is drawn most prominently:
+// the SELECTED city first (generous radius, and it only loses to a line the cursor is clearly
+// sitting on), then the current top 10 -- but only when nothing is selected, because a
+// selection mutes them and preferring an invisible distinction is what made hovering the
+// selected line hand you a neighbour's tooltip instead.
+gcv.addEventListener('mousemove', e => {
+  if (!GLINES.length) return;
+  const sr = scrub.getBoundingClientRect();
+  const frac = (e.clientX - sr.left) / sr.width;
+  if (frac < 0 || frac > 1){                     // out past where the timeline ends -> nothing
+    tip.style.display = 'none';
+    if (hoverLine){ hoverLine = null; drawGraph(); }
+    return;
+  }
+  const my = e.clientY - gcv.getBoundingClientRect().top, yr = sToYear(frac);
+  let bestSel = null, bdSel = 26, bestTop = null, bdTop = 16, bestAny = null, bdAny = 12;
+  for (const L of GALL){
+    const p = L.c.p;
+    if (yr < p[0][0] || yr > p[p.length-1][0]) continue;
+    const pop = popAt(L.c, yr);
+    if (pop < MINPOP) continue;                  // in a data gap here -> not hoverable
+    const d = Math.abs(gY(pop) - my);
+    if (L === selLine){ if (d < bdSel){ bdSel = d; bestSel = { L, pop }; } }
+    else if (!selLine && curTopSet.has(L.c) && d < bdTop){ bdTop = d; bestTop = { L, pop }; }
+    if (d < bdAny){ bdAny = d; bestAny = { L, pop }; }
+  }
+  // the selected line keeps the tooltip unless another line is more than 10px closer, i.e.
+  // unless you are plainly pointing at that one and not at this
+  const best = (bestSel && bdSel <= bdAny + 10) ? bestSel : (bestTop || bestAny);
+  const nl = best ? best.L : null;
+  if (nl !== hoverLine){ hoverLine = nl; drawGraph(); }
+  if (best){
+    tip.style.display = 'block';
+    tip.style.left = e.clientX + 'px'; tip.style.top = (e.clientY - 6) + 'px';
+    tip.innerHTML = `<div class="tn">${best.L.c.n}</div>`+
+      `<div class="tp">${fmtPop(best.pop)} · ${fmtYear(yr)}</div>`;
+  } else tip.style.display = 'none';
+});
+gcv.addEventListener('mouseleave', () => {
+  tip.style.display = 'none';
+  if (hoverLine){ hoverLine = null; drawGraph(); }
+});
+gcv.style.cursor = 'crosshair';
+gcv.addEventListener('click', () => selectCity(hoverLine ? hoverLine.c : null));
+
+// The bubble canvas is glued to maplibre by redrawing on its 'render' event, which is the only
+// way to stay in step with the transform mid-animation. With the old empty style that fired
+// only while panning; a real tiled basemap also fires it for every tile fade-in, and draw()
+// costs ~42ms in 2025 (19,145 bubbles), so those extra frames were pure waste -- the transform
+// is not moving during a fade. Skip when the view is identical to the last one drawn. Year
+// changes call draw() directly and so are unaffected.
+let lastView = '';
+function redraw(){
+  const t = map.transform;
+  const sig = t.center.lng + ',' + t.center.lat + ',' + t.zoom + ',' + t.width + ',' + t.height;
+  if (sig === lastView) return;
+  lastView = sig;
+  draw();
+}
+map.on('move', redraw);
+map.on('render', redraw);
+addEventListener('resize', resize);
+
+
+// hover / click
+const tip = document.getElementById('tip');
+// among bubbles whose disk covers the cursor, take the largest — it's the one drawn on top.
+// `slack` widens the search for clicking, so the 1px dots are still hittable.
+function bubbleAt(mx, my, slack){
+  let best = null, near = null, nd = (slack + 2) ** 2;
+  for (const p of projected){
+    const d2 = (p.x-mx)**2 + (p.y-my)**2, hit = p.r + 2;
+    if (d2 <= hit*hit && (!best || p.r > best.r)) best = p;
+    else if (slack && d2 < nd){ nd = d2; near = p; }
+  }
+  return best || near;
+}
+// maplibre's own click, so taps work on touch and a pan never counts as a click
+map.on('click', e => {
+  const hit = bubbleAt(e.point.x, e.point.y, 6);
+  selectCity(hit ? hit.c : null);
+});
+const mapEl = map.getCanvas().parentElement;
+mapEl.addEventListener('mousemove', e => {
+  const rect = cv.getBoundingClientRect();
+  const best = bubbleAt(e.clientX - rect.left, e.clientY - rect.top, 0);
+  map.getCanvas().style.cursor = best ? 'pointer' : '';
+  if (best){
+    tip.style.display = 'block';
+    tip.style.left = best.x + 'px'; tip.style.top = best.y + 'px';
+    tip.innerHTML = `<div class="tn">${best.name}</div>`+
+      `<div class="tp">${fmtPop(best.pop)} · ${fmtYear(year)}</div>`;
+  } else tip.style.display = 'none';
+});
+
+// ---------- load ----------
+fetch('data/cities.json?v=' + Date.now()).then(r => r.json()).then(d => {
+  DATA = d;
+  for (const c of d.cities){ const m = mercNorm(c.lo, c.la); c.mx = m[0]; c.my = m[1]; c.reg = regionOf(c.la, c.lo); }
+  document.getElementById('loading').remove();
+  scrub.min = 0; scrub.max = 1000;
+  document.getElementById('seg-ad1').style.left = (segS()[1] * 100).toFixed(2) + '%';
+  computeTopEver();
+  updateGLabel();
+  const q = new URLSearchParams(location.search);
+  setGraph(q.get('graph') !== '0');                // line graph on by default (?graph=0 hides it)
+  setYear(q.has('year') ? +q.get('year') : 1900);
+  if (map.loaded()) draw();
+});
+map.on('load', () => { if (DATA) draw(); });
+resize();
+</script>
+</body>
+</html>

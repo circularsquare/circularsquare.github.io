@@ -13,6 +13,7 @@ permalink: /projects/
         - <a href="/nycriders" data-thumb="/assets/thumbs/nycriders.png">nyc riders</a>
         - <a href="/londonriders">london riders</a>
         - <a href="/flights" data-thumb="/assets/thumbs/flights.jpg">flight traffic</a>
+        - <a href="/cityhistory" data-thumb="/assets/thumbs/cityhistory.png">city history</a>
         - <a href="https://graffiti.anita.garden/">graffiti nyc</a>
     - equal population maps
         - <a href="/asia1mloc/" data-thumb="/assets/thumbs/maps/asia1mloc.jpg">asia in regions of 1 million people</a> (in progress)
