@@ -120,7 +120,6 @@
    "im": 2,
    "pri": 3,
    "t": "Monte Albán rises",
-   "d": "a ridge levelled to hold the Zapotec capital",
    "p": "Anchored on the data's own Monte Alban (the entry keyed 'Santa Cruz Xoxocotlan', RENAMEd). Writable only since the 2026-08-22 pass: the entry used to begin at 800:30k, roughly 1,300 years late, so the map caught the city only as it was being abandoned -- which is exactly the complaint recorded in the Teotihuacan note below. CENSUS now takes it back on Blanton's settlement sequence and the curve reads -300:5k, -100:15k, 600:25k, 800:30k. Fires at -300 because that is where the bubble appears, not because that is the founding: the site is levelled c.500 BC and the note says 'a ridge levelled' rather than 'founded' for that reason. It is the earliest true city the map has anywhere in the Americas, and at -300 it is alone on the continent apart from Tres Zapotes and Izapa.\n\nVOICE PASS 2026-08-22: headline was the bare name 'Monte Alban', which read as a label rather than something happening; verbed to match Teotihuacan and Cahokia. The d is unchanged - 'levelled' is still doing the work 'founded' would have got wrong."
   },
   {
@@ -150,15 +149,6 @@
    "p": "Anchored Samarqand (39.6508/66.9654 in cities.json), which is on the map at 400BC:100k sliding to 622:45k; Balkh (36.7551/66.8975) is at 200BC:75k. Deliberate im:0 marker - the Central Asian curves are flat-to-declining right through the Han and Sasanian centuries, so claiming growth here would contradict the data. What it is pointing forward to is Merv's series starting AD 1 at 100k (which appears while the note is still on screen at this end of the timeline, where 2.1s covers ~420 years) and the 1100-1220 peak that the 1221 note then destroys. Year is the conventional 130-120 BC opening after Zhang Qian; framed and anchored from the Central Asian end on purpose so it does not collide with whatever the China lane writes about Chang'an."
   },
   {
-   "y": 90,
-   "la": 19.3011,
-   "lo": -99.1808,
-   "im": -3,
-   "t": "Cuicuilco buried by lava",
-   "d": "Xitle erupts; the basin moves north",
-   "p": "THE NOTE THE PREVIOUS PASS SAID IT COULD NOT WRITE -- see the Teotihuacan note, which names Cuicuilco as missing and calls it 'the standard explanation for where Teotihuacan's first population came from'. It is now in the map via the ARCHAEOLOGICAL table (Sanders, Parsons & Santley 1979), curve -400:5k, -150:20k, 100:10k, and the series ends there, so the bubble dies under this note. Deliberately paired with 'Teotihuacan rises' at 150, 45km north-east: the Basin of Mexico had two centres and this is the fifty years it stopped having two. Date is the conventional c.AD 100 for Xitle; a radiocarbon and palaeomagnetic case puts the eruption nearer AD 245-315, which would extend the tail but not change the order of events. If the pairing crowds, this one should keep the slot and Teotihuacan's (pri 3) should yield. YEAR MOVED 100 -> 90 after running tools/check_events.py: at 100 this note fired in the same instant as 'Rome reaches a million' (pri 1), whose slot it could never win, and the simulator reported it as never appearing at all. The block is exactly y=100..120 -- the length of Rome's hold -- and 90 is the nearest clear year on the early side. It has to be the early side: Cuicuilco's series ENDS at 100, so a note after that points at nothing. Firing at 90 is the better reading anyway, since the bubble now dies ten years under it rather than at the same instant. 90 against a conventional 'c. AD 100' is well inside the precision the date actually has."
-  },
-  {
    "y": 100,
    "la": 41.8967,
    "lo": 12.4822,
@@ -174,7 +164,6 @@
    "im": 3,
    "pri": 3,
    "t": "Teotihuacán rises",
-   "d": "a planned grid of apartment blocks",
    "p": "Coordinate from cities.json 'Teotihuacan' 19.6861/-98.8716. Curve: 200BC:800, 100:45k, 361:90k, 400:103k - so the growth note fires while the bubble is already climbing and the 100,000 claim lands exactly on the 400 control point. Chose 150 rather than 100 so this does not sit on top of the bogus AD 100 spike described in the Maya note.\n\nANSWER TO ANITA'S OPEN QUESTION, 'is pre-1AD Mexico correct': no, it is close to empty and what is there is wrong. The complete list of American cities whose curve starts before AD 1 is four entries: Tres Zapotes (350BC:1k, 200BC:2k, 50BC:1k), Izapa/Tapachula (200BC:2k, 100:35k, 175:1k), Teotihuacan (200BC:800) and the three sharing the fake spike below. Missing entirely: San Lorenzo Tenochtitlan (c.1200-900BC), La Venta (c.900-400BC) - i.e. the whole Olmec heartland, which is why I did not write an Olmec note - and Cuicuilco (c.400BC-AD50, ~20k, buried by the Xitle lava, and the standard explanation for where Teotihuacan's first population came from). Monte Alban is in the dataset but starts at 800:30k, roughly 1,300 years late: it was founded c.500BC and peaked c.AD 500-700, so the data catches only its death. Izapa at 35,000 in AD 100 is implausible by an order of magnitude - it was a ceremonial centre of a few thousand - and it has been grafted onto modern Tapachula.\n\nUPDATE 2026-08-22 (Americas pass, GAPS.md 2.7-2.10). The curve quoted above is superseded: it now reads 200BC:800, 100:45k, 361:90k, 500:125k, 622:60k, because CENSUS restored Chandler's own AD 500 = 125,000, which stadester had overwritten with a carry-forward of its interpolated 400 value. So the peak is at 500, not 400, and Teotihuacan is now the largest city in the Americas and 6th in the world at that year. The note still fires on the climb and needs no change. THE OPEN QUESTION ABOVE IS LARGELY ANSWERED: Cuicuilco is now on the map and has its own note at 100; Monte Alban now runs from -300 and has one at -300; Izapa's 35,000 has moved to 200 BC, which is where Chandler actually files it, so it no longer sits implausibly on modern Tapachula in AD 100. The Olmec heartland is still absent and now deliberately so -- San Lorenzo (~5,500) and La Venta (3,000-8,000) sit at or under the display floor, so entries for them would never draw. Also: 150 was chosen partly to avoid the bogus AD 100 spike on Tikal/Caracol/Tiahuanaco. That spike is gone, so the constraint has lifted -- 100 is now available if anyone prefers it, though 150 still reads fine."
   },
   {
@@ -237,22 +226,6 @@
    "pri": 3,
    "t": "Grand Canal finished",
    "p": "Kaifeng. Deliberate im 0 marker in the Columbus mould: Kaifeng sits at 1k in 667 and is below the display floor in 609, so the leader points at bare ground. The payoff is 742:50k, 800:68k, 900:234k, 1102:442k - the largest city in the world, and it is there because the Bian canal junction is there. Luoyang (34.6181/112.4540, 240k in 600) is the Sui eastern capital 150km west and is what is actually lit up in this year. Yangzhou, the other canal city, is not in cities.json at all."
-  },
-  {
-   "y": 650,
-   "la": 17.2221,
-   "lo": -89.6236,
-   "im": 2,
-   "t": "Tikal and Calakmul at war",
-   "p": "Anchored Calakmul, the half that was missing. The previous pass wrote 'Calakmul in particular means the Tikal-Calakmul rivalry in the brief cannot be shown at all'; it is now on the map (ARCHAEOLOGICAL, PACUNAM LiDAR / Canuto et al. 2018) at 250:20k, 650:50k, 900:8k. 650 is chosen as Calakmul's own peak control point and sits inside the long rivalry rather than on one battle -- Calakmul's alliance defeats Tikal in 562 and Tikal answers in 695, and the map cannot draw either, because Tikal's curve rises smoothly through the hiatus (1:10k, 400:30k, 751:63k) and no source in the repo dates that dip. So the note claims a rivalry, which the two bubbles do show, and not a battle, which they do not. Caracol, the third party in 562, peaks at 700:100k 90km south-east. PLACEMENT, after two passes with tools/check_events.py. 650 was flagged for im=2 with no growth left (it is Calakmul's own peak control point, so the anchor city is cresting as the note fires). Moving to 600 fixed that and broke something worse: the note then never appeared at all, losing every slot to the Plague of Justinian (542) and Teotihuacan burns (550), both still on screen. The clear window is 630-670. Resolved by keeping 650 and moving the ANCHOR from Calakmul to Tikal, 100km north-east -- Tikal climbs steadily through this whole period (400:30k, 751:63k) so the growth claim binds to a city that is actually growing, while Calakmul is still drawn at 50k under the same note. Tikal is also the pin a reader recognises. A note that never renders is a real defect; an im warning on a flat-topped curve is a judgement call, and this way there is neither."
-  },
-  {
-   "y": 671,
-   "la": 30.53,
-   "lo": 47.77,
-   "im": 3,
-   "t": "Arab garrison cities founded",
-   "p": "Kufa and Basra grow out of tent camps, as do Fustat and Kairouan; all four are foundations of the conquest rather than captured cities. 'founded' moved into the headline and the subtitle dropped, so the note is one line. The city names are lost from the display but kept here."
   },
   {
    "y": 750,
@@ -381,8 +354,8 @@
    "lo": 2.3514,
    "im": 2,
    "pri": 1,
-   "t": "Europe clears its forests",
-   "d": "warmer weather and a heavier plough",
+   "t": "Europe clears forests",
+   "d": "climate warms",
    "p": "Renamed at Anita's request: 'the great clearances' returns nothing near Paris, and worse, it collides with the HIGHLAND Clearances - 18th and 19th century Scottish evictions, which are close to the opposite of this. What this note is about is the high-medieval assarting: forest cleared for arable across western and central Europe from roughly 1000 to 1300, driven by the medieval warm period and the heavy mouldboard plough. Paris triples by 1250."
   },
   {
@@ -409,7 +382,6 @@
    "lo": 30.5245,
    "im": -3,
    "t": "Mongols burn Kyiv",
-   "d": "Carpini counts 200 houses in 1246",
    "p": "6 December 1240. Carpini rode through in 1246 and counted barely 200 houses - contemporary, quotable, and avoids a made-up death toll. Data caveat: there is no cliff in the curve. cities.json interpolates straight from 1050:40k to 1550:11k, so Kyiv reads ~24k at 1240 and simply keeps sliding; the note explains a decline the map already shows rather than a drop it does not. Kyiv is the only city drawn within 450km at this year, so the leader is unambiguous. im:-3 because the trough runs to the 17th century - Kyiv is still 11k in 1550, 300 years later. Pairs with the Baghdad 1258 seed and with whatever Central Asia does for Merv and Nishapur in 1220-21."
   },
   {
@@ -443,7 +415,7 @@
    "lo": 94.8602,
    "im": -3,
    "pri": 3,
-   "t": "Mongols end Pagan",
+   "t": "Mongols break up Pagan",
    "p": "Bagan 21.1721/94.8602: 1100:100k, 1250:180k, 1325:1k, and 1k until the 20th century. Kublai's armies took the Irrawaddy valley in 1287 and the kingdom broke up by 1297; whether Pagan itself was sacked in 1287 is disputed, so the wording stays on the outcome rather than on a sack. The bubble falls under the display floor around 1292, five years after the note fires. Only Burmese note in the lane."
   },
   {
@@ -460,7 +432,6 @@
    "lo": 77.1025,
    "im": -2,
    "t": "Sultan moves capital to Daulatabad",
-   "d": "Delhi's people are ordered to follow",
    "p": "Delhi 28.7041/77.1025: 1300:80k, 1327:40k, 1350:125k - the halving and the recovery are both in the data, which is why this beat Timur for the slot. Daulatabad 19.9427/75.2132 sits at 1k the whole time, so the destination never lights up and the note stays on Delhi. Timur's 1398 sack is the other big Delhi drop available and is arguably sharper (1375:200k, 1398:125k, 1399:25k, 1450:50k) - a good second Sultanate note if the file has room.\n\nVOICE PASS 2026-08-22: 'Delhi ordered to Daulatabad' has no verb and reads as though Delhi was told to do something. Anita asked for 'sultan shifts capital from Delhi to Daulatabad', which is 45 chars against a 34 limit ('shifts' alone is 35). 'from Delhi' moved to the d, where it also carries the reason the bubble halves; the anchor is still Delhi, so the leader supplies it too. 'moves' is the third in the file after Shah Jahan and the Ming - accepted, they are centuries apart, and Louis XIV's went out this pass."
   },
   {
@@ -523,7 +494,6 @@
    "im": 2,
    "pri": 3,
    "t": "Inca expansion under Pachacuti",
-   "d": "40,000km of road, no wheeled traffic",
    "p": "Coordinate from the data; the curve starts at exactly 1438:24k, the traditional accession of Pachacuti, and runs 1533:35k then 1555:21k for the conquest. Modest numbers - Cusco was an administrative capital of tens of thousands, not a Tenochtitlan - so the note sells the road network rather than the bubble. This is also the slot where Chan Chan and the Chimu would have gone; see the Maya note for why that curve is unusable. Also absent from the dataset for this region: Wari, Moche, Chavin de Huantar and Machu Picchu, so the Andes before 1438 is Tiahuanaco (with a fake curve), Pachacamac and a scatter of Ecuadorean towns, and nothing else.\n\nUPDATE 2026-08-22 (Americas pass, GAPS.md 2.7-2.10). The last paragraph is out of date. Wari and Moche are both on the map now (ARCHAEOLOGICAL), and Tiahuanaco's fake curve has been replaced -- see the new 'Wari and Tiwanaku' note at 800, which is the first note this map has anywhere in South America before this one. Chavin de Huantar remains absent and deliberately so: at 2,000-3,000 it is under the display floor. Chan Chan is unchanged and still unusable for a Chimu note, so that gap stands."
   },
   {
@@ -567,7 +537,7 @@
    "lo": -3.6012,
    "im": -2,
    "t": "Granada falls",
-   "d": "the last emirate; the Muslims and Jews are expelled",
+   "d": "Muslims and Jews are expelled",
    "p": "Granada 1491:200k -> 1494:70k -> 1550:40k, a 65% fall in three years and one of the sharpest in Europe on this map. Shares 1492 with the Columbus seed, but they are on opposite sides of the Atlantic so both can be placed."
   },
   {
@@ -640,7 +610,7 @@
    "lo": -38.5016,
    "im": 0,
    "pri": 3,
-   "t": "Salvador founded",
+   "t": "Salvador founded as capital of Brazil",
    "p": "Salvador 1549:1k, first capital of Brazil, well under the 20k display floor - a marker like Columbus. It reaches 10k by 1650 and 100k by 1807."
   },
   {
@@ -665,7 +635,6 @@
    "lo": 4.415,
    "im": -2,
    "t": "Antwerp falls",
-   "d": "the Scheldt is shut",
    "p": "Antwerpen 1575:110k -> 1595:47k, one of the cleanest halvings in 16th-c Europe. Amsterdam 1575:30k -> 1622:105k, so 'triples' is if anything conservative. This note is doing double duty: it is the Antwerp collapse AND the seed of the Dutch Golden Age, which is why I did not spend a separate slot on Amsterdam 1662 (143k -> 200k in twelve years, if a later pass wants it: 52.3676/4.9041, im +3)."
   },
   {
@@ -718,8 +687,7 @@
    "la": 35.6764,
    "lo": 139.65,
    "im": 3,
-   "t": "Sankin-kotai fills Edo",
-   "d": "daimyo must house their families there",
+   "t": "Sankin-kotai moves daimyo to Edo",
    "p": "Tokyo: 1600:60k, 1609:150k, 1650:500k, 1701:689k, 1721:700k. Alternate attendance was codified in the 1635 Buke shohatto. The famous 'million-person Edo' figure counts samurai households and is contested; cities.json tops out around 700k, so the detail line uses the numbers the curve will actually show under it."
   },
   {
@@ -747,8 +715,7 @@
    "lo": 19.0402,
    "im": 0,
    "pri": 3,
-   "t": "Habsburgs take Buda",
-   "d": "145 years of Ottoman rule end",
+   "t": "Habsburgs take Buda from Ottomans",
    "p": "Renamed from 'Buda retaken', which is Habsburg point of view - retaken from whom, and by whose reckoning. im dropped from +2 to 0 because the map does not support growth either: Budapest runs 1650:7k, 1686:29k, 1690:18k, 1777:35k, so the 1686 figure is a siege muster and the city is SMALLER four years later. The refill is real but slow, and 0 is the honest reading of a curve that noisy."
   },
   {
@@ -791,8 +758,7 @@
    "la": 22.57,
    "lo": 88.36,
    "im": 2,
-   "t": "Britain takes Bengal",
-   "d": "Calcutta and Bombay start to climb",
+   "t": "British East India Company takes Bengal",
    "p": "Renamed from 'Plassey: Company rule', which assumed the reader knows both the battle and what the Company was. The battle of Plassey, June 1757, gives the East India Company the revenues of Bengal and is the usual pin for the start of British rule in India. Anita originally wasn't sure this could be pinned at all - Plassey is the pin. Bombay's own turn is 1869, Suez."
   },
   {
@@ -801,7 +767,7 @@
    "lo": 100.5877,
    "im": -3,
    "t": "Burmese sack Ayutthaya",
-   "d": "the capital moves to Bangkok",
+   "d": "capital moves to Bangkok",
    "p": "Answers Anita's other question. The sack is 1767 and the city was abandoned for good; the source holds it flat at 180k until 1850 and only drops it at 1855:30k, so the fall on the map is EIGHTY-EIGHT YEARS LATE. Pinned to the true date, because the visible consequence is right: Krung Thep appears at 1800:45k and climbs. Flagged so nobody trusts the 1855 step."
   },
   {
@@ -926,7 +892,6 @@
    "lo": 139.65,
    "im": 2,
    "t": "Meiji Restoration",
-   "d": "Edo is renamed Tokyo and the daimyo go home",
    "p": "The sankin-kotai note at 1635 is what this undoes: the compulsory residence ends, Edo empties briefly, and then Tokyo grows as a modern capital instead."
   },
   {
@@ -952,7 +917,6 @@
    "im": -1,
    "pri": 3,
    "t": "Famine in Deccan",
-   "d": "5 million dead",
    "p": "Anchored on Bellary 15.1394/76.9214, the worst-hit district of the Madras Deccan and on the map at 52k in 1877. Mortality was overwhelmingly rural, so the city curves stall rather than fall - Bellary 1871:52k to 1881:54k, Madras 1863:428k to 1881:406k, Patna 1871:159k to 1881:171k against a normal decadal rise of ten per cent. That is why im is -1 and not -2: the map's honest answer is 'the growth stops', and the note says so. Estimates run 5.5-10 million (Digby low, Maharatna high); the conservative figure is in the text. 59km from the existing Vijayanagara anchor but 312 years away from it, so there is no visual clash. Stands in for the whole famine series - 1770 Bengal, 1896-1902 and 1943 Bengal all fail the same test, see the summary."
   },
   {
@@ -1130,7 +1094,6 @@
    "lo": 13.7373,
    "im": -2,
    "t": "Allied bombing of Germany",
-   "d": "Hamburg 1943, Dresden 1945",
    "p": "Dresden. cities.json 1940:630k to 1946:468k, minus 26%. Berlin 4.3M to 3.2M, Frankfurt 554k to 424k, Essen 667k to 525k, Hamburg 1.7M to 1.4M, Leipzig 707k to 608k - a fifth is the average of those, and the drop is genuinely visible on the map, unlike Leningrad's or Stalingrad's. Much of it is flight and evacuation rather than deaths. Dresden's toll is 22,700-25,000 (Dresden historians' commission, 2010); the 100,000-plus figure is Goebbels' and I left all numbers of dead out of d. Hamburg named first because Operation Gomorrah, July 1943, is where the firestorm technique starts."
   },
   {
@@ -1139,7 +1102,6 @@
    "lo": 139.65,
    "im": -2,
    "t": "Japan's cities firebombed",
-   "d": "all refill by 1960",
    "p": "The refill is the interesting half - worth a second note around 1960."
   },
   {
@@ -1149,7 +1111,7 @@
    "im": -2,
    "pri": 1,
    "t": "12 million Germans expelled",
-   "d": "Poles move in",
+   "d": "Poles move west",
    "p": "Wroclaw (Breslau) - the cleanest V anywhere on the European map: 615k(1942), 171k(1946), 341k(1947), 639k(1989). Gdansk does the same (283k, 118k, 280k by 1959) and Szczecin (383k, 200k, 264k by 1959). Kaliningrad's record is unusable and I did not name it: cities.json has 279k(1930) then 44k(1939), which cannot be right for Konigsberg, which had 372k at the 1939 census - the source appears to have switched entities. Year 1946 is the census trough, so the note fires at the bottom and the refill happens under it; the Potsdam authorisation is August 1945 but 1945 is already crowded. Incoming Poles are largely from Lviv and Vilnius, whose own curves show no matching dip (L'viv 340k in 1939, 384k in 1955). Definition warning: Wroclaw, Gdansk and Szczecin all take a second, fake jump at 2000-2001 when the source switches to metropolitan figures - Gdansk 457k to 1.0M in one year.\n\nVOICE PASS 2026-08-22: FLIPPED. The headline was 'Poland moves west' (and had picked up a typo, 'Poles moves west'). What the map actually draws at 1946 is Wroclaw at 171k after 615k - a German city emptying - so the expulsion is the headline and the resettlement is the refill that happens under it."
   },
   {
@@ -1214,7 +1176,7 @@
    "lo": 3.3792,
    "im": 3,
    "pri": 1,
-   "t": "17 African countries independent",
+   "t": "Many African countries independent",
    "p": "The single biggest thing the map does in Africa and the reason the continent looks empty for the first 55 seconds of a playthrough. Lagos 1958:338k -> 1974:1.0M -> 2025:14.3M; Kinshasa 1958:362k -> 1973:1.8M -> 10.9M; Nairobi 1961:258k -> 1978:796k; Abidjan 1958:163k -> 1979:1.6M; Adis Abeba 1959:437k -> 6.7M. Anchored at Lagos as the largest. Caveat for the curator: several African series have a step artefact at 1996 or 2002-03 where the source switches to an agglomeration definition (Lagos 1999:1.4M -> 2000:8.7M, Kano 1995:657k -> 1996:2.9M, Cairo 2002:7.8M -> 2003:19.1M), so some of the visible growth in that decade is a definition change, not people.\n\nVOICE PASS 2026-08-22: 'Year of Africa' is a real term but it is a journalism label rather than an event. Replaced with the countable fact under it - 17 states in 1960. Deliberately not pinned to one independence (Nigeria, 1 Oct 1960, would have matched the Lagos anchor) because the note is carrying the whole continent."
   },
   {
@@ -1298,7 +1260,7 @@
    "lo": 30.0542,
    "im": -3,
    "pri": 3,
-   "t": "Chernobyl",
+   "t": "Chernobyl Disaster",
    "p": "Pripyat: 49,360 people, founded 1970, evacuated on 27 April 1986 in about three hours by 1,200 buses. It is not in cities.json at all - the nearest records are Chernihiv 86km and Kyjiv 111km - so this leader deliberately points at a blank piece of map, the same trick as the Columbus and Gulf oil notes. It will not trip the 400km warning because Chernihiv is inside that radius. The 350,000 is the cumulative resettlement out of the 30km zone plus the later Belarusian and Ukrainian relocations, not the April 1986 evacuation alone. im -3 because the zone is permanent: Pripyat is the one 20th-century European city that is simply gone."
   },
   {
@@ -1327,7 +1289,7 @@
    "im": 0,
    "pri": 3,
    "t": "Rwandan genocide",
-   "d": "a million refugees cross into Goma",
+   "d": "refugees cross into Goma",
    "p": "Re-aimed from Goma to KIGALI so the note is the genocide itself, as Anita asked. Kigali shows no drop at all (1990:246k -> 1997:330k), hence im 0; the visible movement is the refugee influx at Goma and Bukavu, which the detail line carries."
   },
   {

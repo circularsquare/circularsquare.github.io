@@ -912,7 +912,20 @@ const NOTE_WHITE = true;
 const NOTE_IN = 120, NOTE_HOLD = 2400, NOTE_OUT = 600;   // ms: fade in, full, fade out
 const NOTE_STACK = 2;         // slots a note may be pushed from its natural spot before it is
                               // dropped instead -- see placeNote
-const NOTE_MAX = 5;           // most fired at once; best pri wins
+// Most fired at once; best pri wins. Raised 5 -> 10 on 2026-08-23. At 5 the tier formula below
+// capped flavour notes at THREE live, against an average of about five on screen, so pri 3 spent
+// most of a run locked out -- 73 of 153 notes never appeared at notes=all. The cap is not there
+// to stop the map looking busy; it is there because placement is frozen and nothing can be
+// evicted, so without it a flavour note fired in 1868 could hold a slot and keep the Industrial
+// Revolution off the screen entirely. That failure needs a cap, not a cap this tight.
+const NOTE_MAX = 10;
+// How many may be live before a note of this rank is refused a slot. Pulled out of fireNotes so
+// it can be measured and tuned in one place -- it is the threshold that actually decides whether
+// a note appears. Measured over a full 1x playthrough at notes=all: placeNote never once failed
+// to find room (80 of 80 calls succeeded), so EVERY note that went missing was refused here,
+// before it ever tried. Tuning the stacking or the leader length cannot help a note that is not
+// allowed to place at all.
+const noteCap = pri => pri === 1 ? NOTE_MAX + 1 : NOTE_MAX + 1 - pri;
 const NOTE_FAR = 0.05;        // scrubber fraction past which a live note is cut, not faded
 const NOTE_F_T = "700 13px Nunito,system-ui,sans-serif";
 const NOTE_F_D = "400 11.5px Nunito,system-ui,sans-serif";
@@ -1067,7 +1080,7 @@ function fireNotes(from, to){
     const pri = e.pri || 2;
     // pri 1 may overflow to one extra slot rather than be lost -- a headline note not appearing
     // at all is worse than six on screen for a moment. Lower tiers keep their headroom.
-    if (live >= (pri === 1 ? NOTE_MAX + 1 : NOTE_MAX + 1 - pri)) continue;
+    if (live >= noteCap(pri)) continue;
     if (!placeNote(e, v, boxes)) continue;
     e.t0 = t; live++; fired = true;
     boxes.push(noteBox(e, v));
