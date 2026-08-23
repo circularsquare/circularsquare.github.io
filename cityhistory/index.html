@@ -113,8 +113,11 @@
   .segsel span.on { color:#fff; background:#2a2f38; border-color:#6889a8; }
   /* growth legend. Stop positions are the growth values placed on a linear -2%..+2% axis, so the
      bar matches growthColor() exactly. The axis runs -5%..+8%, so zero sits at 38.5%, not at the
-     midpoint, and the labels are placed absolutely rather than spread evenly. */
-  #growthkey { margin-top:3px; }
+     midpoint, and the labels are placed absolutely rather than spread evenly.
+     It sits in the leaderboard panel, under the top-10 and above the Settings button, so it is
+     on screen whenever the colour it explains is. .hidden is driven by colorMode -- the key is
+     for the growth ramp specifically and means nothing in population or continent mode. */
+  #growthkey { margin-top:9px; }
   #growthkey.hidden { display:none; }
   #growthbar { height:7px; border-radius:3px; background:linear-gradient(90deg,
     #5d60e2 0%, #489cf0 7.692%, #45cf77 23.077%, #c6db55 38.462%, #fde047 46.154%,
@@ -212,6 +215,11 @@
   @media (max-width:640px) {
     #map-title { display:none; }
     #toplist-panel { width:176px; top:8px; right:8px; }
+    /* The growth key stays on at 176px rather than being hidden as desktop-only. It is 22px of
+       bar and labels, which the leaderboard can afford even on a phone -- and since it is no
+       longer duplicated inside Settings, hiding it here would leave the small screen with no
+       key at all, which is worse than the space it costs. To make it desktop-only, add
+       `#growthkey { display:none; }` here AND put a copy back in the settings panel. */
     #timebar, #timebar.big { bottom:8px; gap:7px; padding:8px 10px; width:calc(100vw - 16px); }
     #yearbig { width:82px; font-size:17px; }
     #tgraph { bottom:62px; }
@@ -263,6 +271,18 @@
 <div class="panel" id="toplist-panel">
   <div class="panel-title">Largest cities</div>
   <ol id="toplist"></ol>
+  <!-- The growth ramp lives out here, above the Settings button, rather than inside the panel
+       next to the "colour by" control that sets it: the colour it explains is on the map all the
+       time, so the key has to be too. Moved rather than copied -- the settings popover opens
+       directly under this panel, so a second copy would have sat about 100px below this one,
+       identical, whenever settings were open. -->
+  <div id="growthkey">
+    <div id="growthbar"></div>
+    <!-- the unit rides on the right-hand marker only; on all three it reads as three separate
+         quantities rather than one axis, and the other two are wide enough to crowd -->
+    <div id="growthlabels"><span>−5%</span><span style="left:38.462%">0</span><span>+8%/yr</span></div>
+    <div id="srckey"><i></i>step between two sources, not a real change</div>
+  </div>
   <button id="settingsbtn" title="Settings">
     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915"/><circle cx="12" cy="12" r="3"/></svg>
     <span>Settings</span>
@@ -299,11 +319,6 @@
       <span data-v="pop">population</span>
       <span data-v="region">continent</span>
       <span data-v="growth" class="on">growth</span>
-    </div>
-    <div id="growthkey">
-      <div id="growthbar"></div>
-      <div id="growthlabels"><span>−5%</span><span style="left:38.462%">0</span><span>+8%</span></div>
-      <div id="srckey"><i></i>step between two sources, not a real change</div>
     </div>
   </div>
   <div class="seg-group">
@@ -376,7 +391,9 @@ map.once('load', () => document.querySelector('.maplibregl-ctrl-attrib')
 
 // ---------- state ----------
 const cv = document.getElementById('bubbles'), ctx = cv.getContext('2d');
-const YEAR0 = 1700;   // where the map opens, unless ?year= says otherwise
+// Where the map opens, unless ?year= says otherwise. -1 is 1 BC -- there is no year 0 on this
+// timeline (spec 3.2b), so the year before AD 1 is -1 and fmtYear renders it "1 BC".
+const YEAR0 = -1;
 let DATA = null, year = YEAR0, playing = false, sizeMul = 1, expo = 0.38;
 const PIVOT_LOG = 6, EXPO_REF = 0.29;   // the contrast exponent pivots on a 1M city -- see draw()
 // Bubble size drifts down as the map runs forward, because the same size is not right at both
