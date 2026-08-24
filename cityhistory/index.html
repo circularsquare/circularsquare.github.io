@@ -100,7 +100,16 @@
     display:flex; flex-direction:column; gap:9px;
   }
   .settings-row { display:flex; align-items:center; gap:10px; }
-  .settings-label { font-size:12px; color:#ccc; flex:none; min-width:96px; }
+  /* The live value sits INSIDE the label, and the slider takes the remaining width -- so a value
+     changing width moved the track. "off" is 15px and "15000" is 36px, which resized the track by
+     22px WHILE YOU WERE DRAGGING IT and slid the thumb out from under the cursor. The fix is to
+     pin the one thing that changes: .val is a fixed 36px box (the widest value, "15000") with
+     tabular figures, so the label is a constant width per row and the track cannot move. Fixing
+     the TRACK instead was tried and is worse -- it forces every label to a uniform box and leaves
+     a ragged puddle of dead space after the short ones. Text stays left-aligned in the box, so
+     the number still reads as part of the label rather than as a right-hand column. */
+  .settings-label { font-size:12px; color:#ccc; flex:none; min-width:96px; white-space:nowrap; }
+  .settings-label .val { display:inline-block; min-width:36px; font-variant-numeric:tabular-nums; }
   .settings-row input[type=range] { flex:1; min-width:0; accent-color:#6889a8; }
   .settings-row input[type=checkbox] { accent-color:#6889a8; margin:0; }
   /* segmented selector (japanrail-style); NB: .seg is taken by the scrubber ticks, so .segsel */
@@ -306,11 +315,15 @@
     <input type="range" id="expslider" min="0.15" max="0.45" step="0.01" value="0.38">
   </div>
   <div class="settings-row">
-    <span class="settings-label">max cities <span id="capval">4000</span></span>
+    <span class="settings-label">max cities <span class="val" id="capval">4000</span></span>
     <input type="range" id="capslider" min="0" max="17" step="1" value="12">
   </div>
   <div class="settings-row">
-    <span class="settings-label">play speed <span id="speedval">1.0x</span></span>
+    <span class="settings-label">min pop <span class="val" id="minpopval">off</span></span>
+    <input type="range" id="minpopslider" min="0" max="10" step="1" value="0">
+  </div>
+  <div class="settings-row">
+    <span class="settings-label">play speed <span class="val" id="speedval">1.0x</span></span>
     <input type="range" id="speedslider" min="0.5" max="5" step="0.1" value="1">
   </div>
   <div class="seg-group">
@@ -421,6 +434,17 @@ function autoSizeMul(y){
 // to mean "all of them" on a dataset whose drawn count swings from 39 to 14,600.
 const CAP_STOPS = [0, 25, 50, 100, 200, 300, 500, 750, 1000, 1500, 2000, 3000, 4000, 5000, 7500, 10000, 15000, Infinity];
 let maxCities = 4000;
+// A hand floor, asked for after the first post: "only show me cities over a million". Stops for
+// the same reason CAP_STOPS has them -- the interesting resolution is 20k vs 100k, not 4.1M vs
+// 4.2M -- and 0 means off rather than a floor of zero, because mapFloor() is still underneath.
+// It only ever RAISES the floor (see FLOOR in draw): the era floor exists because below it the
+// modern map is a grey wash of 19,000 unreadable dots and most of draw()'s cost, and a slider
+// that could undo that would just be a way to make the map worse. This is a display filter like
+// mapFloor and hides bubbles only -- the data, the graph traces and the hover readouts are
+// untouched. It does reach the leaderboard, because that is built from the same filtered list,
+// so at a 1M cutoff in 2000 BC the top-10 is legitimately empty: nothing was that big.
+const MINPOP_STOPS = [0, 10e3, 20e3, 50e3, 100e3, 200e3, 500e3, 1e6, 2e6, 5e6, 10e6];
+let minPop = 0;
 // The graph's floor, and the level below which a control point is "not a city here" for the
 // data windows. The MAP's floor is mapFloor(), which starts here and rises with the era.
 const MINPOP = 5000;
@@ -1177,7 +1201,7 @@ function draw(){
   // is only the scale anchor -- it fixes the pivot city at the 11.5px it always had, and is
   // deliberately not the default expo, which sits higher now that raising it costs nothing.
   const PIV = BASE * Math.pow(10, EXPO_REF * PIVOT_LOG);
-  const FLOOR = mapFloor(year);
+  const FLOOR = Math.max(mapFloor(year), minPop);   // the era floor, or the hand one if higher
   sizeWindow(year);
 
   // Every city above the floor this year, plus the ones inside an edgeRamp on either side of
@@ -1675,6 +1699,17 @@ document.getElementById('capslider').oninput = e => {
   capval.textContent = maxCities === Infinity ? 'all' : maxCities;
   draw();
 };
+// gKey is cleared as well as redrawing: a high cutoff can empty cities out of the top 10, and
+// curTopSet is what the graph highlights, but minPop is not in the graph's cache key.
+const minpopval = document.getElementById('minpopval'), minpopslider = document.getElementById('minpopslider');
+function setMinPop(i){
+  minpopslider.value = i;
+  minPop = MINPOP_STOPS[i];
+  minpopval.textContent = minPop ? fmtPop(minPop) : 'off';
+  gKey = '';
+  if (DATA) draw();
+}
+minpopslider.oninput = e => setMinPop(+e.target.value);
 // Speed only scales the play loop, so nothing needs redrawing -- tick() reads it next frame.
 const speedval = document.getElementById('speedval');
 document.getElementById('speedslider').oninput = e => {
@@ -1852,6 +1887,17 @@ fetch('data/cities.json?v=' + Date.now()).then(r => r.json()).then(d => {
   const q = new URLSearchParams(location.search);
   setGraph(q.get('graph') !== '0');                // line graph on by default (?graph=0 hides it)
   if (q.get('fade') === '1'){ fadeBubbles = true; fadetoggle.checked = true; }   // off by default
+  // ?minpop=1000000 (or 1M / 100k) -- snapped UP to the nearest stop, so a link that asks for a
+  // floor never quietly gets a lower one than it named.
+  if (q.has('minpop')){
+    const raw = String(q.get('minpop')).trim().toLowerCase();
+    const mul = raw.endsWith('m') ? 1e6 : raw.endsWith('k') ? 1e3 : 1;
+    const want = parseFloat(raw) * mul;
+    if (want > 0){
+      let i = MINPOP_STOPS.findIndex(s => s >= want);
+      setMinPop(i < 0 ? MINPOP_STOPS.length - 1 : i);
+    }
+  }
   // ?notes=none|few|some|all, defaulting to some. The old spellings still work, because links to
   // this map are out in the world: ?notes=0 is none and ?notes=key is few.
   const NOTE_Q = { none: 0, '0': 0, few: 1, key: 1, some: 2, all: 3 };
