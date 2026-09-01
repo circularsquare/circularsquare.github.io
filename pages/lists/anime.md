@@ -6,8 +6,10 @@ permalink: /anime/
 
 - evangelion - 9/10
 - haikyuu - 8/10
+    - minus tempo
 - blue period - 7/10
 - chihayafuru - 7/10
+    - art style is boring but so lovely
 - ouran - 9/10
     - :3
 - attack on titan - 6/10
@@ -30,7 +32,12 @@ permalink: /anime/
 - heavenly delusion - 7/10
 - sanda - 8/10
     - style so dynamic!
+- beastars - 8/10
+    - relatable
+- jojo - 5/10
 
-stuff i want to watch
+
+stuff i want to watch/read
 - berserk
-- beastars
+- hajime no ippo
+- i don't know which is love

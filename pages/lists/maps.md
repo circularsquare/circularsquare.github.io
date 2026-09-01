@@ -4,7 +4,7 @@ title: maps
 permalink: /lists/maps/
 ---
 
-these are the best maps in the world! (that are not made by me.)
+these are the best maps in the world! (that are not mine)
 
 - [muturzikin](https://www.muturzikin.com/)
 - [NYC full track map](https://www.vanshnookenraggen.com/_index/docs/NYC_full_trackmap.pdf)

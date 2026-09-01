@@ -20,6 +20,8 @@ permalink: /games/
     - factorio - 6/10
         - i really like the complex production chains it has. 
         - it is very satsifying to set up science production. the colorful vials coming down the belt are very dopamine.
+    - subway builder - 5/10
+        - still feels clunky. addicting though
 - story games
     - omori - 10/10
         - i have some of the soundtrack saved on spotify and whenever a song comes up i still want to cry.

@@ -42,7 +42,7 @@ permalink: /projects/
 - [audio](/audio/)
 - <a href="bread" data-thumb="/assets/thumbs/breads.png">bread</a>
 - [my github](https://github.com/circularsquare)
-
+- [(other people's maps i like)](/lists/maps/)
 
 <br/>
 <iframe src="//incr.easrng.net/badge?key=amanita" style="background: url(//incr.easrng.net/bg.gif)" title="increment badge" width="88" height="31" frameborder="0"></iframe>
