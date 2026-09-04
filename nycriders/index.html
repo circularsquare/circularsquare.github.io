@@ -231,6 +231,12 @@ body { background: #0a0a0a; color: #eee; font-family: 'Nunito', sans-serif; over
     height: 100%;
     background: #ccc;
 }
+/* The dot overlay is a canvas at z-index 1 inside the map container, and
+   MapLibre leaves its own furniture on auto -- so say where these go, or the
+   dots paint over the tooltips and the attribution. */
+.maplibregl-control-container { z-index: 2; }
+.maplibregl-popup { z-index: 3; }
+
 .train-tooltip .maplibregl-popup-content {
     background: rgba(10,10,10,0.9);
     color: #eee;
@@ -1132,49 +1138,9 @@ function drawSubwayLines() {
 }
 
 function setupTrainLayer() {
-    map.addSource('walks', { type: 'geojson', data: emptyGeoJSON });
-    map.addLayer({
-        id: 'walks-layer',
-        type: 'circle',
-        source: 'walks',
-        layout: { visibility: showWalks ? 'visible' : 'none' },
-        paint: {
-            'circle-radius': ['get', 'radius'],
-            'circle-color': '#cbcbcb',
-            'circle-opacity': ['get', 'opacity'],
-        },
-    });
-
-    map.addSource('waiting', { type: 'geojson', data: emptyGeoJSON });
-    map.addLayer({
-        id: 'waiting-layer',
-        type: 'circle',
-        source: 'waiting',
-        layout: { visibility: showWaiting ? 'visible' : 'none' },
-        paint: {
-            'circle-radius': ['get', 'radius'],
-            'circle-color': '#cbcbcb',
-            'circle-opacity': 0.8,
-        },
-    });
-
-    map.addSource('trains', { type: 'geojson', data: emptyGeoJSON });
-    map.addLayer({
-        id: 'trains-layer',
-        type: 'circle',
-        source: 'trains',
-        layout: {
-            'circle-sort-key': ['get', 'order'],
-        },
-        paint: {
-            'circle-radius': ['get', 'radius'],
-            'circle-color': ['get', 'color'],
-            'circle-opacity': 0.8,
-            'circle-stroke-width': ['get', 'strokeWidth'],
-            'circle-stroke-color': ['get', 'stroke'],
-            'circle-stroke-opacity': 0.8,
-        },
-    });
+    // The animated dots -- walks, waiting crowds and trains -- are drawn on a
+    // canvas over the map rather than as MapLibre layers. See makeOverlay().
+    makeOverlay();
 
     // static-mode layers (added now so they sit underneath trains; hidden until activated)
     // MapLibre only allows ['zoom'] inside a top-level interpolate/step. To
@@ -1210,7 +1176,7 @@ function setupTrainLayer() {
             'line-offset': offsetExpr,
             'line-opacity': 0.55,
         },
-    }, 'trains-layer');
+    });
 
     map.addSource('static-segments', { type: 'geojson', data: emptyGeoJSON });
     map.addLayer({
@@ -1229,7 +1195,7 @@ function setupTrainLayer() {
             'line-offset': offsetExpr,
             'line-opacity': 0.85,
         },
-    }, 'trains-layer');
+    });
 
     // overlay layer: white at 0.2 over the colored line itself, on top of segments,
     // so highlighted routes also "lighten" rather than just having an outline halo.
@@ -1248,7 +1214,7 @@ function setupTrainLayer() {
             'line-offset': offsetExpr,
             'line-opacity': 0.22,
         },
-    }, 'trains-layer');
+    });
 
     map.addSource('static-stations', { type: 'geojson', data: emptyGeoJSON });
     map.addLayer({
@@ -1261,7 +1227,7 @@ function setupTrainLayer() {
             'circle-color': '#cbcbcb',
             'circle-opacity': 0.85,
         },
-    }, 'trains-layer');
+    });
 }
 
 
@@ -1283,32 +1249,63 @@ function resetAnchor() {
 }
 
 let lastRenderWall = 0;
-const RENDER_INTERVAL = 32; // ~30fps cap for setData calls
-let tooltipDirty = false; // set when trains re-rendered or mouse moved
+// Frame budget for the simulation. The dots are drawn on a canvas rather than
+// pushed through a MapLibre source, so a frame is cheap and this is a battery
+// choice -- run smooth in front, and slow down rather than stop when the window
+// is only in the background.
+const RENDER_INTERVAL_FOCUSED = 16, RENDER_INTERVAL_BLURRED = 100;
+let RENDER_INTERVAL = RENDER_INTERVAL_FOCUSED;
+
+// The loop used to run flat out for the life of the page whether or not the
+// clock was moving. It now runs only while time is advancing or something has
+// changed, and stops entirely when the page is hidden.
+let dirty = true, suspended = false;
+
+function invalidate() {
+    dirty = true;
+    if (animFrame === null && !suspended) animFrame = requestAnimationFrame(tick);
+}
+
+function suspend() {
+    if (suspended) return;
+    suspended = true;
+    if (animFrame !== null) { cancelAnimationFrame(animFrame); animFrame = null; }
+}
+
+// The clock freezes while the page is hidden rather than running on, so coming
+// back lands where you left off instead of at some arbitrary hour.
+function resume() {
+    if (!suspended) return;
+    suspended = false;
+    resetAnchor();
+    invalidate();
+}
 
 function startAnimation() {
     resetAnchor();
-    animFrame = requestAnimationFrame(tick);
+    invalidate();
 }
 
 function tick(now) {
-    if (speedMultiplier > 0) {
+    animFrame = null;
+    const moving = speedMultiplier > 0;
+    if (moving) {
         simTime = anchorSim + (now - anchorWall) / 1000 * BASE_SIM_SPEED * speedMultiplier;
         if (simTime >= 86400) simTime -= 86400;
         if (simTime < 0) simTime += 86400;
         slider.value = Math.floor(simTime / 60);
     }
 
-    // in static mode the slider drives staticHourIdx and updateStaticTimeLabel
-    // owns the label; otherwise the rAF loop would clobber it every frame
-    if (!staticMode) updateTimeLabel();
-
-    if (now - lastRenderWall >= RENDER_INTERVAL) {
+    if ((moving || dirty) && now - lastRenderWall >= RENDER_INTERVAL) {
         lastRenderWall = now;
+        dirty = false;
+        // in static mode the slider drives staticHourIdx and updateStaticTimeLabel
+        // owns the label; otherwise the rAF loop would clobber it every frame
+        if (!staticMode) updateTimeLabel();
         renderTrains();
     }
 
-    animFrame = requestAnimationFrame(tick);
+    if (!suspended && (moving || dirty)) animFrame = requestAnimationFrame(tick);
 }
 
 function updateTimeLabel() {
@@ -1337,6 +1334,107 @@ for (const [route, color] of Object.entries(ROUTE_COLORS)) {
 
 function bubbleRadius(count) {
     return Math.max(1, Math.min(60, Math.sqrt(count) * 0.5));
+}
+
+// --- Dot overlay ---
+// The animated dots are drawn on a plain 2D canvas over the map rather than as
+// MapLibre circle layers. Feeding a GeoJSON source every frame makes MapLibre
+// re-index the collection on its worker, rebuild the visible tiles and repaint
+// the whole basemap; drawing a few hundred arcs ourselves costs almost nothing,
+// and MapLibre then sits idle unless the camera actually moves.
+let fx = null, fxCtx = null;
+const TAU = Math.PI * 2;
+// Rebuilt by renderTrains(); redrawn by drawOverlay() on every camera frame, so
+// panning stays glued to the basemap between simulation steps.
+let frameTrains = [], frameWaits = [], frameWalks = [];
+
+function makeOverlay() {
+    fx = document.createElement('canvas');
+    // Above MapLibre's own canvas, below its controls (2) and popups (3).
+    fx.style.cssText =
+        'position:absolute;top:0;left:0;width:100%;height:100%;' +
+        'pointer-events:none;z-index:1';
+    map.getContainer().appendChild(fx);
+    fxCtx = fx.getContext('2d');
+    map.on('move', drawOverlay);
+    map.on('resize', drawOverlay);
+}
+
+function drawOverlay() {
+    if (!fxCtx) return;
+    const dpr = window.devicePixelRatio || 1;
+    const w = map.getContainer().clientWidth, h = map.getContainer().clientHeight;
+    if (fx.width !== Math.round(w * dpr) || fx.height !== Math.round(h * dpr)) {
+        fx.width = Math.round(w * dpr);
+        fx.height = Math.round(h * dpr);
+    }
+    fxCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    fxCtx.clearRect(0, 0, w, h);
+    if (staticMode) return;
+
+    const off = (p, r) => p.x < -r || p.y < -r || p.x > w + r || p.y > h + r;
+
+    // walks sit under the waiting crowds, which sit under the trains
+    fxCtx.fillStyle = '#cbcbcb';
+    for (let i = 0; i < frameWalks.length; i++) {
+        const k = frameWalks[i];
+        const p = map.project([k.lon, k.lat]);
+        if (off(p, k.radius)) continue;
+        fxCtx.globalAlpha = k.opacity;
+        fxCtx.beginPath();
+        fxCtx.arc(p.x, p.y, k.radius, 0, TAU);
+        fxCtx.fill();
+    }
+
+    fxCtx.globalAlpha = 0.8;
+    for (let i = 0; i < frameWaits.length; i++) {
+        const s = frameWaits[i];
+        const p = map.project([s.lon, s.lat]);
+        s.x = p.x; s.y = p.y;
+        if (off(p, s.radius)) continue;
+        fxCtx.beginPath();
+        fxCtx.arc(p.x, p.y, s.radius, 0, TAU);
+        fxCtx.fill();
+    }
+
+    for (let i = 0; i < frameTrains.length; i++) {
+        const t = frameTrains[i];
+        const p = map.project([t.lon, t.lat]);
+        t.x = p.x; t.y = p.y;
+        if (off(p, t.radius)) continue;
+        fxCtx.beginPath();
+        fxCtx.arc(p.x, p.y, t.radius, 0, TAU);
+        fxCtx.globalAlpha = 0.8;
+        fxCtx.fillStyle = t.color;
+        fxCtx.fill();
+        fxCtx.lineWidth = t.strokeWidth;
+        fxCtx.strokeStyle = t.stroke;
+        fxCtx.stroke();
+        fxCtx.fillStyle = '#cbcbcb';
+    }
+    fxCtx.globalAlpha = 1;
+}
+
+// Nearest dot under a point, topmost first -- the picking that
+// queryRenderedFeatures used to do. Tiny dots get a few pixels of slop so they
+// stay catchable, which matters more on a touchscreen than it did with a mouse.
+function pickDot(pt) {
+    if (staticMode) return null;
+    for (let i = frameTrains.length - 1; i >= 0; i--) {
+        const t = frameTrains[i];
+        if (t.x === undefined) continue;
+        const hit = Math.max(t.radius, 4);
+        const dx = pt.x - t.x, dy = pt.y - t.y;
+        if (dx * dx + dy * dy <= hit * hit) return { kind: 'train', t };
+    }
+    for (let i = frameWaits.length - 1; i >= 0; i--) {
+        const s = frameWaits[i];
+        if (s.x === undefined) continue;
+        const hit = Math.max(s.radius, 4);
+        const dx = pt.x - s.x, dy = pt.y - s.y;
+        if (dx * dx + dy * dy <= hit * hit) return { kind: 'station', s };
+    }
+    return null;
 }
 
 function darkenHex(hex, factor) {
@@ -1539,32 +1637,30 @@ function renderTrains() {
         }
 
         features.push({
-            type: 'Feature',
-            geometry: { type: 'Point', coordinates: [lon, lat] },
-            properties: { radius, color, stroke, strokeWidth, route: train.route, riders: ridersRound, ti, order: trainDrawOrder[ti] },
+            lon, lat, radius, color, stroke, strokeWidth,
+            route: train.route, riders: ridersRound, ti,
+            order: trainDrawOrder[ti],
         });
     }
 
-    map.getSource('trains').setData({ type: 'FeatureCollection', features });
-    tooltipDirty = true;
+    // Drawing in timetable order stacks whole lines on top of each other where
+    // they share track; the same random key the circle-sort-key used to apply.
+    features.sort((a, b) => a.order - b.order);
+    frameTrains = features;
 
     // render transfer waiting bubbles (per-station, with smooth transitions)
+    const waitFeatures = [];
     if (showWaiting) {
-        const waitFeatures = [];
         for (let si = 0; si < data.waiting.length; si++) {
             const station = data.waiting[si];
             const waiting = getStationWaiting(si);
             if (waiting < 0.5) continue;
 
             const radius = bubbleRadius(waiting) * zoomScale * dotScale;
-            waitFeatures.push({
-                type: 'Feature',
-                geometry: { type: 'Point', coordinates: [station.lon, station.lat] },
-                properties: { radius, si },
-            });
+            waitFeatures.push({ lon: station.lon, lat: station.lat, radius, si });
         }
-        map.getSource('waiting').setData({ type: 'FeatureCollection', features: waitFeatures });
     }
+    frameWaits = waitFeatures;
 
     // render walking bubbles (transfer walks + origin walks + dest walks)
     // Opacity fades so the far-from-station end is invisible:
@@ -1600,46 +1696,39 @@ function renderTrains() {
             let opacity = WALK_PEAK_OPACITY;
             if (fade === 'in') opacity *= f;
             else if (fade === 'out') opacity *= 1 - f;
-            walkFeatures.push({
-                type: 'Feature',
-                geometry: { type: 'Point', coordinates: [lon, lat] },
-                properties: { radius, opacity },
-            });
+            walkFeatures.push({ lon, lat, radius, opacity });
         }
     }
-    if (showWalks) {
-        map.getSource('walks').setData({ type: 'FeatureCollection', features: walkFeatures });
-    }
+    frameWalks = walkFeatures;
+    drawOverlay();
 
     document.getElementById('train-count').innerHTML =
         `${activeCount} trains<br>${Math.round(totalRiders).toLocaleString()} riders`;
 
     if (currentByRoute) updateRidershipPanel(currentByRoute);
+    refreshTooltips();
 }
 
-// update all tooltips (hover + locked) with live data
-map.on('render', () => {
-    // Skip if nothing relevant changed. Tooltips need updates only when trains
-    // re-rendered (positions moved) or the mouse moved. Pan/zoom fires 'render'
-    // too but popups track LngLat automatically.
-    if (!tooltipDirty) return;
-    tooltipDirty = false;
-    // re-query what's under the cursor so tooltips update as trains move
+// update all tooltips (hover + locked) with live data. This used to hang off
+// map.on('render'), but the overlay leaves MapLibre idle, so nothing fires it
+// any more -- renderTrains() and the pointer handlers call it instead.
+function refreshTooltips() {
+    // Everything under the cursor is moving, so ask each frame what is there
+    // now rather than trusting a mouseenter that fired several frames ago.
     if (lastMousePoint) {
-        const trainFeats = map.getLayer('trains-layer') ? map.queryRenderedFeatures(lastMousePoint, { layers: ['trains-layer'] }) : [];
-        const waitFeats = map.getLayer('waiting-layer') ? map.queryRenderedFeatures(lastMousePoint, { layers: ['waiting-layer'] }) : [];
-        if (trainFeats.length > 0) {
-            const p = trainFeats[0].properties;
-            const coords = trainFeats[0].geometry.coordinates;
+        const d = pickDot(lastMousePoint);
+        if (d && d.kind === 'train') {
+            const p = d.t;
+            const coords = [p.lon, p.lat];
             if (hoverType !== 'train' || !hoverTrain || hoverTrain.ti !== p.ti) {
                 hoverTrain = { ti: p.ti };
                 hoverType = 'train';
                 map.getCanvas().style.cursor = 'pointer';
             }
             hoverTooltip.setLngLat(coords).setHTML(trainTooltipHTML(p)).addTo(map);
-        } else if (waitFeats.length > 0) {
-            const p = waitFeats[0].properties;
-            const coords = waitFeats[0].geometry.coordinates;
+        } else if (d) {
+            const p = d.s;
+            const coords = [p.lon, p.lat];
             if (hoverType !== 'station' || !hoverStation || hoverStation.si !== p.si) {
                 hoverStation = { si: p.si, lngLat: coords };
                 hoverType = 'station';
@@ -1684,7 +1773,7 @@ map.on('render', () => {
             }
         }
     }
-});
+}
 
 
 // --- Controls ---
@@ -1699,33 +1788,32 @@ slider.addEventListener('input', () => {
     simTime = parseInt(slider.value) * 60;
     resetAnchor();
     updateTimeLabel();
+    invalidate();
 });
 
 const dotSlider = document.getElementById('dot-slider');
 dotSlider.addEventListener('input', () => {
     dotScale = parseInt(dotSlider.value) / 100;
+    invalidate();
 });
 
-// default stations/walks off on narrow screens — they're the heaviest layers
-// and mobile GPUs struggle with hundreds of extra circles
-const isMobile = window.innerWidth <= 560;
-let showWaiting = !isMobile;
-let showWalks = !isMobile;
-if (isMobile) {
-    document.getElementById('toggle-waiting-cb').checked = false;
-    document.getElementById('toggle-walks-cb').checked = false;
-}
+// Both on everywhere, phones included. These used to default off on narrow
+// screens because every extra circle was another feature for MapLibre to
+// re-index and retile each frame; the canvas overlay draws them for a fraction
+// of a millisecond, so there is nothing left to protect a mobile GPU from.
+let showWaiting = true;
+let showWalks = true;
+// Both flags are read by renderTrains when it builds the frame, so the overlay
+// picks the change up on the next pass -- there is no layer to hide.
 document.getElementById('toggle-waiting-cb').addEventListener('change', (e) => {
     showWaiting = e.target.checked;
     if (staticMode) return;
-    map.setLayoutProperty('waiting-layer', 'visibility', showWaiting ? 'visible' : 'none');
-    if (!showWaiting) map.getSource('waiting').setData(emptyGeoJSON);
+    invalidate();
 });
 document.getElementById('toggle-walks-cb').addEventListener('change', (e) => {
     showWalks = e.target.checked;
     if (staticMode) return;
-    map.setLayoutProperty('walks-layer', 'visibility', showWalks ? 'visible' : 'none');
-    if (!showWalks) map.getSource('walks').setData(emptyGeoJSON);
+    invalidate();
 });
 const ridershipToggleBtn = document.getElementById('ridership-toggle-btn');
 ridershipToggleBtn.addEventListener('mousedown', (e) => e.preventDefault());
@@ -1767,10 +1855,9 @@ async function setStaticMode(on) {
     staticMode = on;
     staticToggleBtn.classList.toggle('active', on);
 
-    const animVis = on ? 'none' : 'visible';
-    map.setLayoutProperty('trains-layer', 'visibility', animVis);
-    if (showWaiting) map.setLayoutProperty('waiting-layer', 'visibility', animVis);
-    if (showWalks) map.setLayoutProperty('walks-layer', 'visibility', animVis);
+    // The animated dots live on the overlay, which draws nothing in static
+    // mode; drawOverlay() below clears whatever was on it.
+    drawOverlay();
     map.setLayoutProperty('subway-lines-layer', 'visibility', on ? 'none' : 'visible');
     map.setLayoutProperty('static-segments-layer', 'visibility', on ? 'visible' : 'none');
     map.setLayoutProperty('static-stations-layer', 'visibility', on ? 'visible' : 'none');
@@ -3004,6 +3091,7 @@ function setSpeed(s) {
     speedMultiplier = s;
     if (s > 0) lastSpeed = s;
     resetAnchor();
+    invalidate();   // restarts the loop when coming off a pause
     document.querySelectorAll('#speed-buttons button[data-speed]').forEach(btn => {
         btn.classList.toggle('active', Number(btn.dataset.speed) === s);
     });
@@ -3095,64 +3183,31 @@ function clearAllLocked() {
     lockedTooltips.length = 0;
 }
 
-map.on('mousemove', (e) => { lastMousePoint = e.point; tooltipDirty = true; });
-map.on('mouseout', () => { lastMousePoint = null; tooltipDirty = true; });
+// Hover is resolved against the overlay's own dot list, so a pointer move has
+// to wake the loop when the clock is stopped -- and the dot radii track zoom,
+// so a camera move has to as well.
+map.on('mousemove', (e) => { lastMousePoint = e.point; invalidate(); });
+map.on('mouseout', () => { lastMousePoint = null; invalidate(); });
+map.on('move', invalidate);
 
-map.on('mousemove', 'trains-layer', (e) => {
-    map.getCanvas().style.cursor = 'pointer';
-    const p = e.features[0].properties;
-    const coords = e.features[0].geometry.coordinates;
-    hoverTrain = { ti: p.ti };
-    hoverType = 'train';
-    hoverTooltip.setLngLat(coords)
-        .setHTML(trainTooltipHTML(p))
-        .addTo(map);
-});
-map.on('mouseleave', 'trains-layer', () => {
-    map.getCanvas().style.cursor = '';
-    if (hoverType === 'train') {
-        hoverTrain = null;
-        hoverType = null;
-        hoverTooltip.remove();
-    }
-});
-
+// The dots are no longer MapLibre layers, so there are no layer-scoped
+// mousemove/mouseleave/click events to bind. refreshTooltips() covers hover;
+// this covers locking one open.
 let clickedTrain = false;
-map.on('click', 'trains-layer', (e) => {
-    clickedTrain = true;
-    const p = e.features[0].properties;
-    const coords = e.features[0].geometry.coordinates;
-    const popup = makePopup();
-    popup.setLngLat(coords).setHTML(trainTooltipHTML(p)).addTo(map);
-    lockedTooltips.push({ type: 'train', popup, ti: p.ti });
-});
-
-map.on('mousemove', 'waiting-layer', (e) => {
-    if (hoverType === 'train') return;
-    map.getCanvas().style.cursor = 'pointer';
-    const p = e.features[0].properties;
-    const coords = e.features[0].geometry.coordinates;
-    hoverStation = { si: p.si, lngLat: coords };
-    hoverType = 'station';
-    hoverTooltip.setLngLat(coords)
-        .setHTML(stationTooltipHTML(p.si, Math.round(getStationWaiting(p.si))))
-        .addTo(map);
-});
-map.on('mouseleave', 'waiting-layer', () => {
-    map.getCanvas().style.cursor = '';
-    if (hoverType === 'station') {
-        hoverStation = null;
-        hoverType = null;
-        hoverTooltip.remove();
+map.on('click', (e) => {
+    const d = pickDot(e.point);
+    if (!d) return;
+    if (d.kind === 'train') {
+        clickedTrain = true;
+        const p = d.t;
+        const popup = makePopup();
+        popup.setLngLat([p.lon, p.lat]).setHTML(trainTooltipHTML(p)).addTo(map);
+        lockedTooltips.push({ type: 'train', popup, ti: p.ti });
+        return;
     }
-});
-
-map.on('click', 'waiting-layer', (e) => {
-    if (clickedTrain) return; // train layer already handled this click
-    const p = e.features[0].properties;
-    const coords = e.features[0].geometry.coordinates;
+    const p = d.s;
     const popup = makePopup();
-    popup.setLngLat(coords).setHTML(stationTooltipHTML(p.si, Math.round(getStationWaiting(p.si)))).addTo(map);
+    popup.setLngLat([p.lon, p.lat]).setHTML(stationTooltipHTML(p.si, Math.round(getStationWaiting(p.si)))).addTo(map);
     lockedTooltips.push({ type: 'station', popup, si: p.si });
 });
 
@@ -3167,11 +3222,20 @@ map.on('click', (e) => {
     clickedTrain = false;
     document.getElementById('info-panel').classList.add('hidden');
     if (lockedTooltips.length === 0) return;
-    const layers = ['trains-layer', 'waiting-layer'].filter(l => map.getLayer(l));
-    const features = layers.length ? map.queryRenderedFeatures(e.point, { layers }) : [];
-    if (features.length > 0) return;
+    if (pickDot(e.point)) return;   // clicked another dot; that one locks instead
     clearAllLocked();
 });
+
+// An unfocused window is often still on screen -- a second monitor, or sitting
+// beside an editor -- so it keeps running, just slowly. Only a genuinely hidden
+// page stops, and then the clock freezes with it.
+window.addEventListener('blur', () => { RENDER_INTERVAL = RENDER_INTERVAL_BLURRED; });
+window.addEventListener('focus', () => {
+    RENDER_INTERVAL = RENDER_INTERVAL_FOCUSED;
+    invalidate();
+});
+document.addEventListener('visibilitychange',
+    () => (document.hidden ? suspend() : resume()));
 
 // --- Info panel ---
 const toggleInfo = () => document.getElementById('info-panel').classList.toggle('hidden');
