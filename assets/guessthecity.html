@@ -7,8 +7,8 @@
 {%- include analytics.html -%}
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>guess the city!</title>
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5/dist/maplibre-gl.css" />
+  <link rel="preconnect" href="https://server.arcgisonline.com" crossorigin />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet" />
 
@@ -118,29 +118,22 @@
     .clue-clip-wrapper {
       width: var(--map-size); height: var(--map-size);
       overflow: hidden; position: relative; flex-shrink: 0;
+      background: #1a2e1a;
     }
 
-    /* The pyramid container holds all zoom layers, scaled up 1.5x */
-    #pyramid-container {
+    /* Single GL map filling the panel. The old implementation stacked one
+       Leaflet map per integer zoom and CSS-scaled them to fake fractional
+       zoom; MapLibre does fractional zoom natively, so there is just one map
+       now and CLUE_ZOOM_OFFSET reproduces the old framing exactly. */
+    #clue-map {
       position: absolute;
       inset: 0;
-      overflow: hidden;
-      transform: scale(1.3);
-      transform-origin: center center;
+      /* Hidden while a round is being set up, so the previous round's answer
+         view never shows through during the geocode await. */
+      opacity: 0;
+      transition: opacity 0.2s ease;
     }
-
-    /* Each pyramid layer is a full-size Leaflet map, clipped to a circle */
-    .pyramid-layer {
-      position: absolute;
-      width: calc(var(--map-size) * 2.3);
-      height: calc(var(--map-size) * 2.3);
-      left: 50%;
-      top: 50%;
-      will-change: transform;
-      transform-origin: center center;
-      transform: translate(-50%, -50%) scale(1);
-    }
-    /* Filter applied via JS only for map mode */
+    #clue-map.ready { opacity: 1; }
 
     .map-container {
       width: var(--map-size); height: var(--map-size); flex-shrink: 0;
@@ -254,18 +247,16 @@
     .lb-diff { color: var(--text-dim); font-size: 0.65rem; }
     .lb-empty { font-family: var(--font-mono); font-size: 0.75rem; color: var(--text-dim); }
 
-    .leaflet-container { background: #eef3eb; }
-    .satellite-mode .leaflet-container { background: #1a2e1a; }
-    .pyramid-layer.map-tiles .leaflet-tile-pane {
-    }
-    .pyramid-layer .leaflet-tile-pane img {
-      image-rendering: high-quality;
-    }
-    .leaflet-control-attribution {
+    .maplibregl-map { background: #eef3eb; }
+    .satellite-mode #clue-map .maplibregl-map,
+    .satellite-mode #clue-map .maplibregl-canvas-container { background: #1a2e1a; }
+    .maplibregl-ctrl-attrib.maplibregl-compact {
       background: #cde7b7 !important;
       color: var(--text-dim) !important; font-size: 0.6rem !important;
     }
-    .leaflet-control-attribution a { color: var(--text-dim) !important; }
+    .maplibregl-ctrl-attrib a { color: var(--text-dim) !important; }
+    /* Leaflet's zoom control was a compact stacked pair; keep that footprint. */
+    .maplibregl-ctrl-group button { width: 26px; height: 26px; }
 
     @media (max-width: 820px) {
       html, body { overflow: auto; }
@@ -310,7 +301,7 @@
         <h2>clue map</h2>
       </div>
       <div class="clue-clip-wrapper" id="clue-clip">
-        <div id="pyramid-container"></div>
+        <div id="clue-map"></div>
       </div>
       <div id="wrong-feedback" class="wrong-feedback"></div>
       <div class="result-overlay" id="result-overlay">
@@ -355,9 +346,7 @@
   </div>
 
 
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="https://unpkg.com/maplibre-gl@5/dist/maplibre-gl.js"></script>
-  <script src="https://unpkg.com/@maplibre/maplibre-gl-leaflet@0.1.3/leaflet-maplibre-gl.js"></script>
 
   <script>
     /* ==========================================================
@@ -435,7 +424,6 @@
       winRadius: 250,        // base win radius in km (used when zoomed in)
       scaleThresholdKm: 500, // win radius starts growing once the view exceeds this radius
       penalty: 4,
-      maxVisibleLayers: 2,
     };
 
     /* ==========================================================
@@ -474,34 +462,38 @@
       return 1.0;
     }
 
+    // Single definition of the zoom at a given elapsed time — the camera, the
+    // win radius and the zoom readout all read from here. Uses the mode-aware
+    // start zoom (getEffectiveStartZoom, defined below) so it cannot drift
+    // from the animation loop the way a second copy of this formula would.
     function effectiveZoom(elapsed) {
+      const startZoom = getEffectiveStartZoom();
       const progress = elapsedToZoomProgress(elapsed);
-      return CONFIG.startZoom - progress * (CONFIG.startZoom - CONFIG.endZoom);
+      return startZoom - progress * (startZoom - CONFIG.endZoom);
     }
 
     /* ==========================================================
        TILES — map and satellite modes
        ========================================================== */
+    // `tiles` is a MapLibre URL template list. MapLibre picks the entry for a
+    // tile with urls[(x + y) % urls.length], so adding a second hostname here
+    // shards across it — buildTileUrl() below mirrors that choice exactly so
+    // prefetches land on the same URL the map will ask for. Esri serves this
+    // over HTTP/1.1 from one host (6 connections), so keeping the request
+    // count low matters more here than it would on an HTTP/2 source.
     const TILE_SETS = {
       map: {
-        clue: "https://{s}.basemaps.cartocdn.com/rastertiles/voyager_nolabels/{z}/{x}/{y}{r}.png",
-        preload: "https://{s}.basemaps.cartocdn.com/rastertiles/voyager_nolabels/{z}/{x}/{y}.png",
-        subdomains: "abcd",
+        tiles: ["a", "b", "c", "d"].map(s =>
+          `https://${s}.basemaps.cartocdn.com/rastertiles/voyager_nolabels/{z}/{x}/{y}.png`),
         maxClueZoom: 20,
+        dim: true,
       },
       satellite: {
-        clue: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
-        preload: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
-        subdomains: "",
+        tiles: ["https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"],
         maxClueZoom: 18,
+        attribution: "Imagery &copy; Esri",
       },
     };
-
-    // Answer map always uses standard labeled tiles
-    const ANSWER_TILE_URL = "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png";
-    const ANSWER_TILE_ATTR =
-      '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> ' +
-      '&copy; <a href="https://carto.com/">CARTO</a>';
 
     let tileMode = "satellite";
 
@@ -511,8 +503,6 @@
     function getEffectiveStartZoom() {
       return Math.min(CONFIG.startZoom, getTiles().maxClueZoom);
     }
-
-    const SUBDOMAINS = ["a", "b", "c", "d"];
 
     /* ==========================================================
        MAP SIZE
@@ -531,8 +521,9 @@
       const maxW = isStacked ? containerW - 48 : (containerW - 64) / 2;
       const size = Math.max(200, Math.floor(Math.min(maxFromHeight, maxW)));
       document.documentElement.style.setProperty("--map-size", size + "px");
-      answerMap.invalidateSize();
-      for (const layer of pyramidLayers) layer.map.invalidateSize();
+      // GL maps don't observe their container, so both need telling.
+      answerMap.resize();
+      clueMap.resize();
     }
 
     /* ==========================================================
@@ -546,155 +537,244 @@
     };
 
     /* ==========================================================
-       PYRAMID LAYER SYSTEM
+       CLUE MAP — one MapLibre GL map, continuous fractional zoom
        ========================================================== */
-    const pyramidContainer = document.getElementById("pyramid-container");
-    let pyramidLayers = [];
+    /* This used to be a pyramid: one Leaflet map per integer zoom, CSS-scaled
+       and clip-path'd into each other to fake fractional zoom. MapLibre zooms
+       fractionally on its own, so there is one map now.
 
-    function createPyramidLayer(zoom, latlng) {
-      const el = document.createElement("div");
-      el.className = "pyramid-layer";
-      if (tileMode === "map") el.classList.add("map-tiles");
-      el.id = `pyramid-layer-${zoom}`;
-      el.style.zIndex = zoom;
-      pyramidContainer.appendChild(el);
+       The framing has to be preserved exactly, because getDynamicWinRadius()
+       is empirically calibrated against it. Two corrections, both folded into
+       the camera: Leaflet zoom N means 256 * 2^N px per world where MapLibre
+       means 512 * 2^N (so one level lower), and the old pyramid sat inside a
+       container with `transform: scale(1.3)` (so log2(1.3) levels higher). */
+    const CLUE_ZOOM_OFFSET = Math.log2(1.3) - 1;   // ~ -0.6215
 
-      const map = L.map(el, {
-        zoomControl: false, dragging: false, touchZoom: false,
-        doubleClickZoom: false, scrollWheelZoom: false,
-        boxZoom: false, keyboard: false,
-        fadeAnimation: false, zoomAnimation: false,
-        attributionControl: false,
-      }).setView(latlng, zoom);
+    const clueEl = document.getElementById("clue-map");
 
+    function buildClueStyle() {
       const tiles = getTiles();
-      L.tileLayer(tiles.clue, {
-        keepBuffer: 10, updateWhenZooming: false,
-        subdomains: tiles.subdomains || "abc",
-        maxZoom: tiles.maxClueZoom || 20,
-      }).addTo(map);
-
-      // Map mode: brightness/contrast filter
-      if (tileMode === "map") {
-        const tilePane = el.querySelector(".leaflet-tile-pane");
-        if (tilePane) tilePane.style.filter = "brightness(0.85) contrast(1.3)";
-      }
-
-      const layer = { zoom, map, el };
-      pyramidLayers.push(layer);
-      pyramidLayers.sort((a, b) => a.zoom - b.zoom);
-      return layer;
+      return {
+        version: 8,
+        sources: {
+          clue: {
+            type: "raster",
+            tiles: tiles.tiles,
+            tileSize: 256,
+            minzoom: 0,
+            maxzoom: tiles.maxClueZoom,
+            attribution: tiles.attribution || "",
+          },
+        },
+        layers: [
+          { id: "clue-bg", type: "background", paint: { "background-color": "#1a2e1a" } },
+          {
+            id: "clue-raster", type: "raster", source: "clue",
+            // Map mode replaces the old brightness(0.85) contrast(1.3) CSS
+            // filter that was applied to the Leaflet tile pane.
+            paint: tiles.dim
+              ? { "raster-fade-duration": 300, "raster-brightness-max": 0.85, "raster-contrast": 0.3 }
+              : { "raster-fade-duration": 300 },
+          },
+        ],
+      };
     }
 
-    function destroyPyramidLayer(layer) {
-      layer.map.remove();
-      if (layer.el.parentNode) layer.el.parentNode.removeChild(layer.el);
-      pyramidLayers = pyramidLayers.filter(l => l !== layer);
+    const clueMap = new maplibregl.Map({
+      container: "clue-map",
+      style: buildClueStyle(),
+      center: [0, 20],
+      zoom: CONFIG.startZoom + CLUE_ZOOM_OFFSET,
+      interactive: false,
+      attributionControl: false,
+    });
+
+    function setClueZoom(ez) {
+      clueMap.jumpTo({ zoom: ez + CLUE_ZOOM_OFFSET });
     }
 
-    function clearAllPyramidLayers() {
-      for (const layer of [...pyramidLayers]) {
-        layer.map.remove();
-        if (layer.el.parentNode) layer.el.parentNode.removeChild(layer.el);
-      }
-      pyramidLayers = [];
+    /* Hand the whole zoom-out to MapLibre rather than nudging setZoom() from
+       our own rAF. Driving it externally meant the zoom advanced in even
+       per-frame steps that MapLibre then painted at uneven times — its repaint
+       sometimes landed in the same frame and sometimes a frame later, so an
+       identical zoom step covered anywhere from 4ms to 37ms of wall clock.
+       Even steps, uneven timing: that was the stutter. easeTo interpolates
+       inside MapLibre's own render loop, where the camera value is computed
+       from the paint's clock, so the rate is smooth by construction. */
+    /* A wrong guess pushes the clock forward 4s, which the camera has to make
+       up. Teleporting there reveals a whole ring of never-seen ground in one
+       frame, and on a slow link that was the single worst source of empty
+       background left (measured ~8% of the panel). Sliding into it over a few
+       hundred ms gives the tiles time to arrive and reads better besides. */
+    const PENALTY_CATCHUP_MS = 450;
+
+    function startClueZoomAnimation(elapsed, catchUpMs) {
+      const ez0 = effectiveZoom(elapsed);          // where the clock says we are
+      const remaining = CONFIG.totalTime - elapsed;
+      if (remaining <= 0) { setClueZoom(ez0); return; }
+
+      // Without a catch-up, snap into place first so camera and clock agree
+      // exactly; with one, start from wherever the camera currently is.
+      if (!catchUpMs) setClueZoom(ez0);
+      const camNow = clueMap.getZoom() - CLUE_ZOOM_OFFSET;
+      const gap = camNow - ez0;                    // >0 only mid-catch-up
+      const span = camNow - CONFIG.endZoom;
+      if (span <= 0) return;
+
+      clueMap.easeTo({
+        zoom: CONFIG.endZoom + CLUE_ZOOM_OFFSET,
+        duration: remaining * 1000,
+        /* easeTo interpolates zoom linearly against easing(t), so this maps
+           time to "fraction of the way from here to the end zoom" — keeping
+           PHASES as the single source of truth for pacing, plus a decaying
+           term that closes any catch-up gap over catchUpMs. */
+        easing: t => {
+          const target = effectiveZoom(elapsed + t * remaining);
+          const blend = catchUpMs ? Math.min(1, (t * remaining * 1000) / catchUpMs) : 1;
+          return (camNow - (target + gap * (1 - blend))) / span;
+        },
+        // Without this MapLibre skips the animation outright for anyone with
+        // prefers-reduced-motion set, and the clue map would snap to the end.
+        essential: true,
+      });
+    }
+
+    // Resolves once the clue map has settled — tiles in, fades finished — or
+    // after capMs regardless, so a slow tile server can never stall a round.
+    function clueSettled(capMs) {
+      return new Promise(resolve => {
+        let settled = false;
+        const finish = () => {
+          if (settled) return;
+          settled = true;
+          clearTimeout(timer);
+          clueMap.off("idle", finish);
+          resolve();
+        };
+        const timer = setTimeout(finish, capMs);
+        clueMap.on("idle", finish);
+      });
     }
 
     /* ==========================================================
-       PYRAMID CLIP & SCALE UPDATE
+       TILE PREFETCH
+       MapLibre covers a not-yet-loaded tile with whatever loaded parent or
+       child it already holds, so crossing a zoom level is a clean whole-frame
+       cross-fade — but only if the incoming level is already in the HTTP
+       cache. If those tiles trickle in instead, you get a ragged per-tile
+       patchwork, which for satellite imagery (different capture dates at
+       different levels) looks worse than any single clean seam. So warm each
+       level ahead of time: 9 tiles per level, against the 81 per level the
+       old preloader fired.
        ========================================================== */
-    function updatePyramidLayers(currentEZ) {
-      const startZoom = getEffectiveStartZoom();
-      const currentIntZoom = Math.max(CONFIG.endZoom, Math.ceil(currentEZ));
-
-      const desiredZooms = [];
-      for (let z = currentIntZoom; z <= Math.min(currentIntZoom + CONFIG.maxVisibleLayers - 1, startZoom); z++) {
-        desiredZooms.push(z);
-      }
-
-      for (const z of desiredZooms) {
-        if (!pyramidLayers.find(l => l.zoom === z)) {
-          createPyramidLayer(z, state.clueLatLng || state.currentCity.latlng);
-        }
-      }
-
-      for (const layer of [...pyramidLayers]) {
-        if (!desiredZooms.includes(layer.zoom)) destroyPyramidLayer(layer);
-      }
-
-      pyramidLayers.sort((a, b) => a.zoom - b.zoom);
-      const numLayers = pyramidLayers.length;
-
-      for (let i = 0; i < numLayers; i++) {
-        const layer = pyramidLayers[i];
-        const scaleFactor = Math.pow(2, -(layer.zoom - currentEZ));
-        layer.el.style.transform = `translate(-50%, -50%) scale(${scaleFactor})`;
-
-        const posFromTop = numLayers - 1 - i;
-
-        if (posFromTop === numLayers - 1) {
-          layer.el.style.clipPath = "none";
-        } else {
-          const fractionalProgress = layer.zoom - currentEZ;
-          const baseScreenFrac = 0.35 * (posFromTop + 1);
-          const growFactor = 1.0 + fractionalProgress * 0.5;
-          const screenFrac = Math.min(1.0, baseScreenFrac * growFactor);
-          // Element is 2.3x viewport
-          const elementFrac = screenFrac / (2.3 * scaleFactor);
-          const clipPct = Math.min(50, elementFrac * 100 + 2);
-          layer.el.style.clipPath = `circle(${clipPct}% at 50% 50%)`;
-        }
-      }
-    }
-
-    /* ==========================================================
-       TILE PRELOADING
-       ========================================================== */
-    function latLngToTile(lat, lng, zoom) {
+    // Fractional tile coordinates — the position *within* the tile matters for
+    // working out coverage, so this deliberately does not floor.
+    function latLngToTileXY(lat, lng, zoom) {
       const n = Math.pow(2, zoom);
-      const x = Math.floor(((lng + 180) / 360) * n);
       const latRad = (lat * Math.PI) / 180;
-      const y = Math.floor(
-        ((1 - Math.log(Math.tan(latRad) + 1 / Math.cos(latRad)) / Math.PI) / 2) * n
-      );
-      return { x, y };
+      return {
+        x: ((lng + 180) / 360) * n,
+        y: ((1 - Math.log(Math.tan(latRad) + 1 / Math.cos(latRad)) / Math.PI) / 2) * n,
+      };
     }
 
-    let preloadedZooms = new Set();
+    // MapLibre asks a 256px raster source for round(cameraZoom + 1).
+    function clueSourceZoom(ez) {
+      return Math.round(ez + CLUE_ZOOM_OFFSET + 1);
+    }
 
-    function preloadTilesForZoom(lat, lng, zoom) {
-      const startZoom = getEffectiveStartZoom();
-      if (zoom < CONFIG.endZoom || zoom > startZoom || preloadedZooms.has(zoom)) return;
-      preloadedZooms.add(zoom);
+    // Mirrors MapLibre's CanonicalTileID.url(): urls[(x + y) % urls.length].
+    // Has to agree exactly, or the prefetch warms a URL the map never asks for.
+    function buildTileUrl(urls, z, x, y) {
+      return urls[(x + y) % urls.length]
+        .replace(/{z}/g, z).replace(/{x}/g, x).replace(/{y}/g, y);
+    }
 
-      const center = latLngToTile(lat, lng, zoom);
-      const mapPx = parseFloat(getComputedStyle(document.documentElement)
-        .getPropertyValue("--map-size")) * 2.3 || 1035;
-      const tilesAcross = Math.ceil(mapPx / 256);
-      const radius = Math.ceil(tilesAcross / 2) + 1;
+    /* Priority hint on prefetch requests. This one matters a lot: measured on
+       a throttled 3 Mbps / 150ms link, "auto" left frames up to 100% empty
+       because prefetches queued ahead of the tiles the map was waiting on over
+       a 6-connection HTTP/1.1 pipe — the old preloader's exact failure. With
+       "low" the worst frame in the same test was ~3%. Browsers without
+       priority hints ignore it and issue a normal fetch. */
+    const PREFETCH_PRIORITY = "low";
 
+    // How many levels ahead to warm. Deeper lead steadily improves the
+    // wrong-guess skip (measured 13.8% -> 7.8% empty at 3 -> 6 levels), but
+    // going much deeper just front-loads a large burst at round start.
+    const PREFETCH_LEAD = 6;
+
+    /* Prefetches go through a queue instead of all at once. The priority hint
+       alone is not enough: a request that already holds one of the six
+       HTTP/1.1 sockets is never preempted, so a burst can occupy all of them
+       and starve the tiles the map needs *now*. At 1.2 Mbps that showed up as
+       a fully empty panel — the map could not even fetch a low-resolution
+       parent to cover with. Capping in-flight prefetches keeps sockets free
+       for the map at all times, so a slow link degrades to blurry rather than
+       blank. */
+    const PREFETCH_CONCURRENCY = 2;
+    let prefetchQueue = [];
+    let prefetchActive = 0;
+
+    function pumpPrefetchQueue() {
+      while (prefetchActive < PREFETCH_CONCURRENCY && prefetchQueue.length) {
+        const url = prefetchQueue.shift();
+        prefetchActive++;
+        fetch(url, { priority: PREFETCH_PRIORITY })
+          // Consume the body: an unread response stream can be collected and
+          // cancel the transfer, which would leave nothing in the cache.
+          .then(r => r.blob())
+          .catch(() => {})
+          .then(() => { prefetchActive--; pumpPrefetchQueue(); });
+      }
+    }
+
+    let prefetchedZooms = new Set();
+
+    /* A level is in use while round(cameraZoom + 1) equals it, which spans a
+       whole zoom level: its tiles enter the frame at 512/sqrt(2) = 362 screen
+       px and shrink to 512/2^1.5 = 181 px before the next level takes over.
+       Sizing the block for the moment of switch-in only covers the start of
+       that span — by the end the viewport reaches twice as far, and those
+       outer tiles show up cold mid-level. Size for the small end. */
+    const MIN_TILE_SCREEN_PX = 512 / Math.pow(2, 1.5);   // ~181
+
+    function prefetchSourceZoom(zoom) {
       const tiles = getTiles();
-      for (let dx = -radius; dx <= radius; dx++) {
-        for (let dy = -radius; dy <= radius; dy++) {
-          const tx = center.x + dx;
-          const ty = center.y + dy;
-          const s = SUBDOMAINS[((tx % 4) + 4) % 4];
-          const url = tiles.preload
-            .replace("{s}", s)
-            .replace("{z}", zoom)
-            .replace("{x}", tx)
-            .replace("{y}", ty)
-            .replace("{r}", "");
-          new Image().src = url;
+      if (zoom < 0 || zoom > tiles.maxClueZoom || prefetchedZooms.has(zoom)) return;
+      prefetchedZooms.add(zoom);
+
+      const clue = state.clueLatLng || (state.currentCity && state.currentCity.latlng);
+      if (!clue) return;
+
+      const el = document.getElementById("clue-clip");
+      const px = Math.max(el.clientWidth, el.clientHeight) || 450;
+      /* Half the panel, measured in tiles of this level, at the most zoomed-out
+         moment the level is still in use — i.e. when its tiles are smallest.
+         Taking the exact range rather than a symmetric worst-case block is
+         worth a lot: a fixed 5x5 covers 905px for a 505px panel, over three
+         times the area actually needed, and those tiles cost real bytes. */
+      const half = (px / 2) / MIN_TILE_SCREEN_PX;
+      const n = Math.pow(2, zoom);
+      const c = latLngToTileXY(clue[0], clue[1], zoom);
+
+      for (let ty = Math.floor(c.y - half); ty <= Math.floor(c.y + half); ty++) {
+        if (ty < 0 || ty >= n) continue;                       // past a pole
+        for (let x = Math.floor(c.x - half); x <= Math.floor(c.x + half); x++) {
+          const tx = ((x % n) + n) % n;                        // wrap the antimeridian
+          prefetchQueue.push(buildTileUrl(tiles.tiles, zoom, tx, ty));
         }
       }
+      pumpPrefetchQueue();
+    }
+
+    function prefetchAhead(ez) {
+      const z = clueSourceZoom(ez);
+      for (let i = 1; i <= PREFETCH_LEAD; i++) prefetchSourceZoom(z - i);
     }
 
     /* ==========================================================
        rAF ANIMATION LOOP
        ========================================================== */
-    let _lastPyramidUpdate = 0;
-
     function animationLoop(timestamp) {
       if (!state.roundActive) return;
 
@@ -709,25 +789,11 @@
         return;
       }
 
-      // Compute effective zoom using the mode-aware start zoom
-      const startZoom = getEffectiveStartZoom();
-      const zoomRange = startZoom - CONFIG.endZoom;
-      const progress = elapsedToZoomProgress(elapsed);
-      const ez = startZoom - progress * zoomRange;
+      const ez = effectiveZoom(elapsed);
 
-      // Throttle pyramid CSS updates to ~30fps — clip-path+transform at 60fps is expensive
-      if (timestamp - _lastPyramidUpdate >= 33) {
-        _lastPyramidUpdate = timestamp;
-
-        // Preload upcoming zoom levels
-        const currentIntZoom = Math.max(CONFIG.endZoom, Math.ceil(ez));
-        for (let z = currentIntZoom; z >= Math.max(CONFIG.endZoom, currentIntZoom - 3); z--) {
-          const clue = state.clueLatLng || state.currentCity.latlng;
-          preloadTilesForZoom(clue[0], clue[1], z);
-        }
-
-        updatePyramidLayers(ez);
-      }
+      // The camera is MapLibre's job now (see startClueZoomAnimation); this
+      // loop only keeps the clock, the UI and the tile prefetch in step.
+      prefetchAhead(ez);
 
       // UI at ~4Hz
       if (timestamp - state._lastUIUpdate > 250) {
@@ -740,7 +806,7 @@
         fill.classList.toggle("critical", pct <= 15);
         document.getElementById("timer-text").textContent = `${t.toFixed(1)}s`;
         document.getElementById("zoom-label").textContent = `zoom ${ez.toFixed(1)}`;
-        if (guessCircle) guessCircle.setRadius(getDynamicWinRadius(ez) * 1000);
+        syncGuessOverlay(ez);
       }
 
       state.animFrameId = requestAnimationFrame(animationLoop);
@@ -750,11 +816,12 @@
       state.animStartTime = null;
       state.animTimeOffset = 0;
       state._lastUIUpdate = 0;
-      _lastPyramidUpdate = 0;
+      startClueZoomAnimation(0);
       state.animFrameId = requestAnimationFrame(animationLoop);
     }
 
     function stopAnimation() {
+      clueMap.stop();
       if (state.animFrameId) {
         cancelAnimationFrame(state.animFrameId);
         state.animFrameId = null;
@@ -762,70 +829,147 @@
     }
 
     /* ==========================================================
-       ANSWER MAP (always standard labeled tiles)
+       ANSWER MAP — MapLibre GL, OpenFreeMap vector basemap
        ========================================================== */
-    const answerMap = L.map("answer-map", { zoomControl: true }).setView([20, 0], 2);
-    // OpenFreeMap vector basemap via maplibre-gl-leaflet (keyless). Liberty =
-    // colorful + labeled, the closest analog to the old CARTO voyager answer tiles.
-    L.maplibreGL({ style: 'https://tiles.openfreemap.org/styles/liberty', attribution: '© OpenStreetMap' }).addTo(answerMap);
-    L.control.scale({ imperial: false, position: 'bottomleft' }).addTo(answerMap);
+    /* This was Leaflet with maplibre-gl-leaflet layered on top. That shim
+       draws GL into a canvas only 10% wider than the viewport and re-syncs the
+       camera at most every 32ms, so a quick drag outruns what has been
+       rendered and the map visibly fails to fill in; zooming was a CSS-scaled
+       bitmap that snapped at the end. Driving MapLibre directly removes both,
+       and with it the SVG-redraw workaround the overlays used to need. */
+    const answerMap = new maplibregl.Map({
+      container: "answer-map",
+      style: "https://tiles.openfreemap.org/styles/liberty",
+      center: [0, 20],          // Leaflet [20, 0] @ z2 == MapLibre [0, 20] @ z1
+      zoom: 1,
+      attributionControl: false,
+      dragRotate: false,
+      pitchWithRotate: false,
+      touchPitch: false,
+    });
+    answerMap.touchZoomRotate.disableRotation();
+    answerMap.addControl(new maplibregl.NavigationControl({ showCompass: false }), "top-left");
+    answerMap.addControl(new maplibregl.ScaleControl({ unit: "metric" }), "bottom-left");
+    answerMap.addControl(
+      new maplibregl.AttributionControl({ compact: true, customAttribution: "&copy; OpenStreetMap" }),
+      "bottom-right"
+    );
 
-    let guessCircle = null;
+    const ACCENT = "#4a8c3f";
+    const EMPTY_FC = { type: "FeatureCollection", features: [] };
+
     let guessPinMarker = null;
-    const GUESS_CIRCLE_STYLE = {
-      color: "#4a8c3f", weight: 2,
-      fillColor: "#4a8c3f", fillOpacity: 0.10, dashArray: "6 4",
-    };
-    const GUESS_PIN_ICON = L.divIcon({
-      className: "",
-      html: `<svg xmlns="http://www.w3.org/2000/svg" width="28" height="40" viewBox="0 0 28 40" style="filter:drop-shadow(0 2px 4px rgba(0,0,0,0.35))"><path d="M14 0 C6.268 0 0 6.268 0 14 C0 24.5 14 40 14 40 C14 40 28 24.5 28 14 C28 6.268 21.732 0 14 0 Z" fill="#4a8c3f"/><circle cx="14" cy="14" r="6" fill="white"/></svg>`,
-      iconSize: [28, 40],
-      iconAnchor: [14, 40],
+    let answerReady = false;
+
+    const GUESS_PIN_SVG =
+      `<svg xmlns="http://www.w3.org/2000/svg" width="28" height="40" viewBox="0 0 28 40" style="filter:drop-shadow(0 2px 4px rgba(0,0,0,0.35))"><path d="M14 0 C6.268 0 0 6.268 0 14 C0 24.5 14 40 14 40 C14 40 28 24.5 28 14 C28 6.268 21.732 0 14 0 Z" fill="${ACCENT}"/><circle cx="14" cy="14" r="6" fill="white"/></svg>`;
+
+    /* A true great-circle ring on the same sphere haversineKm() uses, so the
+       drawn boundary *is* the win condition rather than an approximation of it
+       — L.circle projected a slightly different shape, which showed at the
+       large radii this grows to late in a round. */
+    function geodesicRing(lat, lng, radiusKm, steps = 128) {
+      const R = 6371;
+      const d = radiusKm / R;
+      const lat1 = (lat * Math.PI) / 180;
+      const lng1 = (lng * Math.PI) / 180;
+      const coords = [];
+      let prevLng = null;
+      for (let i = 0; i <= steps; i++) {
+        const brng = (i / steps) * 2 * Math.PI;
+        const lat2 = Math.asin(
+          Math.sin(lat1) * Math.cos(d) + Math.cos(lat1) * Math.sin(d) * Math.cos(brng)
+        );
+        const lng2 = lng1 + Math.atan2(
+          Math.sin(brng) * Math.sin(d) * Math.cos(lat1),
+          Math.cos(d) - Math.sin(lat1) * Math.sin(lat2)
+        );
+        let lngDeg = (lng2 * 180) / Math.PI;
+        // Keep the ring continuous across the antimeridian rather than letting
+        // it wrap and smear a band across the whole world.
+        if (prevLng !== null) {
+          while (lngDeg - prevLng > 180) lngDeg -= 360;
+          while (prevLng - lngDeg > 180) lngDeg += 360;
+        }
+        prevLng = lngDeg;
+        coords.push([lngDeg, (lat2 * 180) / Math.PI]);
+      }
+      return { type: "Feature", properties: {}, geometry: { type: "Polygon", coordinates: [coords] } };
+    }
+
+    answerMap.on("load", () => {
+      answerReady = true;
+      answerMap.addSource("guess-area", { type: "geojson", data: EMPTY_FC });
+      answerMap.addSource("result", { type: "geojson", data: EMPTY_FC });
+
+      answerMap.addLayer({
+        id: "guess-area-fill", type: "fill", source: "guess-area",
+        paint: { "fill-color": ACCENT, "fill-opacity": 0.10 },
+      });
+      answerMap.addLayer({
+        id: "guess-area-line", type: "line", source: "guess-area",
+        paint: { "line-color": ACCENT, "line-width": 2, "line-dasharray": [3, 2] },
+      });
+      answerMap.addLayer({
+        id: "result-line", type: "line", source: "result",
+        filter: ["==", ["geometry-type"], "LineString"],
+        paint: { "line-color": ["get", "color"], "line-width": 2, "line-dasharray": [3, 2] },
+      });
+      answerMap.addLayer({
+        id: "result-point", type: "circle", source: "result",
+        filter: ["==", ["geometry-type"], "Point"],
+        paint: {
+          "circle-radius": 8, "circle-color": ACCENT, "circle-opacity": 0.9,
+          "circle-stroke-color": ACCENT, "circle-stroke-width": 2,
+        },
+      });
+
+      syncGuessOverlay();
     });
 
-    answerMap.on("click", function (e) {
+    function setAnswerData(id, data) {
+      if (!answerReady) return;
+      const src = answerMap.getSource(id);
+      if (src) src.setData(data);
+    }
+
+    // Redraw the acceptance ring. Called on each guess and ~4x/sec during a
+    // round, since the radius grows as the clue map zooms out.
+    function syncGuessOverlay(ez) {
+      if (!state.guessLatLng) { setAnswerData("guess-area", EMPTY_FC); return; }
+      const z = ez === undefined
+        ? effectiveZoom(CONFIG.totalTime - state.timeRemaining)
+        : ez;
+      setAnswerData("guess-area", geodesicRing(
+        state.guessLatLng.lat, state.guessLatLng.lng, getDynamicWinRadius(z)
+      ));
+    }
+
+    function clearGuessOverlay() {
+      setAnswerData("guess-area", EMPTY_FC);
+      if (guessPinMarker) { guessPinMarker.remove(); guessPinMarker = null; }
+    }
+
+    answerMap.on("click", (e) => {
       if (!state.roundActive) return;
-      state.guessLatLng = e.latlng;
-      const ez = effectiveZoom(CONFIG.totalTime - state.timeRemaining);
-      const r = getDynamicWinRadius(ez) * 1000;
-      if (guessCircle) {
-        guessCircle.setLatLng(e.latlng);
-        guessCircle.setRadius(r);
-      } else {
-        guessCircle = L.circle(e.latlng, { ...GUESS_CIRCLE_STYLE, radius: r }).addTo(answerMap);
-      }
+      // World copies mean a click can arrive at lng 190; wrap so the readout
+      // and the stored guess stay in the normal range.
+      state.guessLatLng = e.lngLat.wrap();
+      syncGuessOverlay();
+
       if (guessPinMarker) {
-        guessPinMarker.setLatLng(e.latlng);
+        guessPinMarker.setLngLat(state.guessLatLng);
       } else {
-        guessPinMarker = L.marker(e.latlng, { icon: GUESS_PIN_ICON }).addTo(answerMap);
+        const el = document.createElement("div");
+        el.innerHTML = GUESS_PIN_SVG;
+        guessPinMarker = new maplibregl.Marker({ element: el, anchor: "bottom" })
+          .setLngLat(state.guessLatLng)
+          .addTo(answerMap);
       }
+
       document.getElementById("btn-submit").disabled = false;
       document.getElementById("guess-hint").textContent =
-        `${e.latlng.lat.toFixed(2)}, ${e.latlng.lng.toFixed(2)}`;
-    });
-
-    // Hide the circle and pin during player-initiated zoom animations to avoid SVG redraw glitches.
-    // endRound sets roundActive=false before fitBounds, so those zooms are left alone.
-    answerMap.on('zoomstart', () => {
-      if (state.roundActive && guessCircle) {
-        answerMap.removeLayer(guessCircle);
-        guessCircle = null;
-      }
-      if (state.roundActive && guessPinMarker) {
-        answerMap.removeLayer(guessPinMarker);
-        guessPinMarker = null;
-      }
-    });
-    answerMap.on('zoomend', () => {
-      if (state.roundActive && state.guessLatLng) {
-        if (guessCircle) { answerMap.removeLayer(guessCircle); guessCircle = null; }
-        const ez = effectiveZoom(CONFIG.totalTime - state.timeRemaining);
-        guessCircle = L.circle(state.guessLatLng,
-          { ...GUESS_CIRCLE_STYLE, radius: getDynamicWinRadius(ez) * 1000 }
-        ).addTo(answerMap);
-        if (guessPinMarker) { answerMap.removeLayer(guessPinMarker); guessPinMarker = null; }
-        guessPinMarker = L.marker(state.guessLatLng, { icon: GUESS_PIN_ICON }).addTo(answerMap);
-      }
+        `${state.guessLatLng.lat.toFixed(2)}, ${state.guessLatLng.lng.toFixed(2)}`;
     });
 
     /* ==========================================================
@@ -997,10 +1141,18 @@
        Entries are categorised by difficulty + mode (6 combos).
        Only entries matching the current selection are shown.
        ========================================================== */
-    const JSONBIN_BIN_ID  = "699b73faae596e708f4062e1";
-    const JSONBIN_API_KEY = "$2a$10$wgxuqXN86298YHAQDZ/lGOSPnrRiqnHmqgF2FAiq9hkubkmGG/7Ae";
-    const JSONBIN_URL = JSONBIN_BIN_ID
-      ? `https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}` : null;
+    // Backed by shonei-server (leaderboard.go). This replaced a jsonbin.io bin
+    // whose master key was in this file — public source, so anyone could rewrite
+    // or delete the whole account. Nothing secret lives here now; the server
+    // validates, filters names, and keeps an append-only log of every
+    // submission and every completed game.
+    const LB_BASE = "https://market.anita.garden/guesscity";
+
+    // One board per difficulty+mode combination, matching the server's key
+    // shape. The old client treated a missing mode as "map"; keep that.
+    function lbBoard(difficulty, mode) {
+      return `${difficulty}_${mode || "map"}`;
+    }
 
     const LB_KEY = "guessTheCity_leaderboard";
     const LB_CAT_MAX = 10;     // top entries kept per category locally
@@ -1088,21 +1240,25 @@
       `).join("");
     }
 
+    // Names are typed by strangers and go straight into innerHTML below, so they
+    // must be escaped — otherwise a short name like <img src=x onerror=…> runs
+    // as script for everyone who later opens this board.
+    function esc(s) {
+      return String(s).replace(/[&<>"']/g, c => (
+        { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]
+      ));
+    }
+
     async function fetchGlobalLeaderboard() {
       const container = document.getElementById("lb-global-entries");
-      if (!JSONBIN_URL) {
-        container.innerHTML = '<span class="lb-empty">Global leaderboard not configured</span>';
-        return;
-      }
       if (globalLeaderboardCache) renderGlobalLeaderboard(globalLeaderboardCache);
       else container.innerHTML = '<span class="lb-empty">Loading…</span>';
+      const { difficulty, mode } = getCurrentFilter();
       try {
-        const res = await fetch(`${JSONBIN_URL}/latest`, {
-          headers: { "X-Master-Key": JSONBIN_API_KEY },
-        });
+        const board = lbBoard(difficulty, mode);
+        const res = await fetch(`${LB_BASE}/board?board=${encodeURIComponent(board)}`);
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const data = await res.json();
-        const entries = (data.record && data.record.entries) || [];
+        const entries = (await res.json()).entries || [];
         globalLeaderboardCache = entries;
         renderGlobalLeaderboard(entries);
       } catch (err) {
@@ -1112,51 +1268,56 @@
       }
     }
 
+    // The server already returns just this board's top entries, ranked — no
+    // client-side filtering or sorting left to do.
     function renderGlobalLeaderboard(entries) {
-      const { difficulty, mode } = getCurrentFilter();
       const container = document.getElementById("lb-global-entries");
-      const filtered = entries
-        .filter(e => e.difficulty === difficulty && (e.mode === mode || !e.mode))
-        .sort((a, b) => b.score - a.score)
-        .slice(0, GLOBAL_CAT_MAX);
-      if (filtered.length === 0) {
+      if (!entries.length) {
         container.innerHTML = '<span class="lb-empty">No entries for this mode yet — be first!</span>';
         return;
       }
-      container.innerHTML = filtered.map((e, i) => `
+      container.innerHTML = entries.slice(0, GLOBAL_CAT_MAX).map((e, i) => `
         <div class="lb-entry">
           <span class="lb-rank">${i + 1}.</span>
-          <span class="lb-score">${e.score}/${e.maxScore}</span>
-          <span class="lb-diff">${e.name || "anon"}</span>
+          <span class="lb-score">${esc(e.found)}/${esc(e.total)}</span>
+          <span class="lb-diff">${esc(e.name || "anon")}</span>
         </div>
       `).join("");
     }
 
+    // Throws with the server's own message (a refused name, a rate limit) so the
+    // caller can show why, instead of reporting a success that never happened.
     async function submitToGlobalLeaderboard(score, difficulty, mode, name = getPlayerName()) {
-      if (!JSONBIN_URL) return;
-      try {
-        const res = await fetch(`${JSONBIN_URL}/latest`, {
-          headers: { "X-Master-Key": JSONBIN_API_KEY },
-        });
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const data = await res.json();
-        const entries = (data.record && data.record.entries) || [];
-        entries.push({
-          score, difficulty, mode,
-          maxScore: CONFIG.totalTime * CONFIG.roundsPerGame,
-          name, date: new Date().toISOString(),
-        });
-        const trimmed = trimByCategory(entries, GLOBAL_CAT_MAX);
-        await fetch(JSONBIN_URL, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json", "X-Master-Key": JSONBIN_API_KEY },
-          body: JSON.stringify({ entries: trimmed }),
-        });
-        globalLeaderboardCache = trimmed;
-        if (currentLbTab === "global") renderGlobalLeaderboard(trimmed);
-      } catch (err) {
-        console.warn("Failed to submit to global leaderboard:", err);
-      }
+      const res = await fetch(`${LB_BASE}/score`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          board: lbBoard(difficulty, mode),
+          name,
+          found: score,
+          total: CONFIG.totalTime * CONFIG.roundsPerGame,
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || "could not reach the leaderboard");
+      globalLeaderboardCache = data.entries || [];
+      if (currentLbTab === "global") renderGlobalLeaderboard(globalLeaderboardCache);
+    }
+
+    // Anonymous record that a game reached the end screen, sent whether or not
+    // a name is submitted. Most players never type one, so submissions alone
+    // badly undercount how much the game is actually played. Fire-and-forget:
+    // a failure here must never interrupt the end-of-game flow.
+    function recordCompletedGame(score, difficulty, mode) {
+      fetch(`${LB_BASE}/finish`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          board: lbBoard(difficulty, mode),
+          found: score,
+          total: CONFIG.totalTime * CONFIG.roundsPerGame,
+        }),
+      }).catch(() => {});
     }
 
     /* ==========================================================
@@ -1184,11 +1345,16 @@
       state.guessLatLng = null;
       state.timeRemaining = CONFIG.totalTime;
       state.roundActive = true;
-      preloadedZooms = new Set();
+      prefetchedZooms = new Set();
+      // Drop anything still queued for the previous location.
+      prefetchQueue = [];
 
       const startZoom = getEffectiveStartZoom();
 
-      clearAllPyramidLayers();
+      // Hide the clue map for the duration of the setup below — the reverse
+      // geocode can take a second, and the previous round's answer view would
+      // otherwise sit there in plain sight.
+      clueEl.classList.remove("ready");
 
       if (city.isAnywhere) {
         if (!city.latlng) await prepareAnywhereCity(city);
@@ -1203,15 +1369,19 @@
         state.clueLatLng = await getJitteredLatLng(city);
       }
 
-      createPyramidLayer(startZoom, state.clueLatLng);
+      clueMap.jumpTo({
+        center: [state.clueLatLng[1], state.clueLatLng[0]],
+        zoom: startZoom + CLUE_ZOOM_OFFSET,
+      });
+      prefetchAhead(startZoom);
+      // The end-of-round reveal cuts straight to zoom 6 over the true location,
+      // which MapLibre has nothing cached to cover. Warm it now — the jitter is
+      // a few km, far inside one tile at this level, so these are the same
+      // tiles the reveal will ask for.
+      prefetchSourceZoom(6);
 
-      for (let z = startZoom - 1; z >= Math.max(CONFIG.endZoom, startZoom - 4); z--) {
-        preloadTilesForZoom(state.clueLatLng[0], state.clueLatLng[1], z);
-      }
-
-      answerMap.setView([20, 0], 2, { animate: false });
-      if (guessCircle) { answerMap.removeLayer(guessCircle); guessCircle = null; }
-      if (guessPinMarker) { answerMap.removeLayer(guessPinMarker); guessPinMarker = null; }
+      answerMap.jumpTo({ center: [0, 20], zoom: 1 });
+      clearGuessOverlay();
 
       document.getElementById("btn-submit").disabled = true;
       document.getElementById("guess-hint").textContent = "click to place pin";
@@ -1219,7 +1389,18 @@
       updateTimerUI();
       updateScoreboard();
 
-      setTimeout(() => startAnimation(), 600);
+      // Was a flat 600ms pause. Now it is at least 600ms — so the opening view
+      // still gets a beat before the zoom starts — but it also waits for the
+      // first tiles, capped so a slow tile server cannot stall the round.
+      await Promise.all([
+        new Promise(r => setTimeout(r, 600)),
+        clueSettled(2000),
+      ]);
+      // A new round may have been started underneath us (difficulty change)
+      // while we were waiting; if so, leave the screen to whoever owns it now.
+      if (state.currentCity !== city || !state.roundActive) return;
+      clueEl.classList.add("ready");
+      startAnimation();
     }
 
     function submitGuess() {
@@ -1242,6 +1423,11 @@
         updateTimerUI();
         showWrongFeedback(dist);
         if (state.timeRemaining <= 0) { stopAnimation(); endRound(false, 0); }
+        // The clock jumped, so the running ease is now aimed from the wrong
+        // place: restart it, sliding into the penalised position rather than
+        // cutting to it.
+        else startClueZoomAnimation(CONFIG.totalTime - state.timeRemaining,
+                                    PENALTY_CATCHUP_MS);
       }
     }
 
@@ -1268,26 +1454,33 @@
       stopAnimation();
       const city = state.currentCity;
 
-      clearAllPyramidLayers();
-      const overviewLayer = createPyramidLayer(6, city.latlng);
-      overviewLayer.el.style.transform = "translate(-50%, -50%) scale(1)";
-      overviewLayer.el.style.clipPath = "none";
+      // Reveal: pull the clue map back to an overview of the real location.
+      prefetchSourceZoom(6);
+      clueMap.jumpTo({ center: [city.latlng[1], city.latlng[0]], zoom: 6 + CLUE_ZOOM_OFFSET });
+      clueEl.classList.add("ready");
 
-      const trueMarker = L.circleMarker(city.latlng, {
-        radius: 8, color: "#4a8c3f",
-        fillColor: "#4a8c3f", fillOpacity: 0.9, weight: 2,
-      }).addTo(answerMap);
+      const resultFeatures = [{
+        type: "Feature", properties: {},
+        geometry: { type: "Point", coordinates: [city.latlng[1], city.latlng[0]] },
+      }];
 
-      let line = null;
       if (state.guessLatLng) {
-        line = L.polyline([state.guessLatLng, city.latlng], {
-          color: won ? "#4a8c3f" : "#c0392b", weight: 2, dashArray: "6 4",
-        }).addTo(answerMap);
+        const guess = [state.guessLatLng.lng, state.guessLatLng.lat];
+        const truth = [city.latlng[1], city.latlng[0]];
+        resultFeatures.push({
+          type: "Feature",
+          properties: { color: won ? "#4a8c3f" : "#c0392b" },
+          geometry: { type: "LineString", coordinates: [guess, truth] },
+        });
         answerMap.fitBounds(
-          L.latLngBounds([state.guessLatLng, city.latlng]),
-          { padding: [40, 40] }
+          [[Math.min(guess[0], truth[0]), Math.min(guess[1], truth[1])],
+           [Math.max(guess[0], truth[0]), Math.max(guess[1], truth[1])]],
+          // maxZoom guards the degenerate case of a near-exact guess, where
+          // zero-size bounds would otherwise fly to street level.
+          { padding: 40, maxZoom: 9, duration: 700 }
         );
       }
+      setAnswerData("result", { type: "FeatureCollection", features: resultFeatures });
 
       const isLast = state.round + 1 >= CONFIG.roundsPerGame;
       const card = document.getElementById("result-card");
@@ -1322,8 +1515,7 @@
 
       const handler = () => {
         document.getElementById("result-overlay").classList.remove("visible");
-        answerMap.removeLayer(trueMarker);
-        if (line) answerMap.removeLayer(line);
+        setAnswerData("result", EMPTY_FC);
         document.getElementById("result-overlay").removeEventListener("click", handler);
         state.round++;
         if (state.round >= CONFIG.roundsPerGame) showGameOver();
@@ -1335,6 +1527,8 @@
     function showGameOver() {
       const diff = document.getElementById("difficulty-select").value;
       addToLeaderboard(state.score, diff, tileMode);
+      // Count the game itself, before anyone decides whether to submit a name.
+      recordCompletedGame(state.score, diff, tileMode);
       const maxPossible = CONFIG.totalTime * CONFIG.roundsPerGame;
       const savedName = localStorage.getItem("guessTheCity_playerName") || "";
       const card = document.getElementById("result-card");
@@ -1344,9 +1538,10 @@
         <div style="display:flex;gap:6px;margin:16px 0 4px">
           <input type="text" id="score-name-input" class="player-name-input"
             placeholder="your name" maxlength="16" spellcheck="false"
-            value="${savedName}" style="flex:1;font-size:0.82rem;padding:6px 8px" />
+            value="${esc(savedName)}" style="flex:1;font-size:0.82rem;padding:6px 8px" />
           <button id="btn-submit-score" onclick="submitScore()">submit score</button>
         </div>
+        <div id="score-submit-status" class="lb-empty" style="min-height:14px"></div>
         <div style="display:flex;gap:8px;margin-top:8px">
           <button style="flex:1" onclick="dismissGameOver()">close</button>
           <button class="primary" style="flex:1" onclick="dismissAndRestart()">play again</button>
@@ -1355,14 +1550,24 @@
       document.getElementById("result-overlay").classList.add("visible");
     }
 
-    function submitScore() {
+    async function submitScore() {
       const nameEl = document.getElementById("score-name-input");
       const name = (nameEl && nameEl.value.trim()) || "anonymous";
       localStorage.setItem("guessTheCity_playerName", name);
       const diff = document.getElementById("difficulty-select").value;
-      submitToGlobalLeaderboard(state.score, diff, tileMode, name);
       const btn = document.getElementById("btn-submit-score");
-      if (btn) { btn.textContent = "submitted!"; btn.disabled = true; }
+      const status = document.getElementById("score-submit-status");
+      if (btn) btn.disabled = true;
+      try {
+        await submitToGlobalLeaderboard(state.score, diff, tileMode, name);
+        if (btn) btn.textContent = "submitted!";
+        if (status) status.textContent = "";
+      } catch (err) {
+        // Re-enable so a refused name (or a blip) can be corrected and retried,
+        // rather than claiming success for a submission that never landed.
+        if (status) status.textContent = err.message;
+        if (btn) btn.disabled = false;
+      }
     }
 
     function dismissGameOver() {
