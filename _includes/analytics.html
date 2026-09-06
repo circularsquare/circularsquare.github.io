@@ -1,0 +1,25 @@
+{%- comment -%}
+Google Analytics (GA4), property G-RW5BF5TNQH — the single definition of the
+tag for the whole site.
+
+Two kinds of page pull this in:
+  * anything using the site layouts, via _includes/head.html;
+  * the standalone map and game pages, which carry no layout and so never reach
+    head.html — they include this file directly.
+
+That second group had no analytics at all until 2026-09-06. The city quiz ran
+for six months completely uncounted, which is why "how many people played?"
+could only be answered from leaderboard leftovers.
+
+A page including this MUST have YAML front matter, even an empty `---` / `---`
+pair. Jekyll only renders Liquid in files that have it; without it the file is
+copied verbatim and this include is emitted as literal text into the page.
+{%- endcomment -%}
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-RW5BF5TNQH"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-RW5BF5TNQH');
+</script>
