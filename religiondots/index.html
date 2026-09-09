@@ -1,7 +1,11 @@
+---
+sitemap: false
+---
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
+  {%- include analytics.html -%}
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Religion Dot Map</title>
   <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" />
@@ -16,7 +20,20 @@
     #loading {
       position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%);
       font-size: 18px; color: #ccc; z-index: 20; pointer-events: none;
+      text-align: center;
     }
+    /* The wait is 40-odd MB of dot buffers and it is long enough that a static word reads as a
+       hang.  The manifest carries each country's dot count and a dot is exactly ten bytes, so
+       the total is known before the first request and the bar is a real fraction rather than a
+       guess that creeps.  Same shape as nycriders. */
+    #loading-bar {
+      width: 220px; height: 3px; margin: 10px auto 0; border-radius: 2px;
+      background: rgba(255,255,255,0.12); overflow: hidden;
+    }
+    /* No transition: the fill is driven by arriving bytes, which is already smooth, and an
+       eased width would lag behind the number beside it. */
+    #loading-bar-fill { width: 0; height: 100%; background: #ccc; }
+    #loading-sub { font-size: 11px; color: #777; margin-top: 6px; }
 
     #left { position: absolute; top: 10px; left: 12px; z-index: 1000; width: 258px; }
     #title { color: #eee; font-size: 15px; font-weight: 700; text-shadow: 0 1px 3px #000; }
@@ -805,7 +822,11 @@
 </head>
 <body>
   <div id="map"></div>
-  <div id="loading">loading…</div>
+  <div id="loading">
+    <div id="loading-text">loading…</div>
+    <div id="loading-bar"><div id="loading-bar-fill"></div></div>
+    <div id="loading-sub"></div>
+  </div>
   <div id="tip"></div>
 
   <div id="left">
@@ -5514,7 +5535,45 @@ function setCountry(cc, opts = {}) {
    1541px), and a phone gets the rule that was meant rather than the number that expressed it.
    What it is protecting against is unchanged — Russia's box spans 161°, so at global range it
    would score a full `viewFill` and win a legend for a view of the northern hemisphere. */
+/* AND FILL ALONE IS AN ASPECT-RATIO TRAP — Anita, 2026-09-09: *"the auto select country seems to
+   be a bit eager to select horizontally wide countries. i think our auto mode criteria are kinda
+   calibrated for horizontal screens and maybe they dont work well for vertical ones?"*
+
+   She is right, and the mechanism is `Math.max` in `viewFill`: a country has to fill only ONE
+   axis. On a tall window the horizontal axis is the cheap one, so a wide country spans it while
+   occupying a strip across the middle of the screen. Measured over all 124 countries, the share
+   of the visible map a country actually covers at the moment it latches is
+   `0.85² × (shape match)`, where the match is how near the country's box is to the band's own
+   aspect — so it runs from 0.72 for a country shaped like the window down to about 0.10 for one
+   six times off:
+
+   | window | band aspect | median cover at latch | worst |
+   |---|---|---|---|
+   | 1541×964 | 1.21 | 0.50 | Chile 0.12, Israel 0.23 |
+   | 1100×900 | 0.77 | 0.50 | Canada 0.19, Malaysia 0.20, Indonesia 0.21 |
+   | 900×1000 | 0.55 | 0.40 | Canada 0.14, Indonesia 0.15, Türkiye 0.17 |
+   | 760×1100 | 0.42 | 0.31 | Canada 0.11, Indonesia 0.11, Türkiye 0.13 |
+
+   Note which countries are in the tail: on a WIDE window it is the tall ones (Chile, Israel), on
+   a TALL window the wide ones (Canada, Indonesia). It was never a bias towards wide countries, it
+   is a bias towards countries shaped like the window — and since her window is the tall kind, the
+   wide ones are what she saw.
+
+   THERE IS NO MEASURE THAT FIXES THIS WITHOUT GIVING SOMETHING UP, which is worth stating because
+   the obvious repairs all fail the same way. Any score that reads 1 for a framed country on every
+   aspect is a monotone function of `viewFill` and so ranks countries identically — "cover as a
+   share of the best cover achievable at this aspect" works out to `viewFill²` exactly. A country
+   whose shape fights the window genuinely cannot cover much of it, so the choice is between
+   latching at 11% cover and not latching at all.
+
+   AUTO_COVER_IN takes the second, and only for CHOOSING. 0.2 is read off the table above: on her
+   own desktop shape it removes one country from Auto's reach (Chile at 0.12) and on a tall window
+   it removes the tail she is complaining about. Everything it blocks is still one tap away in the
+   picker and still holds once picked, because the release test is `AUTO_FILL_OUT` and is
+   untouched. That asymmetry is `contested`'s, quoted here because it is the same argument: *"IT
+   GATES SELECTING, NOT KEEPING … it is harder to change the legend than to set it."* */
 const AUTO_FILL_IN = 0.85, AUTO_FILL_OUT = 0.6, AUTO_SPAN_MAX = 130,
+      AUTO_COVER_IN = 0.2,
       AUTO_OVER_IN = 0.5, AUTO_OVER_OUT = 0.25,
       AUTO_SHARE = 0.85, AUTO_MIN = 150, AUTO_BOX = 0.5;
 let lastLook = '';
@@ -5544,6 +5603,25 @@ function viewFill(cc) {
   const vw = b.e - b.w, vh = mercY(b.n) - mercY(b.s);
   if (!(vw > 0) || !(vh > 0)) return 0;
   return Math.max((v[2] - v[0]) / vw, (mercY(v[3]) - mercY(v[1])) / vh);
+}
+
+/** How much of the visible map this country's box actually covers — both axes, where `viewFill`
+    takes the better of the two. Each axis is capped at 1, so standing deep inside a country that
+    runs off every edge reads as 1 rather than as a number about how big the country is. */
+function viewCover(cc) {
+  const v = META[cc] && META[cc].view;
+  if (!v) return 0;
+  const b = viewBounds();
+  const vw = b.e - b.w, vh = mercY(b.n) - mercY(b.s);
+  if (!(vw > 0) || !(vh > 0)) return 0;
+  return Math.min(1, (v[2] - v[0]) / vw)
+       * Math.min(1, (mercY(v[3]) - mercY(v[1])) / vh);
+}
+
+/** The whole IN half of the scale test, in one place so the routes into a selection cannot drift
+    apart: framed, AND actually most of what is on screen (AUTO_COVER_IN). */
+function framedIn(cc) {
+  return viewFill(cc) >= AUTO_FILL_IN && viewCover(cc) >= AUTO_COVER_IN;
 }
 
 /** Whether the middle of the screen is over this country: the country's box and the middle of
@@ -5843,8 +5921,7 @@ function considerCamera() {
       if (tooWide() || viewFill(country) < AUTO_FILL_OUT
           || viewOverlap(country) < AUTO_OVER_OUT)
         setCountry(null, { fly: false });
-    } else if (!tooWide() && META[at]
-               && viewFill(at) >= AUTO_FILL_IN
+    } else if (!tooWide() && META[at] && framedIn(at)
                && !contested(sh, at) && scopeDrawsIn(at)) {
       setCountry(at, { fly: false });     // straight across, with no all-countries frame between
     } else if (country !== null) {
@@ -5913,6 +5990,14 @@ function considerCamera() {
      answered the question the tally was being asked, and the number of dots is beside the
      point. Both thresholds are the strict IN ones and `contested` still applies, so this
      cannot fire over a border, over open water, or on a view wide enough to hold rivals. */
+  /* AUTO_COVER_IN IS DELIBERATELY NOT APPLIED HERE, and this is the one branch it must not be.
+     The countries that reach this line are the ones too small to be tallied at all, and small
+     countries are exactly where an odd box shape is cheapest to hit — the Cayman Islands' box is
+     2.8 times wider than it is tall and Antigua's is 2.4 times taller than wide, so a cover floor
+     would strand them on some window shapes for the same reason AUTO_MIN once stranded Saint
+     Vincent. It can afford to go without: this branch already demands that exactly ONE built
+     country is framed, with nothing else framed anywhere on screen and no rival holding the
+     middle, which is a stronger statement about the view than any coverage number. */
   if (total < AUTO_MIN) {
     const framed = BUILT.filter(cc => META[cc] && viewFill(cc) >= AUTO_FILL_IN
                                       && viewOverlap(cc) >= AUTO_OVER_IN);
@@ -5930,7 +6015,7 @@ function considerCamera() {
   // into a selection. It costs nothing on the cases this fallback exists for — Indonesia and
   // the Philippines framed from the sea each hold every sample that lands on a built country.
   if (best && best !== country && META[best] && out[best] / total >= AUTO_SHARE
-      && viewFill(best) >= AUTO_FILL_IN && viewOverlap(best) >= AUTO_OVER_IN
+      && framedIn(best) && viewOverlap(best) >= AUTO_OVER_IN
       && !contested(sh, best) && scopeDrawsIn(best))
     setCountry(best, { fly: false });
 }
@@ -6474,6 +6559,58 @@ function doneLoading() {
   if (el) el.remove();
 }
 
+/* THE PROGRESS BAR, AND WHY IT CAN BE AN HONEST FRACTION RATHER THAN A CREEPING GUESS.
+
+   Every dot in a buffer is exactly ten bytes — `pos` is 8n and `ni` is 2n — so the manifest's
+   per-country dot count IS the byte count, and the total is known before a single request goes
+   out. No HEAD pass, no Content-Length to trust, and the denominator cannot drift.
+
+   COUNTED AFTER DECOMPRESSION, WHICH IS THE POINT. The published buffers are served
+   `Content-Encoding: gzip`, so a stream reader yields inflated bytes and `received` lands on
+   exactly `10 * dots`. Counting the wire instead would make the bar stop at about two thirds
+   published and at 100% locally, which is the shape of a bug rather than a measurement. */
+const LOAD = { total: 0, got: 0, files: 0, done: 0 };
+
+function loadProgress() {
+  const bar = document.getElementById('loading-bar-fill');
+  const txt = document.getElementById('loading-text');
+  const sub = document.getElementById('loading-sub');
+  if (!bar) return;
+  const frac = LOAD.total ? Math.min(1, LOAD.got / LOAD.total) : 0;
+  bar.style.width = (frac * 100).toFixed(1) + '%';
+  if (txt) txt.textContent = 'loading… ' + Math.round(frac * 100) + '%';
+  /* The countries line is the useful half on a slow connection: the percentage moves
+     continuously and says nothing about whether anything is stuck, while `31 of 124` is a
+     count of things that have actually finished. */
+  if (sub) sub.textContent = LOAD.files
+    ? `${LOAD.done} of ${LOAD.files} countries` : '';
+}
+
+/* `arrayBuffer()` with the bytes counted on the way past. Falls back to the plain read where
+   there is no readable stream, which costs the bar its motion and nothing else. */
+async function fetchCounted(url) {
+  const r = await fetch(url);
+  if (!r.ok) throw new Error(r.status + ' ' + url);
+  if (!r.body || !r.body.getReader) return r.arrayBuffer();
+  const reader = r.body.getReader();
+  const chunks = [];
+  let n = 0;
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    chunks.push(value);
+    n += value.length;
+    LOAD.got += value.length;
+    loadProgress();
+  }
+  /* Stitched by hand rather than through a Blob, because the caller reads typed-array views
+     straight off this buffer at fixed offsets and needs one contiguous ArrayBuffer. */
+  const out = new Uint8Array(n);
+  let at = 0;
+  for (const c of chunks) { out.set(c, at); at += c.length; }
+  return out.buffer;
+}
+
 /* Load the buffers. THE EDITION THE LEGEND CLAIMS IS THE ONE THAT LOADS FIRST — reversed
    2026-09-06, Anita's call. The coarse edition used to come first, on the argument that 3.1 MB
    paints every country at 1:10,000 straight away, and §4.1b makes that an AUTHORED edition
@@ -6495,6 +6632,44 @@ function doneLoading() {
    It only ever replaces the fine edition WHOLESALE, never country by country: drawing the US
    at 1:10,000 beside India at 1:1,000 would put two different dot values in one view, which
    §4.1 does not allow. */
+/* How many buffers may be in flight at once. Over HTTP/2 an uncapped fan-out puts all 124 on
+   the wire together, which finishes at the same moment overall but delivers everything at the
+   END — the ordering below then buys nothing at all. A small number of lanes keeps the link
+   busy while leaving most of the queue unclaimed and therefore still re-orderable. */
+const FETCH_LANES = 6;
+
+/* Countries whose buffer failed twice, kept so the camera can ask for them again. */
+SCATTER.missing = new Map();
+
+/* The nearest un-fetched country to wherever the camera is NOW.
+
+   Called each time a lane frees up rather than sorted once, which is the whole point: a reader
+   waiting for the map pans to the place they came for, and that pan has to change what loads
+   next. Distance is on the country's own bbox centre.
+
+   PLAIN DEGREES, NOT METRES. A degree of longitude is shorter near the poles, so this slightly
+   under-rates high-latitude neighbours — and it is choosing between countries that are all
+   roughly "near the middle of the screen", where being approximately right is the entire
+   requirement. Antimeridian-safe, because Fiji and Kiribati are exactly the countries a naive
+   subtraction would send to the back of the queue. */
+function nearestPending(pending) {
+  if (!pending.size) return null;
+  const c = map.getCenter();
+  let best = null, bestD = Infinity;
+  for (const cc of pending.keys()) {
+    const b = META[cc] && META[cc].bbox;
+    let d = 1e9;
+    if (b) {
+      let dx = Math.abs((b[0] + b[2]) / 2 - c.lng);
+      if (dx > 180) dx = 360 - dx;
+      const dy = (b[1] + b[3]) / 2 - c.lat;
+      d = dx * dx + dy * dy;
+    }
+    if (d < bestD) { bestD = d; best = cc; }
+  }
+  return best;
+}
+
 SCATTER.loadAll = async function () {
   const man = await fetch(DATA_BASE + 'buffers/manifest.json').then(r => r.json()).catch(() => null);
   if (!man) {
@@ -6531,6 +6706,21 @@ SCATTER.loadAll = async function () {
     this.upload(this.gl, d);
   };
 
+  /* THE FIRST COUNTRY, and only the parts that cannot wait. `ready` is what lets hover and
+     picking work, and the palette has to exist before a dot can be given a colour — so both
+     are paid once, on the first buffer to land, and never again during the fill.
+
+     WHAT IS DELIBERATELY NOT HERE is everything in `settle` below: the legend rebuild, §7's
+     measured/derived shares and §7c's header row. Those are all COUNTED OFF THE BUFFERS, so
+     running them mid-fill would put a number on screen that is a fraction of the true one and
+     then quietly change it — a legend that says 41% modelled and means "of the third of the
+     world that has arrived". They wait for the whole edition. The loading bar is what says
+     the rest is still coming. */
+  const firstDots = () => {
+    this.ready = true;
+    if (typeof recolour === 'function') { recolour(); applyPaint(); }
+  };
+
   // one edition has arrived and is on screen; the second call is the coarse one and is cheap
   const settle = () => {
     this.ready = true;
@@ -6551,34 +6741,84 @@ SCATTER.loadAll = async function () {
 
   const eds = man.editions || {};
   if (eds.fine) {
-    /* Staged, then committed together. A country whose fetch fails is simply left out rather
-       than taking the whole edition down with it, and the coarse edition below then becomes
-       the map — a failure degrades to a coarser map instead of to no dots. `allSettled` and
-       not `all` for exactly that reason. */
-    const stage = {};
-    const got = await Promise.allSettled(Object.entries(eds.fine.countries).map(
-      async ([cc, e]) => {
-        const buf = await fetch(DATA_BASE + 'buffers/' + e.file).then(r => {
-          if (!r.ok) throw new Error(r.status + ' ' + e.file);
-          return r.arrayBuffer();
-        });
-        stage[cc] = { e, buf };
-      }));
-    const failed = got.filter(g => g.status === 'rejected');
-    if (failed.length) {
-      // partial fine + partial coarse would mix dot values (§4.1), so commit none of it
-      console.warn('scatter: ' + failed.length + ' fine buffer(s) failed, falling back to the '
-                   + 'coarse edition', failed.map(f => String(f.reason)));
-    } else {
-      for (const cc in stage) {
-        const { e, buf } = stage[cc], n = e.dots;
-        const d = { cc, n, buckets: e.buckets,
-          pos: new Uint8Array(buf, 0, 8 * n), ni: new Uint8Array(buf, 8 * n, 2 * n),
-          x: new Uint32Array(buf, 0, n), y: new Uint32Array(buf, 4 * n, n),
-          nid: new Uint16Array(buf, 8 * n, n) };
-        this.data.fine[cc] = d;
-        this.upload(this.gl, d);
+    /* Ten bytes a dot, so the denominator is exact and is known here rather than discovered.
+       Set before the first request, or the bar spends its first second dividing by zero. */
+    const fineList = Object.entries(eds.fine.countries);
+    LOAD.total = fineList.reduce((s, [, e]) => s + 10 * e.dots, 0);
+    LOAD.files = fineList.length;
+    loadProgress();
+
+    /* COMMITTED ONE COUNTRY AT A TIME, NEAREST THE CAMERA FIRST — 2026-09-09, and it replaces
+       a staged all-or-nothing commit.
+
+       WHY IT CHANGED. 124 buffers is 59 MB, and nothing was drawn until the last of them
+       landed: half a minute of an empty map, where the country a reader is actually looking at
+       had usually arrived in the first second. The format did not need to change and the
+       renderer did not either — §4.2d's flat buffers are already per country, so this is a
+       scheduling change and nothing more.
+
+       WHY THE QUEUE IS PICKED FROM RATHER THAN SORTED. Sorting once at page load prioritises
+       the view the reader STARTED at, and the thing they do while waiting is pan to the
+       country they came for. Each worker instead takes the nearest un-fetched country at the
+       moment it goes idle, so panning to Japan re-orders everything still outstanding without
+       any explicit cancel-and-resort. 124 candidates per pick, at most 124 picks, is nothing.
+
+       WHY CONCURRENCY IS CAPPED. Over HTTP/2 all 124 requests would otherwise be in flight at
+       once, which saturates the link just as well and makes the ordering meaningless — every
+       country arrives at the end together, which is exactly the behaviour being removed.
+
+       WHAT §4.1 STILL FORBIDS. The old comment here said a partial commit would mix dot
+       values, and that was about mixing the FINE and COARSE editions in one view, not about
+       drawing some fine countries before others. The coarse edition is only ever drawn when
+       the reader asks for 1:10,000, so committing fine countries as they arrive cannot mix
+       anything. The whole-map fallback to coarse is kept for the case it was written for,
+       which is every fine buffer failing. */
+    const pending = new Map(fineList);
+    const commit = (cc, e, buf) => {
+      const n = e.dots;
+      const d = { cc, n, buckets: e.buckets,
+        pos: new Uint8Array(buf, 0, 8 * n), ni: new Uint8Array(buf, 8 * n, 2 * n),
+        x: new Uint32Array(buf, 0, n), y: new Uint32Array(buf, 4 * n, n),
+        nid: new Uint16Array(buf, 8 * n, n) };
+      this.data.fine[cc] = d;
+      this.upload(this.gl, d);
+      if (!this.ready) firstDots();      // hover, picking and the palette come alive here
+      map.triggerRepaint();
+    };
+
+    const failures = [];
+    const worker = async () => {
+      for (;;) {
+        const cc = nearestPending(pending);
+        if (!cc) return;
+        const e = pending.get(cc);
+        pending.delete(cc);
+        try {
+          commit(cc, e, await fetchCounted(DATA_BASE + 'buffers/' + e.file));
+        } catch (err) {
+          /* One immediate retry, then park it. Anita's call, 2026-09-09: a country that never
+             arrives gets NO special treatment in the UI. The self-healing below is what makes
+             that safe rather than silent — a parked country is retried whenever the camera
+             next moves near it, so the usual cause, one dropped request, fixes itself the
+             moment a reader goes looking. */
+          try {
+            commit(cc, e, await fetchCounted(DATA_BASE + 'buffers/' + e.file));
+          } catch (err2) {
+            failures.push(cc);
+            SCATTER.missing.set(cc, e);
+            console.warn('scatter: ' + cc + ' failed twice, parked for retry', String(err2));
+          }
+        }
+        LOAD.done++;
+        loadProgress();
       }
+    };
+    await Promise.all(Array.from({ length: Math.min(FETCH_LANES, fineList.length) }, worker));
+
+    if (failures.length === fineList.length) {
+      // Nothing at all arrived, which is the case the coarse fallback was written for.
+      console.warn('scatter: every fine buffer failed, falling back to the coarse edition');
+    } else {
       settle();
     }
   }
@@ -6587,6 +6827,50 @@ SCATTER.loadAll = async function () {
     settle();
   }
   doneLoading();              // neither edition in the manifest: nothing is coming
+};
+
+/* SELF-HEALING FOR A COUNTRY THAT NEVER ARRIVED — 2026-09-09.
+
+   A country that failed twice is drawn as nothing, and nothing is what an UNBUILT country
+   looks like too, so on screen the map says "no data here" when it means "one request was
+   dropped". Anita's call was that this does not earn a badge or a warning in the UI, and this
+   is what makes that safe: the parked country is simply asked for again whenever the camera
+   comes near it. The overwhelmingly common cause is a transient failure, so a reader who pans
+   to the hole is the same event that fills it.
+
+   ONE AT A TIME AND ONLY THE NEAREST, on `moveend` rather than on a timer: a reader who never
+   goes there never pays for the retry, and a map left open does not sit re-requesting a
+   genuinely dead URL for ever. `inFlight` stops a fast pan from stacking requests. */
+SCATTER.watchMissing = function () {
+  let inFlight = false;
+  map.on('moveend', async () => {
+    if (inFlight || !SCATTER.missing.size || !SCATTER.gl) return;
+    const cc = nearestPending(SCATTER.missing);
+    if (!cc) return;
+    const e = SCATTER.missing.get(cc);
+    /* Deleted BEFORE the attempt, and re-added only on failure. Leaving it in while the
+       request is out would let the next `moveend` pick the same country again. */
+    SCATTER.missing.delete(cc);
+    inFlight = true;
+    try {
+      const buf = await fetch(DATA_BASE + 'buffers/' + e.file).then(r => {
+        if (!r.ok) throw new Error(r.status + ' ' + e.file);
+        return r.arrayBuffer();
+      });
+      const n = e.dots;
+      SCATTER.data.fine[cc] = { cc, n, buckets: e.buckets,
+        pos: new Uint8Array(buf, 0, 8 * n), ni: new Uint8Array(buf, 8 * n, 2 * n),
+        x: new Uint32Array(buf, 0, n), y: new Uint32Array(buf, 4 * n, n),
+        nid: new Uint16Array(buf, 8 * n, n) };
+      SCATTER.upload(SCATTER.gl, SCATTER.data.fine[cc]);
+      map.triggerRepaint();
+      console.info('scatter: ' + cc + ' recovered on approach');
+    } catch (err) {
+      SCATTER.missing.set(cc, e);
+    } finally {
+      inFlight = false;
+    }
+  });
 };
 
 /* The palette texture. RGB is the colour the legend shows; A is whether the dot is drawn at
@@ -7029,6 +7313,9 @@ map.on('load', async () => {
   /* The same dots unmerged — the default view, and no longer a tile layer (§4.2d). It goes in
      here, under the rings, so the paint order is unchanged from when it was `atomic`. */
   map.addLayer(SCATTER);
+  /* Registered before the load starts, so a country that fails during the initial fill is
+     already covered by the time the reader pans anywhere. */
+  SCATTER.watchMissing();
   SCATTER.loadAll();
   // Auto's own copy of the wash's polygons, so it can tell where the camera is (centreShares).
   // Neither is awaited: the map is usable before either arrives.

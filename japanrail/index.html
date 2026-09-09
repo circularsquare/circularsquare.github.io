@@ -199,10 +199,33 @@ body { background: #07090d; color: #eee; font-family: 'Nunito', system-ui, sans-
 #tooltip .meta { color: #8b939e; font-size: 11px; }
 
 .maplibregl-ctrl-attrib { font-size: 10px !important; }
+/* ── loading overlay ─────────────────────────────────────────────────────
+   Same shape as nycriders. The bar counts FILES, not bytes, and the megabyte
+   readout underneath is a separate number rather than the bar's own scale.
+   GitHub Pages serves this data gzipped, so `Content-Length` is the compressed
+   size while a stream reader hands back inflated bytes; measuring one against
+   the other pins the bar at 100% about a quarter of the way in, which is worse
+   than a coarse bar that is right. The file count cannot overshoot. */
+#loading {
+    position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%);
+    font-size: 18px; color: #ccc; z-index: 20; text-align: center;
+    pointer-events: none;
+}
+#loading-bar {
+    width: 220px; height: 3px; margin: 10px auto 0; border-radius: 2px;
+    background: rgba(255,255,255,0.12); overflow: hidden;
+}
+#loading-bar-fill { width: 0; height: 100%; background: #ccc; }
+#loading-sub { font-size: 11px; color: #777; margin-top: 6px; }
 </style>
 </head>
 <body>
 <div id="map"></div>
+<div id="loading">
+    <div id="loading-text">loading…</div>
+    <div id="loading-bar"><div id="loading-bar-fill"></div></div>
+    <div id="loading-sub"></div>
+</div>
 <div id="title">
     <div class="hdr">
         <h1 id="t-h1"></h1>
@@ -602,7 +625,16 @@ const casingWidth = (m = effMul()) => ['interpolate', ['exponential', ZOOM_BASE]
 // minimum — every feature, however faint, gets a usable target, while fat lines
 // stay clickable across their whole width (the floor never shrinks them).
 const HIT_LINE_MIN = 11;   // px — min clickable line band
-const HIT_DOT_MIN  = 9;    // px — min clickable bubble radius
+// Bubble hit floor. A flat floor is wrong zoomed out: a station drawn at a
+// fraction of a pixel still claimed a 9px grab radius, so hovering a line near
+// any station showed that station's tooltip instead of the segment's — and at
+// national zoom that is most of the map, with the bubble too small to see and
+// nothing to explain why the wrong thing appeared. So the floor is a curve of
+// its own, generous where the dots are big enough to aim at and nearly off
+// where they are not. Lines keep their flat floor: a hairline is unclickable
+// at any zoom, and there is no second thing competing for the cursor.
+const HIT_DOT_MIN_LO = 3;  // px — at zoom 3, where the dots are specks
+const HIT_DOT_MIN_HI = 9;  // px — at zoom 13, finger-friendly
 // Floor is baked into each zoom stop, not wrapped around the interpolate —
 // ['zoom'] may only sit at the top level of a step/interpolate, never nested
 // inside max(). Width grows monotonically with zoom and the floor is constant,
@@ -716,8 +748,8 @@ const circleRadius = (m = stationMul) => ['interpolate', ['exponential', ZOOM_BA
     3,  ['*', ['get', 'r'], m * ZF_LO],
     13, ['*', ['get', 'r'], m * ZF_HI]];
 const hitRadius = (m = stationMul) => ['interpolate', ['exponential', ZOOM_BASE], ['zoom'],
-    3,  ['max', HIT_DOT_MIN, ['*', ['get', 'r'], m * ZF_LO]],
-    13, ['max', HIT_DOT_MIN, ['*', ['get', 'r'], m * ZF_HI]]];
+    3,  ['max', HIT_DOT_MIN_LO, ['*', ['get', 'r'], m * ZF_LO]],
+    13, ['max', HIT_DOT_MIN_HI, ['*', ['get', 'r'], m * ZF_HI]]];
 
 function applyStationSize() {
     if (map.getLayer('station-dots'))
@@ -755,10 +787,65 @@ function stationsOnSelectedLine() {
 const DATA_VERSION = '2026-06-01b';
 const dataURL = (name) => `data/${name}?v=${DATA_VERSION}`;
 
+// ── loading progress ──────────────────────────────────────────────────────
+// LOADING.total is the number of data files this page fetches before it is
+// usable. It is a constant rather than a discovered number because the fetches
+// are spread through the load handler, and a denominator that grows as requests
+// start would read 100% on the first file.
+const LOADING = { total: 3, done: 0, bytes: 0 };
+
+function loadingTick() {
+    const fill = document.getElementById('loading-bar-fill');
+    if (!fill) return;
+    const frac = Math.min(1, LOADING.done / LOADING.total);
+    fill.style.width = (frac * 100).toFixed(1) + '%';
+    const txt = document.getElementById('loading-text');
+    const sub = document.getElementById('loading-sub');
+    if (txt) txt.textContent = 'loading\u2026 ' + Math.round(frac * 100) + '%';
+    // Real arrived bytes, and the continuous half of the signal: on a slow
+    // connection the file count can sit still for seconds while this moves,
+    // which is the difference between "working" and "hung".
+    if (sub) sub.textContent = (LOADING.bytes / 1048576).toFixed(1) + ' MB';
+}
+
+function loadingDone() {
+    const el = document.getElementById('loading');
+    if (el) el.remove();
+}
+
+// A real Response, with the body piped through a counter. Returning the
+// Response rather than parsed JSON is what lets every existing call site stay
+// as it was, including the ones that test `r.ok` before parsing.
+async function fetchTracked(url) {
+    let r;
+    try {
+        r = await fetch(url);
+    } catch (e) {
+        LOADING.done++; loadingTick();
+        throw e;
+    }
+    if (!r.ok || !r.body || !r.body.pipeThrough) {
+        LOADING.done++; loadingTick();
+        return r;
+    }
+    const ts = new TransformStream({
+        transform(chunk, ctl) {
+            LOADING.bytes += chunk.length; loadingTick(); ctl.enqueue(chunk);
+        },
+        flush() { LOADING.done++; loadingTick(); },
+    });
+    return new Response(r.body.pipeThrough(ts),
+                        { status: r.status, statusText: r.statusText, headers: r.headers });
+}
+
+// Paint it once before anything is requested. Without this the bar is an empty
+// track and the sub-line is blank until the first chunk of the first file lands,
+// which on the big segments file is over a second of looking switched off.
+loadingTick();
 map.on('load', async () => {
     const [fc, names] = await Promise.all([
-        fetch(dataURL('segments.geojson')).then(r => r.json()),
-        fetch(dataURL('names_en.json')).then(r => r.json()),
+        fetchTracked(dataURL('segments.geojson')).then(r => r.json()),
+        fetchTracked(dataURL('names_en.json')).then(r => r.json()),
     ]);
     NAMES = names;
     for (const f of fc.features) {
@@ -805,7 +892,7 @@ map.on('load', async () => {
     });
 
     // ── station ridership bubbles (all operators, one per station complex) ──
-    const sfc = await (await fetch(dataURL('stations.geojson'))).json();
+    const sfc = await (await fetchTracked(dataURL('stations.geojson'))).json();
     sfc.features.forEach((f, i) => {
         const p = f.properties;
         p.color = colorLineFor(p.op, p.line);  // tooltip accent only — the dots are white
@@ -979,6 +1066,7 @@ map.on('load', async () => {
     });
 
     applyWidths();
+    loadingDone();
 });
 
 // ─────────────────────────── selection / info ────────────────────────────

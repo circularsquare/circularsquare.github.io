@@ -59,6 +59,19 @@
       background: var(--surface); color: var(--text); cursor: pointer;
     }
     .difficulty-select:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+    /* Locked while a game is in progress — the difficulty a game is scored on
+       is fixed at the moment it starts. */
+    .difficulty-select:disabled { opacity: 0.45; cursor: not-allowed; }
+    /* Deliberately up here beside the difficulty select rather than down in
+       .controls next to "submit guess", so ending a game can't be a misclick. */
+    .header-btn {
+      font-family: var(--font-mono); font-size: 0.78rem; padding: 4px 10px;
+      border: 1px solid var(--border); border-radius: 4px;
+      background: var(--surface); color: var(--text-dim); cursor: pointer;
+      transition: all 0.15s ease; white-space: nowrap;
+    }
+    .header-btn:hover:not(:disabled) { border-color: var(--red); color: var(--red); }
+    .header-btn:disabled { opacity: 0.4; cursor: not-allowed; }
     .mode-toggle {
       font-family: var(--font-mono); font-size: 0.78rem; padding: 4px 8px;
       border: 1px solid var(--border); border-radius: 4px;
@@ -272,6 +285,7 @@
   <header>
     <h1>guess the city !</h1>
     <div class="header-right">
+      <button id="btn-end-game" class="header-btn" disabled>end game</button>
       <select class="difficulty-select" id="difficulty-select">
         <option value="easy" selected>easy (50 cities)</option>
         <option value="medium">medium (200 cities)</option>
@@ -410,9 +424,8 @@
       }
     }
 
-    function getCityPool() {
-      const diff = document.getElementById("difficulty-select").value;
-      const slice = DIFFICULTY_SLICES[diff] || 200;
+    function getCityPool(difficulty) {
+      const slice = DIFFICULTY_SLICES[difficulty] || 200;
       return ALL_CITIES.slice(0, Math.min(slice, ALL_CITIES.length));
     }
 
@@ -532,9 +545,35 @@
     let state = {
       round: 0, score: 0, currentCity: null, clueLatLng: null, guessLatLng: null,
       citiesThisGame: [], timeRemaining: CONFIG.totalTime,
+      // The difficulty this game is being played on. Snapshotted from the
+      // <select> by startGame() and never re-read from the DOM afterwards, so a
+      // score always lands on the board it was actually played on. The select
+      // is disabled for the life of a game, but the snapshot is what makes the
+      // guarantee rather than the disabled attribute.
+      difficulty: document.getElementById("difficulty-select").value,
+      // True from startGame() until the game-over card is dismissed. Covers the
+      // gaps roundActive leaves — between rounds, and while the final card is
+      // up with a score still waiting to be submitted.
+      gameActive: false,
       roundActive: false, gameOver: false, animFrameId: null,
       animStartTime: null, animTimeOffset: 0, _lastUIUpdate: 0,
     };
+
+    /* ==========================================================
+       CONTROL ENABLEMENT
+       One place decides whether each control is live, so the rules stay
+       consistent no matter which path got us here.
+       ========================================================== */
+    function updateControls() {
+      document.getElementById("difficulty-select").disabled = state.gameActive;
+      document.getElementById("btn-end-game").disabled =
+        !state.gameActive || state.gameOver;
+      // Deliberately not gated on "already submitted this pin" — hammering
+      // submit on the same spot is a legitimate way to burn the clock out of a
+      // round you've given up on.
+      document.getElementById("btn-submit").disabled =
+        !state.roundActive || !state.guessLatLng;
+    }
 
     /* ==========================================================
        CLUE MAP — one MapLibre GL map, continuous fractional zoom
@@ -967,7 +1006,7 @@
           .addTo(answerMap);
       }
 
-      document.getElementById("btn-submit").disabled = false;
+      updateControls();
       document.getElementById("guess-hint").textContent =
         `${state.guessLatLng.lat.toFixed(2)}, ${state.guessLatLng.lng.toFixed(2)}`;
     });
@@ -1114,11 +1153,22 @@
       });
     }
 
+    // The select is disabled for the whole life of a game, so this can only
+    // fire when there is no game to destroy. Start the chosen difficulty right
+    // away — picking one from the dropdown is how you begin a game.
     document.getElementById("difficulty-select").addEventListener("change", () => {
-      stopAnimation(); startGame();
-      renderLeaderboard();
-      if (currentLbTab === "global" && globalLeaderboardCache) renderGlobalLeaderboard(globalLeaderboardCache);
+      document.getElementById("btn-new-game").style.display = "none";
+      stopAnimation();
+      startGame();
     });
+
+    // Redraw both leaderboards for whatever difficulty is now being played.
+    function refreshLeaderboards() {
+      renderLeaderboard();
+      if (currentLbTab === "global" && globalLeaderboardCache) {
+        renderGlobalLeaderboard(globalLeaderboardCache);
+      }
+    }
 
     // Map mode (CARTO basemap) is disabled — satellite-only for now, since the
     // map-mode clue tiles are unavailable. The mode-toggle button was removed.
@@ -1161,11 +1211,10 @@
     let currentLbTab = "local";
     let globalLeaderboardCache = null;
 
+    // Follows the game being played, not the raw <select>, so the board on
+    // screen is always the board the current score can land on.
     function getCurrentFilter() {
-      return {
-        difficulty: document.getElementById("difficulty-select").value,
-        mode: tileMode,
-      };
+      return { difficulty: state.difficulty, mode: tileMode };
     }
 
     // Keep the top N entries per difficulty+mode category.
@@ -1323,17 +1372,43 @@
     /* ==========================================================
        GAME FLOW
        ========================================================== */
+    /* The click handler that advances past a round-result card lives on the
+       overlay until it is clicked. Anything that tears a game down has to drop
+       it first, or it fires later against a game it knows nothing about and
+       silently skips a round. */
+    let pendingResultHandler = null;
+    let pendingResultTimer = null;
+
+    function clearPendingResult() {
+      const overlay = document.getElementById("result-overlay");
+      if (pendingResultTimer) { clearTimeout(pendingResultTimer); pendingResultTimer = null; }
+      if (pendingResultHandler) {
+        overlay.removeEventListener("click", pendingResultHandler);
+        pendingResultHandler = null;
+      }
+    }
+
     async function startGame() {
+      clearPendingResult();
+      document.getElementById("result-overlay").classList.remove("visible");
+      setAnswerData("result", EMPTY_FC);
       state.round = 0;
       state.score = 0;
+      state.gameOver = false;
+      state.gameActive = true;
+      state.guessLatLng = null;
+      // Fixed for the rest of this game.
+      state.difficulty = document.getElementById("difficulty-select").value;
+      const diff = state.difficulty;
+      updateControls();
       updateScoreboard();
-      const diff = document.getElementById("difficulty-select").value;
+      refreshLeaderboards();
       if (diff === "anywhere") {
         state.citiesThisGame = Array.from({ length: CONFIG.roundsPerGame }, () => ({
           name: null, country: null, latlng: null, isAnywhere: true,
         }));
       } else {
-        state.citiesThisGame = shuffle(getCityPool()).slice(0, CONFIG.roundsPerGame);
+        state.citiesThisGame = shuffle(getCityPool(diff)).slice(0, CONFIG.roundsPerGame);
       }
       startRound();
     }
@@ -1383,7 +1458,7 @@
       answerMap.jumpTo({ center: [0, 20], zoom: 1 });
       clearGuessOverlay();
 
-      document.getElementById("btn-submit").disabled = true;
+      updateControls();
       document.getElementById("guess-hint").textContent = "click to place pin";
       hideWrongFeedback();
       updateTimerUI();
@@ -1452,6 +1527,7 @@
     function endRound(won, pts, dist, winRadius = CONFIG.winRadius) {
       state.roundActive = false;
       stopAnimation();
+      updateControls();
       const city = state.currentCity;
 
       // Reveal: pull the clue map back to an overview of the real location.
@@ -1513,48 +1589,91 @@
       document.getElementById("result-overlay").classList.add("visible");
       updateScoreboard();
 
+      clearPendingResult();
       const handler = () => {
+        clearPendingResult();
         document.getElementById("result-overlay").classList.remove("visible");
         setAnswerData("result", EMPTY_FC);
-        document.getElementById("result-overlay").removeEventListener("click", handler);
         state.round++;
         if (state.round >= CONFIG.roundsPerGame) showGameOver();
         else startRound();
       };
-      setTimeout(() => document.getElementById("result-overlay").addEventListener("click", handler), 300);
+      pendingResultHandler = handler;
+      pendingResultTimer = setTimeout(
+        () => document.getElementById("result-overlay").addEventListener("click", handler), 300);
     }
 
-    function showGameOver() {
-      const diff = document.getElementById("difficulty-select").value;
-      addToLeaderboard(state.score, diff, tileMode);
-      // Count the game itself, before anyone decides whether to submit a name.
-      recordCompletedGame(state.score, diff, tileMode);
+    // endedEarly: the player hit "end game" partway through. A game that never
+    // ran its full five rounds isn't comparable to one that did, so it goes on
+    // no board — not the local bests, not the server's completion count — and
+    // the card says so instead of offering a submit box.
+    function showGameOver(endedEarly = false, roundsPlayed = state.round) {
+      clearPendingResult();
       const maxPossible = CONFIG.totalTime * CONFIG.roundsPerGame;
-      const savedName = localStorage.getItem("guessTheCity_playerName") || "";
       const card = document.getElementById("result-card");
-      card.innerHTML = `
-        <h3>game over</h3>
-        <div class="final-score">${state.score} / ${maxPossible}</div>
-        <div style="display:flex;gap:6px;margin:16px 0 4px">
-          <input type="text" id="score-name-input" class="player-name-input"
-            placeholder="your name" maxlength="16" spellcheck="false"
-            value="${esc(savedName)}" style="flex:1;font-size:0.82rem;padding:6px 8px" />
-          <button id="btn-submit-score" onclick="submitScore()">submit score</button>
-        </div>
-        <div id="score-submit-status" class="lb-empty" style="min-height:14px"></div>
-        <div style="display:flex;gap:8px;margin-top:8px">
-          <button style="flex:1" onclick="dismissGameOver()">close</button>
-          <button class="primary" style="flex:1" onclick="dismissAndRestart()">play again</button>
-        </div>`;
+
+      if (endedEarly) {
+        card.innerHTML = `
+          <h3>game ended</h3>
+          <div class="final-score">${state.score} / ${maxPossible}</div>
+          <div class="result-detail">
+            stopped after ${roundsPlayed} of ${CONFIG.roundsPerGame} rounds — not saved
+          </div>
+          <div style="display:flex;gap:8px;margin-top:16px">
+            <button style="flex:1" onclick="dismissGameOver()">close</button>
+            <button class="primary" style="flex:1" onclick="dismissAndRestart()">play again</button>
+          </div>`;
+      } else {
+        addToLeaderboard(state.score, state.difficulty, tileMode);
+        // Count the game itself, before anyone decides whether to submit a name.
+        recordCompletedGame(state.score, state.difficulty, tileMode);
+        const savedName = localStorage.getItem("guessTheCity_playerName") || "";
+        card.innerHTML = `
+          <h3>game over</h3>
+          <div class="final-score">${state.score} / ${maxPossible}</div>
+          <div style="display:flex;gap:6px;margin:16px 0 4px">
+            <input type="text" id="score-name-input" class="player-name-input"
+              placeholder="your name" maxlength="16" spellcheck="false"
+              value="${esc(savedName)}" style="flex:1;font-size:0.82rem;padding:6px 8px" />
+            <button id="btn-submit-score" onclick="submitScore()">submit score</button>
+          </div>
+          <div id="score-submit-status" class="lb-empty" style="min-height:14px"></div>
+          <div style="display:flex;gap:8px;margin-top:8px">
+            <button style="flex:1" onclick="dismissGameOver()">close</button>
+            <button class="primary" style="flex:1" onclick="dismissAndRestart()">play again</button>
+          </div>`;
+      }
+
       state.gameOver = true;
+      state.roundActive = false;
+      updateControls();
       document.getElementById("result-overlay").classList.add("visible");
+    }
+
+    // "end game" — bail out of the game in progress and show the final card, so
+    // the difficulty select unlocks. Only reachable while a game is running.
+    function endGameEarly() {
+      if (!state.gameActive || state.gameOver) return;
+      // state.round only advances when the result card is clicked through, so a
+      // finished round still sitting under its card has to be counted here.
+      const roundsPlayed = state.roundActive ? state.round : state.round + 1;
+      stopAnimation();
+      state.roundActive = false;
+      hideWrongFeedback();
+      setAnswerData("result", EMPTY_FC);
+      // Nothing is going to be submitted from this card, so the difficulty can
+      // unlock straight away — the whole point of the button is to let you
+      // switch. A real game-over keeps it locked until its card is dismissed,
+      // because a score there is still waiting on a board.
+      state.gameActive = false;
+      showGameOver(true, roundsPlayed);
     }
 
     async function submitScore() {
       const nameEl = document.getElementById("score-name-input");
       const name = (nameEl && nameEl.value.trim()) || "anonymous";
       localStorage.setItem("guessTheCity_playerName", name);
-      const diff = document.getElementById("difficulty-select").value;
+      const diff = state.difficulty;
       const btn = document.getElementById("btn-submit-score");
       const status = document.getElementById("score-submit-status");
       if (btn) btn.disabled = true;
@@ -1572,13 +1691,17 @@
 
     function dismissGameOver() {
       document.getElementById("result-overlay").classList.remove("visible");
+      setAnswerData("result", EMPTY_FC);
       state.gameOver = false;
+      // Nothing left to submit, so this is the point where the difficulty
+      // select unlocks.
+      state.gameActive = false;
+      updateControls();
       document.getElementById("btn-new-game").style.display = "";
     }
 
     function dismissAndRestart() {
-      document.getElementById("result-overlay").classList.remove("visible");
-      state.gameOver = false;
+      document.getElementById("btn-new-game").style.display = "none";
       startGame();
     }
 
@@ -1589,6 +1712,7 @@
     }
 
     document.getElementById("btn-submit").addEventListener("click", submitGuess);
+    document.getElementById("btn-end-game").addEventListener("click", endGameEarly);
     document.getElementById("btn-new-game").addEventListener("click", () => {
       document.getElementById("btn-new-game").style.display = "none";
       startGame();
@@ -1601,6 +1725,7 @@
     requestAnimationFrame(async () => {
       document.getElementById("timer-text").textContent = `${CONFIG.totalTime.toFixed(1)}s`;
       computeMapSize();
+      updateControls();
       renderLeaderboard();
       await loadCities();
       startGame();

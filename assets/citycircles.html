@@ -9,7 +9,6 @@ permalink: /circles/
 {%- include analytics.html -%}
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Proximity City Quiz</title>
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5/dist/maplibre-gl.css"/>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -29,7 +28,9 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:Georgia
 .config-row{display:flex;align-items:center;justify-content:space-between;gap:8px}
 .config-row label{font-size:var(--fs-sm);color:var(--muted);white-space:nowrap}
 .config-row select{background:var(--surface2);border:1px solid var(--border);color:var(--text);font-family:Georgia,serif;font-size:var(--fs-sm);border-radius:var(--radius);padding:3px 7px;cursor:pointer;outline:none}
-.leaflet-tooltip.city-tip{font-family:Georgia,serif;font-size:var(--fs-sm);background:#ffffff;border:1px solid var(--border2);color:var(--text);border-radius:2px;padding:3px 8px;box-shadow:0 1px 4px rgba(0,0,0,.1);white-space:nowrap}
+.city-tip{pointer-events:none}
+.city-tip .maplibregl-popup-content{font-family:Georgia,serif;font-size:var(--fs-sm);background:#ffffff;border:1px solid var(--border2);color:var(--text);border-radius:2px;padding:3px 8px;box-shadow:0 1px 4px rgba(0,0,0,.1);white-space:nowrap}
+.city-tip .maplibregl-popup-tip{display:none}
 #input-section{padding:12px 18px;border-bottom:1px solid var(--border)}
 #city-input{width:100%;background:var(--surface);border:1px solid var(--border);color:var(--text);font-family:Georgia,serif;font-size:var(--fs-md);padding:8px 11px;border-radius:var(--radius);outline:none;transition:border-color .15s;margin-bottom:7px}
 #city-input::placeholder{color:var(--muted)}
@@ -71,7 +72,11 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:Georgia
 #win-name-input{flex:1;background:var(--surface);border:1px solid var(--border);color:var(--text);font-family:Georgia,serif;font-size:var(--fs-sm);padding:6px 9px;border-radius:var(--radius);outline:none}
 #win-name-input:focus{border-color:var(--border2)}
 #win-submit-status{font-size:var(--fs-sm);color:var(--muted);min-height:16px;margin-bottom:6px;text-align:center}
-#win-lb-entries{max-height:190px;overflow-y:auto;border:1px solid var(--border)}
+/* Twenty rows rather than ten, so give the box room to show a useful run of
+   them, but cap it against the viewport as well — the overlay is pinned to the
+   top of the screen and has no height limit of its own, so a fixed 20-row box
+   would run off the bottom on a short window. */
+#win-lb-entries{max-height:min(360px,45vh);overflow-y:auto;border:1px solid var(--border)}
 .lb-table{width:100%;border-collapse:collapse;font-size:var(--fs-sm)}
 .lb-table td.r{text-align:right}
 .lb-table td{padding:5px 6px;border-bottom:1px solid var(--border);color:var(--text)}
@@ -169,9 +174,7 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:Georgia
     </div>
   </div>
 </div>
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://unpkg.com/maplibre-gl@5/dist/maplibre-gl.js"></script>
-<script src="https://unpkg.com/@maplibre/maplibre-gl-leaflet@0.1.3/leaflet-maplibre-gl.js"></script>
 <script src="/assets/games/cities_data.js"></script>
 <script>
 
@@ -731,33 +734,108 @@ let gameFinished=false;
 let revealedSet=new Set();  // player-found, counted in Found
 let finishedSet=new Set();  // giveUp-revealed, not counted, have tooltips
 let guessCount=0;
-let cityMarkers={}; // idx -> {main, clones[]}
+let mapReady=false;  // style loaded and our sources/layers are on the map
 // guessCircles: array of {lat, lng, radiusKm} — redrawn on map move
 let guessCircles=[];
 let guessedSet=new Set(); // indices already used as guess origins
-let circleLayerGroup=L.layerGroup();
-
 
 // ── Map ──
-const map=L.map('map',{center:[20,10],zoom:3,minZoom:3,maxZoom:12,worldCopyJump:false,maxBounds:[[-80,-500],[80,500]],maxBoundsViscosity:1.0});
-// OpenFreeMap vector basemap via maplibre-gl-leaflet (keyless). Positron with
-// all label (symbol) layers stripped, to match the old CARTO light_nolabels look.
-fetch('https://tiles.openfreemap.org/styles/positron')
-  .then(r=>r.json())
-  .then(style=>{
-    style.layers=style.layers.filter(l=>l.type!=='symbol');
-    L.maplibreGL({style,attribution:'© OpenStreetMap'}).addTo(map);
-  })
-  .catch(e=>console.warn('basemap load failed:',e));
-circleLayerGroup.addTo(map);
-// One Leaflet pane per tier; higher z-index = renders on top.
-// TIERS[0] is the largest cities, so it gets the highest z-index (410).
-const TIER_PANES=[];
-for(let i=0;i<TIERS.length;i++){
-  const name='cityTier'+i;
-  map.createPane(name);
-  map.getPane(name).style.zIndex=410-i;
-  TIER_PANES.push(name);
+//
+// MapLibre GL directly. This was Leaflet with maplibre-gl-leaflet layered on
+// top, which is the same thing Guess the City used to be. The basemap has not
+// changed: it is still OpenFreeMap Positron with the label layers stripped, so
+// the map looks exactly as it did — what left is the Leaflet shim around it.
+//
+// What the shim was costing here was not the basemap but the overlays. Every
+// city was an SVG path in the DOM, five of them per city so the dots would
+// still be there after a world wrap, and a grid decimation existed purely to
+// keep that number survivable: at the world view it threw away roughly twenty
+// thousand of the twenty-eight thousand cities. Drawn by GL from one GeoJSON
+// source, the whole board is a single layer, world wrap is native, and there is
+// nothing to decimate — the finish screen shows every city.
+//
+// ZOOM NUMBERING DIFFERS. MapLibre z == Leaflet z - 1, so the old Leaflet 3/12
+// range is 2/11 here, and the old default view of [20,10] @ z3 is [10,20] @ z2.
+// Longitude comes first in MapLibre and in GeoJSON, latitude first in Leaflet.
+let map=null;
+const EMPTY_FC={type:'FeatureCollection',features:[]};
+
+function startMap(){
+  fetch('https://tiles.openfreemap.org/styles/positron')
+    .then(r=>r.json())
+    .then(style=>{
+      style.layers=style.layers.filter(l=>l.type!=='symbol');
+      return style;
+    })
+    .catch(e=>{
+      // A dead basemap should cost the basemap, not the game. Fall back to an
+      // empty style so the dots and circles still draw on a blank background.
+      console.warn('basemap load failed:',e);
+      return {version:8,sources:{},layers:[]};
+    })
+    .then(buildMap);
+}
+
+function buildMap(style){
+  map=new maplibregl.Map({
+    container:'map',
+    style,
+    center:[10,20], zoom:2, minZoom:2, maxZoom:11,
+    dragRotate:false, pitchWithRotate:false, touchPitch:false,
+    attributionControl:false,
+  });
+  map.touchZoomRotate.disableRotation();
+  map.addControl(new maplibregl.NavigationControl({showCompass:false}),'top-left');
+  map.addControl(new maplibregl.AttributionControl({compact:true,customAttribution:'© OpenStreetMap'}),'bottom-right');
+
+  map.on('load',()=>{
+    map.addSource('guesses',{type:'geojson',data:EMPTY_FC});
+    map.addSource('cities',{type:'geojson',data:EMPTY_FC});
+
+    // Guess circles go under the dots, matching the old pane order where the
+    // circle layer group sat below every city tier.
+    map.addLayer({
+      id:'guess-fill', type:'fill', source:'guesses',
+      filter:['==',['geometry-type'],'Polygon'],
+      paint:{'fill-color':'#648f5d','fill-opacity':0.13},
+    });
+    map.addLayer({
+      id:'guess-line', type:'line', source:'guesses',
+      filter:['==',['geometry-type'],'LineString'],
+      paint:{'line-color':'#648f5d','line-width':1,'line-dasharray':[5,4]},
+    });
+
+    map.addLayer({
+      id:'city-dots', type:'circle', source:'cities',
+      // Replaces the seven Leaflet panes that used to order the tiers by hand.
+      // Higher sort key draws on top, so keying on population puts the big
+      // cities above the small ones, which is what the panes were for.
+      layout:{'circle-sort-key':['get','pop']},
+      paint:{
+        // The old radius was tierRadius * 1.25^(leafletZoom - 5), recomputed in
+        // JS on every marker after every zoom. MapLibre's exponential
+        // interpolation between two stops IS that curve exactly when the stops
+        // are the endpoint values, so the whole resize pass becomes one
+        // expression the GPU evaluates. 0.64 is 1.25^-2 and 4.768 is 1.25^7,
+        // the multipliers at MapLibre z2 and z11.
+        'circle-radius':['interpolate',['exponential',1.25],['zoom'],
+          2, ['*',['get','r'],0.64],
+          11,['*',['get','r'],4.76837158203125]],
+        'circle-color':['get','col'],
+        'circle-opacity':0.6,
+        'circle-stroke-width':1,
+        'circle-stroke-color':'#ffffff',
+        'circle-stroke-opacity':0.75,
+      },
+    });
+
+    map.on('mousemove','city-dots',onDotHover);
+    map.on('mouseleave','city-dots',clearDotHover);
+
+    mapReady=true;
+    syncGuessCircles();
+    syncCityDots();
+  });
 }
 
 // ── Geodesic circle helpers ──
@@ -775,21 +853,31 @@ function geodesicPoint(lat, lng, distKm, bearingDeg){
   ];
 }
 
-// ── Circle drawing — geodesic polygons, 5 copies spanning ±720° ──
-// Longitudes are kept continuous (no [-180,180] snapping) so the polygon
-// never self-intersects when crossing the antimeridian.
-// For circles that enclose a pole the fill is drawn as 2° latitude strips —
-// each strip is a simple trapezoid that never reaches ±85°, so no single
-// polygon causes rendering problems.  The outline is drawn as a polyline.
-function drawAllCircles(){
-  circleLayerGroup.clearLayers();
+// ── Circle drawing — geodesic rings as GeoJSON ──
+// Longitudes are kept continuous (no [-180,180] snapping) so the ring never
+// self-intersects when crossing the antimeridian. MapLibre reads a ring that
+// runs past ±180 the same way, so the continuity trick still does its job.
+//
+// The copies at ±360 and ±720 are gone. renderWorldCopies draws the wrapped
+// world for us, so one ring per guess is all that has to exist.
+//
+// For circles that enclose a pole the fill is drawn as two half-circle polygons
+// closed along the ±84° parallel, so no single polygon approaches a pole. The
+// outline is always its own LineString, in both cases, which is why the dashed
+// edge looks the same whether or not a pole is inside.
+function ringToGeoJSONRing(pts){
+  const first=pts[0], last=pts[pts.length-1];
+  return (first[0]===last[0]&&first[1]===last[1])?pts:pts.concat([first]);
+}
+
+function guessCirclesFC(){
   const STEPS=144;
-  const style={color:'#648f5d',weight:1,fillColor:'#648f5d',fillOpacity:0.13,dashArray:'5 4',interactive:false};
-  const outlineStyle={color:'#648f5d',weight:1,dashArray:'5 4',interactive:false};
-  const stripStyle={stroke:false,fillColor:'#648f5d',fillOpacity:0.13,interactive:false};
+  const features=[];
+  const feat=(geometry)=>({type:'Feature',properties:{},geometry});
   for(const gc of guessCircles){
     const poleEnclosed=gc.radiusKm>=(90+gc.lat)*111.32||gc.radiusKm>=(90-gc.lat)*111.32;
-    // Arc points (used for outline in both cases, and fill in the normal case)
+    // Arc points, [lng, lat] for GeoJSON. Used for the outline in both cases,
+    // and for the fill in the normal case.
     const pts=[];
     let prevLng=gc.lng;
     for(let i=0;i<=STEPS;i++){
@@ -798,165 +886,97 @@ function drawAllCircles(){
       while(lng-prevLng> 180) lng-=360;
       while(prevLng-lng> 180) lng+=360;
       prevLng=lng;
-      pts.push([Math.max(-85,Math.min(85,lat)),lng]);
+      pts.push([lng,Math.max(-85,Math.min(85,lat))]);
     }
+    features.push(feat({type:'LineString',coordinates:pts}));
     if(!poleEnclosed){
-      for(const offset of [-720,-360,0,360,720])
-        L.polygon(pts.map(([lat,lng])=>[lat,lng+offset]),style).addTo(circleLayerGroup);
+      features.push(feat({type:'Polygon',coordinates:[ringToGeoJSONRing(pts)]}));
     } else {
-      // Pole-enclosing: draw fill as two half-circle polygons closed along ±84°.
-      // East half follows bearings 0→180, west half 360→180.  Each polygon's
+      // East half follows bearings 0→180, west half 360→180. Each polygon's
       // vertices lie on the actual circle arc (exact geodesic points) plus two
-      // closing vertices on the ±84° parallel — no single polygon approaches a pole.
+      // closing vertices on the ±84° parallel.
       const clampLat=(gc.radiusKm>=(90+gc.lat)*111.32)?-84:84;
       const H=STEPS/2;
-      const halfPolys=[];
       for(const dir of [1,-1]){ // +1 = east, -1 = west
         const hPts=[];
-        let prevLng=gc.lng;
+        let pl=gc.lng;
         for(let i=0;i<=H;i++){
           const [lat,rawLng]=geodesicPoint(gc.lat,gc.lng,gc.radiusKm,(dir>0?i:STEPS-i)/STEPS*360);
           let lng=rawLng;
-          while(lng-prevLng>180) lng-=360;
-          while(prevLng-lng>180) lng+=360;
-          prevLng=lng;
-          hPts.push([Math.max(-84,Math.min(84,lat)),lng]);
+          while(lng-pl>180) lng-=360;
+          while(pl-lng>180) lng+=360;
+          pl=lng;
+          hPts.push([lng,Math.max(-84,Math.min(84,lat))]);
         }
         // Close along the parallel back to the starting longitude
-        hPts.push([clampLat,hPts[hPts.length-1][1]]);
-        hPts.push([clampLat,hPts[0][1]]);
-        halfPolys.push(hPts);
-      }
-      for(const offset of [-720,-360,0,360,720]){
-        L.polyline(pts.map(([lat,lng])=>[lat,lng+offset]),outlineStyle).addTo(circleLayerGroup);
-        for(const hPts of halfPolys)
-          L.polygon(hPts.map(([lat,lng])=>[lat,lng+offset]),stripStyle).addTo(circleLayerGroup);
+        hPts.push([hPts[hPts.length-1][0],clampLat]);
+        hPts.push([hPts[0][0],clampLat]);
+        features.push(feat({type:'Polygon',coordinates:[ringToGeoJSONRing(hPts)]}));
       }
     }
   }
+  return {type:'FeatureCollection',features};
 }
 
-// ── City markers — 5 copies spanning ±720° to cover full map scroll range ──
-function zoomScale(){return Math.pow(1.25,map.getZoom()-5);}
-
-function placeMarker(c, idx, withTooltip=false){
-  if(cityMarkers[idx]) return;
-  const st=cityStyle(c.pop);
-  const tierIdx=TIERS.findIndex(t=>c.pop>=t.min);
-  const opts={
-    radius:st.r*zoomScale(),
-    fillColor:st.col,
-    color:'rgba(255,255,255,0.75)',
-    weight:1,
-    fillOpacity: 0.6,
-    interactive:withTooltip,
-    pane:TIER_PANES[tierIdx<0?TIER_PANES.length-1:tierIdx]
-  };
-  const main=L.circleMarker([c.lat,c.lng],opts).addTo(map);
-  const clones=[];
-  for(const off of [-720,-360,360,720]){
-    const clone=L.circleMarker([c.lat,c.lng+off],Object.assign({},opts)).addTo(map);
-    clones.push(clone);
-  }
-  if(withTooltip){
-    const addTip=m=>{
-      m.on('mouseover',e=>showCityTip(c,e.target.getLatLng()));
-      m.on('mouseout',hideCityTip);
-    };
-    addTip(main);
-    clones.forEach(addTip);
-  }
-  cityMarkers[idx]={main,clones};
+function syncGuessCircles(){
+  if(!mapReady) return;
+  map.getSource('guesses').setData(guessCirclesFC());
 }
 
-// ── Single shared tooltip for finished cities ──
-let _sharedTip=null;
-function showCityTip(c,latlng){
-  if(!_sharedTip) _sharedTip=L.tooltip({className:'city-tip'});
-  _sharedTip.setContent(`${c.name} · ${formatPop(c.pop)}`);
-  _sharedTip.setLatLng(latlng);
-  if(!map.hasLayer(_sharedTip)) _sharedTip.addTo(map);
-}
-function hideCityTip(){
-  if(_sharedTip&&map.hasLayer(_sharedTip)) map.removeLayer(_sharedTip);
-}
-
-// Viewport-based grid decimation: 100×100 cells, top 2 cities by pop per cell.
-// Called after each guess and debounced on map pan/zoom.
-let _renderTimer=null;
-function scheduleRender(){
-  clearTimeout(_renderTimer);
-  _renderTimer=setTimeout(updateRenderedMarkers,150);
-}
-
-function updateRenderedMarkers(){
-  const bounds=map.getBounds();
-  const vS=bounds.getSouth(), vN=bounds.getNorth();
-  const vW=bounds.getWest(), vE=bounds.getEast();
-  const latSpan=Math.max(vN-vS,0.001);
-  const lngSpan=Math.max(vE-vW,0.001);
-  const GRID=100;
-  // Cell size is derived from the viewport (scales with zoom) but anchored to world
-  // coordinates so panning doesn't shift which cell a city falls in.
-  // Use Mercator Y for rows: the projected Y-span is constant for a given zoom
-  // regardless of latitude, so cellY stays stable during north/south panning.
-  function mercY(lat){const r=lat*Math.PI/180;return Math.log(Math.tan(Math.PI/4+r/2));}
-  const yS=mercY(Math.max(-85,vS)), yN=mercY(Math.min(85,vN));
-  const cellY=Math.max(yN-yS,1e-6)/GRID;
-  const cellLng=lngSpan/GRID;
-
-  // Bin all revealed+finished cities visible in viewport
-  const grid=new Map(); // cellKey -> [idx, ...]
-  function bin(idx){
-    const c=CITIES[idx];
-    if(c.lat<vS||c.lat>vN) return;
-    // Shift lng into [vW, vW+360) to handle world-wrap copies
-    let lng=c.lng;
-    while(lng<vW) lng+=360;
-    while(lng-360>=vW) lng-=360;
-    if(lng>vE) return;
-    const col=Math.floor(lng/cellLng);
-    const row=Math.floor(mercY(c.lat)/cellY);
-    const key=`${row},${col}`;
-    if(!grid.has(key)) grid.set(key,[]);
-    grid.get(key).push(idx);
+// ── City dots ──
+//
+// One GeoJSON feature per revealed or finished city, handed to the map as a
+// single source. There is no per-city object, no world-wrap copy and no
+// viewport decimation: the layer's radius expression handles zoom, MapLibre
+// handles wrap, and the GPU does not care that there are twenty-eight thousand
+// of them. Everything the player has uncovered is on the map, all of it.
+//
+// Features are built once and reused, because the same city gets re-sent on
+// every guess and there is no reason to rebuild the object each time.
+let _cityFeatures=[];
+function cityFeature(idx){
+  let f=_cityFeatures[idx];
+  if(!f){
+    const c=CITIES[idx], st=cityStyle(c.pop);
+    f={type:'Feature',
+       geometry:{type:'Point',coordinates:[c.lng,c.lat]},
+       properties:{name:c.name,pop:c.pop,r:st.r,col:st.col}};
+    _cityFeatures[idx]=f;
   }
-  for(const i of revealedSet) bin(i);
-  for(const i of finishedSet) bin(i);
-
-  // Select top 4 per cell by population
-  const cullAmount = 4;
-  const toShow=new Set();
-  for(const [,idxs] of grid){
-    idxs.sort((a,b)=>CITIES[b].pop-CITIES[a].pop);
-    idxs.slice(0,cullAmount).forEach(i=>toShow.add(i));
-  }
-
-  // Add newly visible markers
-  for(const idx of toShow){
-    if(!cityMarkers[idx]) placeMarker(CITIES[idx],idx,gameFinished&&(revealedSet.has(idx)||finishedSet.has(idx)));
-  }
-  // Remove markers that scrolled out of selection
-  for(const k of Object.keys(cityMarkers)){
-    const idx=+k;
-    if(!toShow.has(idx)) removeMarker(idx);
-  }
-  // Resize all visible markers to current zoom (catches survivors that weren't recreated)
-  const scale=zoomScale();
-  for(const k of Object.keys(cityMarkers)){
-    const r=cityStyle(CITIES[+k].pop).r*scale;
-    const m=cityMarkers[+k];
-    m.main.setRadius(r);
-    m.clones.forEach(c=>c.setRadius(r));
-  }
+  return f;
 }
 
-function removeMarker(idx){
-  const m=cityMarkers[idx];
-  if(!m)return;
-  map.removeLayer(m.main);
-  m.clones.forEach(c=>map.removeLayer(c));
-  delete cityMarkers[idx];
+function syncCityDots(){
+  if(!mapReady) return;
+  const features=[];
+  for(const i of revealedSet) features.push(cityFeature(i));
+  for(const i of finishedSet) features.push(cityFeature(i));
+  map.getSource('cities').setData({type:'FeatureCollection',features});
+}
+
+// ── Hover tooltip for finished cities ──
+const cityPopup=new maplibregl.Popup({closeButton:false,closeOnClick:false,className:'city-tip',offset:8});
+
+function onDotHover(e){
+  // Dots are on the map during play too, so this is where "only the finish
+  // screen has tooltips" is enforced.
+  if(!gameFinished||!e.features.length){clearDotHover();return;}
+  const f=e.features[0];
+  // The dot under the pointer may be a wrapped copy of the world, but the
+  // feature carries its source longitude. Walk the popup to the copy the
+  // pointer is actually over, or it lands a world away.
+  const coords=f.geometry.coordinates.slice();
+  while(Math.abs(e.lngLat.lng-coords[0])>180) coords[0]+=e.lngLat.lng>coords[0]?360:-360;
+  map.getCanvas().style.cursor='pointer';
+  cityPopup.setLngLat(coords)
+           .setText(`${f.properties.name} · ${formatPop(f.properties.pop)}`)
+           .addTo(map);
+}
+
+function clearDotHover(){
+  // newGame() calls this before the style has loaded, so there may be no map yet.
+  if(mapReady) map.getCanvas().style.cursor='';
+  cityPopup.remove();
 }
 
 // ── Game helpers ──
@@ -1100,7 +1120,7 @@ function processGuessOrigin(idx){
     const lngDeg=radKm/(111*Math.cos(seed.lat*Math.PI/180)||0.001);
     if(drawCircle){
       guessCircles.push({lat:seed.lat,lng:seed.lng,radiusKm:radKm});
-      drawAllCircles();
+      syncGuessCircles();
     }
     const fi=filteredIndices();
     for(const {c,i} of fi){
@@ -1123,7 +1143,7 @@ function processGuessOrigin(idx){
     const farthestDist=slice.length>0?slice[slice.length-1].d:radKm;
     if(drawCircle){
       guessCircles.push({lat:seed.lat,lng:seed.lng,radiusKm:farthestDist});
-      drawAllCircles();
+      syncGuessCircles();
     }
     for(const {i} of slice) revealCity(i);
   }
@@ -1139,7 +1159,7 @@ function onGuess(raw){
   guessCount++;
   if(guessCount===1) lockControls();
   for(const {i} of valid) processGuessOrigin(i);
-  updateRenderedMarkers();
+  syncCityDots();
   updateCountryList();
   upStats();
   if(revealedSet.size>=totalCities()) setTimeout(showWin,500);
@@ -1156,15 +1176,16 @@ function newGame(){
   guessCircles=[];
   guessedSet=new Set();
   unlockControls();
-  Object.keys(cityMarkers).forEach(k=>removeMarker(+k));
-  circleLayerGroup.clearLayers();
+  clearDotHover();
+  syncCityDots();
+  syncGuessCircles();
   document.getElementById('found-list').innerHTML='';
   const inp=document.getElementById('city-input');
   inp.value='';
   inp.disabled=false;
   inp.placeholder='type a city name, press enter\u2026';
   upStats();
-  map.setView([20,10],3,{animate:true});
+  if(mapReady) map.easeTo({center:[10,20],zoom:2});
 }
 
 function giveUp(){
@@ -1172,9 +1193,9 @@ function giveUp(){
   for(const {i} of filteredIndices()){
     if(!revealedSet.has(i)) finishedSet.add(i);
   }
-  // Clear all markers so they get re-placed with tooltips enabled
-  Object.keys(cityMarkers).forEach(k=>removeMarker(+k));
-  updateRenderedMarkers();
+  // One setData with every city in it. This used to remove every marker on the
+  // map and rebuild the lot as SVG, which is what made the finish screen hitch.
+  syncCityDots();
   const inp=document.getElementById('city-input');
   inp.disabled=true;
   inp.placeholder='';
@@ -1244,12 +1265,10 @@ document.addEventListener('keydown',e=>{
   if(e.key.length===1) inp.focus();
 });
 
-map.on('moveend',scheduleRender);
-map.on('zoomstart',()=>clearTimeout(_renderTimer));
-map.on('zoomend',()=>{
-  clearTimeout(_renderTimer);
-  updateRenderedMarkers();
-});
+// No move or zoom handlers any more. Both existed to re-run the decimation and
+// to resize every marker by hand; the dot layer's radius expression covers zoom
+// and the source is viewport-independent, so panning costs nothing to maintain.
+startMap();
 loadCities();newGame();
 
 // ── Leaderboard ──
@@ -1292,7 +1311,7 @@ function lbRecordFinish(){
   }).catch(()=>{});
 }
 
-// Submits one score and returns the updated top ten. Throws with the server's
+// Submits one score and returns the updated board. Throws with the server's
 // own message so the caller can say why a name was refused.
 async function lbSubmit(name,found,total){
   const r=await fetch(`${LB_BASE}/score`,{
