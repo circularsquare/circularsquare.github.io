@@ -1,0 +1,1547 @@
+---
+sitemap: false
+---
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+{%- include analytics.html -%}
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>korea rail flow — passengers per segment</title>
+<meta property="og:title" content="korea rail flow" />
+<meta property="og:description" content="passengers per day on every segment of korea's intercity rail network" />
+<meta property="og:type" content="website" />
+<meta property="og:image" content="index.png" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:image" content="index.png" />
+<link rel="icon" type="image/png" href="favicon.png" />
+<meta name="robots" content="noindex, nofollow" />
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { background: #07090d; color: #eee; font-family: 'Nunito', system-ui, sans-serif; overflow: hidden; }
+#map { width: 100vw; height: 100vh; }
+
+#title {
+    position: absolute;
+    top: 12px; left: 14px;
+    background: rgba(7,9,13,0.84);
+    border: 1px solid #2a2f38;
+    border-radius: 8px;
+    padding: 9px 13px;
+    z-index: 100;
+    max-width: 360px;
+    font-size: 13px;
+    line-height: 1.45;
+}
+#title .hdr { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+#title h1 { font-size: 15px; font-weight: 800; margin-bottom: 3px; }
+#title .sub { color: #8b939e; font-size: 11px; }
+#title a { color: #5bb6ff; text-decoration: none; }
+#title .warn { color: #d0a24a; }
+
+#langtoggle { flex: none; font-size: 11px; white-space: nowrap; }
+#langtoggle span { cursor: pointer; color: #8b939e; padding: 1px 5px; border-radius: 4px; }
+#langtoggle span.on { color: #fff; background: #2a2f38; }
+
+#bottomleft {
+    position: absolute;
+    bottom: 16px; left: 14px;
+    z-index: 100;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+}
+#legend {
+    position: relative;
+    background: rgba(7,9,13,0.84);
+    border: 1px solid #2a2f38;
+    border-radius: 8px;
+    padding: 9px 12px;
+    font-size: 11.5px;
+    line-height: 1.7;
+}
+#legend.hidden { display: none; }
+/* desktop: widen so the direction trio sits on one line. mobile keeps the
+   auto-narrow column. */
+@media (min-width: 701px) {
+    #legend { min-width: 196px; }
+    #legend .thick { width: 100%; }
+}
+#legend .close {
+    position: absolute;
+    top: 2px; right: 4px;
+    color: #59616d;
+    cursor: pointer;
+    font-size: 20px;
+    line-height: 1;
+    padding: 4px 6px;
+    user-select: none;
+}
+#legend .close:hover { color: #d8dde3; }
+#ctrlbtn {
+    width: 40px; height: 40px;
+    background: rgba(7,9,13,0.84);
+    border: 1px solid #2a2f38;
+    border-radius: 50%;
+    color: #c0c5cc;
+    cursor: pointer;
+    user-select: none;
+    display: none;
+    align-items: center;
+    justify-content: center;
+}
+#ctrlbtn svg { width: 22px; height: 22px; }
+#ctrlbtn:hover { color: #fff; border-color: #4a505c; }
+#ctrlbtn.show { display: flex; }
+#legend .hd { color: #8b939e; font-size: 10px; text-transform: uppercase; letter-spacing: .5px; margin-bottom: 3px; }
+#legend .widths { margin-top: 7px; padding-top: 6px; border-top: 1px solid #2a2f38; }
+#legend .wrow { display: flex; align-items: center; gap: 6px; }
+#legend .wbar { background: #d8dde3; border-radius: 2px; flex: none; }
+#legend .thick { margin-top: 7px; width: 172px; }
+#legend .thick .val { color: #d8dde3; }
+#legend .thick input { width: 100%; margin-top: 0; accent-color: #5bb6ff; cursor: pointer; }
+#legend .thick .hd { margin-bottom: 0; }
+#legend .modetoggle { display: flex; gap: 4px; margin-bottom: 6px; }
+#legend .modetoggle span { cursor: pointer; color: #8b939e; padding: 2px 7px; border-radius: 4px; border: 1px solid #2a2f38; }
+#legend .modetoggle span.on { color: #fff; background: #2a2f38; }
+#legend .widths .modetoggle { margin-top: 8px; }
+#legend .stsec { margin-top: 7px; padding-top: 6px; border-top: 1px solid #2a2f38; }
+#legend .strow { display: flex; align-items: center; gap: 8px; width: 172px; }
+#legend .strow input[type=checkbox] { width: 13px; height: 13px; flex: none; margin: 0; accent-color: #5bb6ff; cursor: pointer; }
+#legend .strow input[type=range] { flex: 1; min-width: 0; accent-color: #5bb6ff; cursor: pointer; }
+
+/* line roster — the whole palette, scrollable so 22 lines stay compact */
+#legend .roster { margin-top: 7px; padding-top: 6px; border-top: 1px solid #2a2f38; }
+#legend .rlist { max-height: 124px; overflow-y: auto; width: 172px; scrollbar-width: thin; scrollbar-color: #2a2f38 transparent; }
+#legend .rlist::-webkit-scrollbar { width: 6px; }
+#legend .rlist::-webkit-scrollbar-thumb { background: #2a2f38; border-radius: 3px; }
+#legend .rrow {
+    display: flex; align-items: center; gap: 6px;
+    cursor: pointer; padding: 0 4px; margin-right: 4px;
+    border-radius: 3px; line-height: 1.55; color: #b6bcc5;
+}
+#legend .rrow:hover { background: #171b22; color: #fff; }
+#legend .rrow.on { background: #2a2f38; color: #fff; }
+#legend .rrow .sw { width: 14px; height: 3px; border-radius: 2px; flex: none; }
+#legend .rrow .nm { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#legend .rrow .vl { color: #6c7480; font-size: 10.5px; flex: none; }
+#legend .rrow.on .vl { color: #aab1ba; }
+
+#aboutbtn {
+    position: absolute;
+    top: 108px; left: 14px;
+    z-index: 110;
+    width: 32px; height: 32px;
+    background: rgba(7,9,13,0.84);
+    border: 1px solid #2a2f38;
+    border-radius: 50%;
+    color: #c0c5cc;
+    font-size: 17px;
+    font-weight: 700;
+    line-height: 30px;
+    text-align: center;
+    cursor: pointer;
+    user-select: none;
+}
+#aboutbtn:hover { color: #fff; border-color: #4a505c; }
+#aboutbtn.on { color: #fff; background: #2a2f38; border-color: #5bb6ff; }
+#aboutpanel {
+    position: absolute;
+    bottom: 16px;
+    left: 222px;
+    width: 360px;
+    max-width: calc(100vw - 242px);
+    max-height: calc(80vh - 16px);
+    overflow-y: auto;
+    background: rgba(7,9,13,0.94);
+    border: 1px solid #3a414c;
+    border-radius: 8px;
+    padding: 14px 16px;
+    z-index: 105;
+    font-size: 11.5px;
+    line-height: 1.5;
+    color: #c0c5cc;
+    display: none;
+}
+#aboutpanel.open { display: block; }
+@media (max-width: 700px) {
+    #aboutpanel { left: 14px; right: 14px; width: auto; max-width: none; }
+}
+#aboutpanel h2 { color: #fff; font-size: 13px; font-weight: 800; margin: 14px 0 5px; letter-spacing: .3px; }
+#aboutpanel h2:first-child { margin-top: 0; }
+#aboutpanel p { margin-top: 6px; }
+#aboutpanel p:first-of-type { margin-top: 0; }
+#aboutpanel b { color: #fff; }
+#aboutpanel a { color: #5bb6ff; text-decoration: none; }
+
+#info {
+    position: absolute;
+    bottom: 16px; right: 14px;
+    background: rgba(7,9,13,0.92);
+    border: 1px solid #3a414c;
+    border-radius: 8px;
+    padding: 10px 13px;
+    z-index: 100;
+    font-size: 12.5px;
+    line-height: 1.5;
+    max-width: 320px;
+    display: none;
+}
+#info .ipline { font-weight: 800; font-size: 13.5px; margin-bottom: 3px; }
+#info .ipseg { color: #fff; margin-bottom: 5px; }
+#info .iprow { display: flex; justify-content: space-between; gap: 20px; color: #8b939e; }
+#info .iprow b { color: #eee; font-weight: 700; }
+#info .ipnote { color: #8b939e; font-size: 11px; margin-top: 3px; }
+
+#tooltip {
+    position: absolute;
+    pointer-events: none;
+    background: rgba(7,9,13,0.96);
+    border: 1px solid #3a414c;
+    border-radius: 6px;
+    padding: 6px 9px;
+    font-size: 12px;
+    line-height: 1.45;
+    z-index: 200;
+    display: none;
+    white-space: nowrap;
+}
+#tooltip .line { font-weight: 800; }
+#tooltip .seg { color: #fff; }
+#tooltip .ri { color: #ffd66b; font-weight: 800; }
+#tooltip .meta { color: #8b939e; font-size: 11px; }
+
+/* shown only when segments.geojson carries no geometry yet */
+#notice {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(7,9,13,0.92);
+    border: 1px solid #3a414c;
+    border-radius: 8px;
+    padding: 12px 16px;
+    z-index: 90;
+    font-size: 12.5px;
+    color: #c0c5cc;
+    text-align: center;
+    display: none;
+}
+#notice.show { display: block; }
+
+.maplibregl-ctrl-attrib { font-size: 10px !important; }
+</style>
+</head>
+<body>
+<div id="map"></div>
+<div id="title">
+    <div class="hdr">
+        <h1 id="t-h1"></h1>
+        <div id="langtoggle"><span id="lang-en">EN</span><span id="lang-ko">한국어</span></div>
+    </div>
+    <div class="sub" id="t-sub"></div>
+</div>
+<div id="aboutbtn" title="about">?</div>
+<div id="bottomleft">
+    <div id="ctrlbtn" title="controls"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="17" x2="20" y2="17"/></svg></div>
+    <div id="legend"></div>
+</div>
+<div id="info"></div>
+<div id="tooltip"></div>
+<div id="notice"></div>
+<div id="aboutpanel"></div>
+
+<link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet" />
+<script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+<script>
+// ─────────────────────────── interface strings ───────────────────────────
+const STR = {
+    en: {
+        h1: 'korea rail flow',
+        sub1: 'line thickness = passengers per day',
+        subWarn: 'segment figures are reconstructed, not published',
+        legDirection: 'direction',
+        dirBoth: 'both', dirDown: 'down', dirUp: 'up',
+        legLineColors: 'line colors',
+        modeLine: 'by line', modeClass: 'by class',
+        clsHs: 'high-speed', clsSemi: 'semi-high-speed', clsConv: 'conventional',
+        legWidth: 'passengers / day',
+        legLines: 'lines',
+        legThickness: 'line thickness',
+        legFloor: 'log scale above',
+        scaleLog: 'log', scaleLinear: 'linear',
+        joinNote: '{n} trains join here, at a junction with no station — so the count steps up partway along.',
+        stubTo: 'junction with {n}',
+        stubNote: 'Past the last platform. These are the passengers still aboard, riding on to join the {n}.',
+        throughNote: 'Runs past {n} more stations no intercity train stops at.',
+        noSvcTitle: 'No intercity service',
+        noSvcCommuter: 'Commuter rail only — {n} trains a day each way in {y}. Those riders are on the metro layer.',
+        noSvcNone: 'No trains ran on this section in {y}.',
+        unrecTitle: 'Riders not recorded',
+        unrecNote: 'Intercity trains do run here — {n} a day each way in {y} — but the yearbook credits this line with almost no passengers, so this grey line carries no figure. The ITX-Cheongchun riding the same rails is drawn separately, from Korail station counts.',
+        pubTitle: 'Published total, not reconstructed',
+        pubTip: 'Not reconstructed — the line\'s published 통과인원 for {y}, split evenly between the two directions.',
+        pubNote: 'No station on this line reports boardings its own trains can claim, so nothing here is cumulated. The figure is the line\'s {y} 통과인원 from the 철도통계연보, split evenly between the two directions. All of it rode this stretch, the only one with intercity trains on it ({n} a day each way).',
+        legNoSvc: 'no rider figure',
+        toggleStations: 'station bubbles',
+        tipFlow: 'passengers / day',
+        tipDown: 'down (하행)', tipUp: 'up (상행)',
+        tipStationRiders: 'published entries + exits',
+        tipMetroRiders: 'intracity entries + exits',
+        panelLength: 'length', panelSections: 'segments', panelRange: 'passengers / day',
+        km: 'km', perday: '/day',
+        noGeom: 'segments.geojson has no geometry yet — {n} segments loaded, nothing to draw.',
+        aboutTitle: 'about',
+        aboutBody: `<h2>what this shows</h2><p>Every segment of Korea's intercity rail network, drawn at a thickness proportional to the passengers who ride it. A <b>line</b> is a named route in Korail's yearbook; a <b>segment</b> is the track between two consecutive stations on it.</p><p><b>Left click</b> to highlight a line, and click it again to drill into one segment. <b>Right click</b> goes straight to a segment. <b>Esc</b> clears.</p>
+<h2>these numbers are reconstructed</h2><p>Korea publishes no per-segment passenger figures. The <b>철도통계연보</b> gives boardings and alightings at each station, split by direction, and passenger totals per line — but nothing per segment.</p><p>Each line's segment loads are rebuilt from those station counts: order the stations along the track, then cumulate boardings minus alightings inward from the far terminus. Where a line junctions at both ends there is no clean anchor, so the level comes from the line's published 통과인원 instead, and only the shape comes from the station counts. Published train counts per section pin down where traffic can and cannot step on or off at a junction.</p><p>One line is drawn from the published total alone. 경원선 runs no train the station counts can be attributed to, so there is nothing to cumulate, and its 용산–청량리 figure is the line's 통과인원 for {y} rather than a reconstruction. Its segments say so when you hover them.</p><p>So these are <b>derived figures, not measured ones</b>, and they are more reliable on some lines than others. The two directions are built from disjoint columns of the source, so where 하행 and 상행 disagree on a segment, the reconstruction is straining.</p>
+<h2>direction</h2><p><b>both</b> sums the two directions — the usual way a flow map reads. <b>down</b> (하행) is travel away from a line's 기점, <b>up</b> (상행) back towards it. Selecting a segment shows both.</p>
+<h2>line thickness scale</h2><p>The <b>log scale above</b> slider sets where thickness switches from linear to logarithmic. Set it <b>high</b> to separate the busy high-speed lines from each other. Set it <b>low</b> to see the quiet rural lines at all.</p>
+<h2>data sources</h2><p>Passengers: <b>철도통계연보</b> (Korail, {y}) — 역별 승하차, 선별 통과인원, 선구별 운행횟수.</p><p>Two commuter services are not in that yearbook and come from Korail's 광역수송 수송통계 board instead, which publishes boardings and alightings at every station of every 광역철도 line each month. Those are the Donghae Line between Bujeon and Taehwagang, and the ITX-Cheongchun between Yongsan and Chuncheon. Both are modelled the way the city lines are, and both are fitted to a trip length the yearbook publishes for the line.</p><p><b>Station bubbles</b> show boardings plus alightings per day, with area proportional to traffic. Intercity bubbles are published yearbook counts. Intracity bubbles use the station margins behind each city's weekday model; Seoul's coverage varies by operator, while Busan, Daejeon and Gwangju use published gates.</p><p>Geometry: OpenStreetMap named <code>railway=rail</code> ways, chained station to station and rescaled to the yearbook's 영업거리.</p><p>Method and its limits: <a href="https://github.com/anitagarden/maps">the project README</a>.</p>`,
+    },
+    ko: {
+        h1: '한국 철도 수송량',
+        sub1: '선 굵기 = 하루 이용객',
+        subWarn: '구간 수치는 공표값이 아니라 복원값',
+        legDirection: '방향',
+        dirBoth: '양방향', dirDown: '하행', dirUp: '상행',
+        legLineColors: '노선 색',
+        modeLine: '노선별', modeClass: '등급별',
+        clsHs: '고속', clsSemi: '준고속', clsConv: '일반',
+        legWidth: '이용객 (명/일)',
+        legLines: '노선',
+        legThickness: '선 굵기',
+        legFloor: '로그 전환 기준',
+        scaleLog: '로그', scaleLinear: '선형',
+        joinNote: '{n} 열차가 역이 없는 분기점에서 합류하므로, 구간 중간부터 이용객 수가 늘어납니다.',
+        stubTo: '{n} 분기점',
+        stubNote: '마지막 정차역 이후 구간입니다. {n}으로 직결하기 위해 계속 승차 중인 이용객 수입니다.',
+        throughNote: '일반열차가 정차하지 않는 역 {n}개를 통과합니다.',
+        noSvcTitle: '일반열차 미운행',
+        noSvcCommuter: '광역전철만 운행 — {y}년 편도 1일 {n}회. 해당 이용객은 수도권 전철 레이어에 표시됩니다.',
+        noSvcNone: '{y}년 열차 운행 없음.',
+        unrecTitle: '이용객 수 자료 없음',
+        unrecNote: '일반열차는 운행합니다 — {y}년 편도 1일 {n}회. 다만 연보가 이 노선에 집계한 이용객이 거의 없어 이 회색 선에는 수치가 없습니다. 같은 선로를 달리는 ITX-청춘은 한국철도공사의 역별 승하차 자료로 따로 그렸습니다.',
+        pubTitle: '추정값이 아닌 공표 수치',
+        pubTip: '추정값이 아닙니다 — 철도통계연보의 {y}년 선별 통과인원을 상하행으로 균등 배분한 값입니다.',
+        pubNote: '이 노선이 자기 열차의 이용객으로 집계할 수 있는 승하차 자료가 없어, 이 구간은 누적 추정을 하지 않았습니다. 표시된 값은 철도통계연보의 {y}년 선별 통과인원을 상하행으로 균등 배분한 것입니다. 일반열차가 운행하는 구간은 여기뿐이므로(편도 1일 {n}회) 통과인원 전부가 이 구간을 이용했습니다.',
+        legNoSvc: '이용객 수 자료 없음',
+        toggleStations: '역별 승하차 원',
+        tipFlow: '명/일',
+        tipDown: '하행', tipUp: '상행',
+        tipStationRiders: '공표 승차 + 하차',
+        tipMetroRiders: '도시철도 승차 + 하차',
+        panelLength: '영업거리', panelSections: '구간 수', panelRange: '이용객',
+        km: 'km', perday: '명/일',
+        noGeom: 'segments.geojson에 아직 선형이 없습니다 — 구간 {n}개만 로드됨.',
+        aboutTitle: '이 지도에 대하여',
+        aboutBody: `<h2>무엇을 그린 지도인가</h2><p>한국 일반철도·고속철도의 모든 역간 구간을, 그 구간을 지나는 이용객 수에 비례한 굵기로 그렸다. <b>노선</b>은 철도통계연보의 선명, <b>구간</b>은 그 위 인접한 두 역 사이의 선로다.</p><p><b>왼쪽 클릭</b>으로 노선을 선택하고, 한 번 더 누르면 그 구간으로 들어간다. <b>오른쪽 클릭</b>은 바로 구간 선택. <b>Esc</b>로 해제.</p>
+<h2>이 수치는 복원한 값이다</h2><p>한국은 구간별 수송량을 공표하지 않는다. <b>철도통계연보</b>에는 역별 승하차(상·하행 구분)와 선별 통과인원이 있을 뿐, 구간별 수치는 없다.</p><p>여기 실린 값은 그 역별 수치로부터 되짚어 만든 것이다. 역을 선로 순서대로 놓고, 반대편 종점에서 안쪽으로 승차－하차를 누적한다. 양 끝이 모두 분기역인 노선은 기준으로 삼을 종점이 없어, 수준은 선별 통과인원에서 가져오고 모양만 역별 수치에서 얻는다. 분기역에서 어느 구간에 열차가 붙고 떨어질 수 있는지는 선구별 운행횟수로 고정했다.</p><p>한 노선만은 공표 수치를 그대로 썼다. 경원선은 역별 승하차로 집계할 수 있는 열차가 없어 누적할 것이 없으므로, 용산–청량리 값은 복원값이 아니라 {y}년 선별 통과인원 그 자체다. 해당 구간에 커서를 올리면 그렇게 적혀 있다.</p><p>따라서 이 값들은 <b>측정값이 아니라 유도값</b>이며, 노선에 따라 신뢰도가 다르다. 상행과 하행은 원자료의 서로 다른 열에서 따로 만들어지므로, 두 값이 어긋나는 구간일수록 복원이 무리한 곳이다.</p>
+<h2>방향</h2><p><b>양방향</b>은 두 방향의 합 — 흐름 지도를 읽는 보통의 방식이다. <b>하행</b>은 기점에서 멀어지는 방향, <b>상행</b>은 기점으로 돌아오는 방향. 구간을 선택하면 둘 다 표시된다.</p>
+<h2>선 굵기 스케일</h2><p><b>로그 전환 기준</b> 슬라이더는 굵기가 선형에서 로그로 바뀌는 지점을 정한다. <b>높이면</b> 붐비는 고속선끼리의 차이가 벌어지고, <b>낮추면</b> 한산한 지방 노선도 눈에 보인다.</p>
+<h2>자료</h2><p>이용객: <b>철도통계연보</b>(한국철도공사, {y}) — 역별 승하차, 선별 통과인원, 선구별 운행횟수.</p><p>광역전철 두 노선은 연보에 실리지 않아 한국철도공사 광역수송 수송통계 게시판의 월별 역별 승하차 자료로 그렸다. 동해선 부전－태화강과 ITX-청춘 용산－춘천이다. 두 노선 모두 도시철도 모형과 같은 방식으로 추정했고, 감쇠는 연보가 노선별로 공표한 평균 수송거리에 맞췄다.</p><p><b>역 버블</b>은 하루 승차＋하차이며 넓이가 이용객에 비례한다. 일반철도 원은 연보 공표값이다. 도시철도 원은 각 평일 모형의 역별 합계로, 부산·대전·광주는 공표 게이트 수치이고 수도권은 운영기관에 따라 측정 범위가 다르다.</p><p>선형: OpenStreetMap의 선명이 붙은 <code>railway=rail</code>, 역과 역을 잇고 연보의 영업거리에 맞춰 보정.</p><p>방법과 그 한계: <a href="https://github.com/anitagarden/maps">프로젝트 README</a>.</p>`,
+    },
+};
+// device in Korea → default to Korean. Timezone is the cleanest "where am I"
+// signal: navigator.language is the OS/browser locale, not the location.
+let lang = (() => {
+    try {
+        if (Intl.DateTimeFormat().resolvedOptions().timeZone === 'Asia/Seoul') return 'ko';
+    } catch (e) {}
+    return 'en';
+})();
+
+// ───────────────────────── lines: colour, name, class ────────────────────
+// Korail publishes no line colours for the intercity network the way the
+// 수도권 전철 map does, so this palette is authored: hue separated between any
+// two lines that meet, high-speed lines warm and bold, branches cooler and
+// quieter. Fixed per line, so it stays the same whatever else the map shows.
+const LINES = {
+    '경부고속선':   { color: '#ff4f45', en: 'Gyeongbu HSR',      cls: 'hs'   },
+    '호남고속선':   { color: '#ff9d2e', en: 'Honam HSR',         cls: 'hs'   },
+    '수서고속선':   { color: '#b47bff', en: 'Suseo HSR (SRT)',   cls: 'hs'   },
+    '강릉선':       { color: '#3fd7e6', en: 'Gangneung Line',    cls: 'semi' },
+    '중부내륙선':   { color: '#7fb2ff', en: 'Jungbu Naeryuk Line', cls: 'semi' },
+    '경부선':       { color: '#4f9dff', en: 'Gyeongbu Line',     cls: 'conv' },
+    '호남선':       { color: '#2fc46b', en: 'Honam Line',        cls: 'conv' },
+    '전라선':       { color: '#ffd93d', en: 'Jeolla Line',       cls: 'conv' },
+    '중앙선':       { color: '#ff6fb5', en: 'Jungang Line',      cls: 'conv' },
+    '경전선':       { color: '#9ede3f', en: 'Gyeongjeon Line',   cls: 'conv' },
+    '장항선':       { color: '#d99a5c', en: 'Janghang Line',     cls: 'conv' },
+    '동해선':       { color: '#6d7bff', en: 'Donghae Line',      cls: 'conv' },
+    '경원선':       { color: '#e75fd0', en: 'Gyeongwon Line',    cls: 'conv' },
+    '충북선':       { color: '#c78be0', en: 'Chungbuk Line',     cls: 'conv' },
+    '영동선':       { color: '#5fbf8a', en: 'Yeongdong Line',    cls: 'conv' },
+    '태백선':       { color: '#8f9ee8', en: 'Taebaek Line',      cls: 'conv' },
+    '경북선':       { color: '#ff8a6b', en: 'Gyeongbuk Line',    cls: 'conv' },
+    '대구선':       { color: '#c0d84a', en: 'Daegu Line',        cls: 'conv' },
+    '광주선':       { color: '#f06fa0', en: 'Gwangju Line',      cls: 'conv' },
+    '정선선':       { color: '#b8b0a2', en: 'Jeongseon Line',    cls: 'conv' },
+    '경춘선':       { color: '#1fa583', en: 'Gyeongchun Line',   cls: 'conv' },
+    '경의선':       { color: '#77c4a3', en: 'Gyeongui Line',     cls: 'conv' },
+};
+const CLASS_COLORS = { hs: '#ff5c4d', semi: '#ffb03d', conv: '#4f9dff', metro: '#49c6ad' };
+const OTHER_COLOR = '#9aa0ab';        // a line the table doesn't know
+
+let colorMode = 'line';               // 'line' | 'class'
+const lineMeta = ln => LINES[ln] || null;
+function colorLineFor(ln) { const m = lineMeta(ln); return m ? m.color : OTHER_COLOR; }
+function colorClassFor(ln) { const m = lineMeta(ln); return m ? CLASS_COLORS[m.cls] : OTHER_COLOR; }
+
+// ─────────────── Revised Romanization of Hangul, for the EN labels ───────
+// 433 station names, none of them published in English by the yearbook, so the
+// EN view transliterates. Standard RR: syllable decomposition plus the
+// assimilation rules that actually change a Korean place name's spelling
+// (백마 Baengma, 왕십리 Wangsimni, 청량리 Cheongnyangni, 신탄리 Sintalli).
+// data/names_en.json overrides this wholesale if it ever exists.
+const CHO = ['g','kk','n','d','tt','r','m','b','pp','s','ss','','j','jj','ch','k','t','p','h'];
+const JUNG = ['a','ae','ya','yae','eo','e','yeo','ye','o','wa','wae','oe','yo','u','wo','we','wi','yu','eu','ui','i'];
+// a final as pronounced when a consonant (or nothing) follows
+const JONG = ['','k','k','k','n','n','n','t','l','k','m','p','l','l','p','l','m','p','p','t','t','ng','t','t','k','t','p','t'];
+// the sound a final carries onto a following vowel (silent ㅇ initial)
+const LINK = ['','g','kk','ks','n','nj','nh','d','r','lg','lm','lb','ls','lt','lp','lh','m','b','ps','s','ss','ng','j','ch','k','t','p','h'];
+const I_G = 0, I_N = 2, I_D = 3, I_R = 5, I_M = 6, I_S = 9, I_J = 12;   // initial-jamo indices
+// RULES[finalJamo][nextInitialJamo] = [finalRoman, replacementInitialRoman] —
+// only the pairs where assimilation changes the plain spelling.
+const RULES = {};
+const rrule = (f, i, fr, ir) => { (RULES[f] || (RULES[f] = {}))[i] = [fr, ir]; };
+// ㄱ-sound and ㅂ-sound finals nasalise before ㄴ/ㅁ/ㄹ. They do NOT aspirate
+// before ㅎ here: RR keeps the h in proper nouns (묵호 Mukho, not Muko).
+for (const f of [1, 2, 9, 24]) { rrule(f, I_N, 'ng', 'n'); rrule(f, I_M, 'ng', 'm'); rrule(f, I_R, 'ng', 'n'); }
+for (const f of [11, 14, 17, 18]) { rrule(f, I_N, 'm', 'n'); rrule(f, I_M, 'm', 'm'); rrule(f, I_R, 'm', 'n'); }
+// ㄴ + ㄹ, and ㄹ-finals + ㄴ/ㄹ  →  ll
+rrule(4, I_R, 'l', 'l');
+for (const f of [8, 12, 13, 15]) { rrule(f, I_N, 'l', 'l'); rrule(f, I_R, 'l', 'l'); }
+// ㅁ / ㅇ + ㄹ → n
+rrule(16, I_R, 'm', 'n'); rrule(10, I_R, 'm', 'n'); rrule(21, I_R, 'ng', 'n');
+// ㄷ-sound finals: nasalise before ㄴ/ㅁ/ㄹ, aspirate before ㄱ/ㄷ/ㅈ
+for (const f of [7, 19, 20, 22, 23, 25, 27]) {
+    rrule(f, I_N, 'n', 'n'); rrule(f, I_M, 'n', 'm'); rrule(f, I_R, 'n', 'n');
+    rrule(f, I_G, 't', 'k'); rrule(f, I_D, 't', 't'); rrule(f, I_J, 't', 'ch');
+}
+// ㅎ-finals are the aspirator — they merge into the following consonant
+rrule(27, I_G, '', 'k'); rrule(27, I_D, '', 't'); rrule(27, I_J, '', 'ch'); rrule(27, I_S, '', 's');
+rrule(6,  I_G, 'n', 'k'); rrule(6,  I_D, 'n', 't'); rrule(6,  I_J, 'n', 'ch');
+rrule(15, I_G, 'l', 'k'); rrule(15, I_D, 'l', 't'); rrule(15, I_J, 'l', 'ch');
+
+function romanize(s) {
+    const toks = [];
+    for (const ch of s) {
+        const c = ch.codePointAt(0);
+        if (c >= 0xac00 && c <= 0xd7a3) {
+            const k = c - 0xac00;
+            toks.push({ cho: (k / 588) | 0, jung: ((k / 28) | 0) % 21, jong: k % 28 });
+        } else toks.push(ch);
+    }
+    let out = '';
+    for (let i = 0; i < toks.length; i++) {
+        const t = toks[i];
+        if (typeof t === 'string') { out += t; continue; }
+        out += (t.ini !== undefined ? t.ini : CHO[t.cho]) + JUNG[t.jung];
+        if (!t.jong) continue;
+        const nx = toks[i + 1];
+        if (nx && typeof nx === 'object') {
+            if (nx.cho === 11) { nx.ini = LINK[t.jong]; continue; }   // silent ㅇ takes the final over
+            const r = RULES[t.jong] && RULES[t.jong][nx.cho];
+            if (r) { out += r[0]; nx.ini = r[1]; continue; }
+        }
+        out += JONG[t.jong];
+    }
+    return out;
+}
+const titleCase = s => s.replace(/(^|[\s\-(])([a-z])/g, (m, p, c) => p + c.toUpperCase());
+// names RR gets right but which have a settled English form of their own
+const STN_EN = {
+    '천안아산': 'Cheonan-Asan', '광주송정': 'Gwangju-Songjeong', '여수엑스포': 'Yeosu-EXPO',
+    '벡스코': 'BEXCO', '센텀': 'Centum', '디지털미디어시티': 'Digital Media City',
+    '가산디지털단지': 'Gasan Digital Complex', '추추스테이션': 'Choo Choo Station',
+    '청주공항': 'Cheongju Airport', '공항': 'Airport',
+};
+const stnCache = new Map();
+function romanizeStation(name) {
+    if (STN_EN[name]) return STN_EN[name];
+    let v = stnCache.get(name);
+    if (v !== undefined) return v;
+    // "X역" is a station named after a station — 서울역, 대전역, 영월역
+    v = /^..+역$/.test(name)
+        ? titleCase(romanize(name.slice(0, -1))) + ' Station'
+        : titleCase(romanize(name));
+    stnCache.set(name, v);
+    return v;
+}
+
+// EN names, overridable by data/names_en.json ({ lines: {...}, stations: {...} })
+let NAMES = { lines: {}, stations: {} };
+function lineLabel(ln) {
+    if (lang === 'ko') return ln;
+    if (NAMES.lines[ln]) return NAMES.lines[ln];
+    const m = lineMeta(ln);
+    return m ? m.en : titleCase(romanize(ln));
+}
+function stnLabel(name) {
+    if (lang === 'ko') return name;
+    return NAMES.stations[name] || romanizeStation(name);
+}
+function clsLabel(cls) {
+    const S = STR[lang];
+    if (cls === 'metro') return lang === 'ko' ? '도시철도' : 'metro';
+    return cls === 'hs' ? S.clsHs : cls === 'semi' ? S.clsSemi : S.clsConv;
+}
+
+// ─────────────────────────── direction (data view) ───────────────────────
+// every feature carries down / up (annual, by direction) and daily
+// ((down+up)/365). the two directions come from disjoint columns of the
+// yearbook, so they are genuinely separate views, not a split of one number.
+let dirMode = 'both';                 // 'both' | 'down' | 'up'
+function valueExpr() {
+    if (dirMode === 'down') return ['coalesce', ['get', 'daily_down'], ['/', ['get', 'down'], 365]];
+    if (dirMode === 'up')   return ['coalesce', ['get', 'daily_up'], ['/', ['get', 'up'], 365]];
+    return ['get', 'daily'];
+}
+function segValue(p) {                // JS-side equivalent — tooltips, panel, sort
+    if (dirMode === 'down') return p.daily_down ?? (p.down || 0) / 365;
+    if (dirMode === 'up')   return p.daily_up ?? (p.up || 0) / 365;
+    return p.daily;
+}
+function setDirMode(m) {
+    if (m === dirMode) return;
+    dirMode = m;
+    applyWidths();
+    buildLegend();
+    renderInfo();
+}
+
+// ───────────────────────────── width scale ───────────────────────────────
+const NOSVC_COLOR = '#69727e';   // track this map cannot put a rider figure on;
+                                 // lifted off the basemap's own greys so it
+                                 // reads as drawn rather than as a road
+const MIN_W = 0.2, MAX_W = 12.0;                   // hairline .. fattest line
+const W_RANGE = MAX_W - MIN_W;
+const W_CEIL = 5e5;                                // includes Seoul's ~392k weekday peak
+const LOG_CEIL = Math.log10(W_CEIL);
+// the width curve is linear below a "knee" throughput and logarithmic above it,
+// with the slopes matched at the knee so there is no kink. sweeping the knee morphs
+// the whole scale: knee at the floor → pure log · knee at the ceiling → pure linear.
+const KNEE_MIN = 1.5, KNEE_MAX = LOG_CEIL;   // knee range, in log10(passengers/day)
+// Keep the intuitive linear scale through 300k passengers/day, then compress
+// only the very busiest Seoul segments logarithmically.
+let knee = Math.log10(300000);
+let kneeX, kneeA, kneeB, kneeC;
+function recalcKnee() {
+    kneeX = Math.pow(10, knee);                    // knee throughput
+    kneeA = 1 / (LOG_CEIL - knee + Math.LOG10E);   // log-branch slope factor
+    kneeB = kneeA * (Math.LOG10E - knee);          // log-branch offset
+    kneeC = kneeA * Math.LOG10E / kneeX;           // linear-branch slope
+}
+recalcKnee();
+function tFor(d) {   // normalised width 0..1 — log above the knee, linear below
+    const c = Math.min(W_CEIL, Math.max(1, d));
+    const t = c >= kneeX ? kneeA * Math.log10(c) + kneeB : kneeC * c;
+    return Math.max(0, Math.min(1, t));
+}
+function widthFor(d) { return MIN_W + W_RANGE * tFor(d); }   // px — used by legend swatches
+let widthSlider = 1;
+let widthMul = 1;   // thickness multiplier — scales only the data-driven part, so a
+                    // minimum-throughput line stays a hairline however far it's pushed
+// the linear end is far gentler than log, so blend in a ×1→×5 head-start with the
+// knee. linearness^2.5 rather than linear: a linear ramp double-boosts mid-range
+// lines that are still on the log branch around the slider midpoint.
+function linearness() { return (knee - KNEE_MIN) / (KNEE_MAX - KNEE_MIN); }   // 0 log .. 1 linear
+function effMul() { return 0.7 * widthMul * (1 + 4 * Math.pow(linearness(), 2.5)); }
+
+// Size sliders run linear over 0.1‒2 (1:1, fine granularity preserved) then bend
+// onto an exponential top, so the last stretch adds aggressive widening for
+// emphasis without losing low-end control.
+const SLIDER_LIN_MAX = 2;
+const THICK_SLIDER_MAX = 5,  THICK_MUL_MAX  = 8;
+const BUBBLE_SLIDER_MAX = 5, BUBBLE_MUL_MAX = 8;
+function logTopMap(s, mulMax, sliderMax) {
+    if (s <= SLIDER_LIN_MAX) return s;
+    const f = (s - SLIDER_LIN_MAX) / (sliderMax - SLIDER_LIN_MAX);
+    return SLIDER_LIN_MAX * Math.pow(mulMax / SLIDER_LIN_MAX, f);
+}
+const thickMap  = s => logTopMap(s, THICK_MUL_MAX,  THICK_SLIDER_MAX);
+const bubbleMap = s => logTopMap(s, BUBBLE_MUL_MAX, BUBBLE_SLIDER_MAX);
+
+// width is computed GPU-side straight from the feature's own counts — so a knee,
+// thickness or direction change is only a paint-property swap, never a geometry
+// re-upload. rendered width = zoomFactor · (MIN_W + m · W_RANGE · t).
+function tExpr() {
+    const c = () => ['min', W_CEIL, ['max', 1, valueExpr()]];
+    return ['max', 0, ['min', 1, ['case',
+        ['>=', c(), kneeX], ['+', ['*', kneeA, ['log10', c()]], kneeB],
+        ['*', kneeC, c()]]]];
+}
+// Zoom factor scales as ZOOM_BASE per zoom level — line width / bubble radius
+// grow with zoom so they keep a roughly constant fraction of the visible
+// real-world area instead of dwindling to a screen-pixel point as you zoom in.
+// Anchored at zoom 7 (multiplier 1). MapLibre forbids ['zoom'] inside arbitrary
+// math, so this is encoded as exponential interpolation between two stops with
+// the matching base — the curve evaluates to exactly ZOOM_BASE^(z-7) per level.
+const ZOOM_BASE = 1.3;
+const ZF_LO = Math.pow(ZOOM_BASE, 3 - 7);
+const ZF_HI = Math.pow(ZOOM_BASE, 13 - 7);
+// A segment the map cannot put a rider figure on is drawn at a constant width,
+// not at the width its number implies. Its number is the fit's residual noise —
+// 9 to 120 a day — and drawing that as a hairline says "almost nobody rides
+// here", which is a claim about ridership. What is true is either that this
+// map's trains do not run here or that the source does not count the people on
+// them, and a constant width says that instead.
+const NOSVC_W = 1.5;
+// Except where nothing ran at all, which is not the same kind of statement.
+// `commuter` and `unrecorded` are both unknowns — a busy railway whose riders
+// are on the other layer, or trains whose passengers the source does not count
+// — and a constant width is the honest way to draw an unknown. `none` is a
+// known zero: the 운전 sheet shows no train of any kind on the section. Drawing
+// a known zero at the same width as an unknown overstates it, and on the one
+// segment this applies to, 경원선's 소요산-백마고지, it is 38.6 km of the map's
+// most conspicuous grey. Nothing else draws that track either — the metro layer
+// stops at 소요산 too, exactly as the sheet says — so this stripe is the only
+// thing on those kilometres and it was reading as traffic. A hairline still
+// says the railway is there, which is true and worth saying: it was shut for
+// the 전철 works, not abandoned.
+const NONE_W = 0.5;
+const wExpr = (m) => ['case',
+    ['==', ['get', 'service'], 'none'], NONE_W,
+    ['has', 'service'], NOSVC_W,
+    ['+', MIN_W, ['*', m * W_RANGE, tExpr()]]];
+
+// Widths are drawn at their natural size. There used to be a viewport cap that
+// scaled every line down whenever the thickest visible one passed 40px, so the
+// 경부 corridor could not overwhelm the map — but the corridor overwhelming the
+// map is the finding, and a cap that rescales on pan turns a fixed quantity
+// into one that depends on where you are looking. The thickness slider already
+// covers wanting it smaller.
+
+const coreWidth = (m = effMul()) => ['interpolate', ['exponential', ZOOM_BASE], ['zoom'],
+    3,  ['*', ZF_LO, wExpr(m)],
+    13, ['*', ZF_HI, wExpr(m)]];
+const casingWidth = (m = effMul()) => ['interpolate', ['exponential', ZOOM_BASE], ['zoom'],
+    3,  ['+', ['*', ZF_LO, wExpr(m)], 3],
+    13, ['+', ['*', ZF_HI, wExpr(m)], 3]];
+
+// Invisible hit-area. Clicks/hover hit-test rendered pixels, so a 0.2px hairline
+// is effectively impossible to tap. segs-hit / station-hit are fully transparent
+// layers whose size is the visible size floored to a finger-friendly minimum.
+const HIT_LINE_MIN = 11;   // px — min clickable line band
+// Bubble hit floor. A flat floor is wrong zoomed out: a station drawn at a
+// fraction of a pixel still claimed a 9px grab radius, so hovering a line near
+// any station showed that station's tooltip instead of the segment's — and at
+// national zoom that is most of the map, with the bubble too small to see and
+// nothing to explain why the wrong thing appeared. So the floor is a curve of
+// its own, generous where the dots are big enough to aim at and nearly off
+// where they are not. Lines keep their flat floor: a hairline is unclickable
+// at any zoom, and there is no second thing competing for the cursor.
+const HIT_DOT_MIN_LO = 3;  // px — at zoom 3, where the dots are specks
+const HIT_DOT_MIN_HI = 9;  // px — at zoom 13, finger-friendly
+// Floor is baked into each zoom stop, not wrapped around the interpolate —
+// ['zoom'] may only sit at the top level of a step/interpolate, never nested
+// inside max(). Width grows monotonically with zoom and the floor is constant,
+// so flooring both endpoints floors the whole curve.
+const hitWidth = (m = effMul()) => ['interpolate', ['exponential', ZOOM_BASE], ['zoom'],
+    3,  ['max', HIT_LINE_MIN, ['*', ZF_LO, wExpr(m)]],
+    13, ['max', HIT_LINE_MIN, ['*', ZF_HI, wExpr(m)]]];
+
+function applyWidths() {
+    if (!map.getLayer('segs-line')) return;
+    map.setPaintProperty('segs-casing', 'line-width', casingWidth());
+    map.setPaintProperty('segs-line', 'line-width', coreWidth());
+    if (map.getLayer('segs-hit')) map.setPaintProperty('segs-hit', 'line-width', hitWidth());
+}
+
+// knee / thickness changed — coalesced to about one apply per 2 frames so a fast
+// drag stays smooth; each apply reads the latest setting, not the interim ones.
+let widthRAF = 0;
+function refreshWidths() {
+    if (widthRAF) return;
+    widthRAF = requestAnimationFrame(() => requestAnimationFrame(() => {
+        widthRAF = 0;
+        recalcKnee();
+        applyWidths();
+        refreshWidthSwatches();
+    }));
+}
+function refreshWidthSwatches() {
+    document.querySelectorAll('#legend .wbar').forEach(el => {
+        const w = widthFor(+el.dataset.d);
+        // sub-1px widths can't render thinner than 1px in CSS; fade the bar's
+        // opacity instead so the swatch looks like the faint hairline a thin
+        // antialiased line draws on the map, not a solid 1px block.
+        el.style.height = Math.max(w, 1).toFixed(1) + 'px';
+        el.style.opacity = Math.min(1, w).toFixed(2);
+    });
+}
+function fmtFloor(lf) {
+    const v = Math.pow(10, lf);
+    if (v >= 1000) { const k = v / 1000; return (k >= 10 ? Math.round(k) : k.toFixed(1)) + 'k'; }
+    return String(Math.round(v));
+}
+// the log / linear buttons are presets — they snap the knee to either extreme
+function snapKnee(mode) {
+    const target = mode === 'linear' ? KNEE_MAX : KNEE_MIN;
+    if (target === knee) return;
+    knee = target;
+    recalcKnee();
+    applyWidths();
+    buildLegend();
+}
+
+// ─────────────────────────── station bubbles ─────────────────────────────
+// 역별 승하차 drawn as circles over the lines, area proportional to riders.
+// Intercity and intracity bubbles are white and load additively.
+let hasStations = false;
+let showStations = true;
+let stationSlider = 0.45;
+let stationMul = 0.45;
+const R_SCALE = 0.05;                              // px of radius per √(승하차)
+function radiusFor(r) { return Math.sqrt(Math.max(0, r)) * R_SCALE; }
+const circleRadius = (m = stationMul) => ['interpolate', ['exponential', ZOOM_BASE], ['zoom'],
+    3,  ['*', ['get', 'r'], m * ZF_LO],
+    13, ['*', ['get', 'r'], m * ZF_HI]];
+const hitRadius = (m = stationMul) => ['interpolate', ['exponential', ZOOM_BASE], ['zoom'],
+    3,  ['max', HIT_DOT_MIN_LO, ['*', ['get', 'r'], m * ZF_LO]],
+    13, ['max', HIT_DOT_MIN_HI, ['*', ['get', 'r'], m * ZF_HI]]];
+function applyStationSize() {
+    if (map.getLayer('station-dots'))
+        map.setPaintProperty('station-dots', 'circle-radius', circleRadius());
+    if (map.getLayer('station-hit'))
+        map.setPaintProperty('station-hit', 'circle-radius', hitRadius());
+}
+
+let aboutOpen = false;
+let noGeomCount = 0;
+let hasNoService = false;   // any track drawn as carrying no intercity service
+const NO_MATCH = ['==', ['get', 'line'], ' '];   // filter that matches nothing
+
+// ──────────────────────────────── map ────────────────────────────────────
+const map = new maplibregl.Map({
+    container: 'map',
+    style: 'https://tiles.openfreemap.org/styles/dark',
+    center: [127.9, 36.4],
+    zoom: 6.4,
+    minZoom: 5,
+    attributionControl: true,
+});
+map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-right');
+
+// A fast zoom-out that crosses four or more zoom levels at once goes blank for
+// about a third of a second — basemap, lines, bubbles, everything. It is
+// MapLibre's tile retain window and not anything on this page.
+//
+// SourceCache stands in for a tile it has not loaded yet with a loaded parent
+// or child, but only within `maxUnderzooming` levels, which is 3. Flick from
+// z9 to z5 and the z9 tiles in hand are four levels down, so nothing covers the
+// viewport and the style's background paints through until z5 arrives.
+// Measured on a cold cache, 300 frames across the jump: 16 blank frames at the
+// default, 0 with the window widened; 8→5 never blanks, being three levels.
+//
+// It only bites when the destination tiles have never been fetched, which is
+// why it looks rare to anyone who has had the page open a while and constant to
+// a first-time visitor — the case that matters.
+//
+// The widening is not exponential: `findLoadedChildren` only ever considers
+// tiles already in the cache, so a bigger window lets existing tiles cover more,
+// it does not go looking for 4^n of them.
+//
+// There is no public setting for this. `maxUnderzooming` is a static on
+// SourceCache, reachable only through a live instance, so it is private API and
+// guarded as such — one patch covers every source, since they share the class.
+// If a MapLibre upgrade renames it the guard simply skips and the only cost is
+// the flash coming back.
+map.once('style.load', () => {
+    try {
+        const caches = map.style._sourceCaches || map.style.sourceCaches || {};
+        const one = Object.values(caches)[0];
+        if (!one) return;
+        const SourceCache = Object.getPrototypeOf(one).constructor;
+        if (typeof SourceCache.maxUnderzooming === 'number') SourceCache.maxUnderzooming = 10;
+    } catch (e) { /* private API; worst case is the flash returns */ }
+});
+
+let allFeats = [];
+let fcData = null;              // the loaded FeatureCollection — re-fed on colour-mode switch
+let selected = null;            // { mode:'line'|'segment', line, color, ... }
+let lineStations = new Map();   // line → Set<station name> (built from segment from/to)
+let sfcData = null;             // station FeatureCollection, or null
+let selStationIds = new Set();  // station feature ids on the selected line
+function stationsOnSelectedLine() {
+    return selected ? (lineStations.get(selected.line) || new Set()) : new Set();
+}
+
+// Cache-bust the data files — browsers cache these fetch()es hard, so a hard
+// refresh alone won't pull a rebuilt segments.geojson. Bump on data change.
+const DATA_VERSION = '2026-09-09-yongsan-ktx';
+const dataURL = (name) => `data/${name}?v=${DATA_VERSION}`;
+
+map.on('load', async () => {
+    const fc = await fetch(dataURL('segments.geojson')).then(r => r.json());
+    applyYear(fc.year);
+    // an EN name table, if one is ever built — otherwise the romanizer stands in
+    try {
+        const n = await fetch(dataURL('names_en.json')).then(r => r.ok ? r.json() : null);
+        if (n) NAMES = { lines: n.lines || {}, stations: n.stations || {} };
+    } catch (e) {}
+
+    // A separate generated file preserves the intercity solver's output.
+    // Metro directions are daily values; do not manufacture annual counts.
+    try {
+        const r = await fetch(dataURL('metro_segments.geojson'));
+        if (!r.ok) throw new Error('Metro data: HTTP ' + r.status);
+        const metro = await r.json();
+        // Infrastructure and metro services can share an English line name.
+        const existingNames = new Set(Object.values(LINES).map(m => m.en));
+        for (const m of Object.values(metro.line_meta)) {
+            if (existingNames.has(m.en)) m.en += ' (metro)';
+        }
+        Object.assign(LINES, metro.line_meta);
+        Object.assign(NAMES.stations, metro.station_names);
+        fc.features.push(...metro.features);
+    } catch (e) {
+        console.error(e);
+        document.getElementById('t-sub').insertAdjacentHTML('beforeend', '<br>Seoul metro data unavailable');
+    }
+
+    try {
+        const r = await fetch(dataURL('busan_segments.geojson'));
+        if (!r.ok) throw new Error('Busan data: HTTP ' + r.status);
+        const busan = await r.json();
+        Object.assign(LINES, busan.line_meta);
+        // Do not overwrite settled Seoul names when cities reuse a name.
+        for (const [ko, en] of Object.entries(busan.station_names)) {
+            if (!NAMES.stations[ko]) NAMES.stations[ko] = en;
+        }
+        fc.features.push(...busan.features);
+    } catch (e) {
+        console.error(e);
+        document.getElementById('t-sub').insertAdjacentHTML('beforeend', '<br>Busan estimates unavailable');
+    }
+
+    try {
+        const r = await fetch(dataURL('small_city_segments.geojson'));
+        if (!r.ok) throw new Error('Daejeon/Gwangju data: HTTP ' + r.status);
+        const cities = await r.json();
+        Object.assign(LINES, cities.line_meta);
+        for (const [ko, en] of Object.entries(cities.station_names)) {
+            if (!NAMES.stations[ko]) NAMES.stations[ko] = en;
+        }
+        fc.features.push(...cities.features);
+    } catch (e) {
+        console.error(e);
+        document.getElementById('t-sub').insertAdjacentHTML('beforeend', '<br>Daejeon/Gwangju estimates unavailable');
+    }
+
+    try {
+        const r = await fetch(dataURL('daegu_busan_segments.geojson'));
+        if (!r.ok) throw new Error('Daegu/Busan-Gimhae data: HTTP ' + r.status);
+        const cities = await r.json();
+        Object.assign(LINES, cities.line_meta);
+        for (const [ko, en] of Object.entries(cities.station_names)) {
+            if (!NAMES.stations[ko]) NAMES.stations[ko] = en;
+        }
+        fc.features.push(...cities.features);
+    } catch (e) {
+        console.error(e);
+        document.getElementById('t-sub').insertAdjacentHTML('beforeend', '<br>Daegu/Busan-Gimhae estimates unavailable');
+    }
+
+    // 동해선 광역전철, 부전-태화강. Korail's, not a city operator's, and drawn
+    // on the same metals as the intercity 동해선 above it -- the two are
+    // separate services on one railway, the way 경춘선 already is.
+    try {
+        const r = await fetch(dataURL('donghae_segments.geojson'));
+        if (!r.ok) throw new Error('Donghae commuter data: HTTP ' + r.status);
+        const donghae = await r.json();
+        Object.assign(LINES, donghae.line_meta);
+        for (const [ko, en] of Object.entries(donghae.station_names)) {
+            if (!NAMES.stations[ko]) NAMES.stations[ko] = en;
+        }
+        fc.features.push(...donghae.features);
+    } catch (e) {
+        console.error(e);
+        document.getElementById('t-sub').insertAdjacentHTML('beforeend', '<br>Donghae commuter estimates unavailable');
+    }
+
+    // ITX-청춘, 용산-춘천. The yearbook records almost none of these riders, so
+    // the intercity 경춘선 underneath is drawn grey; this is the same railway's
+    // traffic from Korail's own counts.
+    try {
+        const r = await fetch(dataURL('gyeongchun_segments.geojson'));
+        if (!r.ok) throw new Error('ITX-Cheongchun data: HTTP ' + r.status);
+        const itx = await r.json();
+        Object.assign(LINES, itx.line_meta);
+        for (const [ko, en] of Object.entries(itx.station_names)) {
+            if (!NAMES.stations[ko]) NAMES.stations[ko] = en;
+        }
+        fc.features.push(...itx.features);
+    } catch (e) {
+        console.error(e);
+        document.getElementById('t-sub').insertAdjacentHTML('beforeend', '<br>ITX-Cheongchun estimates unavailable');
+    }
+
+    const total = fc.features.length;
+    // build.py currently emits null geometry on every segment; MapLibre would
+    // silently draw nothing, so drop them and say so rather than show a blank map.
+    fc.features = fc.features.filter(f => f.geometry && f.geometry.coordinates);
+    if (!fc.features.length) {
+        const el = document.getElementById('notice');
+        noGeomCount = total;
+        el.textContent = STR[lang].noGeom.replace('{n}', total);
+        el.classList.add('show');
+    }
+    for (const f of fc.features) {
+        const p = f.properties;
+        p.colorLine = colorLineFor(p.line);
+        p.colorClass = colorClassFor(p.line);
+        p.color = colorMode === 'line' ? p.colorLine : p.colorClass;
+        // Track with no rider figure takes the grey in both colour modes. It is
+        // an authored colour with a legend row of its own, not the line's own
+        // colour dimmed — a dimmed line still reads as that line, quietly.
+        if (p.service) { p.color = NOSVC_COLOR; hasNoService = true; }
+    }
+    fc.features.sort((a, b) => a.properties.daily - b.properties.daily);   // fat on top
+    allFeats = fc.features;
+    fcData = fc;
+
+    // index: line → station names, for highlighting the bubbles a line stops at
+    for (const f of allFeats) {
+        const p = f.properties;
+        let s = lineStations.get(p.line);
+        if (!s) { s = new Set(); lineStations.set(p.line, s); }
+        s.add(p.from); s.add(p.to);
+    }
+
+    map.addSource('segs', { type: 'geojson', data: fc });
+
+    // white casing — only the selected line (filter set on click)
+    map.addLayer({
+        id: 'segs-casing', type: 'line', source: 'segs',
+        filter: NO_MATCH,
+        paint: { 'line-color': '#fbfdff', 'line-width': casingWidth(), 'line-opacity': 0.92 },
+        layout: { 'line-cap': 'round', 'line-join': 'round' },
+    });
+    // crisp coloured core
+    map.addLayer({
+        id: 'segs-line', type: 'line', source: 'segs',
+        paint: { 'line-color': ['get', 'color'], 'line-width': coreWidth(), 'line-opacity': 0.92 },
+        layout: { 'line-cap': 'round', 'line-join': 'round' },
+    });
+    // transparent fat hit-band — all line hover/click hit-tests target this
+    map.addLayer({
+        id: 'segs-hit', type: 'line', source: 'segs',
+        paint: { 'line-color': '#000', 'line-width': hitWidth(), 'line-opacity': 0 },
+        layout: { 'line-cap': 'round', 'line-join': 'round' },
+    });
+
+    await addStationsIfPresent();
+
+    const tip = document.getElementById('tooltip');
+
+    function matchesSelection(p) {
+        if (!selected || selected.line !== p.line) return false;
+        if (selected.mode === 'segment')
+            return selected.from === p.from && selected.to === p.to;
+        return true;
+    }
+    function showSegTip(p, pt) {
+        const S = STR[lang];
+        tip.style.display = 'block';
+        tip.style.left = (pt.x + 14) + 'px';
+        tip.style.top = (pt.y + 14) + 'px';
+        const dirNote = dirMode === 'down' ? ' · ' + S.tipDown
+                      : dirMode === 'up'   ? ' · ' + S.tipUp : '';
+        // Track the map cannot put a rider figure on shows what runs there
+        // instead. The figure exists — it is the fit's residual, 9 to 120 a day
+        // — but quoting it would answer a question the map cannot answer.
+        // Three reasons, and the tooltip has to say which: no intercity service
+        // but commuter rail, nothing running at all, or trains running whose
+        // passengers the yearbook does not record (경춘선's ITX-청춘).
+        if (p.service) {
+            const unrec = p.service === 'unrecorded';
+            tip.innerHTML =
+                `<div class="line" style="color:${p.color}">${lineLabel(p.line)}</div>` +
+                `<div class="seg">${stnLabel(p.from)} → ${stnLabel(p.to)}</div>` +
+                `<div class="ri" style="color:#8b939e">${unrec ? S.unrecTitle : S.noSvcTitle}</div>` +
+                `<div class="meta">${unrec
+                    ? S.unrecNote.replace('{n}', Number(p.intercity_trains).toLocaleString())
+                    : p.service === 'commuter'
+                    ? S.noSvcCommuter.replace('{n}', Number(p.commuter_trains).toLocaleString())
+                    : S.noSvcNone}</div>` +
+                `<div class="meta">${Number(p.km).toFixed(1)} ${S.km}</div>`;
+            return;
+        }
+        // A run-on stub ends at a junction, not a station, so `to` holds the
+        // line it joins rather than a place name.
+        tip.innerHTML =
+            `<div class="line" style="color:${p.color}">${lineLabel(p.line)}</div>` +
+            `<div class="seg">${stnLabel(p.from)} → ${p.stub
+                ? S.stubTo.replace('{n}', lineLabel(p.stub)) : stnLabel(p.to)}</div>` +
+            `<div class="ri">${Math.round(segValue(p)).toLocaleString()} ${S.perday}</div>` +
+            (p.stub ? `<div class="meta">${S.stubNote.replace('{n}', lineLabel(p.stub))}</div>` : '') +
+            `<div class="meta">${Number(p.km).toFixed(1)} ${S.km}${dirNote}</div>` +
+            // A segment split at a junction with no platform: the two halves
+            // share a name, so the heavier one has to say why it is heavier.
+            // What joins at a flying junction is a service, not a station. The
+            // old note named p.junction — the giving line's last stop, which
+            // for the SRT is 평택지제, a station 3 km short of the merge — so it
+            // pointed at a place that is not where the count changes and has no
+            // dot on the map. Name the line instead.
+            (p.junction ? `<div class="meta">${S.joinNote.replace('{n}',
+                p.join_line ? lineLabel(p.join_line) : stnLabel(p.junction))}</div>` : '') +
+            // The one figure on the map that is published rather than derived,
+            // so it has to say so — the rest of the page's numbers come with
+            // an implied "reconstructed" that would be wrong here. One line in
+            // the tooltip; the panel has room for the argument.
+            (p.level === 'passing' ? `<div class="meta">${S.pubTip}</div>` : '') +
+            // A merged segment runs past stations that have bubbles on the map,
+            // so it has to say why there is no break at them.
+            (p.through ? `<div class="meta">${S.throughNote.replace('{n}', Number(p.through).toLocaleString())}</div>` : '') +
+            (lineMeta(p.line)?.cls === 'metro' ? `<div class="meta">${metroNote(p.line)}</div>${scenarioNote(p)}` : '');
+    }
+
+    map.on('mousemove', 'segs-hit', (e) => {
+        if (!e.features.length) return;
+        // if a line is selected, prefer the feature that matches it over
+        // whatever segment happens to be on top
+        const f = e.features.find(x => matchesSelection(x.properties)) || e.features[0];
+        showSegTip(f.properties, e.point);
+        map.getCanvas().style.cursor = 'pointer';
+    });
+    map.on('mouseleave', 'segs-hit', () => {
+        tip.style.display = 'none';
+        map.getCanvas().style.cursor = '';
+    });
+
+    if (hasStations) {
+        // registered after segs-line, so a dot sitting on a line wins the
+        // tooltip when the cursor is over both — unless the selected line is
+        // also under the cursor, which then wins.
+        map.on('mousemove', 'station-hit', (e) => {
+            if (!e.features.length) return;
+            const p = e.features[0].properties;
+            const onSelLine = selected && selStationIds.has(e.features[0].id);
+            if (selected && !onSelLine) {
+                const segHits = map.queryRenderedFeatures(e.point, { layers: ['segs-hit'] });
+                const selHit = segHits.find(x => matchesSelection(x.properties));
+                if (selHit) { showSegTip(selHit.properties, e.point); map.getCanvas().style.cursor = 'pointer'; return; }
+            }
+            const S = STR[lang];
+            tip.style.display = 'block';
+            tip.style.left = (e.point.x + 14) + 'px';
+            tip.style.top = (e.point.y + 14) + 'px';
+            // MapLibre hands array properties back as JSON text, not arrays
+            const lns = Array.isArray(p.lines) ? p.lines : JSON.parse(p.lines || '[]');
+            tip.innerHTML =
+                `<div class="line" style="color:${p.color || '#fff'}">${stnLabel(p.station)}</div>` +
+                (lns.length ? `<div class="seg">${lns.map(lineLabel).join(' · ')}</div>` : '') +
+                `<div class="ri">${Math.round(p.riders).toLocaleString()} ${S.perday}</div>` +
+                `<div class="meta">${p.kind === 'metro' ? S.tipMetroRiders : S.tipStationRiders}</div>`;
+            map.getCanvas().style.cursor = 'pointer';
+        });
+        map.on('mouseleave', 'station-hit', () => {
+            tip.style.display = 'none';
+            map.getCanvas().style.cursor = '';
+        });
+    }
+
+    // On mobile a tap fires synthetic mousemove (showing the tooltip at the tap
+    // point) but no mouseleave when the touch ends, so panning afterwards leaves
+    // the tooltip stuck. Hide on every view change; hover re-shows it on desktop.
+    map.on('movestart', () => { tip.style.display = 'none'; });
+
+    // left-click: highlight the line on first click; clicking again anywhere on
+    // the same line drills into the segment under the cursor (mobile has no
+    // right-click, so this is how it reaches segments). Clicking off any line
+    // clears.   ·   right-click: toggles a single segment directly.
+    map.on('click', (e) => {
+        const hits = map.queryRenderedFeatures(e.point, { layers: ['segs-hit'] });
+        if (!hits.length) { clearSelection(); return; }
+        let f = hits[0];
+        if (selected) {
+            const same = hits.find(h => h.properties.line === selected.line);
+            if (same) f = same;
+        }
+        const p = f.properties;
+        if (selected && selected.line === p.line) setSegmentSelection(p);
+        else setLineSelection(p);
+    });
+    map.on('contextmenu', (e) => {
+        const hits = map.queryRenderedFeatures(e.point, { layers: ['segs-hit'] });
+        if (hits.length) selectSegment(hits[0].properties);
+        else clearSelection();
+    });
+    map.getCanvasContainer().addEventListener('contextmenu', (ev) => ev.preventDefault());
+
+    applyWidths();
+    buildLegend();   // the line roster needs allFeats
+});
+
+// Station sources are additive. Expected shape: Point features with
+// { station, line, lines, riders, kind }.
+async function addStationsIfPresent() {
+    const sfc = { type: 'FeatureCollection', features: [] };
+    for (const name of ['stations.geojson', 'metro_stations.geojson']) {
+        try {
+            const r = await fetch(dataURL(name));
+            if (!r.ok) continue;
+            const part = await r.json();
+            sfc.features.push(...(part.features || []));
+        } catch (e) { console.error(e); }
+    }
+    if (!sfc || !sfc.features || !sfc.features.length) return;
+    sfc.features.forEach((f, i) => {
+        const p = f.properties;
+        if (!Array.isArray(p.lines)) p.lines = p.line ? [p.line] : [];
+        p.color = colorLineFor(p.line);   // tooltip accent only — the dots are white
+        p.r = radiusFor(p.riders);
+        f.id = i + 1;                     // stable id for feature-state highlight
+    });
+    sfcData = sfc;
+    hasStations = true;
+    map.addSource('stations', { type: 'geojson', data: sfc });
+    map.addLayer({
+        id: 'station-dots', type: 'circle', source: 'stations',
+        layout: { visibility: showStations ? 'visible' : 'none' },
+        paint: {
+            'circle-radius': circleRadius(),
+            'circle-color': '#ffffff',
+            'circle-opacity': 0.5,
+            'circle-stroke-color': '#ffffff',
+            'circle-stroke-width': 0,
+            // no transitions — paint changes for opacity / stroke must land on
+            // the same frame as the feature-state update, otherwise the bubbles
+            // flicker (fade through the "off" state before the highlight lands)
+            'circle-opacity-transition': { duration: 0 },
+            'circle-stroke-width-transition': { duration: 0 },
+            'circle-stroke-color-transition': { duration: 0 },
+        },
+    });
+    map.addLayer({
+        id: 'station-hit', type: 'circle', source: 'stations',
+        layout: { visibility: showStations ? 'visible' : 'none' },
+        paint: { 'circle-radius': hitRadius(), 'circle-color': '#000', 'circle-opacity': 0 },
+    });
+}
+
+// ─────────────────────────── selection / info ────────────────────────────
+function selCond(s) {
+    const t = [['==', ['get', 'line'], s.line]];
+    if (s.mode === 'segment')
+        t.push(['==', ['get', 'from'], s.from], ['==', ['get', 'to'], s.to]);
+    return ['all', ...t];
+}
+
+// Which bubbles light up with the selection. No geometry test is needed here:
+// build_stations.py resolves each station against the drawn network and records
+// the lines that actually call there, and the segment table keys on those same
+// station names — so membership is exact rather than a proximity guess.
+function recomputeSelStationIds() {
+    selStationIds = new Set();
+    if (!selected || !sfcData) return;
+    const names = selected.mode === 'segment'
+        ? new Set([selected.from, selected.to])
+        : stationsOnSelectedLine();
+    for (const f of sfcData.features) {
+        const p = f.properties;
+        const on = selected.mode === 'segment'
+            ? p.lines.includes(selected.line) && names.has(p.station)
+            : p.lines.includes(selected.line);
+        if (on) selStationIds.add(f.id);
+    }
+}
+function pushStationFeatureState() {
+    if (!sfcData) return;
+    for (const f of sfcData.features)
+        map.setFeatureState({ source: 'stations', id: f.id }, { onLine: selStationIds.has(f.id) });
+}
+
+function applySelection() {
+    if (!map.getLayer('segs-line')) return;
+    if (!selected) {
+        map.setFilter('segs-casing', NO_MATCH);
+        map.setPaintProperty('segs-line', 'line-opacity', 0.92);
+        if (map.getLayer('station-dots')) {
+            map.setPaintProperty('station-dots', 'circle-opacity', 0.5);
+            map.setPaintProperty('station-dots', 'circle-stroke-width', 0);
+        }
+        selStationIds = new Set();
+        pushStationFeatureState();
+        return;
+    }
+    const cond = selCond(selected);
+    map.setFilter('segs-casing', cond);
+    map.setPaintProperty('segs-line', 'line-opacity', ['case', cond, 0.97, 0.13]);
+
+    recomputeSelStationIds();
+    pushStationFeatureState();
+
+    if (map.getLayer('station-dots')) {
+        const onLine = ['boolean', ['feature-state', 'onLine'], false];
+        map.setPaintProperty('station-dots', 'circle-opacity', ['case', onLine, 0.95, 0.08]);
+        map.setPaintProperty('station-dots', 'circle-stroke-color', selected.color);
+        map.setPaintProperty('station-dots', 'circle-stroke-width', ['case', onLine, 1.5, 0]);
+    }
+}
+
+function setLineSelection(p) {
+    selected = { mode: 'line', line: p.line, color: p.color };
+    applySelection();
+    renderInfo();
+    markRoster();
+}
+function setSegmentSelection(p) {
+    selected = { ...p, mode: 'segment' };
+    applySelection();
+    renderInfo();
+    markRoster();
+}
+// right-click handler — toggles a segment off when clicking the same one again
+function selectSegment(p) {
+    if (selected && selected.mode === 'segment' && selected.line === p.line
+        && selected.from === p.from && selected.to === p.to) { clearSelection(); return; }
+    setSegmentSelection(p);
+}
+// legend roster click — selects the whole line
+function selectLineByName(ln) {
+    if (selected && selected.mode === 'line' && selected.line === ln) { clearSelection(); return; }
+    const f = allFeats.find(x => x.properties.line === ln);
+    if (f) setLineSelection(f.properties);
+}
+function clearSelection() {
+    if (!selected) return;
+    selected = null;
+    applySelection();
+    document.getElementById('info').style.display = 'none';
+    markRoster();
+}
+function markRoster() {
+    document.querySelectorAll('#legend .rrow').forEach(el =>
+        el.classList.toggle('on', !!selected && el.dataset.line === selected.line));
+}
+
+// ─────────────────────────── colour mode ─────────────────────────────────
+function setColorMode(mode) {
+    if (mode === colorMode) return;
+    colorMode = mode;
+    for (const f of allFeats) {
+        const p = f.properties;
+        p.color = p.service ? NOSVC_COLOR
+                : (colorMode === 'line' ? p.colorLine : p.colorClass);
+    }
+    if (fcData) map.getSource('segs').setData(fcData);   // layers read ['get','color']
+    if (selected) {
+        const f = allFeats.find(x => x.properties.line === selected.line);
+        if (f) selected.color = f.properties.color;
+        applySelection();   // refresh the station stroke colour
+    }
+    buildLegend();
+    renderInfo();
+}
+
+function renderInfo() {
+    if (!selected) return;
+    const S = STR[lang];
+    const box = document.getElementById('info');
+    const head = `<div class="ipline" style="color:${selected.color}">${lineLabel(selected.line)}</div>`;
+
+    if (selected.mode === 'segment') {
+        // both-directions view shows the split too: the two are built from
+        // disjoint columns of the yearbook, so their gap is the honest read on
+        // how hard the reconstruction is working here.
+        const split = dirMode === 'both'
+            ? `<div class="iprow"><span>${S.tipDown}</span>` +
+                  `<b>${Math.round(selected.daily_down ?? (selected.down || 0) / 365).toLocaleString()}</b></div>` +
+              `<div class="iprow"><span>${S.tipUp}</span>` +
+                  `<b>${Math.round(selected.daily_up ?? (selected.up || 0) / 365).toLocaleString()}</b></div>`
+            : '';
+        // The panel quotes the same figure the tooltip refuses to, so it has to
+        // refuse it in the same cases — otherwise clicking a grey segment gets
+        // the rider count hovering it was careful not to give.
+        box.innerHTML = head +
+            `<div class="ipseg">${stnLabel(selected.from)} → ${stnLabel(selected.to)}</div>` +
+            `<div class="iprow"><span>${S.panelLength}</span>` +
+                `<b>${Number(selected.km).toFixed(1)} ${S.km}</b></div>` +
+            (selected.service
+                ? `<div class="ipseg">${selected.service === 'unrecorded'
+                       ? S.unrecTitle : S.noSvcTitle}</div>`
+                : `<div class="iprow"><span>${S.panelRange}</span>` +
+                      `<b>${Math.round(segValue(selected)).toLocaleString()}</b></div>` +
+                  split +
+                  // Down and up are equal here because the published total was
+                  // halved, not because they were built separately and agreed.
+                  // The panel is where that has room to be said.
+                  (selected.level === 'passing'
+                      ? `<div class="ipseg">${S.pubTitle}</div>` +
+                        `<div class="ipnote">${S.pubNote.replace('{n}',
+                            Number(selected.intercity_trains).toLocaleString())}</div>`
+                      : ''));
+    } else {
+        const parts = allFeats.filter(f => f.properties.line === selected.line);
+        let km = 0, dmin = Infinity, dmax = -Infinity;
+        // Grey end to end means there is no range to quote. Only end to end:
+        // 경원선 is greyed north of 청량리 and its 20.5k on 용산-청량리 is the
+        // line's published 통과인원, so a partly-grey line still gets its
+        // numbers.
+        const allGrey = parts.length > 0 && parts.every(f => f.properties.service);
+        const unrec = allGrey && parts[0].properties.service === 'unrecorded';
+        for (const f of parts) {
+            const q = f.properties;
+            km += Number(q.km) || 0;
+            // The range is over the segments the map is willing to quote. A
+            // greyed segment's number is the fit's residual, and reading it as
+            // the low end of 경원선's range put "14 – 13,193" on a line whose
+            // own tooltips decline to say 14.
+            if (q.service) continue;
+            const v = segValue(q);
+            dmin = Math.min(dmin, v);
+            dmax = Math.max(dmax, v);
+        }
+        const range = Math.round(dmin) === Math.round(dmax)
+            ? Math.round(dmin).toLocaleString()
+            : Math.round(dmin).toLocaleString() + ' – ' + Math.round(dmax).toLocaleString();
+        const m = lineMeta(selected.line);
+        box.innerHTML = head +
+            (m ? `<div class="ipseg">${clsLabel(m.cls)}</div>` : '') +
+            `<div class="iprow"><span>${S.panelLength}</span><b>${km.toFixed(1)} ${S.km}</b></div>` +
+            `<div class="iprow"><span>${S.panelSections}</span><b>${parts.length}</b></div>` +
+            (allGrey
+                ? `<div class="ipseg">${unrec ? S.unrecTitle : S.noSvcTitle}</div>` +
+                  (unrec ? `<div class="ipnote">${S.unrecNote.replace('{n}',
+                       Number(parts[0].properties.intercity_trains).toLocaleString())}</div>` : '')
+                : `<div class="iprow"><span>${S.panelRange}</span><b>${range}</b></div>`);
+    }
+    if (lineMeta(selected.line)?.cls === 'metro') box.innerHTML += `<div class="ipseg">${metroNote(selected.line)}</div>`;
+    if (selected.mode === 'segment') box.innerHTML += scenarioNote(selected);
+    box.style.display = 'block';
+}
+
+function metroNote(line) {
+    const m = lineMeta(line);
+    const cityEn = {'대전': 'Daejeon', '광주': 'Gwangju', '대구': 'Daegu',
+                    '부산·김해': 'Busan–Gimhae'}[m?.city] || 'Busan';
+    if (m?.estimated) return lang === 'ko'
+        ? `${m.city || '부산'} · 추정 OD · ${m.period} 평일 · 직선 선형`
+        : `${cityEn} · estimated OD · ${m.period} Mon–Fri · straight-line shapes`;
+    return lang === 'ko' ? '수도권 · 모형 평일 이용객 · 일부 구간은 직선' : 'Seoul metropolitan network · modelled weekday · some shapes are straight lines';
+}
+
+function scenarioNote(p) {
+    if (!p.estimated || p.daily_low == null) return '';
+    const prefix = dirMode === 'both' ? 'daily' : 'daily_' + dirMode;
+    const low = Math.round(p[prefix + '_low']).toLocaleString();
+    const high = Math.round(p[prefix + '_high']).toLocaleString();
+    return `<div class="meta">${lang === 'ko' ? '가정별 범위 (신뢰구간 아님)' : 'Scenario range (not a confidence interval)'}: ${low} – ${high}</div>`;
+}
+
+window.addEventListener('keydown', (e) => { if (e.key === 'Escape') clearSelection(); });
+
+// ───────────────────────────── interface ─────────────────────────────────
+function buildLegend() {
+    const S = STR[lang];
+    let html = `<span class="close" id="lg-close" title="hide">×</span>` +
+        `<div class="hd">${S.legDirection}</div>` +
+        `<div class="modetoggle">` +
+        `<span id="dir-both" class="${dirMode === 'both' ? 'on' : ''}">${S.dirBoth}</span>` +
+        `<span id="dir-down" class="${dirMode === 'down' ? 'on' : ''}">${S.dirDown}</span>` +
+        `<span id="dir-up" class="${dirMode === 'up' ? 'on' : ''}">${S.dirUp}</span>` +
+        `</div>`;
+    html += `<div class="hd" style="margin-top:7px">${S.legLineColors}</div>` +
+        `<div class="modetoggle">` +
+        `<span id="cm-line" class="${colorMode === 'line' ? 'on' : ''}">${S.modeLine}</span>` +
+        `<span id="cm-class" class="${colorMode === 'class' ? 'on' : ''}">${S.modeClass}</span></div>`;
+
+    html += `<div class="widths"><div class="hd">${S.legWidth}</div>`;
+    for (const [d, label] of [[100, '100'], [1000, '1k'], [10000, '10k'], [100000, '100k']]) {
+        const w = widthFor(d);
+        html += `<div class="wrow"><span class="wbar" data-d="${d}" style="width:34px;` +
+                `height:${Math.max(w, 1).toFixed(1)}px;opacity:${Math.min(1, w).toFixed(2)}"></span>${label}</div>`;
+    }
+    // The grey is drawn on the map, so it belongs in the legend. Shown only when
+    // there is some on screen, since it applies to two lines.
+    if (hasNoService)
+        html += `<div class="wrow" style="margin-top:5px"><span class="wbar" style="width:34px;` +
+                `height:${Math.max(NOSVC_W, 2).toFixed(1)}px;background:${NOSVC_COLOR};opacity:1"></span>` +
+                `${S.legNoSvc}</div>`;
+    html += `<div class="modetoggle">` +
+        `<span id="sm-log" class="${knee === KNEE_MIN ? 'on' : ''}">${S.scaleLog}</span>` +
+        `<span id="sm-lin" class="${knee === KNEE_MAX ? 'on' : ''}">${S.scaleLinear}</span></div>`;
+    html += '</div>';
+
+    html += `<div class="thick"><div class="hd">${S.legThickness} ` +
+            `<span class="val" id="thickVal">×${widthMul.toFixed(1)}</span></div>` +
+            `<input id="thickSlider" type="range" min="0.1" max="${THICK_SLIDER_MAX}" step="0.1" value="${widthSlider}"></div>`;
+    html += `<div class="thick"><div class="hd">${S.legFloor} ` +
+            `<span class="val" id="floorVal">${fmtFloor(knee)}</span></div>` +
+            `<input id="floorSlider" type="range" min="${KNEE_MIN}" max="${KNEE_MAX}" step="0.01" value="${knee}"></div>`;
+
+    // the roster IS the palette: every colour the map draws is named here.
+    // sorted by the line's busiest segment, so the map's boldest lines lead.
+    const roster = rosterRows();
+    if (roster.length) {
+        html += `<div class="roster"><div class="hd">${S.legLines}</div><div class="rlist">`;
+        for (const r of roster) {
+            const on = selected && selected.line === r.line ? ' on' : '';
+            html += `<div class="rrow${on}" data-line="${r.line}">` +
+                    `<span class="sw" style="background:${r.color}"></span>` +
+                    `<span class="nm">${lineLabel(r.line)}</span>` +
+                    `<span class="vl">${r.greyed ? '—' : fmtCompact(r.peak)}</span></div>`;
+        }
+        html += `</div></div>`;
+    }
+
+    if (hasStations) {
+        html += `<div class="stsec"><div class="hd">${S.toggleStations}</div><div class="strow">` +
+                `<input type="checkbox" id="st-toggle"${showStations ? ' checked' : ''}>` +
+                `<input id="bubbleSlider" type="range" min="0.1" max="${BUBBLE_SLIDER_MAX}" step="0.1" value="${stationSlider}">` +
+                `</div></div>`;
+    }
+    document.getElementById('legend').innerHTML = html;
+
+    document.getElementById('lg-close').onclick = () => setLegendOpen(false);
+    document.getElementById('dir-both').onclick = () => setDirMode('both');
+    document.getElementById('dir-down').onclick = () => setDirMode('down');
+    document.getElementById('dir-up').onclick = () => setDirMode('up');
+    document.getElementById('cm-line').onclick = () => setColorMode('line');
+    document.getElementById('cm-class').onclick = () => setColorMode('class');
+    document.getElementById('sm-log').onclick = () => snapKnee('log');
+    document.getElementById('sm-lin').onclick = () => snapKnee('linear');
+    document.querySelectorAll('#legend .rrow').forEach(el => {
+        el.onclick = () => selectLineByName(el.dataset.line);
+    });
+
+    const sl = document.getElementById('thickSlider');
+    sl.oninput = () => {
+        widthSlider = parseFloat(sl.value);
+        widthMul = thickMap(widthSlider);
+        document.getElementById('thickVal').textContent = '×' + widthMul.toFixed(1);
+        refreshWidths();
+    };
+    const fs = document.getElementById('floorSlider');
+    fs.oninput = () => {
+        knee = parseFloat(fs.value);
+        document.getElementById('floorVal').textContent = fmtFloor(knee);
+        document.getElementById('sm-log').classList.toggle('on', knee === KNEE_MIN);
+        document.getElementById('sm-lin').classList.toggle('on', knee === KNEE_MAX);
+        refreshWidths();
+    };
+    if (hasStations) {
+        document.getElementById('st-toggle').onchange = (e) => {
+            showStations = e.target.checked;
+            const vis = showStations ? 'visible' : 'none';
+            if (map.getLayer('station-dots')) map.setLayoutProperty('station-dots', 'visibility', vis);
+            if (map.getLayer('station-hit')) map.setLayoutProperty('station-hit', 'visibility', vis);
+        };
+        document.getElementById('bubbleSlider').oninput = (e) => {
+            stationSlider = parseFloat(e.target.value);
+            stationMul = bubbleMap(stationSlider);
+            applyStationSize();
+        };
+    }
+}
+
+// one row per line actually present in the data, coloured as the map colours it
+// A line drawn grey end to end has no rider figure to lead with — 경춘선's peak
+// is 13 a day, which is the fit's residual and not a readership. It sorts last
+// and shows a dash. Partly-grey lines keep their number: 경원선's 20.5k on
+// 용산–청량리 is the line's published 통과인원, and only the stretch past
+// 청량리 is greyed.
+function rosterRows() {
+    const by = new Map();
+    for (const f of allFeats) {
+        const p = f.properties;
+        const v = segValue(p);
+        const cur = by.get(p.line);
+        if (!cur) by.set(p.line, { line: p.line, peak: v, color: p.color, greyed: true });
+        const e = by.get(p.line);
+        if (v > e.peak) { e.peak = v; e.color = p.color; }
+        if (!p.service) e.greyed = false;
+    }
+    return [...by.values()].sort((a, b) =>
+        (a.greyed - b.greyed) || (b.peak - a.peak));
+}
+function fmtCompact(v) {
+    const n = Math.round(v);
+    if (n >= 10000) return Math.round(n / 1000) + 'k';
+    if (n >= 1000) return (n / 1000).toFixed(1) + 'k';
+    return String(n);
+}
+
+// The yearbook edition is carried in segments.geojson rather than written into
+// the copy, so switching year does not leave a dozen strings claiming 2022.
+// Substituted in place, once, because these strings are read from the tooltip,
+// the info panel and the about panel and none of them should have to know.
+// Idempotent by construction: after the pass there is no {y} left to replace.
+let dataYear = '';
+function applyYear(y) {
+    if (!y) return;
+    dataYear = String(y);
+    for (const L of Object.keys(STR))
+        for (const k of Object.keys(STR[L]))
+            if (typeof STR[L][k] === 'string')
+                STR[L][k] = STR[L][k].split('{y}').join(dataYear);
+    applyLang();      // the about panel was built before the year was known
+}
+
+function applyLang() {
+    const S = STR[lang];
+    document.title = S.h1;
+    document.getElementById('t-h1').textContent = S.h1;
+    // line 1 = tagline · line 2 = the caveat this map has to carry ·
+    // line 3 = link to the rest of my maps.
+    const moreMaps = lang === 'ko'
+        ? '<a href="https://anita.garden/projects">다른 지도</a>도 있어요!'
+        : 'see <a href="https://anita.garden/projects">more maps</a>!';
+    document.getElementById('t-sub').innerHTML =
+        [S.sub1, `<span class="warn">${S.subWarn}</span>`, moreMaps].join('<br>');
+    document.getElementById('lang-en').classList.toggle('on', lang === 'en');
+    document.getElementById('lang-ko').classList.toggle('on', lang === 'ko');
+    document.getElementById('aboutbtn').title = S.aboutTitle;
+    document.getElementById('aboutpanel').innerHTML = S.aboutBody;
+    document.getElementById('aboutpanel').insertAdjacentHTML('afterbegin', lang === 'ko'
+        ? '<h2>대구·부산김해: 실험적 추정</h2><p>대구 1–3호선은 2026년 6월 월–금, 부산김해경전철은 2025년 12월 월–금 역별 승하차를 바탕으로 별도로 추정했다. OD와 이동거리는 관측값이 아니다. 거리 중력모형을 역별 합계에 맞추고, 대구의 세 환승역에는 0.5km 환승 비용을 둔 최단경로에 배정했다. 10km 감쇠를 표시하고 5·15km 가정을 툴팁 범위로 제시한다. 범위는 신뢰구간이 아니다. 선형은 국가철도공단 역 좌표 사이 직선이다. 동해선 전철은 현재 자료가 2021년 연간치뿐이고 울산 연장이 그해 말 개통해 제외했다.</p>'
+        : '<h2>Daegu and Busan–Gimhae: experimental estimates</h2><p>Daegu Lines 1–3 use June 2026 Monday–Friday station gates; Busan–Gimhae LRT is modelled separately from December 2025 Monday–Friday gates. <b>OD pairs and trip lengths are estimated, not observed.</b> A distance gravity model is balanced to station totals and assigned to shortest paths, with a 0.5km transfer cost at Daegu\'s three interchanges. The map uses a 10km decay scale; 5km and 15km scenarios give the tooltip range. These are assumption tests, not confidence intervals. Geometry is straight between national station coordinates. Donghae commuter rail is omitted because the available 2021 annual file captures its Ulsan extension only at the end of that year.</p>');
+    document.getElementById('aboutpanel').insertAdjacentHTML('afterbegin', lang === 'ko'
+        ? '<h2>대전·광주: 실험적 추정</h2><p>각 1호선은 2026년 7월 월–금 역별 승하차를 바탕으로 추정했다. 두 노선 모두 환승이나 분기가 없어 경로는 정해져 있지만, OD와 이동거리는 관측값이 아니다. 역별 합계에 거리 중력모형을 맞추며 10km 감쇠를 표시하고 5·15km 가정을 툴팁 범위로 제시한다. 범위는 신뢰구간이 아니다. 선형은 국가철도공단 역 좌표 사이 직선이며 거리 합계는 각 노선의 공표 영업거리 20.5km에 맞췄다.</p>'
+        : '<h2>Daejeon and Gwangju: experimental estimates</h2><p>Each Line 1 uses July 2026 Monday–Friday station gate counts. Both are single lines without route or transfer choices, but <b>OD pairs and trip lengths are estimated, not observed.</b> A distance gravity model is balanced to station totals. The map uses a 10km decay scale; 5km and 15km scenarios give the tooltip range. These are assumption tests, not confidence intervals. Geometry is straight between national station coordinates, with distances scaled to each operator\'s published 20.5km line length.</p>');
+    document.getElementById('aboutpanel').insertAdjacentHTML('afterbegin', lang === 'ko'
+        ? '<h2>부산: 실험적 추정</h2><p>1–4호선은 2026년 7월 월–금 역별 승하차를 바탕으로 추정했다. OD는 관측값이 아니다. 이동시간에 따른 중력모형을 역별 합계에 맞추고, 환승 5분을 포함한 최단경로에 배정했다. 10·20·30분 감쇠 가정 중 20분을 표시한다. 가정에 따라 구간 수치가 크게 달라지며 툴팁 범위는 신뢰구간이 아니다. 동해선 전철은 제외했다. 부산김해경전철은 별도의 자료 기간과 모형으로 표시한다. 선형은 역 사이 직선이다.</p>'
+        : '<h2>Busan: experimental estimates</h2><p>Lines 1–4 use July 2026 Monday–Friday station gate counts. <b>OD pairs are estimated, not observed.</b> A travel-time gravity model is balanced to station totals and routed by shortest time with a five-minute transfer penalty. The map uses a 20-minute decay scale; 10- and 30-minute scenarios give the range in segment tooltips. The median range spans 39% of the central estimate. These are assumption tests, not confidence intervals or independent validation. Donghae suburban rail is excluded; Busan–Gimhae LRT appears as a separate model with a different reference period. Geometry is straight between stations. <a href="https://www.data.go.kr/data/3057229/fileData.do">Gate counts</a> · <a href="https://www.data.go.kr/data/3033564/fileData.do">Distances and times</a></p>');
+    document.getElementById('aboutpanel').insertAdjacentHTML('afterbegin', lang === 'ko'
+        ? '<h2>수도권 도시철도</h2><p>seoulriders가 포함하는 22개 노선의 모형 평일 통행량이다. 2023년 OD를 평일 승하차에 맞추고 열차에 배정한 뒤 시간대와 양방향을 합산했다. 급행 이용객도 통과하는 각 완행 역간 구간에 합산했다. 일반철도는 ${dataYear}년 연평균이므로 기준일이 다르다. 역 원은 평일 OD의 출발·도착 합계이며 환승 때 다시 세지 않는다. 도시철도 방향은 역 코드 순서(2호선 순환 구간 포함)를 따른다. 일부 선형은 직선이다.</p>'
+        : '<h2>Seoul metropolitan rail</h2><p>All 22 lines covered by seoulriders show <b>modelled weekday</b> flows: 2023 OD pairs reweighted to weekday counts, assigned to trains, then summed across hours and directions. Express riders are added to every intermediate local segment they pass. Intercity figures are <b>${dataYear} annual daily averages</b>; the periods differ. Station bubbles show the weekday OD station margins, counting each trip once at its origin and destination rather than again at transfers. Metro directions follow station-code order, including the Line 2 ring closure. Some track shapes fall back to straight lines.</p>');
+    const nt = document.getElementById('notice');
+    if (nt.classList.contains('show')) nt.textContent = S.noGeom.replace('{n}', noGeomCount);
+    buildLegend();
+    renderInfo();
+}
+
+document.getElementById('lang-en').onclick = () => { lang = 'en'; applyLang(); };
+document.getElementById('lang-ko').onclick = () => { lang = 'ko'; applyLang(); };
+function setAboutOpen(v) {
+    if (aboutOpen === v) return;
+    aboutOpen = v;
+    document.getElementById('aboutbtn').classList.toggle('on', aboutOpen);
+    document.getElementById('aboutpanel').classList.toggle('open', aboutOpen);
+}
+let legendOpen = true;
+function setLegendOpen(v) {
+    if (legendOpen === v) return;
+    legendOpen = v;
+    document.getElementById('legend').classList.toggle('hidden', !legendOpen);
+    document.getElementById('ctrlbtn').classList.toggle('show', !legendOpen);
+}
+document.getElementById('ctrlbtn').onclick = () => setLegendOpen(true);
+document.getElementById('aboutbtn').onclick = (e) => {
+    e.stopPropagation();
+    setAboutOpen(!aboutOpen);
+};
+document.getElementById('aboutpanel').addEventListener('click', (e) => e.stopPropagation());
+// Clicking anywhere outside the panel or the toggle closes the panel.
+document.addEventListener('click', () => { if (aboutOpen) setAboutOpen(false); });
+// On a phone the legend is 589px of an 844px screen and it opens over 수도권 --
+// the densest part of the map and the reason to look at it at all. Start it
+// closed below the same breakpoint the CSS already uses; ctrlbtn is then the
+// way back in, which is what it is for. Desktop is unchanged.
+if (!window.matchMedia('(min-width: 701px)').matches) setLegendOpen(false);
+applyLang();
+</script>
+</body>
+</html>

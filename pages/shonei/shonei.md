@@ -8,7 +8,7 @@ shonei is a game i am working on.
 
 it's a side view base building game. you control a group of mice that have set out to establish a settlement on the frontiers in the vast mouse confederation of [shonei](/places/shonei/). these mice have endless material desire. to satisfy them and expand, a settlement must specialize in a few efficient production chains, trading for the goods that can't be produced at home on a centralized player market. 
 
-you can try an early version of shonei [here](https://anitagarden.itch.io/shonei). 
+you can try shonei [here](https://anitagarden.itch.io/shonei)!
 
 #### wiki
 - [mice](mice/)

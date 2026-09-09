@@ -4,18 +4,29 @@ title: maps
 permalink: /maps/
 ---
 
-- city maps
-    - <a href="/nycvoronoi/" data-thumb="/assets/thumbs/nycvoronoi.jpg">nyc subway stations by population in catchment area</a>
-    - <a href="/nystreets/" data-thumb="/assets/thumbs/nystreets.jpg">nyc simulated street trips heat map</a>
-    - <a href="/bus/" data-thumb="/assets/thumbs/bus.jpg">nyc bus lines by ridership</a>
+
+- interactive 
+    - <a href="/ancestrydotsna" data-thumb="/assets/thumbs/ancestrydots.png">ancestry dot map</a> (<a href="/ancestrydotsna">usa + canada</a>) (<a href="/ancestrydots">usa</a>)
+    - <a href="/japanrail" data-thumb="/assets/thumbs/japanrail.png">japan rail</a>
+    - <a href="/nycriders" data-thumb="/assets/thumbs/nycriders.png">nyc riders</a>
+    - <a href="/londonriders">london riders</a>
+    - <a href="/flights" data-thumb="/assets/thumbs/flights.jpg">flight traffic</a>
+    - <a href="/cityhistory" data-thumb="/assets/thumbs/cityhistory.png">city history</a>
+    - <a href="https://graffiti.anita.garden/">graffiti nyc</a>
 - equal population maps
+    - <a href="/asia1mloc/" data-thumb="/assets/thumbs/maps/asia1mloc.jpg">asia in regions of 1 million people</a> (in progress)
+        - <a href="/asia1meng/" data-thumb="/assets/thumbs/maps/asia1meng.jpg">with english/latin text labels</a>
     - <a href="/euro1m/" data-thumb="/assets/thumbs/euro1m.jpg">europe in regions of 1 million people</a>
     - <a href="/na1m/" data-thumb="/assets/thumbs/na1m.jpg">north america in regions of 1 million people</a>
     - <a href="/sa1m/" data-thumb="/assets/thumbs/maps/sa1m.jpg">south america in regions of 1 million people</a>
     - <a href="/world10mfull/" data-thumb="/assets/thumbs/world10mfull.jpg">the world in regions of 10 million people</a>
     - <a href="/worldtrain/" data-thumb="/assets/thumbs/worldtrain.jpg">fantasy world metro map</a>
-
-(if you'd like to support my map making, you can donate [here](https://ko-fi.com/anitamaps)!)
+- city maps
+    - <a href="/nycvoronoi/" data-thumb="/assets/thumbs/nycvoronoi.jpg">nyc subway stations by population in catchment area</a>
+        - <a href="/nycarea/" data-thumb="/assets/thumbs/maps/nycarea.jpg">+ regional rail stations</a> ([uncompressed version](/assets/maps/nycarea.png))
+    - <a href="/nystreets/" data-thumb="/assets/thumbs/nystreets.jpg">nyc street trips heat map</a>
+    - <a href="/bus/" data-thumb="/assets/thumbs/bus.jpg">nyc bus lines by ridership</a>
+- (if you'd like to support my map making, you can donate [here](https://ko-fi.com/anitamaps)!)<br><br>
 
 
 

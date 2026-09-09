@@ -9,7 +9,9 @@ permalink: /projects/
 - maps
     - interactive 
         - <a href="/ancestrydotsna" data-thumb="/assets/thumbs/ancestrydots.png">ancestry dot map</a> (<a href="/ancestrydotsna">usa + canada</a>) (<a href="/ancestrydots">usa</a>)
+        - <a href="/religiondots">religion dot map</a> (wip)
         - <a href="/japanrail" data-thumb="/assets/thumbs/japanrail.png">japan rail</a>
+        - <a href="/korearail" data-thumb="">korea rail</a> (wip)
         - <a href="/nycriders" data-thumb="/assets/thumbs/nycriders.png">nyc riders</a>
         - <a href="/londonriders">london riders</a>
         - <a href="/flights" data-thumb="/assets/thumbs/flights.jpg">flight traffic</a>
