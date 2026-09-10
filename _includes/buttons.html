@@ -1,0 +1,9 @@
+<div class="button-wall">
+{%- for button in site.data.buttons %}
+{%- if button.iframe %}
+  <iframe src="{{ button.iframe }}" style="background: url({{ button.background }})" title="{{ button.name }}" width="88" height="31" frameborder="0" loading="lazy"></iframe>
+{%- else %}
+  <a href="{{ button.url }}" target="_blank" rel="noopener"><img src="{{ button.image }}" alt="{{ button.name }}" width="88" height="31" loading="lazy"></a>
+{%- endif %}
+{%- endfor %}
+</div>

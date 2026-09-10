@@ -1,0 +1,22 @@
+# 88x31 buttons, rendered by _includes/buttons.html.
+# to add one: save the image into assets/buttons/ (don't hotlink) and add an entry here.
+# a live counter rather than a saved image, so this one is an iframe.
+# same key as the badge on the projects page, so they share a count.
+- name: "increment badge"
+  iframe: "https://incr.easrng.net/badge?key=amanita"
+  background: "https://incr.easrng.net/bg.gif"
+- name: "Anita's Garden"
+  url: "https://anita.garden"
+  image: "/assets/button.gif"
+- name: "welcometo.my"
+  url: "https://welcometo.my/"
+  image: "/assets/buttons/welcometomy.gif"
+- name: "ezri"
+  url: "https://ezri.pet/"
+  image: "/assets/buttons/ezri.png"
+- name: "tilde.town"
+  url: "https://tilde.town/"
+  image: "/assets/buttons/tildetown.gif"
+- name: "sepdiem"
+  url: "https://sepdiem.neocities.org/"
+  image: "/assets/buttons/sepdiem.gif"

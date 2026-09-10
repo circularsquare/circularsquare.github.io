@@ -43,6 +43,18 @@ here is some of my friends websites. i hope more of my friends make websites so 
 - [jean](https://www.jean.land/)
 - [ashely](https://www.commonplace.day/)
 
+here are more friends and/or internet neighbors:
+
+- [sammysworld](https://sammysworld.org/)
+- [ve3zsh](https://ve3zsh.ca/index.html)
+- [zacsmir](https://zacsmir.github.io/)
+- [sepdiem](https://sepdiem.neocities.org/)
+- [manjusha](https://manjusha.space/)
+- [girl.surgery](https://girl.surgery/)
+
+{% include buttons.html %}
+
+
 
 
 

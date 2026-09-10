@@ -286,3 +286,19 @@ table {border-spacing: 30px;}
   max-height: 207px;
   object-fit: contain;
 }
+
+/* 88x31 button wall, fed by _data/buttons.yml */
+.button-wall {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin: 10px 0;
+}
+.button-wall img {
+  display: block;
+  image-rendering: pixelated;
+}
+.button-wall iframe {
+  display: block;
+  border: 0;
+}
