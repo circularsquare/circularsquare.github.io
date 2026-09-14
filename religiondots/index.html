@@ -134,8 +134,9 @@ sitemap: false
       font-size: 12px; line-height: 1;
     }
     #panel-head button:hover { background: #333; color: #fff; }
-    /* The sheet's disclosure. There is no sheet above 700px, so there is nothing to disclose. */
-    #sheet-grip { display: none; }
+    /* The sheet's disclosure. There is no sheet above 700px, so there is nothing to disclose,
+       and nothing to put the scope line in the header for either. */
+    #sheet-grip, #head-scope { display: none; }
     #scope-bar {
       padding: 5px 10px; border-bottom: 1px solid #2a2a2a;
       color: #888; font-size: 11px; display: flex; align-items: center; gap: 6px;
@@ -682,12 +683,16 @@ sitemap: false
       /* ---- the sheet ---- */
       #panel {
         position: fixed; top: auto; bottom: 0; left: 0; right: 0; width: auto;
-        /* 52 is about half the screen, which is a lot to spend on a legend and is what it
-           costs: the sheet is the key to the map and the map is unreadable without it. The
-           other half is bought back by the header tapping it away, not by making it shorter.
+        /* 40, DOWN FROM 52 — Anita, 2026-09-10, after using it: *"when the legend is open i'd
+           like to give it a little less vertical space. maybe like 40% of screen height rather
+           than 50%?"* Half the screen was set before the sheet existed to look at, on the
+           argument that the legend is the key to the map; twelve points of it turn out to be
+           worth more as map. On an 844px phone the band between the strip and the sheet goes
+           from 275px to 376px, and the legend loses about five rows, which §6.10b spends by
+           folding one rung harder rather than by scrolling further.
            `panelPadding` reserves the same fraction, so the two move together. */
-        max-height: 52vh;
-        max-height: 52dvh;             /* the visual viewport, so the URL bar is not counted */
+        max-height: 40vh;
+        max-height: 40dvh;             /* the visual viewport, so the URL bar is not counted */
         border-radius: 10px 10px 0 0;
         border-top: 1px solid #2f2f2f;
         /* OPAQUE, where the desktop panel is `rgba(20,20,20,0.758)`. Same argument the tooltip
@@ -742,7 +747,28 @@ sitemap: false
          while the sheet is open and reuses them while it is shut, which is a smaller and more
          obvious mechanism than making the panel lie about its height. */
       #panel.shut { height: 42px; max-height: 42px; overflow: hidden; }
-      #sheet-grip { display: block; color: #9a9a9a; font-size: 14px; padding: 0 2px; }
+      /* THE SAME 30px BOX THE TWO BUTTONS GET — Anita, 2026-09-10: *"i'd also like the drop
+         down arrow to be given as much horizontal space as the - and + buttons, currently it
+         takes up less space than those two."* It was a 14px glyph with 2px of padding beside two
+         30px squares, so the row read as two controls and a decoration. No border, because it is
+         not a button in its own right: the whole header is its target, and a third outline would
+         claim otherwise. */
+      #sheet-grip {
+        display: flex; align-items: center; justify-content: center;
+        width: 30px; height: 30px; flex: none; color: #9a9a9a; font-size: 14px;
+      }
+      /* WHAT THE HEADER SAYS WHEN THE SHEET IS SHUT — Anita, 2026-09-10: *"when the legend is
+         minimized i'd like to see the 'viewing: all religions, all countries' … this can
+         actually just replace the title word 'Religions'."* With the body of the sheet gone,
+         "Religions" names a panel that is not on screen; the scope line names what IS. It is the
+         only thing left of the legend at that moment, so it takes the whole width the title had
+         and truncates rather than wrapping — the header is one line tall by construction. */
+      #panel.shut #panel-head b { display: none; }
+      #panel.shut #head-scope {
+        display: block; flex: 1; min-width: 0; color: #fff; font-size: 12px;
+        overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+      }
+      #panel.shut #head-scope .lv { color: #8a8a8a; font-variant-numeric: tabular-nums; }
       /* The head is the target — a chevron is 8px of glyph and this is the one control on the
          page a reader uses before any other. The two depth buttons take their own taps out of
          it, which they do by stopping the click. */
@@ -847,6 +873,11 @@ sitemap: false
   <div id="panel">
     <div id="panel-head">
       <b>Religions</b>
+      <!-- The same sentence `#scope-label` carries, for the phone sheet to wear while it is
+           shut: with the body of the sheet gone the word "Religions" names a panel nobody can
+           see, and what a reader needs from a closed legend is which one is on the map. Written
+           by the same line that writes the scope bar, and hidden at every other time. -->
+      <span id="head-scope"></span>
       <button id="depth-minus" title="Less detail">&minus;</button>
       <button id="depth-plus" title="More detail">+</button>
       <!-- The sheet's disclosure, and only on the phone layout, where the panel is a sheet
@@ -4832,9 +4863,12 @@ function renderTree() {
      every line is the same kind of statement about the same source, and who a census left out
      belongs next to how much of it was counted, not next to the religion picker. Nothing else
      about the note changed: still a few words, still absent for most countries. */
-  document.getElementById('scope-label').innerHTML =
-    `Viewing: ${esc(what)} <span class="lv">(L${lv})</span>, ${esc(where)}`
+  const viewing = `Viewing: ${esc(what)} <span class="lv">(L${lv})</span>, ${esc(where)}`;
+  document.getElementById('scope-label').innerHTML = viewing
     + (litCc.length ? `<div class="lit-note" data-tip="coverage">${esc(litText)}</div>` : '');
+  /* The shut phone sheet wears the same sentence in its header. The coverage note does NOT come
+     with it: it is a second line about the wash, and the header is one line high. */
+  document.getElementById('head-scope').innerHTML = viewing;
   document.getElementById('scope-clear').style.display = scope ? '' : 'none';
   renderMix();                                          // §10.4, the same sentence drawn
 
@@ -5406,13 +5440,15 @@ function panelPadding(el) {
     return {
       left: 8, right: 8,
       top: Math.min(h * 0.20, (strip ? strip.offsetHeight : 130) + 6),
-      /* THE OPEN SHEET, ALWAYS, AND NOT THE SHEET AS IT IS. It is 52dvh by the stylesheet and
+      /* THE OPEN SHEET, ALWAYS, AND NOT THE SHEET AS IT IS. It is 40dvh by the stylesheet and
          that is what this has to say, whether or not it is open at the moment: `viewFill` below
          divides by these same numbers, so a padding that followed the live sheet would change
          what a country SCORES every time the sheet was tapped, and tapping it away would push a
          framed country under AUTO_FILL_OUT and drop the legend. Fixed, both readings are
-         stable and shutting the sheet simply reveals more map around the same frame. */
-      bottom: h * 0.54,
+         stable and shutting the sheet simply reveals more map around the same frame.
+         KEEP THIS IN STEP WITH THE STYLESHEET — the two describe one rectangle, and the two
+         extra points are the sheet's own top border and a hair of breathing room. */
+      bottom: h * 0.42,
     };
   }
   return {
@@ -5446,9 +5482,18 @@ function unmercY(y) {
   return (Math.atan(Math.exp(y * Math.PI / 180)) - Math.PI / 4) * 360 / Math.PI;
 }
 function viewBounds() {
+  if (!matchMedia('(max-width: 700px)').matches) {
+    const b = map.getBounds();
+    return { w: b.getWest(), e: b.getEast(), s: b.getSouth(), n: b.getNorth() };
+  }
+  return bandBounds();
+}
+/* The panel-free band on EVERY layout, where `viewBounds` gives it only on the phone. Used by the
+   release half of the fill test (§9d-i) — letting a country go is asked against the map the reader
+   can actually see, because that is the rectangle `flyToCountry` framed it into. */
+function bandBounds() {
   const b = map.getBounds();
   const w = b.getWest(), e = b.getEast(), s = b.getSouth(), n = b.getNorth();
-  if (!matchMedia('(max-width: 700px)').matches) return { w, e, s, n };
   const el = map.getCanvas(), p = panelPadding(el);
   const cw = el.clientWidth || 1, ch = el.clientHeight || 1;
   const ys = mercY(s), yn = mercY(n);
@@ -5596,10 +5641,9 @@ function mercY(lat) {
 /** The share of the screen this country's box spans, along whichever axis it fills more of —
     the same measure fitBounds works to, so a country flown to lands near 1. Scale-free, so one
     pair of thresholds serves Estonia and Canada alike. */
-function viewFill(cc) {
+function viewFill(cc, b = viewBounds()) {
   const v = META[cc] && META[cc].view;
   if (!v) return 0;
-  const b = viewBounds();
   const vw = b.e - b.w, vh = mercY(b.n) - mercY(b.s);
   if (!(vw > 0) || !(vh > 0)) return 0;
   return Math.max((v[2] - v[0]) / vw, (mercY(v[3]) - mercY(v[1])) / vh);
@@ -5911,14 +5955,14 @@ function considerCamera() {
   const at = countryAt(c.lng, c.lat);
   if (at !== null) {
     if (at === country) {
-      if (tooWide() || viewFill(at) < AUTO_FILL_OUT)
+      if (tooWide() || viewFill(at, bandBounds()) < AUTO_FILL_OUT)
         setCountry(null, { fly: false });
     } else if (country !== null && stillHolds(sh, country)) {
       // The centre pixel has crossed into a neighbour but the selected country still holds a
       // real share of the middle of the screen, so this is drift rather than a departure.
       // It is still made to answer the OUT thresholds, or zooming out over a border would
       // keep it for ever.
-      if (tooWide() || viewFill(country) < AUTO_FILL_OUT
+      if (tooWide() || viewFill(country, bandBounds()) < AUTO_FILL_OUT
           || viewOverlap(country) < AUTO_OVER_OUT)
         setCountry(null, { fly: false });
     } else if (!tooWide() && META[at] && framedIn(at)
@@ -5967,7 +6011,16 @@ function considerCamera() {
   /* The country has become a detail of a wider view, or we have simply left it. This runs ahead
      of the tally on purpose: over a country nobody has built, the tally comes back empty and
      bails, and whatever was selected would otherwise sit there for good. */
-  if (country !== null && (tooWide() || viewFill(country) < AUTO_FILL_OUT
+  /* ALL THREE RELEASE TESTS MEASURE FILL AGAINST THE BAND, NOT THE CANVAS — Anita, 2026-09-14,
+     choosing between the options §9d-i laid out: *"lets fix it for letting go."* A country flown
+     to is framed into the band the panels leave, so against the canvas it scored the band's share
+     of the window: 0.65 at 1541×964, 0.58 at 1280×1024, under AUTO_FILL_OUT, and on a 4:3 or 5:4
+     monitor a picked country was dropped on the next frame. Against the band it scores 1 on every
+     window shape. LATCHING STILL MEASURES THE CANVAS (`framedIn`), so Auto is exactly as eager as
+     it was; the cost is that a country is let go somewhat further out when zooming away from it,
+     which is the direction this file already prefers — harder to change the legend than to set it.
+     On the phone the two rectangles are the same one, so nothing there moves. */
+  if (country !== null && (tooWide() || viewFill(country, bandBounds()) < AUTO_FILL_OUT
                            || viewOverlap(country) < AUTO_OVER_OUT))
     setCountry(null, { fly: false });
   if (tooWide()) return;          // continental range: nothing is the subject, however large
@@ -7107,31 +7160,75 @@ function lowerBound(keys, k) {
   }
   return lo;
 }
+/* A FINGER IS NOT A CURSOR, so it gets a reach — Anita, 2026-09-10: *"on mobile i'd like to have
+   a bit more grace room to tap on dots. if i see a dot it's quite hard to tap on it precisely
+   enough to actually see the tooltip."* The pick radius was the dot's own drawn radius, which at
+   street zoom is two or three pixels: exact for a mouse, and for a thumb it means most taps land
+   on nothing and the card never appears.
+
+   IT IS A FALLBACK, NOT A BIGGER DOT, and the distinction is the whole of it. A dot that actually
+   covers the point still wins by §4.2c's rule — the last one drawn, which is the one you can see —
+   so nothing about picking a dot you hit changes. Only when NOTHING covers the point does the
+   reach come into play, and then the nearest centre within it answers, because "which of these
+   did you mean" has a different right answer from "which one is on top".
+
+   20px, so a 40px target, near the 44-48px the phone platforms give a tap target — Anita,
+   2026-09-14: *"i think phone tap reach should be floored fairly high. the issue here is the
+   inaccuracy of a tap which is kinda fixed."* It was 12, on the worry that a wider reach over empty
+   ground names a dot the reader was not pointing at. That is still the cost, and it is bounded by
+   the reach; the miss it trades against is every tap, because a thumb's error is a physical size
+   and does not shrink with the dots or the zoom. For the same reason it is a FLOOR and not a scale:
+   it does not follow the size slider, and since 2026-09-14 it does not give way at low zoom either
+   (see the scan below). */
+const PICK_TOUCH_SLOP = 20;
+
+/** How far a pick may reach, in CSS pixels: the drawn radius for a mouse, a thumb's worth for a
+    touch screen or the phone layout. */
+function pickReachPx(r) {
+  const coarse = matchMedia('(pointer: coarse)').matches
+              || matchMedia('(max-width: 700px)').matches;
+  return coarse ? Math.max(r, PICK_TOUCH_SLOP) : r;
+}
+
 SCATTER.pick = function (point) {
   if (!this.ready || !this.palette) return null;
   const r = this.radiusPx();
-  const c0 = map.unproject([point.x, point.y]), c1 = map.unproject([point.x + r, point.y]);
+  const reach = pickReachPx(r);
+  const c0 = map.unproject([point.x, point.y]);
+  const c1 = map.unproject([point.x + reach, point.y]);
   const mx = mercXn(c0.lng) * U32, my = mercYn(c0.lat) * U32;
-  const rad = Math.abs(mercXn(c1.lng) * U32 - mx), rad2 = rad * rad;
+  // `soft` is how far a tap may reach; `hard` is the dot's own disc, in the same units
+  const soft = Math.abs(mercXn(c1.lng) * U32 - mx), soft2 = soft * soft;
+  const hard = soft * (reach > 0 ? r / reach : 1), hard2 = hard * hard;
   const cell = U32 / PICK_CELLS;
-  const span = Math.max(1, Math.ceil(rad / cell));
+  const span = Math.max(1, Math.ceil(soft / cell));      // `soft` >= `hard`, so this covers both
   const cx0 = Math.floor(mx / cell), cy0 = Math.floor(my / cell);
+  // `best` is a dot whose disc COVERS the point, by §4.2c's last-drawn-wins rule. `near` is the
+  // touch fallback: the closest centre inside the reach, used only when nothing covers.
   let best = null, bestI = -1;
+  let near = null, nearI = -1, nearD2 = Infinity;
   for (const d of this.active()) {
     /* Skip a country the cursor is nowhere near BEFORE building its index. Without this, one
        hover in the all-countries view builds all sixteen — the cost is not the lookup, it is
        that the index exists at all, and India's is by far the largest. */
     const bb = META[d.cc] && META[d.cc].bbox;
     if (bb) {
-      const pad = rad / U32 * 360;
+      const pad = soft / U32 * 360;      // the reach, so a bbox test cannot cut it short
       if (c0.lng < bb[0] - pad || c0.lng > bb[2] + pad ||
           c0.lat < bb[1] - pad || c0.lat > bb[3] + pad) continue;
     }
     const g = this.grid(d);
-    for (let dy = -span; dy <= span; dy++) for (let dx = -span; dx <= span; dx++) {
-      const key = (cy0 + dy) * PICK_CELLS + (cx0 + dx);
-      let p = lowerBound(g.keys, key);
-      for (; p < g.keys.length && g.keys[p] === key; p++) {
+    /* ONE BINARY SEARCH PER ROW, NOT PER CELL. A cell's key is `row · PICK_CELLS + column`, so the
+       cells of one row of the neighbourhood are a single contiguous run of keys, and the sorted
+       index can be walked straight through it. Per cell it was `(2·span+1)²` searches, which is
+       what used to force a cap on the reach: at zoom 1 a 20px reach is 320 cells either side, and
+       that was 410,000 searches for one tap. Per row it is 641, and the walk only ever visits dots
+       that are inside the square. The key ranges are exactly the union of the old per-cell keys,
+       including what they did at the edge of the grid, so which dots are candidates is unchanged. */
+    for (let dy = -span; dy <= span; dy++) {
+      const row = (cy0 + dy) * PICK_CELLS;
+      const k1 = row + cx0 + span;
+      for (let p = lowerBound(g.keys, row + cx0 - span); p < g.keys.length && g.keys[p] <= k1; p++) {
         const i = g.order[p];
         if (d === best && i <= bestI) continue;
         /* THE VERTEX SHADER'S VISIBILITY RULE, IN JS, and it has to stay a transcription of
@@ -7152,10 +7249,14 @@ SCATTER.pick = function (point) {
         const slot = (v & 0x3fff) + (onlyMeasured && tier === 1 ? this.paletteN : 0);
         if (this.palette[slot * 4 + 3] < 128) continue;
         const ex = d.x[i] - mx, ey = d.y[i] - my;
-        if (ex * ex + ey * ey <= rad2) { best = d; bestI = i; }
+        const d2 = ex * ex + ey * ey;
+        if (d2 <= hard2) { best = d; bestI = i; }
+        else if (d2 <= soft2 && d2 < nearD2) { near = d; nearI = i; nearD2 = d2; }
       }
     }
   }
+  // nothing was actually under the finger, so answer with what it was nearest to
+  if (!best && near) { best = near; bestI = nearI; }
   if (!best) return null;
   /* THE CARD NAMES THE NODE THE DOT WAS DRAWN AS, which under the roll-up is not the node the
      dot carries. A Haredi dot drawn in Judaism's colour whose card said "Haredi" would be
