@@ -179,6 +179,7 @@ body { background: #07090d; color: #eee; font-family: 'Nunito', system-ui, sans-
 #info .iprow { display: flex; justify-content: space-between; gap: 20px; color: #8b939e; }
 #info .iprow b { color: #eee; font-weight: 700; }
 #info .iphint { margin-top: 7px; color: #59616d; font-size: 10.5px; }
+#info .ipnote { color: #8b939e; font-size: 11px; margin-top: 3px; }
 
 #tooltip {
     position: absolute;
@@ -197,6 +198,34 @@ body { background: #07090d; color: #eee; font-family: 'Nunito', system-ui, sans-
 #tooltip .seg { color: #fff; }
 #tooltip .ri { color: #ffd66b; font-weight: 800; }
 #tooltip .meta { color: #8b939e; font-size: 11px; }
+/* what the tooltip is about, before its name: a pale dot for a station bubble,
+   a bar in the line's own colour for a line */
+#tooltip .line { display: flex; align-items: center; gap: 6px; }
+#tooltip .mk-dot { width: 8px; height: 8px; border-radius: 50%; background: #e6e9ee; flex: none; }
+/* 3px tall, top edge sitting where a centred 5px bar's would: the bottom margin
+   lifts it off the centre line */
+#tooltip .mk-bar { width: 12px; height: 3px; margin-bottom: 2px; border-radius: 1.5px; flex: none; }
+/* the longer Korean notes wrap instead of stretching the tooltip across the map */
+#tooltip .note { color: #8b939e; font-size: 11px; white-space: normal; max-width: 280px; }
+
+/* the outline over Korea that adds its network. Instant hover, no transition */
+#krbtn {
+    border: 1.5px solid rgba(255,255,255,0.38);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: rgba(255,255,255,0.75);
+    font-size: 10px;
+    user-select: none;
+}
+#krbtn:hover { border-color: rgba(255,255,255,0.7); background: rgba(255,255,255,0.06); }
+#krbtn.loading { cursor: progress; }
+#legend .krwarn { color: #a8864a; font-size: 10.5px; line-height: 1.4; width: 150px; margin-top: 2px; }
+#legend .krrow { display: flex; align-items: center; justify-content: space-between; gap: 8px; width: 150px; }
+#legend .krrow .strow { width: auto; }
+#legend .krlink { color: #8b939e; padding: 0 7px; border-radius: 4px; border: 1px solid #2a2f38; text-decoration: none; white-space: nowrap; }
+#legend .krlink:hover { color: #fff; border-color: #4a505c; }
 
 .maplibregl-ctrl-attrib { font-size: 10px !important; }
 /* ── loading overlay ─────────────────────────────────────────────────────
@@ -274,6 +303,33 @@ const STR = {
         panelRange: 'throughput',
         panelHint: 'left-click line · right-click segment · Esc clears',
         km: 'km', perday: 'pax/day',
+        // ── korea ──
+        krShowTitle: 'show korea',
+        legKorea: 'korea',
+        krShow: 'show',
+        krWarn: 'segment figures are reconstructed, not published',
+        krFullMap: 'full map ↗',
+        legNoSvc: 'no rider figure',
+        krRecon: 'reconstructed',
+        krEstimated: 'estimated OD',
+        krSeoulModel: 'Seoul area · modelled weekday',
+        krStraight: 'straight-line shape',
+        krScenario: 'scenario range, not a confidence interval',
+        krDown: 'down', krUp: 'up',
+        krClsHs: 'high-speed', krClsSemi: 'semi-high-speed', krClsConv: 'conventional', krClsMetro: 'metro',
+        krStubTo: 'junction with {n}',
+        krStubNote: 'Past the last platform. These are the passengers still aboard, riding on to join the {n}.',
+        krJoinNote: '{n} trains join at a junction with no station, so the count steps up partway along.',
+        krThroughNote: 'Runs past {n} more stations no intercity train stops at.',
+        krNoSvcTitle: 'No intercity service',
+        krNoSvcCommuter: 'Commuter rail only, {n} trains a day each way in {y}. Those riders are on the metro lines.',
+        krNoSvcNone: 'No trains ran on this section in {y}.',
+        krUnrecTitle: 'Riders not recorded',
+        krUnrecNote: 'Intercity trains run here, {n} a day each way in {y}, but the yearbook credits this line with almost no passengers, so this grey line carries no figure. The ITX-Cheongchun on the same rails is drawn separately, from Korail station counts.',
+        krPubTitle: 'Published total, not reconstructed',
+        krPubTip: 'published line total for {y}, split evenly by direction',
+        krPubNote: 'No station on this line reports boardings its own trains can claim, so nothing here is cumulated. The figure is the line\'s {y} passenger total from Korail\'s Railway Statistics Yearbook, split evenly between the two directions. All of it rode this stretch, the only one with intercity trains on it ({n} a day each way).',
+        aboutKorea: `<h2>korea</h2><p>Click the outline over Korea to add South Korea's rail network. It is drawn at the same scale as Japan's, so a line or bubble of the same size means the same number of passengers.</p><p>Korea publishes no passenger figures per segment, so the Korean segments are <b>reconstructed</b>. Station boardings and alightings from Korail's Railway Statistics Yearbook (철도통계연보) are cumulated along each line and fitted to the passenger totals the yearbook publishes per line. Intercity figures are daily averages over the year.</p><p>Seoul's metropolitan lines are a modelled weekday built from 2023 origin and destination data. Busan, Daegu, Daejeon, Gwangju and Busan–Gimhae are estimated from station gate counts with a gravity model, and their tooltips give the range across its assumptions. The Donghae Line commuter service and the ITX-Cheongchun are estimated the same way, from Korail's commuter rail statistics board (광역수송 수송통계). Grey track has no rider figure.</p><p>Korean bubbles are yearbook counts at intercity stations and the city models' station totals everywhere else.</p><p>Geometry: OpenStreetMap.</p>`,
     },
     ja: {
         h1: '日本 鉄道輸送密度',
@@ -302,6 +358,33 @@ const STR = {
         panelRange: '輸送密度',
         panelHint: '左クリックで路線 · 右クリックで区間 · Esc で解除',
         km: 'km', perday: '人/日',
+        // ── 韓国 ──
+        krShowTitle: '韓国を表示',
+        legKorea: '韓国',
+        krShow: '表示',
+        krWarn: '区間の数値は公表値ではなく復元値',
+        krFullMap: '詳細マップ ↗',
+        legNoSvc: '旅客数データなし',
+        krRecon: '復元値',
+        krEstimated: 'OD推計',
+        krSeoulModel: 'Seoul · 平日のモデル推計',
+        krStraight: '線形は直線',
+        krScenario: '仮定別の範囲（信頼区間ではない）',
+        krDown: '下り', krUp: '上り',
+        krClsHs: '高速線', krClsSemi: '準高速線', krClsConv: '在来線', krClsMetro: '都市鉄道',
+        krStubTo: '{n}との分岐点',
+        krStubNote: '最後の駅より先の区間。{n}へ直通するため乗ったままの旅客数。',
+        krJoinNote: '駅のない分岐点で{n}の列車が合流するので、区間の途中で旅客数が増える。',
+        krThroughNote: '一般列車が停車しない駅を{n}駅通過する。',
+        krNoSvcTitle: '一般列車の運行なし',
+        krNoSvcCommuter: '{y}年は広域電鉄のみで、片道1日{n}本。その旅客は都市鉄道の線に含まれる。',
+        krNoSvcNone: '{y}年はこの区間に列車の運行がなかった。',
+        krUnrecTitle: '旅客数の記録なし',
+        krUnrecNote: '{y}年も一般列車が片道1日{n}本走っているが、統計年報がこの路線に計上している旅客はほとんどないので、この灰色の線には数値がない。同じ線路を走るITX-Cheongchunは、KORAILの駅別乗降人員から別に描いている。',
+        krPubTitle: '復元値ではなく公表値',
+        krPubTip: '{y}年の路線別通過人員を上下均等に分けた公表値',
+        krPubNote: 'この路線には自線の列車の旅客として数えられる駅別乗降がないので、累積による復元はしていない。数値はKORAIL鉄道統計年報の{y}年の路線別通過人員を上下均等に分けたもの。一般列車が走るのはこの区間だけなので（片道1日{n}本）、通過人員はすべてこの区間を通っている。',
+        aboutKorea: `<h2>韓国</h2><p>韓国の上の枠をクリックすると、韓国の鉄道網を追加する。日本と同じスケールで描いているので、線やバブルの大きさが同じなら旅客数も同じ。</p><p>韓国は区間ごとの旅客数を公表していないので、韓国の区間は<b>復元値</b>。KORAIL鉄道統計年報（철도통계연보）の駅別乗降人員を路線に沿って累積し、年報が路線ごとに公表する通過人員に合わせた。一般鉄道の数値は年間の1日平均。</p><p>ソウル首都圏の路線は、2023年のODデータから作った平日のモデル推計。Busan・Daegu・Daejeon・Gwangju・Busan–Gimhaeは改札の通過人員から重力モデルで推計したもので、ツールチップに仮定ごとの範囲を示す。Donghae Lineの広域電鉄とITX-Cheongchunも、KORAILの広域輸送統計（광역수송 수송통계）から同じ方法で推計した。灰色の線は旅客数データのない区間。</p><p>韓国のバブルは、一般鉄道の駅では年報の乗降人員、それ以外では各都市モデルの駅別合計。</p><p>線形：OpenStreetMap。</p>`,
     },
 };
 // device in Japan → default to Japanese. Timezone is the cleanest "where am I"
@@ -568,10 +651,11 @@ const bubbleMap = s => logTopMap(s, BUBBLE_MUL_MAX, BUBBLE_SLIDER_MAX);
 // width is computed GPU-side straight from each segment's `density` — so a knee or
 // thickness change is only a paint-property swap, never a geometry re-upload.
 // rendered width = zoomFactor · (MIN_W + m · W_RANGE · t),  t = the 0..1 curve above.
-function tExpr() {
+function tExpr(kr = false) {
     // densityExpr() returns a fresh expression each call — picks d_base /
-    // d_census / density per the current sourceMode.
-    const c = () => ['min', W_CEIL, ['max', 1, densityExpr()]];
+    // d_census / density per the current sourceMode. Korea's layers have one
+    // data view, so theirs is always `density`.
+    const c = () => ['min', W_CEIL, ['max', 1, kr ? ['get', 'density'] : densityExpr()]];
     return ['max', 0, ['min', 1, ['case',
         ['>=', c(), kneeX], ['+', ['*', kneeA, ['log10', c()]], kneeB],
         ['*', kneeC, c()]]]];
@@ -587,7 +671,13 @@ function tExpr() {
 const ZOOM_BASE = 1.3;
 const ZF_LO = Math.pow(ZOOM_BASE, 3 - 7);    // multiplier at z=3
 const ZF_HI = Math.pow(ZOOM_BASE, 13 - 7);   // multiplier at z=13
-const wExpr = (m) => ['+', MIN_W, ['*', m * W_RANGE, tExpr()]];   // unscaled width at z=7
+// unscaled width at z=7. Korean track with no rider figure is drawn at a fixed
+// width instead (see KR_NOSVC_W); no Japanese feature carries `service`.
+const wExpr = (m, kr = false) => {
+    const w = ['+', MIN_W, ['*', m * W_RANGE, tExpr(kr)]];
+    return kr ? ['case', ['==', ['get', 'service'], 'none'], KR_NONE_W,
+                         ['has', 'service'], KR_NOSVC_W, w] : w;
+};
 
 // Viewport cap. When the thickest currently-visible line would render wider
 // than CAP_LINE_PX, scale ALL line widths down uniformly so the thickest hits
@@ -600,7 +690,9 @@ let autocap = true;   // toggled by the "autocap" checkbox in the legend
 function computeViewportScale() {
     if (!autocap) return 1;
     if (!map.getLayer('segs-line')) return 1;
-    const visible = map.queryRenderedFeatures({ layers: ['segs-line'] });
+    // Korean lines count too, so one cap scales both countries alike
+    const layers = map.getLayer('kr-line') ? ['segs-line', 'kr-line'] : ['segs-line'];
+    const visible = map.queryRenderedFeatures({ layers });
     if (!visible.length) return 1;
     const zf = Math.pow(ZOOM_BASE, map.getZoom() - 7);
     const m = effMul();
@@ -612,12 +704,12 @@ function computeViewportScale() {
     return maxNatural > CAP_LINE_PX ? CAP_LINE_PX / maxNatural : 1;
 }
 
-const coreWidth = (m = effMul()) => ['interpolate', ['exponential', ZOOM_BASE], ['zoom'],
-    3,  ['*', viewportScale * ZF_LO, wExpr(m)],
-    13, ['*', viewportScale * ZF_HI, wExpr(m)]];
-const casingWidth = (m = effMul()) => ['interpolate', ['exponential', ZOOM_BASE], ['zoom'],
-    3,  ['+', ['*', viewportScale * ZF_LO, wExpr(m)], 3],
-    13, ['+', ['*', viewportScale * ZF_HI, wExpr(m)], 3]];
+const coreWidth = (m = effMul(), kr = false) => ['interpolate', ['exponential', ZOOM_BASE], ['zoom'],
+    3,  ['*', viewportScale * ZF_LO, wExpr(m, kr)],
+    13, ['*', viewportScale * ZF_HI, wExpr(m, kr)]];
+const casingWidth = (m = effMul(), kr = false) => ['interpolate', ['exponential', ZOOM_BASE], ['zoom'],
+    3,  ['+', ['*', viewportScale * ZF_LO, wExpr(m, kr)], 3],
+    13, ['+', ['*', viewportScale * ZF_HI, wExpr(m, kr)], 3]];
 
 // Invisible hit-area. Clicks/hover hit-test rendered pixels, so a 0.2px hairline
 // or a 1px dot is effectively impossible to tap. segs-hit/station-hit are fully
@@ -639,16 +731,27 @@ const HIT_DOT_MIN_HI = 9;  // px — at zoom 13, finger-friendly
 // ['zoom'] may only sit at the top level of a step/interpolate, never nested
 // inside max(). Width grows monotonically with zoom and the floor is constant,
 // so flooring both endpoints floors the whole curve.
-const hitWidth = (m = effMul()) => ['interpolate', ['exponential', ZOOM_BASE], ['zoom'],
-    3,  ['max', HIT_LINE_MIN, ['*', viewportScale * ZF_LO, wExpr(m)]],
-    13, ['max', HIT_LINE_MIN, ['*', viewportScale * ZF_HI, wExpr(m)]]];
+const hitWidth = (m = effMul(), kr = false) => ['interpolate', ['exponential', ZOOM_BASE], ['zoom'],
+    3,  ['max', HIT_LINE_MIN, ['*', viewportScale * ZF_LO, wExpr(m, kr)]],
+    13, ['max', HIT_LINE_MIN, ['*', viewportScale * ZF_HI, wExpr(m, kr)]]];
 
+// every line layer's width, Japan's and (once loaded) Korea's, at the current
+// viewportScale
+function setWidthPaint() {
+    map.setPaintProperty('segs-casing', 'line-width', casingWidth());
+    map.setPaintProperty('segs-line', 'line-width', coreWidth());
+    map.setPaintProperty('segs-hit', 'line-width', hitWidth());
+    if (map.getLayer('kr-line')) {
+        const m = effMul();
+        map.setPaintProperty('kr-casing', 'line-width', casingWidth(m, true));
+        map.setPaintProperty('kr-line', 'line-width', coreWidth(m, true));
+        map.setPaintProperty('kr-hit', 'line-width', hitWidth(m, true));
+    }
+}
 function applyWidths() {
     if (!map.getLayer('segs-line')) return;
     viewportScale = computeViewportScale();
-    map.setPaintProperty('segs-casing', 'line-width', casingWidth());
-    map.setPaintProperty('segs-line', 'line-width', coreWidth());
-    if (map.getLayer('segs-hit')) map.setPaintProperty('segs-hit', 'line-width', hitWidth());
+    setWidthPaint();
 }
 
 // knee / thickness changed — coalesced to about one apply per 2 frames so a fast
@@ -664,7 +767,7 @@ function refreshWidths() {
     }));
 }
 function refreshWidthSwatches() {
-    document.querySelectorAll('#legend .wbar').forEach(el => {
+    document.querySelectorAll('#legend .wbar[data-d]').forEach(el => {   // not the fixed grey swatch
         const w = widthFor(+el.dataset.d);
         // sub-1px widths can't render thinner than 1px in CSS; fade the bar's
         // opacity instead so the swatch looks like the faint hairline a thin
@@ -715,6 +818,7 @@ function densityExpr() {
 }
 // JS-side equivalent for tooltips, info-panel, sort key
 function modeValue(p) {
+    if (p.op === KR_OP)          return p.density;   // Korea has one data view
     if (sourceMode === 'base')   return p.d_base ?? 0;
     if (sourceMode === 'census') return p.d_census ?? 0;
     return p.density;
@@ -747,15 +851,35 @@ function radiusFor(r) { return Math.sqrt(Math.max(0, r)) * R_SCALE; }
 const circleRadius = (m = stationMul) => ['interpolate', ['exponential', ZOOM_BASE], ['zoom'],
     3,  ['*', ['get', 'r'], m * ZF_LO],
     13, ['*', ['get', 'r'], m * ZF_HI]];
-const hitRadius = (m = stationMul) => ['interpolate', ['exponential', ZOOM_BASE], ['zoom'],
-    3,  ['max', HIT_DOT_MIN_LO, ['*', ['get', 'r'], m * ZF_LO]],
-    13, ['max', HIT_DOT_MIN_HI, ['*', ['get', 'r'], m * ZF_HI]]];
+// A bubble drawn under about a pixel gets no floor at all. It cannot be seen,
+// so a grab radius around it only means that hovering a line shows a station
+// nobody can see — at national zoom, a rural line was mostly station tooltips.
+// Its hit area is just its drawn size.
+//
+// The test is on the drawn radius, which depends on zoom, and ['zoom'] cannot
+// sit inside a case. So it is baked into one stop per zoom level, each with the
+// floor that the old two-stop curve (HIT_DOT_MIN_LO at 3 → HIT_DOT_MIN_HI at
+// 13) had there. Between two stops a bubble crossing the threshold blends from
+// one to the other over that one zoom level.
+const HIT_DOT_VISIBLE = 1;   // px of drawn radius; below this, no floor
+function hitFloorAt(z) {     // MapLibre's exponential interpolation, zoom 3 → 13
+    const t = (Math.pow(ZOOM_BASE, z - 3) - 1) / (Math.pow(ZOOM_BASE, 10) - 1);
+    return HIT_DOT_MIN_LO + t * (HIT_DOT_MIN_HI - HIT_DOT_MIN_LO);
+}
+const hitRadius = (m = stationMul) => {
+    const e = ['interpolate', ['exponential', ZOOM_BASE], ['zoom']];
+    for (let z = 3; z <= 13; z++) {
+        const drawn = ['*', ['get', 'r'], m * Math.pow(ZOOM_BASE, z - 7)];
+        e.push(z, ['case', ['<', drawn, HIT_DOT_VISIBLE], drawn, ['max', hitFloorAt(z), drawn]]);
+    }
+    return e;
+};
 
 function applyStationSize() {
-    if (map.getLayer('station-dots'))
-        map.setPaintProperty('station-dots', 'circle-radius', circleRadius());
-    if (map.getLayer('station-hit'))
-        map.setPaintProperty('station-hit', 'circle-radius', hitRadius());
+    for (const id of ['station-dots', 'kr-dots'])
+        if (map.getLayer(id)) map.setPaintProperty(id, 'circle-radius', circleRadius());
+    for (const id of ['station-hit', 'kr-dothit'])
+        if (map.getLayer(id)) map.setPaintProperty(id, 'circle-radius', hitRadius());
 }
 
 const NO_MATCH = ['==', ['get', 'op'], ' '];   // filter that matches nothing
@@ -929,20 +1053,6 @@ map.on('load', async () => {
     // hover tooltip
     const tip = document.getElementById('tooltip');
 
-    // does this segs-line feature belong to the currently selected line/segment?
-    function matchesSelection(p) {
-        if (!selected) return false;
-        if (selected.op !== p.op || selected.line !== p.line) return false;
-        if (selected.mode === 'segment') {
-            // base mode groups by section (every cut piece of one operator-
-            // published unit); stitched/census group by per-piece endpoints.
-            const isBase = selected.sourceMode === 'base';
-            return isBase
-                ? (selected.from === p.base_from && selected.to === p.base_to)
-                : (selected.from === p.from && selected.to === p.to);
-        }
-        return true;
-    }
     function showSegTip(p, pt, geom) {
         const S = STR[lang];
         tip.style.display = 'block';
@@ -962,7 +1072,7 @@ map.on('load', async () => {
             fromS = g.from; toS = g.to; fromOp = g.fromOp; toOp = g.toOp;
         }
         tip.innerHTML =
-            `<div class="line" style="color:${p.color}">${opLabel(p.op)} ${lineLabel(p.op, p.line)}</div>` +
+            `<div class="line" style="color:${p.color}"><span class="mk-bar" style="background:${p.color}"></span>${opLabel(p.op)} ${lineLabel(p.op, p.line)}</div>` +
             `<div class="seg">${stnLabel(fromOp, fromS)} → ${stnLabel(toOp, toS)}</div>` +
             `<div class="ri">${Math.round(Number(modeValue(p))).toLocaleString()} ${S.perday}</div>` +
             `<div class="meta">${S.tipThroughput} ${p.year}${lang === 'ja' ? '年' : ''} · ${kmS} ${S.km}${p.remark ? ' · ' + remarkLabel(p.remark) : ''}${isBase ? '' : census}</div>`;
@@ -1004,7 +1114,7 @@ map.on('load', async () => {
             ? ops.map(opLabel).join(' · ')
             : opLabel(p.op) + ' · ' + lineLabel(p.op, p.line);
         tip.innerHTML =
-            `<div class="line" style="color:${p.color}">${stnLabel(p.op, p.station)}</div>` +
+            `<div class="line" style="color:${p.color}"><span class="mk-dot"></span>${stnLabel(p.op, p.station)}</div>` +
             `<div class="seg">${opStr}</div>` +
             `<div class="ri">${Number(p.riders).toLocaleString()} ${S.perday}</div>` +
             `<div class="meta">${S.tipStationRiders} · ${p.year}${lang === 'ja' ? '年' : ''}</div>`;
@@ -1026,7 +1136,7 @@ map.on('load', async () => {
     // no right-click, so this is how they reach segments). Clicking off any line
     // clears.   ·   right-click: still toggles a single segment directly.
     map.on('click', (e) => {
-        const hits = map.queryRenderedFeatures(e.point, { layers: ['segs-hit'] });
+        const hits = map.queryRenderedFeatures(e.point, { layers: segHitLayers() });
         if (!hits.length) { clearSelection(); return; }
         // if the currently selected line is among the hits, prefer it — a click
         // on the selected line should always drill into THAT line's segment,
@@ -1045,7 +1155,7 @@ map.on('load', async () => {
         }
     });
     map.on('contextmenu', (e) => {
-        const hits = map.queryRenderedFeatures(e.point, { layers: ['segs-hit'] });
+        const hits = map.queryRenderedFeatures(e.point, { layers: segHitLayers() });
         if (hits.length) selectSegment(hits[0].properties);
         else clearSelection();
     });
@@ -1060,16 +1170,34 @@ map.on('load', async () => {
         const newScale = computeViewportScale();
         if (Math.abs(newScale - viewportScale) < 0.01) return;
         viewportScale = newScale;
-        map.setPaintProperty('segs-casing', 'line-width', casingWidth());
-        map.setPaintProperty('segs-line', 'line-width', coreWidth());
-        map.setPaintProperty('segs-hit', 'line-width', hitWidth());
+        setWidthPaint();
     });
 
     applyWidths();
     loadingDone();
+    addKoreaButton();
 });
 
 // ─────────────────────────── selection / info ────────────────────────────
+// does this segment feature belong to the currently selected line/segment?
+// Korean features carry the same keys (see the korea section), so this and
+// selCond serve both countries.
+function matchesSelection(p) {
+    if (!selected) return false;
+    if (selected.op !== p.op || selected.line !== p.line) return false;
+    if (selected.mode === 'segment') {
+        // base mode groups by section (every cut piece of one operator-
+        // published unit); stitched/census group by per-piece endpoints.
+        const isBase = selected.sourceMode === 'base';
+        return isBase
+            ? (selected.from === p.base_from && selected.to === p.base_to)
+            : (selected.from === p.from && selected.to === p.to);
+    }
+    return true;
+}
+// line hit bands for click tests: Japan's, plus Korea's once loaded
+const segHitLayers = () => map.getLayer('kr-hit') ? ['segs-hit', 'kr-hit'] : ['segs-hit'];
+
 function selCond(s) {
     const t = [['==', ['get', 'op'], s.op], ['==', ['get', 'line'], s.line]];
     if (s.mode === 'segment') {
@@ -1227,6 +1355,8 @@ function stationByNameNearLine(name, lineCoords, maxDeg2) {
 }
 function recomputeSelStationIds() {
     selStationIds = new Set();
+    krSelStationIds = new Set();
+    if (selected && selected.op === KR_OP) { recomputeKrSelStationIds(); return; }
     if (!selected || !sfcData) return;
     // segment selection: find the stations named from/to that lie closest to
     // the segment geometry. name-driven (not endpoint-driven) so it survives
@@ -1295,37 +1425,50 @@ function recomputeSelStationIds() {
     }
 }
 function pushStationFeatureState() {
-    if (!sfcData) return;
-    for (const f of sfcData.features) {
-        const on = selStationIds.has(f.id);
-        map.setFeatureState({ source: 'stations', id: f.id }, { onLine: on });
-    }
+    if (sfcData)
+        for (const f of sfcData.features)
+            map.setFeatureState({ source: 'stations', id: f.id }, { onLine: selStationIds.has(f.id) });
+    if (krSfc && map.getSource('kstations'))
+        for (const f of krSfc.features)
+            map.setFeatureState({ source: 'kstations', id: f.id }, { onLine: krSelStationIds.has(f.id) });
+}
+
+// [casing, core line, bubbles] for Japan and, once loaded, Korea. A selection
+// in either country dims the other one too.
+function selectionLayers() {
+    const sets = [['segs-casing', 'segs-line', 'station-dots']];
+    if (map.getLayer('kr-line')) sets.push(['kr-casing', 'kr-line', 'kr-dots']);
+    return sets;
 }
 
 function applySelection() {
     if (!selected) {
-        map.setFilter('segs-casing', NO_MATCH);
-        map.setPaintProperty('segs-line', 'line-opacity', 0.92);
-        if (map.getLayer('station-dots')) {
-            map.setPaintProperty('station-dots', 'circle-opacity', 0.5);
-            map.setPaintProperty('station-dots', 'circle-stroke-width', 0);
+        for (const [casing, line, dots] of selectionLayers()) {
+            map.setFilter(casing, NO_MATCH);
+            map.setPaintProperty(line, 'line-opacity', 0.92);
+            if (map.getLayer(dots)) {
+                map.setPaintProperty(dots, 'circle-opacity', 0.5);
+                map.setPaintProperty(dots, 'circle-stroke-width', 0);
+            }
         }
         selStationIds = new Set();
+        krSelStationIds = new Set();
         pushStationFeatureState();
         return;
     }
     const cond = selCond(selected);
-    map.setFilter('segs-casing', cond);
-    map.setPaintProperty('segs-line', 'line-opacity', ['case', cond, 0.97, 0.13]);
-
     recomputeSelStationIds();
     pushStationFeatureState();
 
-    if (map.getLayer('station-dots')) {
-        const onLine = ['boolean', ['feature-state', 'onLine'], false];
-        map.setPaintProperty('station-dots', 'circle-opacity', ['case', onLine, 0.95, 0.08]);
-        map.setPaintProperty('station-dots', 'circle-stroke-color', selected.color);
-        map.setPaintProperty('station-dots', 'circle-stroke-width', ['case', onLine, 1.5, 0]);
+    const onLine = ['boolean', ['feature-state', 'onLine'], false];
+    for (const [casing, line, dots] of selectionLayers()) {
+        map.setFilter(casing, cond);
+        map.setPaintProperty(line, 'line-opacity', ['case', cond, 0.97, 0.13]);
+        if (map.getLayer(dots)) {
+            map.setPaintProperty(dots, 'circle-opacity', ['case', onLine, 0.95, 0.08]);
+            map.setPaintProperty(dots, 'circle-stroke-color', selected.color);
+            map.setPaintProperty(dots, 'circle-stroke-width', ['case', onLine, 1.5, 0]);
+        }
     }
 }
 
@@ -1339,7 +1482,10 @@ function setSegmentSelection(p) {
     // In base mode the segment unit is the whole operator-published section,
     // identified by base_from/base_to. Stitched/census stay per-piece.
     const isBase = sourceMode === 'base';
-    selected = { mode: 'segment', op: p.op, line: p.line,
+    // A Korean segment carries more than a Japanese one (the direction split,
+    // service, notes) and its info panel reads all of it, so it keeps the lot.
+    // The fields below overwrite with values that are the same for it.
+    selected = { ...(p.op === KR_OP ? p : {}), mode: 'segment', op: p.op, line: p.line,
                  from: isBase ? p.base_from : p.from,
                  to:   isBase ? p.base_to   : p.to,
                  color: p.color, density: p.density, d_base: p.d_base,
@@ -1379,9 +1525,18 @@ function setColorMode(mode) {
         p.color = colorMode === 'line' ? p.colorLine : p.colorOp;
     }
     if (fcData) map.getSource('segs').setData(fcData);   // layers read ['get','color']
+    if (krFc) {
+        for (const f of krFc.features) {
+            const p = f.properties;
+            p.color = colorMode === 'line' ? p.colorLine : p.colorOp;
+        }
+        map.getSource('ksegs').setData(krFc);
+    }
     if (selected) {
-        const f = allFeats.find(x => x.properties.op === selected.op
-                                  && x.properties.line === selected.line);
+        const pool = selected.op === KR_OP ? krFc.features : allFeats;
+        const same = x => x.properties.op === selected.op && x.properties.line === selected.line;
+        // prefer a segment with a figure: a Korean line can begin in grey
+        const f = pool.find(x => same(x) && !x.properties.service) || pool.find(same);
         if (f) selected.color = f.properties.color;
         applySelection();   // refresh station stroke colour
     }
@@ -1391,6 +1546,7 @@ function setColorMode(mode) {
 
 function renderInfo() {
     if (!selected) return;
+    if (selected.op === KR_OP) { renderKrInfo(); return; }
     const S = STR[lang];
     const box = document.getElementById('info');
     const head = `<div class="ipline" style="color:${selected.color}">` +
@@ -1449,6 +1605,539 @@ function renderInfo() {
 
 window.addEventListener('keydown', (e) => { if (e.key === 'Escape') clearSelection(); });
 
+// ──────────────────────────────── korea ──────────────────────────────────
+// South Korea's network from koreariders, added by clicking the outline over
+// Korea and drawn at this map's own scale: a Korean line is as wide as a
+// Japanese one carrying the same passengers a day, and a Korean bubble as big
+// as a Japanese station with the same boardings plus alightings. Nothing is
+// fetched until the click.
+//
+// It has its own sources (ksegs / kstations) and layers (kr-*), so turning it
+// on or off never re-uploads Japan's 11 MB. Its features are normalised on load
+// so the selection code needs no second path: op is KR_OP, density is the
+// daily figure, and base_from / base_to / base_km repeat from / to / km,
+// because Korea has one data view and the base view keys segments on those.
+//
+// koreariders' direction toggle (both / down / up) is left out, since a reader
+// does not use it. The segment panel still shows the two directions.
+const KR_OP = '_kr';
+// side by side as riders/japanriders and riders/koreariders locally; as
+// /japanrail and /korearail on the site
+const KR_PAGE = location.pathname.includes('/japanriders/') ? '../koreariders/' : '../korearail/';
+const KR_BASE = KR_PAGE + 'data/';
+// Keep in step with DATA_VERSION in koreariders/index.html, or returning
+// visitors get whatever Korean geojson their browser cached last.
+const KR_DATA_VERSION = '2026-09-09-yongsan-ktx';
+const krURL = (name) => `${KR_BASE}${name}?v=${KR_DATA_VERSION}`;
+// the intercity file comes first and is the only one required; the metro file
+// comes second so Seoul's English station names win over a city reusing one
+const KR_SEG_FILES = ['segments.geojson', 'metro_segments.geojson', 'busan_segments.geojson',
+    'small_city_segments.geojson', 'daegu_busan_segments.geojson',
+    'donghae_segments.geojson', 'gyeongchun_segments.geojson'];
+const KR_STN_FILES = ['stations.geojson', 'metro_stations.geojson'];
+const KR_CENTER = [127.90, 36.44];   // where the outline sits: Hwanam-myeon, Sangju
+const KR_BTN_DEG = 0.9;              // its width in degrees of longitude, about a
+                                     // quarter of mainland South Korea's 3.5°
+
+// Track koreariders cannot put a rider figure on, drawn at a fixed width in its
+// own grey rather than as the hairline its residual number would imply. `none`
+// (no train of any kind ran) is a known zero and gets a thinner line than the
+// two unknowns. The full reasoning is at NOSVC_W in koreariders/index.html.
+const KR_NOSVC_COLOR = '#69727e';
+const KR_NOSVC_W = 1.5;
+const KR_NONE_W = 0.5;
+
+// koreariders' authored palette for the intercity lines, which Korail publishes
+// no colours for. Metro and city lines bring their own colour and English name
+// in each file's line_meta.
+const KR_LINES = {
+    '경부고속선': { color: '#ff4f45', en: 'Gyeongbu HSR',        cls: 'hs'   },
+    '호남고속선': { color: '#ff9d2e', en: 'Honam HSR',           cls: 'hs'   },
+    '수서고속선': { color: '#b47bff', en: 'Suseo HSR (SRT)',     cls: 'hs'   },
+    '강릉선':     { color: '#3fd7e6', en: 'Gangneung Line',      cls: 'semi' },
+    '중부내륙선': { color: '#7fb2ff', en: 'Jungbu Naeryuk Line', cls: 'semi' },
+    '경부선':     { color: '#4f9dff', en: 'Gyeongbu Line',       cls: 'conv' },
+    '호남선':     { color: '#2fc46b', en: 'Honam Line',          cls: 'conv' },
+    '전라선':     { color: '#ffd93d', en: 'Jeolla Line',         cls: 'conv' },
+    '중앙선':     { color: '#ff6fb5', en: 'Jungang Line',        cls: 'conv' },
+    '경전선':     { color: '#9ede3f', en: 'Gyeongjeon Line',     cls: 'conv' },
+    '장항선':     { color: '#d99a5c', en: 'Janghang Line',       cls: 'conv' },
+    '동해선':     { color: '#6d7bff', en: 'Donghae Line',        cls: 'conv' },
+    '경원선':     { color: '#e75fd0', en: 'Gyeongwon Line',      cls: 'conv' },
+    '충북선':     { color: '#c78be0', en: 'Chungbuk Line',       cls: 'conv' },
+    '영동선':     { color: '#5fbf8a', en: 'Yeongdong Line',      cls: 'conv' },
+    '태백선':     { color: '#8f9ee8', en: 'Taebaek Line',        cls: 'conv' },
+    '경북선':     { color: '#ff8a6b', en: 'Gyeongbuk Line',      cls: 'conv' },
+    '대구선':     { color: '#c0d84a', en: 'Daegu Line',          cls: 'conv' },
+    '광주선':     { color: '#f06fa0', en: 'Gwangju Line',        cls: 'conv' },
+    '정선선':     { color: '#b8b0a2', en: 'Jeongseon Line',      cls: 'conv' },
+    '경춘선':     { color: '#1fa583', en: 'Gyeongchun Line',     cls: 'conv' },
+    '경의선':     { color: '#77c4a3', en: 'Gyeongui Line',       cls: 'conv' },
+};
+
+// "by operator" colours Korail the way it colours the six JR companies; every
+// other Korean operator takes the grey Japan's private railways do.
+const KORAIL_COLOR = '#5a6ff0';   // Korail blue, pushed off JR West's hue
+const KR_KORAIL = new Set([
+    ...Object.keys(KR_LINES).filter(ln => ln !== '수서고속선'),   // 수서고속선 is SR's (SRT)
+    'ITX-청춘', '동해선 광역전철',
+    '수도권 1호선', '수도권 수인분당선', '수도권 경의중앙선', '수도권 경춘선', '수도권 경강선',
+]);
+// Seoul lines that change operator partway along. Each lists the stations of
+// the stretch that is NOT run by the line's operator above, and a segment
+// touching one of them belongs to the other operator. The handover stations
+// (서울역, 청량리, 지축, 남태령) are left out, so the segments either side of
+// each handover fall the right way.
+const KR_OP_SECTIONS = {
+    // Seoul Metro's own subway between 서울역 and 청량리; the rest is Korail's
+    '수도권 1호선': ['시청', '종각', '종로3가', '종로5가', '동대문', '동묘앞', '신설동', '제기동'],
+    // Korail's 일산선, 지축 to 대화; the rest is Seoul Metro's
+    '수도권 3호선': ['삼송', '원흥', '원당', '화정', '대곡', '백석', '마두', '정발산', '주엽', '대화'],
+    // Korail's 과천선 and 안산선, 남태령 to 오이도; the rest is Seoul Metro's
+    '수도권 4호선': ['선바위', '경마공원', '대공원', '과천', '정부과천청사', '인덕원', '평촌', '범계',
+        '금정', '산본', '수리산', '대야미', '반월', '상록수', '한대앞', '중앙', '고잔', '초지',
+        '안산', '신길온천', '정왕', '오이도'],
+};
+function krIsKorail(p) {
+    const sec = KR_OP_SECTIONS[p.line];
+    const other = !!sec && (sec.includes(p.from) || sec.includes(p.to));
+    return KR_KORAIL.has(p.line) !== other;
+}
+
+// Korean names are romanised in both languages. This overlay is for seeing
+// Korea beside Japan at a glance; korearail, linked from the legend, is the map
+// for reading it closely.
+const KR_CITY = { '부산': 'Busan', '대구': 'Daegu', '대전': 'Daejeon', '광주': 'Gwangju', '부산·김해': 'Busan–Gimhae' };
+
+// Revised Romanization, for the station names the files carry no English for.
+// koreariders' converter, unchanged: syllable decomposition plus the
+// assimilation rules that change a place name's spelling (왕십리 Wangsimni,
+// 청량리 Cheongnyangni, 신탄리 Sintalli).
+const krRomanize = (() => {
+    const CHO = ['g','kk','n','d','tt','r','m','b','pp','s','ss','','j','jj','ch','k','t','p','h'];
+    const JUNG = ['a','ae','ya','yae','eo','e','yeo','ye','o','wa','wae','oe','yo','u','wo','we','wi','yu','eu','ui','i'];
+    // a final as pronounced when a consonant (or nothing) follows
+    const JONG = ['','k','k','k','n','n','n','t','l','k','m','p','l','l','p','l','m','p','p','t','t','ng','t','t','k','t','p','t'];
+    // the sound a final carries onto a following vowel (silent ㅇ initial)
+    const LINK = ['','g','kk','ks','n','nj','nh','d','r','lg','lm','lb','ls','lt','lp','lh','m','b','ps','s','ss','ng','j','ch','k','t','p','h'];
+    const I_G = 0, I_N = 2, I_D = 3, I_R = 5, I_M = 6, I_S = 9, I_J = 12;   // initial-jamo indices
+    // RULES[finalJamo][nextInitialJamo] = [finalRoman, replacementInitialRoman]
+    const RULES = {};
+    const rrule = (f, i, fr, ir) => { (RULES[f] || (RULES[f] = {}))[i] = [fr, ir]; };
+    // ㄱ-sound and ㅂ-sound finals nasalise before ㄴ/ㅁ/ㄹ; RR keeps the h
+    // before ㅎ in proper nouns (묵호 Mukho)
+    for (const f of [1, 2, 9, 24]) { rrule(f, I_N, 'ng', 'n'); rrule(f, I_M, 'ng', 'm'); rrule(f, I_R, 'ng', 'n'); }
+    for (const f of [11, 14, 17, 18]) { rrule(f, I_N, 'm', 'n'); rrule(f, I_M, 'm', 'm'); rrule(f, I_R, 'm', 'n'); }
+    // ㄴ + ㄹ, and ㄹ-finals + ㄴ/ㄹ  →  ll
+    rrule(4, I_R, 'l', 'l');
+    for (const f of [8, 12, 13, 15]) { rrule(f, I_N, 'l', 'l'); rrule(f, I_R, 'l', 'l'); }
+    // ㅁ / ㅇ + ㄹ → n
+    rrule(16, I_R, 'm', 'n'); rrule(10, I_R, 'm', 'n'); rrule(21, I_R, 'ng', 'n');
+    // ㄷ-sound finals: nasalise before ㄴ/ㅁ/ㄹ, aspirate before ㄱ/ㄷ/ㅈ
+    for (const f of [7, 19, 20, 22, 23, 25, 27]) {
+        rrule(f, I_N, 'n', 'n'); rrule(f, I_M, 'n', 'm'); rrule(f, I_R, 'n', 'n');
+        rrule(f, I_G, 't', 'k'); rrule(f, I_D, 't', 't'); rrule(f, I_J, 't', 'ch');
+    }
+    // ㅎ-finals are the aspirator — they merge into the following consonant
+    rrule(27, I_G, '', 'k'); rrule(27, I_D, '', 't'); rrule(27, I_J, '', 'ch'); rrule(27, I_S, '', 's');
+    rrule(6,  I_G, 'n', 'k'); rrule(6,  I_D, 'n', 't'); rrule(6,  I_J, 'n', 'ch');
+    rrule(15, I_G, 'l', 'k'); rrule(15, I_D, 'l', 't'); rrule(15, I_J, 'l', 'ch');
+
+    function romanize(s) {
+        const toks = [];
+        for (const ch of s) {
+            const c = ch.codePointAt(0);
+            if (c >= 0xac00 && c <= 0xd7a3) {
+                const k = c - 0xac00;
+                toks.push({ cho: (k / 588) | 0, jung: ((k / 28) | 0) % 21, jong: k % 28 });
+            } else toks.push(ch);
+        }
+        let out = '';
+        for (let i = 0; i < toks.length; i++) {
+            const t = toks[i];
+            if (typeof t === 'string') { out += t; continue; }
+            out += (t.ini !== undefined ? t.ini : CHO[t.cho]) + JUNG[t.jung];
+            if (!t.jong) continue;
+            const nx = toks[i + 1];
+            if (nx && typeof nx === 'object') {
+                if (nx.cho === 11) { nx.ini = LINK[t.jong]; continue; }   // silent ㅇ takes the final over
+                const r = RULES[t.jong] && RULES[t.jong][nx.cho];
+                if (r) { out += r[0]; nx.ini = r[1]; continue; }
+            }
+            out += JONG[t.jong];
+        }
+        return out;
+    }
+    const titleCase = s => s.replace(/(^|[\s\-(])([a-z])/g, (m, p, c) => p + c.toUpperCase());
+    // names RR gets right but which have a settled English form of their own
+    const STN_EN = {
+        '천안아산': 'Cheonan-Asan', '광주송정': 'Gwangju-Songjeong', '여수엑스포': 'Yeosu-EXPO',
+        '벡스코': 'BEXCO', '센텀': 'Centum', '디지털미디어시티': 'Digital Media City',
+        '가산디지털단지': 'Gasan Digital Complex', '추추스테이션': 'Choo Choo Station',
+        '청주공항': 'Cheongju Airport', '공항': 'Airport',
+    };
+    const cache = new Map();
+    return function (name) {
+        if (STN_EN[name]) return STN_EN[name];
+        let v = cache.get(name);
+        if (v !== undefined) return v;
+        // "X역" is a station named after a station — 서울역, 대전역, 영월역
+        v = /^..+역$/.test(name)
+            ? titleCase(romanize(name.slice(0, -1))) + ' Station'
+            : titleCase(romanize(name));
+        cache.set(name, v);
+        return v;
+    };
+})();
+
+let krState = 'off';               // off → loading → on ⇄ hidden
+let krFc = null, krSfc = null;     // the loaded Korean collections
+let krYear = '';                   // yearbook edition, from segments.geojson
+let krHasNoSvc = false;            // any grey track, which then needs its legend row
+let krSelStationIds = new Set();   // kstations ids lit by a Korean selection
+let krBtn = null;                  // the outline
+const KR_META = { ...KR_LINES };   // plus every file's line_meta once loaded
+const KR_NAMES = {};               // Korean station name → English, from the files
+
+const krMeta = (ln) => KR_META[ln] || null;
+function krLineLabel(ln) {
+    const m = krMeta(ln);
+    return m ? m.en : ln;
+}
+function krStnLabel(name) { return KR_NAMES[name] || krRomanize(name); }
+function krClsLabel(cls) {
+    const S = STR[lang];
+    return { hs: S.krClsHs, semi: S.krClsSemi, conv: S.krClsConv, metro: S.krClsMetro }[cls] || '';
+}
+// {n} a count, {y} the yearbook edition
+function krFill(s, n) {
+    if (n != null) s = s.split('{n}').join(Number(n).toLocaleString());
+    return s.split('{y}').join(krYear);
+}
+const krYearLabel = () => lang === 'ja' ? krYear + '年' : krYear;
+// "2026-07 Mon-Fri mean" and "2023-11 weekday mean" → "2026-07 weekdays";
+// a bare year stays a year
+function krPeriod(s) {
+    const m = /^(\d{4}-\d{2}) (Mon-Fri|weekday)/.exec(s || '');
+    if (m) return m[1] + (lang === 'ja' ? ' 平日' : ' weekdays');
+    if (/^\d{4}$/.test(s || '')) return lang === 'ja' ? s + '年' : s;
+    return '';
+}
+// Where a Korean figure comes from, in one line. None of them is published per
+// segment, so every Korean tooltip carries one.
+function krSourceNote(p) {
+    const S = STR[lang], m = krMeta(p.line) || {};
+    if (p.level === 'passing') return krFill(S.krPubTip);
+    let note;
+    if (m.estimated) {
+        const city = KR_CITY[m.city] || '';
+        note = [city, S.krEstimated, krPeriod(p.period)].filter(Boolean).join(' · ');
+    } else if (m.cls === 'metro') {
+        note = S.krSeoulModel;
+    } else {
+        note = S.krRecon + ' · ' + krYearLabel();
+    }
+    return p.geometry_source === 'straight' ? note + ' · ' + S.krStraight : note;
+}
+// the city models' spread across their decay assumptions
+function krScenarioNote(p, cls) {
+    if (!p.estimated || p.daily_low == null) return '';
+    const lo = Math.round(p.daily_low).toLocaleString();
+    const hi = Math.round(p.daily_high).toLocaleString();
+    return lo === hi ? '' : `<div class="${cls}">${STR[lang].krScenario}: ${lo} – ${hi}</div>`;
+}
+
+function krTipAt(pt) {
+    const tip = document.getElementById('tooltip');
+    tip.style.display = 'block';
+    tip.style.left = (pt.x + 14) + 'px';
+    tip.style.top = (pt.y + 14) + 'px';
+    return tip;
+}
+function showKrSegTip(p, pt) {
+    const S = STR[lang], tip = krTipAt(pt);
+    const head = `<div class="line" style="color:${p.color}"><span class="mk-bar" style="background:${p.color}"></span>${krLineLabel(p.line)}</div>`;
+    const km = `${Number(p.km).toFixed(1)} ${S.km}`;
+    // Grey track says why it has no figure instead of quoting one. A number
+    // exists, the fit's residual, and quoting it would answer a question the
+    // map cannot.
+    if (p.service) {
+        const unrec = p.service === 'unrecorded';
+        const why = unrec ? krFill(S.krUnrecNote, p.intercity_trains)
+                  : p.service === 'commuter' ? krFill(S.krNoSvcCommuter, p.commuter_trains)
+                  : krFill(S.krNoSvcNone);
+        tip.innerHTML = head +
+            `<div class="seg">${krStnLabel(p.from)} → ${krStnLabel(p.to)}</div>` +
+            `<div class="ri" style="color:#8b939e">${unrec ? S.krUnrecTitle : S.krNoSvcTitle}</div>` +
+            `<div class="note">${why}</div>` +
+            `<div class="meta">${km}</div>`;
+        return;
+    }
+    // a run-on stub ends at a junction, not a station, so `stub` names the line
+    const to = p.stub ? S.krStubTo.replace('{n}', krLineLabel(p.stub)) : krStnLabel(p.to);
+    tip.innerHTML = head +
+        `<div class="seg">${krStnLabel(p.from)} → ${to}</div>` +
+        `<div class="ri">${Math.round(Number(p.density)).toLocaleString()} ${S.perday}</div>` +
+        `<div class="meta">${km} · ${krSourceNote(p)}</div>` +
+        (p.stub ? `<div class="note">${S.krStubNote.replace('{n}', krLineLabel(p.stub))}</div>` : '') +
+        // a flying junction: what joins is a service, so name the line
+        (p.junction ? `<div class="note">${S.krJoinNote.replace('{n}',
+            p.join_line ? krLineLabel(p.join_line) : krStnLabel(p.junction))}</div>` : '') +
+        // a merged segment runs past bubbles, so it says why it has no break there
+        (p.through ? `<div class="note">${krFill(S.krThroughNote, p.through)}</div>` : '') +
+        krScenarioNote(p, 'meta');
+}
+function showKrStationTip(p, pt) {
+    const S = STR[lang], tip = krTipAt(pt);
+    // MapLibre hands array properties back as JSON text, not arrays
+    const lns = Array.isArray(p.lines) ? p.lines : JSON.parse(p.lines || '[]');
+    const when = p.kind === 'metro' ? krPeriod(p.period) : krYearLabel();
+    tip.innerHTML =
+        `<div class="line" style="color:${p.color}"><span class="mk-dot"></span>${krStnLabel(p.station)}</div>` +
+        (lns.length ? `<div class="seg">${lns.map(krLineLabel).join(' · ')}</div>` : '') +
+        `<div class="ri">${Math.round(p.riders).toLocaleString()} ${S.perday}</div>` +
+        `<div class="meta">${[S.tipStationRiders, when].filter(Boolean).join(' · ')}</div>`;
+}
+
+function renderKrInfo() {
+    const S = STR[lang], sel = selected, box = document.getElementById('info');
+    const row = (k, v) => `<div class="iprow"><span>${k}</span><b>${v}</b></div>`;
+    let html = `<div class="ipline" style="color:${sel.color}">${krLineLabel(sel.line)}</div>`;
+    if (sel.mode === 'segment') {
+        const to = sel.stub ? S.krStubTo.replace('{n}', krLineLabel(sel.stub)) : krStnLabel(sel.to);
+        html += `<div class="ipseg">${krStnLabel(sel.from)} → ${to}</div>` +
+                row(S.panelLength, `${Number(sel.km).toFixed(1)} ${S.km}`);
+        if (sel.service) {
+            // the panel refuses the figure wherever the tooltip does
+            html += `<div class="ipseg">${sel.service === 'unrecorded' ? S.krUnrecTitle : S.krNoSvcTitle}</div>`;
+        } else {
+            const dir = (daily, annual) => Math.round(daily ?? (annual || 0) / 365).toLocaleString();
+            html += row(S.panelRange, `${Math.round(Number(sel.density)).toLocaleString()} ${S.perday}`) +
+                    row(S.krDown, dir(sel.daily_down, sel.down)) +
+                    row(S.krUp, dir(sel.daily_up, sel.up));
+            // Down and up are equal on a published total because it was halved,
+            // not because two separate builds agreed, so it says so.
+            html += sel.level === 'passing'
+                ? `<div class="ipseg">${S.krPubTitle}</div><div class="ipnote">${krFill(S.krPubNote, sel.intercity_trains)}</div>`
+                : `<div class="ipnote">${krSourceNote(sel)}</div>` + krScenarioNote(sel, 'ipnote');
+        }
+    } else {
+        const parts = krFc.features.filter(f => f.properties.line === sel.line);
+        const shown = parts.filter(f => !f.properties.service);
+        let km = 0, dmin = Infinity, dmax = -Infinity;
+        for (const f of parts) km += Number(f.properties.km) || 0;
+        // the range is over segments with a figure; a grey one's number is
+        // residual, not the low end
+        for (const f of shown) {
+            dmin = Math.min(dmin, f.properties.density);
+            dmax = Math.max(dmax, f.properties.density);
+        }
+        const m = krMeta(sel.line);
+        html += (m ? `<div class="ipseg">${krClsLabel(m.cls)}</div>` : '') +
+                row(S.panelLength, `${km.toFixed(1)} ${S.km}`) +
+                row(S.panelSections, parts.length);
+        if (!shown.length) {
+            const unrec = parts.length > 0 && parts[0].properties.service === 'unrecorded';
+            html += `<div class="ipseg">${unrec ? S.krUnrecTitle : S.krNoSvcTitle}</div>` +
+                    (unrec ? `<div class="ipnote">${krFill(S.krUnrecNote, parts[0].properties.intercity_trains)}</div>` : '');
+        } else {
+            const lo = Math.round(dmin), hi = Math.round(dmax);
+            const range = lo === hi ? lo.toLocaleString() : lo.toLocaleString() + ' – ' + hi.toLocaleString();
+            const pub = shown.every(f => f.properties.level === 'passing');
+            html += row(S.panelRange, `${range} ${S.perday}`) +
+                    `<div class="ipnote">${pub ? S.krPubTitle : krSourceNote(shown[0].properties)}</div>`;
+        }
+    }
+    box.innerHTML = html;
+    box.style.display = 'block';
+}
+
+// Exact rather than a proximity test: koreariders resolves each station against
+// the drawn network and records the lines that call there.
+function recomputeKrSelStationIds() {
+    if (!krSfc) return;
+    const seg = selected.mode === 'segment';
+    for (const f of krSfc.features) {
+        const p = f.properties;
+        if (!p.lines.includes(selected.line)) continue;
+        if (seg && p.station !== selected.from && p.station !== selected.to) continue;
+        krSelStationIds.add(f.id);
+    }
+}
+
+async function loadKorea() {
+    const files = [...KR_SEG_FILES, ...KR_STN_FILES];
+    let done = 0;
+    const tick = () => { krBtn.textContent = Math.round(100 * done / files.length) + '%'; };
+    tick();
+    // A file that fails is a layer that does not draw, as on koreariders itself.
+    const got = await Promise.all(files.map(name => fetch(krURL(name))
+        .then(r => r.ok ? r.json() : Promise.reject(new Error(name + ': HTTP ' + r.status)))
+        .catch(e => { console.error('korea', e); return null; })
+        .finally(() => { done++; tick(); })));
+    const segs = got.slice(0, KR_SEG_FILES.length);
+    const stns = got.slice(KR_SEG_FILES.length);
+    if (!segs[0]) return false;
+    krYear = String(segs[0].year || '');
+
+    // a metro line can share an English name with an intercity one (Gyeongchun Line)
+    const intercityEn = new Set(Object.values(KR_LINES).map(m => m.en));
+    const feats = [];
+    for (const fc of segs) {
+        if (!fc) continue;
+        const meta = fc.line_meta || {};
+        for (const m of Object.values(meta)) if (intercityEn.has(m.en)) m.en += ' (metro)';
+        Object.assign(KR_META, meta);
+        for (const [ko, en] of Object.entries(fc.station_names || {}))
+            if (!KR_NAMES[ko]) KR_NAMES[ko] = en;
+        for (const f of fc.features) if (f.geometry && f.geometry.coordinates) feats.push(f);
+    }
+    for (const f of feats) {
+        const p = f.properties;
+        p.op = KR_OP;
+        p.density = p.daily;
+        p.base_from = p.from; p.base_to = p.to; p.base_km = p.km;
+        if (p.service) {
+            // grey in both colour modes: an authored colour with a legend row of
+            // its own, not the line's colour dimmed
+            p.colorLine = p.colorOp = KR_NOSVC_COLOR;
+            krHasNoSvc = true;
+        } else {
+            p.colorLine = (krMeta(p.line) || {}).color || OTHER_COLOR;
+            p.colorOp = krIsKorail(p) ? KORAIL_COLOR : OTHER_COLOR;
+        }
+        p.color = colorMode === 'line' ? p.colorLine : p.colorOp;
+    }
+    feats.sort((a, b) => a.properties.density - b.properties.density);   // fat on top
+    krFc = { type: 'FeatureCollection', features: feats };
+
+    const sf = [];
+    for (const fc of stns) if (fc) sf.push(...(fc.features || []));
+    sf.forEach((f, i) => {
+        const p = f.properties;
+        if (!Array.isArray(p.lines)) p.lines = p.line ? [p.line] : [];
+        p.color = (krMeta(p.line) || {}).color || '#ffffff';   // tooltip accent only
+        p.r = radiusFor(p.riders);   // this map's bubble scale, not koreariders' larger one
+        f.id = i + 1;
+    });
+    krSfc = { type: 'FeatureCollection', features: sf };
+
+    map.addSource('ksegs', { type: 'geojson', data: krFc });
+    map.addSource('kstations', { type: 'geojson', data: krSfc });
+    const m = effMul();
+    const lineLayout = () => ({ 'line-cap': 'round', 'line-join': 'round', visibility: 'none' });
+    map.addLayer({
+        id: 'kr-casing', type: 'line', source: 'ksegs', filter: NO_MATCH, layout: lineLayout(),
+        paint: { 'line-color': '#fbfdff', 'line-width': casingWidth(m, true), 'line-opacity': 0.92 },
+    });
+    map.addLayer({
+        id: 'kr-line', type: 'line', source: 'ksegs', layout: lineLayout(),
+        paint: { 'line-color': ['get', 'color'], 'line-width': coreWidth(m, true), 'line-opacity': 0.92 },
+    });
+    map.addLayer({
+        id: 'kr-hit', type: 'line', source: 'ksegs', layout: lineLayout(),
+        paint: { 'line-color': '#000', 'line-width': hitWidth(m, true), 'line-opacity': 0 },
+    });
+    map.addLayer({
+        id: 'kr-dots', type: 'circle', source: 'kstations', layout: { visibility: 'none' },
+        paint: {
+            'circle-radius': circleRadius(),
+            'circle-color': '#ffffff',
+            'circle-opacity': 0.5,
+            'circle-stroke-color': '#ffffff',
+            'circle-stroke-width': 0,
+            // no transitions, for the same reason as station-dots
+            'circle-opacity-transition': { duration: 0 },
+            'circle-stroke-width-transition': { duration: 0 },
+            'circle-stroke-color-transition': { duration: 0 },
+        },
+    });
+    map.addLayer({
+        id: 'kr-dothit', type: 'circle', source: 'kstations', layout: { visibility: 'none' },
+        paint: { 'circle-radius': hitRadius(), 'circle-color': '#000', 'circle-opacity': 0 },
+    });
+
+    map.on('mousemove', 'kr-hit', (e) => {
+        if (!e.features.length) return;
+        const f = e.features.find(x => matchesSelection(x.properties)) || e.features[0];
+        showKrSegTip(f.properties, e.point);
+        map.getCanvas().style.cursor = 'pointer';
+    });
+    // registered after kr-hit, so a bubble on a line wins, unless a line is
+    // selected, it is under the cursor, and the bubble is not one of its stops
+    map.on('mousemove', 'kr-dothit', (e) => {
+        if (!e.features.length) return;
+        const f = e.features[0];
+        if (selected && !krSelStationIds.has(f.id)) {
+            const selHit = map.queryRenderedFeatures(e.point, { layers: ['kr-hit'] })
+                .find(x => matchesSelection(x.properties));
+            if (selHit) { showKrSegTip(selHit.properties, e.point); return; }
+        }
+        showKrStationTip(f.properties, e.point);
+        map.getCanvas().style.cursor = 'pointer';
+    });
+    for (const id of ['kr-hit', 'kr-dothit']) {
+        map.on('mouseleave', id, () => {
+            document.getElementById('tooltip').style.display = 'none';
+            map.getCanvas().style.cursor = '';
+        });
+    }
+    return true;
+}
+
+function addKoreaButton() {
+    krBtn = document.createElement('div');
+    krBtn.id = 'krbtn';
+    krBtn.title = STR[lang].krShowTitle;
+    // kept from the map, which would read it as a click on empty ground and
+    // clear the selection
+    krBtn.addEventListener('click', (e) => { e.stopPropagation(); showKorea(); });
+    new maplibregl.Marker({ element: krBtn, anchor: 'center' }).setLngLat(KR_CENTER).addTo(map);
+    sizeKoreaButton();
+    map.on('zoom', sizeKoreaButton);
+}
+// A fixed size on the map rather than on the screen: KR_BTN_DEG of longitude
+// across at every zoom, so it grows and shrinks with Korea under it. Pixels
+// equal ground distance both ways locally in Mercator, so equal pixel sides
+// make it square on the map too. MapLibre's world is 512px wide at zoom 0.
+function sizeKoreaButton() {
+    const side = KR_BTN_DEG * 512 * Math.pow(2, map.getZoom()) / 360;
+    krBtn.style.width = krBtn.style.height = side.toFixed(1) + 'px';
+    krBtn.style.borderRadius = (side * 0.18).toFixed(1) + 'px';
+    krBtn.style.fontSize = Math.min(10, side * 0.28).toFixed(1) + 'px';   // the loading %
+}
+async function showKorea() {
+    if (krState === 'loading') return;
+    if (krState === 'off') {
+        krState = 'loading';
+        krBtn.classList.add('loading');
+        let ok = false;
+        try { ok = await loadKorea(); } catch (e) { console.error('korea', e); }
+        krBtn.classList.remove('loading');
+        krBtn.textContent = '';
+        if (!ok) { krState = 'off'; return; }
+    }
+    setKoreaShown(true);
+}
+function setKoreaShown(on) {
+    krState = on ? 'on' : 'hidden';
+    const vis = on ? 'visible' : 'none';
+    for (const id of ['kr-casing', 'kr-line', 'kr-hit'])
+        map.setLayoutProperty(id, 'visibility', vis);
+    const dots = on && showStations ? 'visible' : 'none';
+    for (const id of ['kr-dots', 'kr-dothit'])
+        map.setLayoutProperty(id, 'visibility', dots);
+    // the outline stands for "Korea is off", so it goes while Korea shows
+    krBtn.style.display = on ? 'none' : '';
+    if (!on) {
+        document.getElementById('tooltip').style.display = 'none';
+        if (selected && selected.op === KR_OP) clearSelection();
+    }
+    if (selected) applySelection();   // dim Korea under a Japanese selection
+    applyWidths();                     // the viewport cap counts Korea only while it draws
+    buildLegend();
+}
+
 // ───────────────────────────── interface ─────────────────────────────────
 function buildLegend() {
     const S = STR[lang];
@@ -1471,6 +2160,9 @@ function buildLegend() {
         const op = Math.min(1, w).toFixed(2);
         html += `<div class="wrow"><span class="wbar" data-d="${d}" style="width:34px;height:${h}px;opacity:${op}"></span>${label}</div>`;
     }
+    // Korea's grey track is drawn on the map, so it gets a row while it shows
+    if (krState === 'on' && krHasNoSvc)
+        html += `<div class="wrow"><span class="wbar" style="width:34px;height:2px;background:${KR_NOSVC_COLOR};opacity:1"></span>${S.legNoSvc}</div>`;
     html += `<div class="modetoggle">` +
         `<span id="sm-log" class="${knee === KNEE_MIN ? 'on' : ''}">${S.scaleLog}</span>` +
         `<span id="sm-lin" class="${knee === KNEE_MAX ? 'on' : ''}">${S.scaleLinear}</span>` +
@@ -1494,6 +2186,12 @@ function buildLegend() {
             `<input type="checkbox" id="st-toggle"${showStations ? ' checked' : ''}>` +
             `<input id="bubbleSlider" type="range" min="0.1" max="${BUBBLE_SLIDER_MAX}" step="0.1" value="${stationSlider}">` +
             `</div></div>`;
+    // only once Korea has loaded; until then the outline over it is the way in
+    if (krState === 'on' || krState === 'hidden')
+        html += `<div class="stsec"><div class="hd">${S.legKorea}</div>` +
+                `<div class="krrow"><label class="strow"><input type="checkbox" id="kr-toggle"${krState === 'on' ? ' checked' : ''}>${S.krShow}</label>` +
+                `<a class="krlink" href="${KR_PAGE}" target="_blank" rel="noopener">${S.krFullMap}</a></div>` +
+                `<div class="krwarn">${S.krWarn}</div></div>`;
     document.getElementById('legend').innerHTML = html;
 
     document.getElementById('lg-close').onclick = () => setLegendOpen(false);
@@ -1531,7 +2229,11 @@ function buildLegend() {
             map.setLayoutProperty('station-dots', 'visibility', vis);
         if (map.getLayer('station-hit'))
             map.setLayoutProperty('station-hit', 'visibility', vis);
+        if (krState === 'on')
+            for (const id of ['kr-dots', 'kr-dothit']) map.setLayoutProperty(id, 'visibility', vis);
     };
+    const kt = document.getElementById('kr-toggle');
+    if (kt) kt.onchange = (e) => setKoreaShown(e.target.checked);
     document.getElementById('bubbleSlider').oninput = (e) => {
         stationSlider = parseFloat(e.target.value);
         stationMul = bubbleMap(stationSlider);
@@ -1553,7 +2255,8 @@ function applyLang() {
     document.getElementById('lang-en').classList.toggle('on', lang === 'en');
     document.getElementById('lang-ja').classList.toggle('on', lang === 'ja');
     document.getElementById('aboutbtn').title = S.aboutTitle;
-    document.getElementById('aboutpanel').innerHTML = S.aboutBody;
+    document.getElementById('aboutpanel').innerHTML = S.aboutBody + S.aboutKorea;
+    if (krBtn) krBtn.title = S.krShowTitle;
     buildLegend();
     renderInfo();
 }

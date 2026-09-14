@@ -11,6 +11,11 @@ sitemap: false
 <meta property="og:title" content="korea rail flow" />
 <meta property="og:description" content="passengers per day on every segment of korea's intercity rail network" />
 <meta property="og:type" content="website" />
+<meta property="og:image" content="index.png" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:image" content="index.png" />
+<link rel="icon" type="image/png" href="favicon.png" />
+<meta name="robots" content="noindex, nofollow" />
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
 body { background: #07090d; color: #eee; font-family: 'Nunito', system-ui, sans-serif; overflow: hidden; }
@@ -57,7 +62,7 @@ body { background: #07090d; color: #eee; font-family: 'Nunito', system-ui, sans-
     line-height: 1.7;
 }
 #legend.hidden { display: none; }
-/* desktop: widen so the direction trio sits on one line. mobile keeps the
+/* desktop: widen so the sliders get a usable length. mobile keeps the
    auto-narrow column. */
 @media (min-width: 701px) {
     #legend { min-width: 196px; }
@@ -105,23 +110,6 @@ body { background: #07090d; color: #eee; font-family: 'Nunito', system-ui, sans-
 #legend .strow { display: flex; align-items: center; gap: 8px; width: 172px; }
 #legend .strow input[type=checkbox] { width: 13px; height: 13px; flex: none; margin: 0; accent-color: #5bb6ff; cursor: pointer; }
 #legend .strow input[type=range] { flex: 1; min-width: 0; accent-color: #5bb6ff; cursor: pointer; }
-
-/* line roster — the whole palette, scrollable so 22 lines stay compact */
-#legend .roster { margin-top: 7px; padding-top: 6px; border-top: 1px solid #2a2f38; }
-#legend .rlist { max-height: 124px; overflow-y: auto; width: 172px; scrollbar-width: thin; scrollbar-color: #2a2f38 transparent; }
-#legend .rlist::-webkit-scrollbar { width: 6px; }
-#legend .rlist::-webkit-scrollbar-thumb { background: #2a2f38; border-radius: 3px; }
-#legend .rrow {
-    display: flex; align-items: center; gap: 6px;
-    cursor: pointer; padding: 0 4px; margin-right: 4px;
-    border-radius: 3px; line-height: 1.55; color: #b6bcc5;
-}
-#legend .rrow:hover { background: #171b22; color: #fff; }
-#legend .rrow.on { background: #2a2f38; color: #fff; }
-#legend .rrow .sw { width: 14px; height: 3px; border-radius: 2px; flex: none; }
-#legend .rrow .nm { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-#legend .rrow .vl { color: #6c7480; font-size: 10.5px; flex: none; }
-#legend .rrow.on .vl { color: #aab1ba; }
 
 #aboutbtn {
     position: absolute;
@@ -278,13 +266,10 @@ const STR = {
         h1: 'korea rail flow',
         sub1: 'line thickness = passengers per day',
         subWarn: 'segment figures are reconstructed, not published',
-        legDirection: 'direction',
-        dirBoth: 'both', dirDown: 'down', dirUp: 'up',
         legLineColors: 'line colors',
         modeLine: 'by line', modeClass: 'by class',
         clsHs: 'high-speed', clsSemi: 'semi-high-speed', clsConv: 'conventional',
         legWidth: 'passengers / day',
-        legLines: 'lines',
         legThickness: 'line thickness',
         legFloor: 'log scale above',
         scaleLog: 'log', scaleLinear: 'linear',
@@ -312,7 +297,7 @@ const STR = {
         aboutTitle: 'about',
         aboutBody: `<h2>what this shows</h2><p>Every segment of Korea's intercity rail network, drawn at a thickness proportional to the passengers who ride it. A <b>line</b> is a named route in Korail's yearbook; a <b>segment</b> is the track between two consecutive stations on it.</p><p><b>Left click</b> to highlight a line, and click it again to drill into one segment. <b>Right click</b> goes straight to a segment. <b>Esc</b> clears.</p>
 <h2>these numbers are reconstructed</h2><p>Korea publishes no per-segment passenger figures. The <b>철도통계연보</b> gives boardings and alightings at each station, split by direction, and passenger totals per line — but nothing per segment.</p><p>Each line's segment loads are rebuilt from those station counts: order the stations along the track, then cumulate boardings minus alightings inward from the far terminus. Where a line junctions at both ends there is no clean anchor, so the level comes from the line's published 통과인원 instead, and only the shape comes from the station counts. Published train counts per section pin down where traffic can and cannot step on or off at a junction.</p><p>One line is drawn from the published total alone. 경원선 runs no train the station counts can be attributed to, so there is nothing to cumulate, and its 용산–청량리 figure is the line's 통과인원 for {y} rather than a reconstruction. Its segments say so when you hover them.</p><p>So these are <b>derived figures, not measured ones</b>, and they are more reliable on some lines than others. The two directions are built from disjoint columns of the source, so where 하행 and 상행 disagree on a segment, the reconstruction is straining.</p>
-<h2>direction</h2><p><b>both</b> sums the two directions — the usual way a flow map reads. <b>down</b> (하행) is travel away from a line's 기점, <b>up</b> (상행) back towards it. Selecting a segment shows both.</p>
+<h2>direction</h2><p>Thickness is both directions added together. Selecting a segment shows them separately: <b>down</b> (하행) is travel away from a line's 기점, <b>up</b> (상행) back towards it.</p>
 <h2>line thickness scale</h2><p>The <b>log scale above</b> slider sets where thickness switches from linear to logarithmic. Set it <b>high</b> to separate the busy high-speed lines from each other. Set it <b>low</b> to see the quiet rural lines at all.</p>
 <h2>data sources</h2><p>Passengers: <b>철도통계연보</b> (Korail, {y}) — 역별 승하차, 선별 통과인원, 선구별 운행횟수.</p><p>Two commuter services are not in that yearbook and come from Korail's 광역수송 수송통계 board instead, which publishes boardings and alightings at every station of every 광역철도 line each month. Those are the Donghae Line between Bujeon and Taehwagang, and the ITX-Cheongchun between Yongsan and Chuncheon. Both are modelled the way the city lines are, and both are fitted to a trip length the yearbook publishes for the line.</p><p><b>Station bubbles</b> show boardings plus alightings per day, with area proportional to traffic. Intercity bubbles are published yearbook counts. Intracity bubbles use the station margins behind each city's weekday model; Seoul's coverage varies by operator, while Busan, Daejeon and Gwangju use published gates.</p><p>Geometry: OpenStreetMap named <code>railway=rail</code> ways, chained station to station and rescaled to the yearbook's 영업거리.</p><p>Method and its limits: <a href="https://github.com/anitagarden/maps">the project README</a>.</p>`,
     },
@@ -320,13 +305,10 @@ const STR = {
         h1: '한국 철도 수송량',
         sub1: '선 굵기 = 하루 이용객',
         subWarn: '구간 수치는 공표값이 아니라 복원값',
-        legDirection: '방향',
-        dirBoth: '양방향', dirDown: '하행', dirUp: '상행',
         legLineColors: '노선 색',
         modeLine: '노선별', modeClass: '등급별',
         clsHs: '고속', clsSemi: '준고속', clsConv: '일반',
         legWidth: '이용객 (명/일)',
-        legLines: '노선',
         legThickness: '선 굵기',
         legFloor: '로그 전환 기준',
         scaleLog: '로그', scaleLinear: '선형',
@@ -354,7 +336,7 @@ const STR = {
         aboutTitle: '이 지도에 대하여',
         aboutBody: `<h2>무엇을 그린 지도인가</h2><p>한국 일반철도·고속철도의 모든 역간 구간을, 그 구간을 지나는 이용객 수에 비례한 굵기로 그렸다. <b>노선</b>은 철도통계연보의 선명, <b>구간</b>은 그 위 인접한 두 역 사이의 선로다.</p><p><b>왼쪽 클릭</b>으로 노선을 선택하고, 한 번 더 누르면 그 구간으로 들어간다. <b>오른쪽 클릭</b>은 바로 구간 선택. <b>Esc</b>로 해제.</p>
 <h2>이 수치는 복원한 값이다</h2><p>한국은 구간별 수송량을 공표하지 않는다. <b>철도통계연보</b>에는 역별 승하차(상·하행 구분)와 선별 통과인원이 있을 뿐, 구간별 수치는 없다.</p><p>여기 실린 값은 그 역별 수치로부터 되짚어 만든 것이다. 역을 선로 순서대로 놓고, 반대편 종점에서 안쪽으로 승차－하차를 누적한다. 양 끝이 모두 분기역인 노선은 기준으로 삼을 종점이 없어, 수준은 선별 통과인원에서 가져오고 모양만 역별 수치에서 얻는다. 분기역에서 어느 구간에 열차가 붙고 떨어질 수 있는지는 선구별 운행횟수로 고정했다.</p><p>한 노선만은 공표 수치를 그대로 썼다. 경원선은 역별 승하차로 집계할 수 있는 열차가 없어 누적할 것이 없으므로, 용산–청량리 값은 복원값이 아니라 {y}년 선별 통과인원 그 자체다. 해당 구간에 커서를 올리면 그렇게 적혀 있다.</p><p>따라서 이 값들은 <b>측정값이 아니라 유도값</b>이며, 노선에 따라 신뢰도가 다르다. 상행과 하행은 원자료의 서로 다른 열에서 따로 만들어지므로, 두 값이 어긋나는 구간일수록 복원이 무리한 곳이다.</p>
-<h2>방향</h2><p><b>양방향</b>은 두 방향의 합 — 흐름 지도를 읽는 보통의 방식이다. <b>하행</b>은 기점에서 멀어지는 방향, <b>상행</b>은 기점으로 돌아오는 방향. 구간을 선택하면 둘 다 표시된다.</p>
+<h2>방향</h2><p>선 굵기는 두 방향의 합이다. 구간을 선택하면 방향별로 따로 표시된다. <b>하행</b>은 기점에서 멀어지는 방향, <b>상행</b>은 기점으로 돌아오는 방향이다.</p>
 <h2>선 굵기 스케일</h2><p><b>로그 전환 기준</b> 슬라이더는 굵기가 선형에서 로그로 바뀌는 지점을 정한다. <b>높이면</b> 붐비는 고속선끼리의 차이가 벌어지고, <b>낮추면</b> 한산한 지방 노선도 눈에 보인다.</p>
 <h2>자료</h2><p>이용객: <b>철도통계연보</b>(한국철도공사, {y}) — 역별 승하차, 선별 통과인원, 선구별 운행횟수.</p><p>광역전철 두 노선은 연보에 실리지 않아 한국철도공사 광역수송 수송통계 게시판의 월별 역별 승하차 자료로 그렸다. 동해선 부전－태화강과 ITX-청춘 용산－춘천이다. 두 노선 모두 도시철도 모형과 같은 방식으로 추정했고, 감쇠는 연보가 노선별로 공표한 평균 수송거리에 맞췄다.</p><p><b>역 버블</b>은 하루 승차＋하차이며 넓이가 이용객에 비례한다. 일반철도 원은 연보 공표값이다. 도시철도 원은 각 평일 모형의 역별 합계로, 부산·대전·광주는 공표 게이트 수치이고 수도권은 운영기관에 따라 측정 범위가 다르다.</p><p>선형: OpenStreetMap의 선명이 붙은 <code>railway=rail</code>, 역과 역을 잇고 연보의 영업거리에 맞춰 보정.</p><p>방법과 그 한계: <a href="https://github.com/anitagarden/maps">프로젝트 README</a>.</p>`,
     },
@@ -505,28 +487,14 @@ function clsLabel(cls) {
     return cls === 'hs' ? S.clsHs : cls === 'semi' ? S.clsSemi : S.clsConv;
 }
 
-// ─────────────────────────── direction (data view) ───────────────────────
-// every feature carries down / up (annual, by direction) and daily
-// ((down+up)/365). the two directions come from disjoint columns of the
-// yearbook, so they are genuinely separate views, not a split of one number.
-let dirMode = 'both';                 // 'both' | 'down' | 'up'
-function valueExpr() {
-    if (dirMode === 'down') return ['coalesce', ['get', 'daily_down'], ['/', ['get', 'down'], 365]];
-    if (dirMode === 'up')   return ['coalesce', ['get', 'daily_up'], ['/', ['get', 'up'], 365]];
-    return ['get', 'daily'];
-}
-function segValue(p) {                // JS-side equivalent — tooltips, panel, sort
-    if (dirMode === 'down') return p.daily_down ?? (p.down || 0) / 365;
-    if (dirMode === 'up')   return p.daily_up ?? (p.up || 0) / 365;
-    return p.daily;
-}
-function setDirMode(m) {
-    if (m === dirMode) return;
-    dirMode = m;
-    applyWidths();
-    buildLegend();
-    renderInfo();
-}
+// ───────────────────────────── the drawn value ────────────────────────────
+// Every feature carries down / up (annual, by direction) and daily
+// ((down+up)/365), and the map draws daily: both directions together. There
+// was a both / down / up toggle; a reader never used it, so it went. The
+// segment panel shows the two directions side by side instead, since they come
+// from disjoint columns of the yearbook and their gap is still worth seeing.
+function valueExpr() { return ['get', 'daily']; }
+function segValue(p) { return p.daily; }   // JS-side equivalent — tooltips, panel, sort
 
 // ───────────────────────────── width scale ───────────────────────────────
 const NOSVC_COLOR = '#69727e';   // track this map cannot put a rider figure on;
@@ -580,8 +548,8 @@ function logTopMap(s, mulMax, sliderMax) {
 const thickMap  = s => logTopMap(s, THICK_MUL_MAX,  THICK_SLIDER_MAX);
 const bubbleMap = s => logTopMap(s, BUBBLE_MUL_MAX, BUBBLE_SLIDER_MAX);
 
-// width is computed GPU-side straight from the feature's own counts — so a knee,
-// thickness or direction change is only a paint-property swap, never a geometry
+// width is computed GPU-side straight from the feature's own counts — so a knee
+// or thickness change is only a paint-property swap, never a geometry
 // re-upload. rendered width = zoomFactor · (MIN_W + m · W_RANGE · t).
 function tExpr() {
     const c = () => ['min', W_CEIL, ['max', 1, valueExpr()]];
@@ -1019,8 +987,6 @@ map.on('load', async () => {
         tip.style.display = 'block';
         tip.style.left = (pt.x + 14) + 'px';
         tip.style.top = (pt.y + 14) + 'px';
-        const dirNote = dirMode === 'down' ? ' · ' + S.tipDown
-                      : dirMode === 'up'   ? ' · ' + S.tipUp : '';
         // Track the map cannot put a rider figure on shows what runs there
         // instead. The figure exists — it is the fit's residual, 9 to 120 a day
         // — but quoting it would answer a question the map cannot answer.
@@ -1049,7 +1015,7 @@ map.on('load', async () => {
                 ? S.stubTo.replace('{n}', lineLabel(p.stub)) : stnLabel(p.to)}</div>` +
             `<div class="ri">${Math.round(segValue(p)).toLocaleString()} ${S.perday}</div>` +
             (p.stub ? `<div class="meta">${S.stubNote.replace('{n}', lineLabel(p.stub))}</div>` : '') +
-            `<div class="meta">${Number(p.km).toFixed(1)} ${S.km}${dirNote}</div>` +
+            `<div class="meta">${Number(p.km).toFixed(1)} ${S.km}</div>` +
             // A segment split at a junction with no platform: the two halves
             // share a name, so the heavier one has to say why it is heavier.
             // What joins at a flying junction is a service, not a station. The
@@ -1144,7 +1110,7 @@ map.on('load', async () => {
     map.getCanvasContainer().addEventListener('contextmenu', (ev) => ev.preventDefault());
 
     applyWidths();
-    buildLegend();   // the line roster needs allFeats
+    buildLegend();   // the grey swatch and the bubble controls depend on what loaded
     loadingDone();
 });
 
@@ -1259,13 +1225,11 @@ function setLineSelection(p) {
     selected = { mode: 'line', line: p.line, color: p.color };
     applySelection();
     renderInfo();
-    markRoster();
 }
 function setSegmentSelection(p) {
     selected = { ...p, mode: 'segment' };
     applySelection();
     renderInfo();
-    markRoster();
 }
 // right-click handler — toggles a segment off when clicking the same one again
 function selectSegment(p) {
@@ -1273,22 +1237,11 @@ function selectSegment(p) {
         && selected.from === p.from && selected.to === p.to) { clearSelection(); return; }
     setSegmentSelection(p);
 }
-// legend roster click — selects the whole line
-function selectLineByName(ln) {
-    if (selected && selected.mode === 'line' && selected.line === ln) { clearSelection(); return; }
-    const f = allFeats.find(x => x.properties.line === ln);
-    if (f) setLineSelection(f.properties);
-}
 function clearSelection() {
     if (!selected) return;
     selected = null;
     applySelection();
     document.getElementById('info').style.display = 'none';
-    markRoster();
-}
-function markRoster() {
-    document.querySelectorAll('#legend .rrow').forEach(el =>
-        el.classList.toggle('on', !!selected && el.dataset.line === selected.line));
 }
 
 // ─────────────────────────── colour mode ─────────────────────────────────
@@ -1317,15 +1270,14 @@ function renderInfo() {
     const head = `<div class="ipline" style="color:${selected.color}">${lineLabel(selected.line)}</div>`;
 
     if (selected.mode === 'segment') {
-        // both-directions view shows the split too: the two are built from
-        // disjoint columns of the yearbook, so their gap is the honest read on
-        // how hard the reconstruction is working here.
-        const split = dirMode === 'both'
-            ? `<div class="iprow"><span>${S.tipDown}</span>` +
-                  `<b>${Math.round(selected.daily_down ?? (selected.down || 0) / 365).toLocaleString()}</b></div>` +
-              `<div class="iprow"><span>${S.tipUp}</span>` +
-                  `<b>${Math.round(selected.daily_up ?? (selected.up || 0) / 365).toLocaleString()}</b></div>`
-            : '';
+        // the two directions: they are built from disjoint columns of the
+        // yearbook, so their gap is the honest read on how hard the
+        // reconstruction is working here.
+        const split =
+            `<div class="iprow"><span>${S.tipDown}</span>` +
+                `<b>${Math.round(selected.daily_down ?? (selected.down || 0) / 365).toLocaleString()}</b></div>` +
+            `<div class="iprow"><span>${S.tipUp}</span>` +
+                `<b>${Math.round(selected.daily_up ?? (selected.up || 0) / 365).toLocaleString()}</b></div>`;
         // The panel quotes the same figure the tooltip refuses to, so it has to
         // refuse it in the same cases — otherwise clicking a grey segment gets
         // the rider count hovering it was careful not to give.
@@ -1399,9 +1351,8 @@ function metroNote(line) {
 
 function scenarioNote(p) {
     if (!p.estimated || p.daily_low == null) return '';
-    const prefix = dirMode === 'both' ? 'daily' : 'daily_' + dirMode;
-    const low = Math.round(p[prefix + '_low']).toLocaleString();
-    const high = Math.round(p[prefix + '_high']).toLocaleString();
+    const low = Math.round(p.daily_low).toLocaleString();
+    const high = Math.round(p.daily_high).toLocaleString();
     return `<div class="meta">${lang === 'ko' ? '가정별 범위 (신뢰구간 아님)' : 'Scenario range (not a confidence interval)'}: ${low} – ${high}</div>`;
 }
 
@@ -1410,14 +1361,8 @@ window.addEventListener('keydown', (e) => { if (e.key === 'Escape') clearSelecti
 // ───────────────────────────── interface ─────────────────────────────────
 function buildLegend() {
     const S = STR[lang];
-    let html = `<span class="close" id="lg-close" title="hide">×</span>` +
-        `<div class="hd">${S.legDirection}</div>` +
-        `<div class="modetoggle">` +
-        `<span id="dir-both" class="${dirMode === 'both' ? 'on' : ''}">${S.dirBoth}</span>` +
-        `<span id="dir-down" class="${dirMode === 'down' ? 'on' : ''}">${S.dirDown}</span>` +
-        `<span id="dir-up" class="${dirMode === 'up' ? 'on' : ''}">${S.dirUp}</span>` +
-        `</div>`;
-    html += `<div class="hd" style="margin-top:7px">${S.legLineColors}</div>` +
+    let html = `<span class="close" id="lg-close" title="hide">×</span>`;
+    html += `<div class="hd">${S.legLineColors}</div>` +
         `<div class="modetoggle">` +
         `<span id="cm-line" class="${colorMode === 'line' ? 'on' : ''}">${S.modeLine}</span>` +
         `<span id="cm-class" class="${colorMode === 'class' ? 'on' : ''}">${S.modeClass}</span></div>`;
@@ -1446,21 +1391,6 @@ function buildLegend() {
             `<span class="val" id="floorVal">${fmtFloor(knee)}</span></div>` +
             `<input id="floorSlider" type="range" min="${KNEE_MIN}" max="${KNEE_MAX}" step="0.01" value="${knee}"></div>`;
 
-    // the roster IS the palette: every colour the map draws is named here.
-    // sorted by the line's busiest segment, so the map's boldest lines lead.
-    const roster = rosterRows();
-    if (roster.length) {
-        html += `<div class="roster"><div class="hd">${S.legLines}</div><div class="rlist">`;
-        for (const r of roster) {
-            const on = selected && selected.line === r.line ? ' on' : '';
-            html += `<div class="rrow${on}" data-line="${r.line}">` +
-                    `<span class="sw" style="background:${r.color}"></span>` +
-                    `<span class="nm">${lineLabel(r.line)}</span>` +
-                    `<span class="vl">${r.greyed ? '—' : fmtCompact(r.peak)}</span></div>`;
-        }
-        html += `</div></div>`;
-    }
-
     if (hasStations) {
         html += `<div class="stsec"><div class="hd">${S.toggleStations}</div><div class="strow">` +
                 `<input type="checkbox" id="st-toggle"${showStations ? ' checked' : ''}>` +
@@ -1470,16 +1400,10 @@ function buildLegend() {
     document.getElementById('legend').innerHTML = html;
 
     document.getElementById('lg-close').onclick = () => setLegendOpen(false);
-    document.getElementById('dir-both').onclick = () => setDirMode('both');
-    document.getElementById('dir-down').onclick = () => setDirMode('down');
-    document.getElementById('dir-up').onclick = () => setDirMode('up');
     document.getElementById('cm-line').onclick = () => setColorMode('line');
     document.getElementById('cm-class').onclick = () => setColorMode('class');
     document.getElementById('sm-log').onclick = () => snapKnee('log');
     document.getElementById('sm-lin').onclick = () => snapKnee('linear');
-    document.querySelectorAll('#legend .rrow').forEach(el => {
-        el.onclick = () => selectLineByName(el.dataset.line);
-    });
 
     const sl = document.getElementById('thickSlider');
     sl.oninput = () => {
@@ -1511,32 +1435,6 @@ function buildLegend() {
     }
 }
 
-// one row per line actually present in the data, coloured as the map colours it
-// A line drawn grey end to end has no rider figure to lead with — 경춘선's peak
-// is 13 a day, which is the fit's residual and not a readership. It sorts last
-// and shows a dash. Partly-grey lines keep their number: 경원선's 20.5k on
-// 용산–청량리 is the line's published 통과인원, and only the stretch past
-// 청량리 is greyed.
-function rosterRows() {
-    const by = new Map();
-    for (const f of allFeats) {
-        const p = f.properties;
-        const v = segValue(p);
-        const cur = by.get(p.line);
-        if (!cur) by.set(p.line, { line: p.line, peak: v, color: p.color, greyed: true });
-        const e = by.get(p.line);
-        if (v > e.peak) { e.peak = v; e.color = p.color; }
-        if (!p.service) e.greyed = false;
-    }
-    return [...by.values()].sort((a, b) =>
-        (a.greyed - b.greyed) || (b.peak - a.peak));
-}
-function fmtCompact(v) {
-    const n = Math.round(v);
-    if (n >= 10000) return Math.round(n / 1000) + 'k';
-    if (n >= 1000) return (n / 1000).toFixed(1) + 'k';
-    return String(n);
-}
 
 // The yearbook edition is carried in segments.geojson rather than written into
 // the copy, so switching year does not leave a dozen strings claiming 2022.
@@ -1579,8 +1477,10 @@ function applyLang() {
         ? '<h2>부산: 실험적 추정</h2><p>1–4호선은 2026년 7월 월–금 역별 승하차를 바탕으로 추정했다. OD는 관측값이 아니다. 이동시간에 따른 중력모형을 역별 합계에 맞추고, 환승 5분을 포함한 최단경로에 배정했다. 10·20·30분 감쇠 가정 중 20분을 표시한다. 가정에 따라 구간 수치가 크게 달라지며 툴팁 범위는 신뢰구간이 아니다. 동해선 전철은 제외했다. 부산김해경전철은 별도의 자료 기간과 모형으로 표시한다. 선형은 역 사이 직선이다.</p>'
         : '<h2>Busan: experimental estimates</h2><p>Lines 1–4 use July 2026 Monday–Friday station gate counts. <b>OD pairs are estimated, not observed.</b> A travel-time gravity model is balanced to station totals and routed by shortest time with a five-minute transfer penalty. The map uses a 20-minute decay scale; 10- and 30-minute scenarios give the range in segment tooltips. The median range spans 39% of the central estimate. These are assumption tests, not confidence intervals or independent validation. Donghae suburban rail is excluded; Busan–Gimhae LRT appears as a separate model with a different reference period. Geometry is straight between stations. <a href="https://www.data.go.kr/data/3057229/fileData.do">Gate counts</a> · <a href="https://www.data.go.kr/data/3033564/fileData.do">Distances and times</a></p>');
     document.getElementById('aboutpanel').insertAdjacentHTML('afterbegin', lang === 'ko'
-        ? '<h2>수도권 도시철도</h2><p>seoulriders가 포함하는 22개 노선의 모형 평일 통행량이다. 2023년 OD를 평일 승하차에 맞추고 열차에 배정한 뒤 시간대와 양방향을 합산했다. 급행 이용객도 통과하는 각 완행 역간 구간에 합산했다. 일반철도는 ${dataYear}년 연평균이므로 기준일이 다르다. 역 원은 평일 OD의 출발·도착 합계이며 환승 때 다시 세지 않는다. 도시철도 방향은 역 코드 순서(2호선 순환 구간 포함)를 따른다. 일부 선형은 직선이다.</p>'
-        : '<h2>Seoul metropolitan rail</h2><p>All 22 lines covered by seoulriders show <b>modelled weekday</b> flows: 2023 OD pairs reweighted to weekday counts, assigned to trains, then summed across hours and directions. Express riders are added to every intermediate local segment they pass. Intercity figures are <b>${dataYear} annual daily averages</b>; the periods differ. Station bubbles show the weekday OD station margins, counting each trip once at its origin and destination rather than again at transfers. Metro directions follow station-code order, including the Line 2 ring closure. Some track shapes fall back to straight lines.</p>');
+        // template literals, not quotes: these two carry ${dataYear}, which a
+        // single-quoted string printed literally
+        ? `<h2>수도권 도시철도</h2><p>seoulriders가 포함하는 22개 노선의 모형 평일 통행량이다. 2023년 OD를 평일 승하차에 맞추고 열차에 배정한 뒤 시간대와 양방향을 합산했다. 급행 이용객도 통과하는 각 완행 역간 구간에 합산했다. 일반철도는 ${dataYear}년 연평균이므로 기준일이 다르다. 역 원은 평일 OD의 출발·도착 합계이며 환승 때 다시 세지 않는다. 도시철도 방향은 역 코드 순서(2호선 순환 구간 포함)를 따른다. 일부 선형은 직선이다.</p>`
+        : `<h2>Seoul metropolitan rail</h2><p>All 22 lines covered by seoulriders show <b>modelled weekday</b> flows: 2023 OD pairs reweighted to weekday counts, assigned to trains, then summed across hours and directions. Express riders are added to every intermediate local segment they pass. Intercity figures are <b>${dataYear} annual daily averages</b>; the periods differ. Station bubbles show the weekday OD station margins, counting each trip once at its origin and destination rather than again at transfers. Metro directions follow station-code order, including the Line 2 ring closure. Some track shapes fall back to straight lines.</p>`);
     const nt = document.getElementById('notice');
     if (nt.classList.contains('show')) nt.textContent = S.noGeom.replace('{n}', noGeomCount);
     buildLegend();
@@ -1610,7 +1510,7 @@ document.getElementById('aboutbtn').onclick = (e) => {
 document.getElementById('aboutpanel').addEventListener('click', (e) => e.stopPropagation());
 // Clicking anywhere outside the panel or the toggle closes the panel.
 document.addEventListener('click', () => { if (aboutOpen) setAboutOpen(false); });
-// On a phone the legend is 589px of an 844px screen and it opens over 수도권 --
+// On a phone the legend is 379px of an 844px screen and it opens over 수도권 --
 // the densest part of the map and the reason to look at it at all. Start it
 // closed below the same breakpoint the CSS already uses; ctrlbtn is then the
 // way back in, which is what it is for. Desktop is unchanged.
