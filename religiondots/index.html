@@ -157,6 +157,9 @@ sitemap: false
       content: ''; display: inline-block; width: 8px; height: 8px; margin-right: 5px;
       vertical-align: 1px; background: #2d2d2d; border: 1px solid #444; border-radius: 2px;
     }
+    /* §15's line names its own mark the same way: an empty square in the outline's colour, which
+       follows the selection and so is set inline as --est. */
+    .lit-note.est-note::before { background: none; border: 1.5px solid var(--est, #8a8a8a); }
     #scope-bar a { color: #89b4fa; text-decoration: none; cursor: pointer; flex: none; }
 
     /* ---- §10.4, the composition bar --------------------------------------
@@ -593,7 +596,25 @@ sitemap: false
       width: 9px; height: 9px; border-radius: 50%; flex: none; margin-top: 3.5px;
     }
     .maplibregl-popup-content .key.ring { background: none; border: 1.5px solid; }
+    .maplibregl-popup-content .key.outline { background: none; border: 1.5px solid; border-radius: 2px; }
     .maplibregl-popup-content .sub { color: #999; }
+    /* §10.6's country card: the country's name, then one line per religion with the same 9px
+       key, its name and its share. `.in` is a division of the selected religion, indented one
+       legend level, and `.cm-c` is the quiet line saying what those shares are of. */
+    .maplibregl-popup-content .cm { min-width: 150px; }
+    .maplibregl-popup-content .cm b { display: block; color: #fff; font-weight: 600; margin-bottom: 2px; }
+    .maplibregl-popup-content .cm-r { display: flex; align-items: flex-start; gap: 6px; }
+    .maplibregl-popup-content .cm-r.in, .maplibregl-popup-content .cm-c { padding-left: 11px; }
+    .maplibregl-popup-content .cm-l { flex: 1; min-width: 0; }
+    .maplibregl-popup-content .cm-p {
+      flex: none; padding-left: 12px; color: #bbb; font-variant-numeric: tabular-nums;
+    }
+    /* A fixed width, so the shares to its left keep one right edge down the card. */
+    .maplibregl-popup-content .cm-n {
+      flex: none; min-width: 3.2em; text-align: right; color: #999;
+      font-variant-numeric: tabular-nums;
+    }
+    .maplibregl-popup-content .cm-c { color: #999; margin-top: 1px; }
     /* The tip is a triangle made of borders, so its colour goes on whichever side faces the
        content. A corner anchor leans on the same side as the edge anchor it is a corner of. */
     .maplibregl-popup-anchor-top .maplibregl-popup-tip,
@@ -927,6 +948,12 @@ sitemap: false
         <span class="segs" id="rings-seg"><span class="seg" data-v="0">hidden</span><span class="seg" data-v="1">shown</span></span>
       </div>
 
+      <!-- §15, the national estimate layer. Off by default, Anita 2026-09-14. -->
+      <div class="ctl" id="ctl-est" title="Shown: with a religion selected, a country gets an outline in that religion's colour where a national figure for it exists and the map does not already draw it as dots. Point at or tap inside an outlined country for the figure and its source. Outlines leave while one country is selected and fade as you zoom in. Most figures are Pew Research Center's 2020 estimates; a few smaller groups come from national surveys entered one at a time. The line under the religion's name gives the total.">
+        <span class="cl">national estimates</span>
+        <span class="segs" id="est-seg"><span class="seg" data-v="0">hidden</span><span class="seg" data-v="1">shown</span></span>
+      </div>
+
       <div class="ctl" id="ctl-none">
         <span class="cl">show non-religions</span>
         <span class="segs" id="none-seg"><span class="seg" data-v="0">hidden</span><span class="seg" data-v="1">shown</span></span>
@@ -1142,6 +1169,9 @@ let dotScale = 1;          // the size slider, a multiplier on every mark's radi
    cost of leaving them off is that a religion too small to draw is absent from the map AND from
    the legend. One word here if that should change. */
 let showRings = false;
+/* §15's layer: off by default, and its two files are not fetched until the reader turns it on. */
+let showEstimates = false;
+let EST = null;            // estimates.json, once it has loaded
 
 /* §7's confidence treatment, second attempt — and it is a MODE, not a modifier, which is the
    whole reason it survives where the 2026-09-04 desaturation did not. The palette is untouched:
@@ -1654,8 +1684,13 @@ const ROOT_ORDER = [
   'islam',
   'judaism',
   'hinduism',
-  'sikhism',
   'buddhism',
+  /* SIKHISM AFTER BUDDHISM, AND JAINISM AFTER SIKHISM. Anita, 2026-09-15: "lets reorder sikhism
+     to be after buddhism, and jainism after sikhism". Jainism leaves the hue-ordered tail for it,
+     so seven named religions now lead. ROOT_KEEP still holds the first six, so Jainism can fold
+     into the small-religions bucket where it is small (spec §10.0b). */
+  'sikhism',
+  'jainism',
   // §6.3a's grey family, contiguous. Ordered person -> instrument:
   'unaffiliated',      // No religion — asked, and said none
   'secular',           // Secular and ethical — asked, and stated a position
@@ -1693,22 +1728,21 @@ const ROOT_ORDER = [
   'bon',                  // 208
   // indigenous, folk and nature traditions
   'paganism',             // 237
-  'afrodiasporic',        // 247
   'indigenous',           // 258
   'rastafari',            // 266
+  'afrodiasporic',        // 276, and 247 until 2026-09-14
   // Western metaphysical and new religious movements
   'hebrewisraelite',      // 270
   'unitarianuniversalist',// 274
   'scientology',          // 279
-  'esoteric',             // 284
+  'esoteric',             // 244 since 2026-09-15 (was 284), so out of hue order here
   'newthought',           // 290
-  'spiritualism',         // 297
-  // the two that belong to no block
+  'spiritualism',         // 290, and 297 until 2026-09-15
+  // the one that belongs to no block (Jainism was here too, until 2026-09-15)
   'druze',                // 304
-  'jainism',              // 310
   // East Asian, running up into Shinto and Buddhism
   'caodaism',             // 316
-  'eastasiannew',         // 320
+  'eastasiannew',         // 228 since 2026-09-15 (was 315), so out of hue order here
   'confucianism',         // 323
   'unification',          // 325
   'chinesefolk',          // 327
@@ -1717,6 +1751,10 @@ const ROOT_ORDER = [
 ];
 const ROOT_RANK = {};
 ROOT_ORDER.forEach((id, i) => { ROOT_RANK[id] = i; });
+/* §10.7: a family in the hue-ordered tail with fewer people than this, across the whole archive,
+   sorts after the ones with more. Filled at load from counts.json's world tally, in people. */
+const SMALL_ROOT_PEOPLE = 1e6;
+const ROOT_WORLD_PEOPLE = {};
 
 function buildTree() {
   KIDS = {}; ROOTS = [];
@@ -1769,8 +1807,20 @@ function buildTree() {
      ever shows the ones it has. */
   const declIdx = {};
   NODES.forEach((n, i) => { declIdx[n.id] = i; });
-  ROOTS.sort((a, b) =>
-    (ROOT_RANK[a] ?? 1e6) - (ROOT_RANK[b] ?? 1e6) || declIdx[a] - declIdx[b]);
+  /* §10.7 — FAMILIES UNDER A MILLION PEOPLE SORT AFTER THE REST. Anita, 2026-09-14: "i feel like
+     'chinese religions' being 40m people should probably not require scrolling all the way
+     down ... i think we could drop all the <1m religions down to the bottom." Hue order had put
+     Chinese religions (41m) 56th of 60 rows in the all-countries legend, after Bahá'í (237k),
+     Caodaism (807k) and Unitarian Universalism (636k).
+
+     The six and the grey run keep their places. Only the hue-ordered tail splits: the families
+     of a million people or more, then the rest, each half still in hue order. THE SIZE IS THE
+     WHOLE ARCHIVE'S AND NOT THE VIEW'S (`ROOT_WORLD_PEOPLE`), so a family sorts the same way in
+     every country and the order stays one a reader can learn, which is what §10.0 fixed it for. */
+  const small = id => (ROOT_RANK[id] ?? 1e6) > ROOT_RANK.other
+    && (ROOT_WORLD_PEOPLE[id] || 0) < SMALL_ROOT_PEOPLE;
+  ROOTS.sort((a, b) => small(a) - small(b)
+    || (ROOT_RANK[a] ?? 1e6) - (ROOT_RANK[b] ?? 1e6) || declIdx[a] - declIdx[b]);
 }
 
 function subtree(id, acc = []) {
@@ -1880,8 +1930,12 @@ const FOLD_MIN = 2;
    statement about reading rather than about pixels: *"if you scroll to the top then the
    bottom, you should be able to see everything within those 2 views."* Two screenfuls is the
    most a person can hold as one list; past that the legend stops being a thing you have read
-   and becomes a thing you search. */
-const BUDGET_SCREENS = 2;
+   and becomes a thing you search.
+
+   2.5 SINCE 2026-09-14 — Anita: "also we can widen the '2 times scroll cap' to like 2.5x." The
+   §10.7 headings had just taken the all-countries legend to 52 rows under a 58-row budget, with
+   the cut already at its floor, so the extra half screen goes to the views that still fold. */
+const BUDGET_SCREENS = 2.5;
 /* A floor under the budget, for the window that is too short to hold a legend at all — a phone
    in landscape leaves about seven rows of sheet. Without it the budget goes to nothing, the
    ladder runs to its ceiling and every family collapses into a bucket, which is not a smaller
@@ -1982,8 +2036,34 @@ const ROOT_KEEP = new Set([
   'christianity', 'islam', 'judaism', 'hinduism', 'sikhism', 'buddhism',
 ]);
 
+/* §6.10d — A FAMILY OF 200,000 PEOPLE OR MORE KEEPS ITS ROW, whatever the ladder has reached.
+   Anita, 2026-09-14, looking at "25 small religions" in the all-countries view: "could we
+   actually use a more forgiving threshold for this. i feel like we should be showing bahai and
+   afro diasporic and pagan and shinto. perhaps we set the threshold at 1m." The ladder had
+   climbed to 7e-4 of 6.3bn, about 4.4m people, so the bucket held East Asian new religions
+   (4.1m) and Spiritualism (3.7m) beside Modekngei's thousand. §6.10b lets one cut serve
+   children and families alike, and a family row is worth far more than a child row.
+
+   A CAP ON THE CUT, NOT A NEW CUT. A flat 1m would fold every family outside the six in a small
+   country (Estonia is 1.3m people), which is §6.10a's reason for a view-relative denominator.
+   So families still fold on the ladder's share of the view, and the cap only stops that share
+   reaching past this many people, which in practice means the world view and the largest
+   countries. Children keep climbing the ladder, so the legend still shrinks where it can and
+   runs long where it cannot.
+
+   200,000 AND NOT THE 1m SUGGESTED, because Bahá'í is 237k and would have stayed folded at 1m.
+   At 200k the all-countries bucket goes from 25 to 14, all under 160k (Druze, 153k, is the
+   largest); Daoism, Caodaism and Unitarian Universalism come back along with the four named. */
+const ROOT_FOLD_MAX_PEOPLE = 200000;
+
+/** The cut a family folds under, in dots: the ladder's share of the view, capped (§6.10d). */
+function rootFoldCut(share, t) {
+  return Math.min(t * share, ROOT_FOLD_MAX_PEOPLE / DOT_VALUE);
+}
+
 function foldRoots(share, t) {
-  const small = ROOTS.filter(id => (counts[id] || 0) < t * share
+  const cut = rootFoldCut(share, t);
+  const small = ROOTS.filter(id => (counts[id] || 0) < cut
     && !ROOT_KEEP.has(id) && !pinned(id));
   return small.length >= FOLD_MIN ? new Set(small) : new Set();
 }
@@ -1995,7 +2075,8 @@ function foldKids(share, t) {
     const ks = KIDS[par];
     if (ks.length < FOLD_MIN) continue;
     if (!(counts[par] || 0)) continue;
-    const small = ks.filter(k => (counts[k] || 0) < t * share && !pinned(k));
+    const grouped = legendGroups(par);          // §10.7: a heading's members never fold
+    const small = ks.filter(k => (counts[k] || 0) < t * share && !pinned(k) && !grouped.has(k));
     if (small.length >= FOLD_MIN) m.set(par, new Set(small));
   }
   return m;
@@ -2038,11 +2119,17 @@ function legendRows(split) {
       const g = new Set(vis.map(k => LINEAGE_GROUP[k]).filter(Boolean));
       if (g.size > 1) n += g.size;
     }
-    for (const k of vis) walk(k);
+    for (const it of legendSeq(id, vis)) visit(it);
     const f = FOLDED.get(id);
     if (f && f.size) n++;
   };
-  for (const r of drawnRoots()) walk(r);
+  // a heading (§10.7) is one row, and its members are rows only while it is open
+  const visit = (it) => {
+    if (typeof it === 'string') { walk(it); return; }
+    n++;
+    if (OPEN_GROUPS.has(it.key)) for (const k of it.ids) walk(k);
+  };
+  for (const it of legendSeq(null, drawnRoots())) visit(it);
   if (ROOT_FOLD.size) n++;
   return n;
 }
@@ -2123,6 +2210,94 @@ function drawnRoots() {
   return ROOT_FOLD.size ? ROOTS.filter(r => !ROOT_FOLD.has(r)) : ROOTS;
 }
 
+/* §10.7 — HEADINGS: A RUN OF ROWS THE LEGEND SHOWS AS ONE CLOSED LINE. Anita, 2026-09-14, on the
+   all-countries legend: "u just have to scroll down too far to see some big religions ... maybe
+   we introduce another layer between christianity L1 and L2? something that groups the 2
+   orthodoxes, the 4 restorationists". At L2 Christianity was twenty of sixty rows.
+
+   A LEGEND LAYER, NOT A TAXONOMY ONE, and the same kind of thing as §6.10c's bucket: no node, no
+   id in the tiles, nothing to select, and nothing about the map changes. Two kinds:
+
+   - CHRISTIANITY'S ONE-COLOUR LINEAGE GROUPS, with nothing selected and at L2 only. §6.14 already
+     draws each of them as one colour there and kept the rows; the rows now sit inside a heading
+     that carries that colour, so the key still shows every colour on the map. (A heading whose
+     members have come apart, through a hand-set colour, shows a blank mark instead.) Catholic
+     keeps a row of its own because OVERVIEW_ARC gives it a colour of its own, and `No single
+     line` is not one colour and is not grouped. At L3 the members' children take colours of
+     their own, so the headings go.
+   - ROOT_GROUPS, a hand list of families that read as one kind of answer. Their members keep
+     their own colours, so the heading's mark is blank, as on §6.10c's bucket.
+
+   A MEMBER OF A HEADING DOES NOT FOLD (§6.10). Inside a closed heading it costs no row, so folding
+   it buys nothing, and folding would trade its group's colour for the family's yellow: Hussites
+   are drawn as Reformation rather than as "Christian". Only two or more present members make a
+   heading; a lone member is an ordinary row. */
+
+/* What the heading says. LINEAGE's labels are names for a line of descent and several are long
+   for a row that ellipsises (`Separatist and believers' churches`); a heading names the churches
+   a reader will be looking for. The tooltip lists every member. */
+const GROUP_LABEL = {
+  // "Orthodox and Eastern churches" is cut off at 159px. The Church of the East (22k people)
+  // is not Orthodox, and is named in the tooltip and on its own row inside.
+  'christianity / Ancient communions':            'Orthodox churches',
+  'christianity / Reformation':                   'Reformation',
+  "christianity / Separatist and believers' churches": 'Baptist and Anabaptist',
+  'christianity / Pietist and Wesleyan revival':  'Methodist and Pentecostal',
+  'christianity / Restorationist and adventist':  'Restorationist and Adventist',
+  'christianity / Locally founded churches':      'Locally founded churches',
+};
+
+/* Families that share a heading. `unrecorded` and `unenumerated` are both a fact about the source
+   rather than an answer anyone gave: Germany's church-tax register never asked, and Myanmar's
+   census never counted. `unknown` stays out, because Vietnam's and China's people were asked
+   (§6.3a-ii), and it is the largest row on the map. */
+const ROOT_GROUPS = [
+  { key: 'unasked', label: 'Not asked or not counted', ids: ['unrecorded', 'unenumerated'],
+    note: 'People the source never asked (Religion not recorded) or never counted (Not '
+      + 'enumerated). Each keeps its own colour on the map.' },
+];
+
+/* Which headings the reader has opened. The panel is rebuilt on every change, so this has to
+   outlive the render; `legendRows` counts an open heading's members. */
+const OPEN_GROUPS = new Set();
+
+/** The headings under `par` (null for the families), as member id -> {key, label, ids, note}. */
+function legendGroups(par) {
+  const byId = new Map();
+  const add = (g) => { if (g.ids.length >= 2) for (const id of g.ids) byId.set(id, g); };
+  if (par === null) {
+    const vis = new Set(drawnRoots());
+    for (const g of ROOT_GROUPS) {
+      const ids = g.ids.filter(id => vis.has(id));
+      if (!ids.some(pinned)) add({ ...g, key: 'root / ' + g.key, ids });
+    }
+    return byId;
+  }
+  if (scope || depth !== 2 || !LINEAGE_PARENTS.has(par)) return byId;
+  const runs = new Map();
+  for (const k of KIDS[par] || []) {
+    const key = par + ' / ' + LINEAGE_GROUP[k];
+    if (!LINEAGE_GROUP[k] || !OVERVIEW_FLAT[key] || OVERVIEW_ARC[k]) continue;
+    if (!runs.has(key)) runs.set(key, []);
+    runs.get(key).push(k);
+  }
+  for (const [key, ids] of runs)
+    add({ key, label: GROUP_LABEL[key] || LINEAGE_GROUP[ids[0]], ids });
+  return byId;
+}
+
+/** The legend's order under `par`: the visible ids, with each heading standing in for its
+    members at the place of the first of them. Items are ids or heading objects. */
+function legendSeq(par, vis) {
+  const groups = legendGroups(par), seen = new Set(), out = [];
+  for (const id of vis) {
+    const g = groups.get(id);
+    if (!g) { out.push(id); continue; }
+    if (!seen.has(g)) { seen.add(g); out.push(g); }
+  }
+  return out;
+}
+
 /* The categories drawn at the moment: descend `depth` levels below the scope, stopping early
    at anything with no children. This decides what the panel keys and which nodes carry a
    colour of their own; it no longer decides the colours themselves, which are fixed per node
@@ -2145,7 +2320,8 @@ function drawnSet(sc = scope, dep = depth) {
        whose divisions are an artefact of how it was counted is ONE category in the overview,
        at any depth. Not while it is the selection, though — asking for it is exactly the
        case where the rows are worth having. */
-    const leaf = OVERVIEW_LEAF.has(id) && !(sc && (sc === id || sc.startsWith(id + '.')));
+    const leaf = (OVERVIEW_LEAF.has(id) && !(sc && (sc === id || sc.startsWith(id + '.'))))
+      || (!sc && dep <= 2 && d === 1 && !OVERVIEW_DIVIDED_L2.has(id));
     if (d >= dep || kids.length === 0 || leaf) { out.push(id); return; }
     /* A branch above the cut that has dots ON it is a drawn category too, and gets its own
        hue beside its children rather than falling through to grey. It has to: those dots
@@ -2211,7 +2387,12 @@ const ROOT_HSL = {
      in the overview (OVERVIEW_ARC), and every degree Sikhism gives back is a degree they
      are not squeezed into. */
   buddhism:              [356,  86, 45],
-  sikhism:               [  0, 100, 70],   // #ff6666
+  /* LIGHTER AGAIN, L 70 -> 77. Anita, 2026-09-15: "lets recolor sikh to #ff8a8a, main issue here
+     is contrast with hindu". Same hue and saturation; the lightness the search above found to be
+     the separation, taken further. Hinduism 31.1 -> 42.2, Buddhism 27.4 -> 45.1, contrast 6.6 ->
+     8.3. What it costs: Shinto 42.4 -> 24.8, flagged in the all-countries view only, since no
+     country draws both at size; Ravidassia 26.8 -> 20.9, under every size threshold. */
+  sikhism:               [  0, 100, 77],   // #ff8a8a  Anita, 2026-09-15
   /* MOVED TO #fb6b28 ON 2026-09-07 — Anita, pairing it with the ancient communions in the
      same breath: "maybe lets make the orthodox a little more yellowish like #b86c2e and
      hinduism a tad more reddish and lighter like #fb6b28 so that they're not so close".
@@ -2342,8 +2523,25 @@ const ROOT_HSL = {
      Nepal. Anita's rule, 2026-09-06: collisions are fine where the pair does not
      co-occur. */
   bon:                   [208,  84, 72],   // #7cbcf4
-  judaism:               [214,  92, 58],
-  shinto:                [334,  84, 70],
+  /* SLIGHTLY GREENER. Anita, 2026-09-15: "we can also shift jewish slightly greener i think to make
+     a bit more room". Was [214, 92, 58], #3187f6. Five degrees, saturation and lightness kept, and
+     it measures lighter against the background for it (contrast 5.32 -> 6.21) because the hue
+     turned toward cyan. The room is for East Asian new religions in Brazil, which draws both: the
+     best blue there cleared 25.7 with Judaism at 214 and 30.4 with it at 209.
+
+     NOTHING JUDAISM IS DRAWN BESIDE COMES UNDER 25 except the new pale Esoteric, 22.7 in the US
+     and Brazil (dE00 18.3), which is that move's cost rather than this one's. `secular` goes
+     56.2 -> 47.0, and `bon`, in the all-countries view only, is 26.7.
+
+     ITS BAND CAME DOWN WITH IT, 197-211 -> 197-207 (see ROOT_BAND), because a band must not
+     contain its own root's hue. Only the top moved, so the teal region's stop at 193 holds. */
+  judaism:               [209,  92, 58],   // #3197f6  Anita, 2026-09-15
+  /* SHINTO LIGHTER AND PINKER — Anita, 2026-09-14: "we can move shinto a bit lighter to pink".
+     Was [334, 84, 70], #f372aa. Six degrees toward pink, eight points lighter and a little less
+     saturated, which is what pink is. Measured against the rest of the palette as it stood:
+     Daoism 26.3, the `other` swatch 25.4, Mahayana 28.6, contrast 9.3. Before it, Shinto was
+     5.5 from Daoism in the all-countries view and 20.0 from Mahayana in Japan. */
+  shinto:                [340,  70, 78],   // #eea0ba — Anita
   /* CONFUCIANISM MOVED INTO THE WEDGE ON 2026-09-07 and its entry is down there, beside
      Daoism and Chinese religions. It was at hue 150 — a pale green, twelve degrees off
      Islam — and the long note that used to sit here spent itself justifying that: the wedge
@@ -2564,7 +2762,34 @@ const ROOT_HSL = {
   parody:                [ 32,  14, 46],
   secular:               [204,  14, 52],   // #738896
   unchurched:            [264,  24, 58],
-  other:                 [228,   6, 72],   // #b3b5bc
+  /* `other` LEAVES THE GREY — Anita, 2026-09-14: "maybe recolor 'other' to pale blue-purple or
+     something? it's misleading to have it grey as it does reflect actual religions, just not
+     sure what". The ramp above already ordered it as "an actual religion, which the source
+     did not name", and NOT_A_RELIGION_IDS already leaves it out; its colour was the one place
+     still saying otherwise.
+
+     A PALE LILAC RATHER THAN A BLUE-PURPLE, because the blue-purple is taken by two things it
+     is drawn beside. hsl(250,40,76) measures dE 15.6 to `afrodiasporic` (Brazil, 961 dots
+     against 2,233) and 17.6 to `unchurched` (the US, 1,124 against 47k); every probe between
+     hue 248 and 265 failed the same pair. Searched over hue 230-280 against every root that
+     shares a country with it, this is the best that still reads as blue-leaning:
+     `zoroastrianism` 27.6 (India), `afrodiasporic` 29.2, `secular` 29.4, `unchurched` 30.0.
+     It was 19.7 to `secular` as a grey, so every pair it has gets better. Contrast 11.4,
+     louder than before, and `other` is 1,893 dots at its largest, so that costs nothing. */
+  /* BLUER AND TWICE AS COLOURFUL, THE SAME DAY — Anita: "for 'other' color i feel like it
+     should be significantly more saturated and a little bluer. could we move afro-diasporic to
+     a significantly deeper purple". Afro-diasporic did move (see its note), and it was not the
+     only thing in the way: the all-religions view draws the indigenous family's children as
+     pale lavenders (Laos's traditional religions, 2,038 dots), so a saturated lavender at hue
+     258 lands dE 7.1 from them in Laos, and US Judaism's pale blues block the other side.
+
+     Measured on the rows actually drawn, the most colourful choice that clears 25 everywhere
+     is #cacbfc, only 1.6x the lilac's Lab chroma and nearly white. This is 2x (30.6 against
+     15.7), a light periwinkle, with four pairs under 25, all in the all-religions view:
+     Orthodox Judaism 22.6 and Conservative 23.8 in the US (941 and 417 dots against 1,124),
+     Laos's traditional religions 22.7 (2,038 against 133) and Reconstructionist 24.4 (39).
+     Every root pair clears 25. #aabefd is the step further: chroma 34, Laos at 20.1. */
+  other:                 [228, 100, 86],   // #b8c6ff
   /* ---- THE WEDGE, 234→330 ------------------------------------------------------------
      Rebuilt 2026-09-07 morning (the three findings below), then rearranged the same evening
      when Anita read the result: "chinese religions (it seems mostly a thing in western
@@ -2641,19 +2866,69 @@ const ROOT_HSL = {
 
   // -- indigenous, folk and nature traditions: the blue-violet Anita asked for
   paganism:              [237,  86, 64],   // #545cf2
-  afrodiasporic:         [247,  76, 80],   // #aea5f3
   indigenous:            [258,  86, 62],   // #7d4bf1  the largest family in the wedge
   rastafari:             [266,  78, 67],   // #a369ec
+  /* AFRO-DIASPORIC GOES DEEP PURPLE, NEXT TO INDIGENOUS — Anita, 2026-09-14: "could we move
+     afro-diasporic to a significantly deeper purple, somewhat closer to the indigenous and
+     traditional religions?" It was #aea5f3 at hue 247, a pale lavender, which is the space
+     she wanted `other` to have.
+
+     SEARCHED ON WHAT IT DRAWS, AND THAT IS MOSTLY ITS CHILDREN: Umbanda (1,272 dots) and
+     Candomblé (539) in Brazil and Vodou (178) in Haiti, each a BAND_TIERS step of this colour.
+     Against every row drawn beside them in the all-religions view nothing comes within dE 27.6,
+     and Revival Zion against Rastafari in Jamaica goes 14.1 -> 38.1. The children come out
+     Umbanda #7f42ae, Candomblé #9c75b8 and Vodou #a883be; Umbanda is contrast 2.96, just over
+     the floor, and that is what stops this going any darker. As a root it is 29.9 from
+     `indigenous` (Brazil, 99 dots) and 34.5 from Spiritism (Brazil, 3,343). The one root pair
+     under 25 is Rastafari, 36 dots against 29 in Jamaica, and the rows actually drawn there
+     are the 38.1 above. */
+  afrodiasporic:         [276,  45, 51],   // #8d4aba
   // -- Western metaphysical, spiritist and new religious movements
   hebrewisraelite:       [270,  86, 59],   // #953df0  drawn in no country yet
   unitarianuniversalist: [274,  76, 71],   // #bd7ded
   scientology:           [279,  78, 65],   // #bb60eb
-  esoteric:              [284,  86, 50],   // #b212ed
+  /* ESOTERIC GOES BLUE-PURPLE, AND PALE. Anita, 2026-09-15, on the pinks being crowded: "perhaps
+     we shift esoterics to blue-purple between pagan and indigenous". Was [284, 86, 50], #b312ed.
+     Hue 244 is between `paganism` 237 and `indigenous` 258; the line stays here in the list.
+
+     PALE BECAUSE NOTHING ELSE BETWEEN THE TWO CLEARS. The US draws all three (Pagan 1,502,
+     Esoteric 866, Indigenous 226) and they are already 15.6 apart. Searched over hue 238-256: at
+     their lightness every candidate lands dE00 6-8 from one of them, and darker falls under the
+     contrast floor, because a blue-violet at L 50 is dim. The pale tier is the only one with room
+     and the best of it reaches dE 23.6 (#a9a3ff); this gives up half a point of that, 23.1, for a
+     better CIEDE2000 floor, 11.4 against 9.3.
+
+     WHAT IT COSTS, on what check_overview draws:
+       esoteric / spiritualism    21.7 -> over 32   Brazil 110 against 3,343, and the US
+       esoteric / indigenous      25.0 -> over 32   the US and Brazil
+       esoteric / judaism         over 32 -> 22.7   the US, 866 against 5,580 (dE00 18.3); Brazil
+       esoteric / unitarian       over 32 -> 23.1   the US, 573 (dE00 11.4)
+       esoteric / unchurched      over 32 -> 23.8   the US, 2,793 (dE00 14.6)
+       esoteric / other           over 32 -> 24.7   the US 1,124 and Brazil 961 (dE00 11.4)
+     More pairs under 25 than before and none as tight in CIEDE2000: the old worst was dE00 9.3
+     against Indigenous. Contrast 3.79 -> 7.57. */
+  esoteric:              [244,  80, 78],   // #a09af4  Anita, 2026-09-15
   newthought:            [290,  76, 68],   // #d76feb
-  spiritualism:          [297,  78, 57],   // #de3ce7
+  /* SLIGHTLY BLUER. Anita, 2026-09-15: "then shift spiritualism and jainism slightly bluer". Was
+     [297, 78, 57], #de3ce7. Seven degrees, saturation and lightness kept, and 290 is as far as it
+     goes: at 287 Brazil's Indigenous pair (99 dots against 3,343) drops under 25.
+       spiritualism / new thought     23.9 -> 23.9   the US, 151 against 93 (dE00 7.8 -> 9.8)
+       spiritualism / indigenous   over 32 -> 26.2   Brazil, the US, Mexico, the Philippines
+       spiritualism / afrodiasporic   34.5 -> 31.2   Brazil
+       spiritualism / druze           13.8 -> 16.4   the all-countries view only
+     Its 21.7 against Esoteric went with Esoteric's move. Contrast 5.32 -> 4.78. */
+  spiritualism:          [290,  78, 57],   // #ca3ce7  Anita, 2026-09-15
   // -- the two that belong to no block: the lone dharmic family, and the teal's exception
   druze:                 [304,  86, 42],   // #c70fbb  see the teal note above
-  jainism:               [310,  76, 66],   // #ea66d4
+  /* SLIGHTLY BLUER, the same sentence as Spiritualism's (Anita, 2026-09-15). Was [310, 76, 66],
+     #ea66d4. Five degrees, and the UK sets the limit: it draws both (24 dots against 33), and with
+     Spiritualism at 290 the pair is 25.3 here and 23.3 at 303.
+       jainism / spiritualism   27.3 -> 25.3   the UK (dE00 8.7 -> 11.0)
+     In the all-countries view it gains on Confucianism (16.7 -> 22.3), Caodaism (14.3 -> 17.3),
+     Unification (19.2 -> 23.8) and Daoism (23.2 -> 28.9), and loses on New Thought (14.2 -> 10.5),
+     Druze (24.5 -> 21.8) and Unitarian Universalism (24.0 -> 22.7); no country view reports any of
+     those. Contrast 6.63 -> 6.73. */
+  jainism:               [305,  76, 66],   // #ea66df  Anita, 2026-09-15
   /* -- East Asian, running up into Shinto at 334 and Buddhism at 356.
      `eastasiannew` LEADS THE BLOCK — Anita, 2026-09-07: "maybe lets put korean/japanese new
      religions to be a bit bluer, as they are regional". It is also the family that made the
@@ -2665,7 +2940,29 @@ const ROOT_HSL = {
      THE ROOT-LEVEL SEARCH CANNOT SEE THIS, which is worth writing down: it scores families
      against families, and this is a family CHILD against a neighbouring family. The signal
      only appears in tools/check_overview.py. */
-  eastasiannew:          [315,  86, 44],   // #d1108f  its children take 313-317
+  /* EAST ASIAN NEW RELIGIONS JUMP TO THE BLUE. Anita, 2026-09-15: "then maybe we also jump east
+     asian new religions over to a blueish one similar to pagan and nature". Was [315, 86, 44],
+     #d110a0 (the old comment on this line said #d1108f). It no longer leads this block; it sits
+     in the blue beside `paganism` [237, 86, 64], and stays on this line so the note above still
+     reads in place.
+
+     TAIWAN IS WHAT ASKED FOR IT: Chinese religions against it measured 21.2 (dE00 7.6), 11,617
+     dots against 600, among Daoism and Mahayana in the same pinks. By check_overview, before and
+     after:
+       Taiwan   Chinese religions 21.2, Daoism 31.6, Mahayana 43.2    -> all over 32, dE00 over 16
+       Japan    Unification 15.9                                      -> over 32
+       Korea    Confucianism 27.8, the child-band collision above     -> over 32
+       Brazil   the one country with blue neighbours: Afro-diasporic 29.2, Indigenous 29.2 (dE00
+                13.3), Esoteric 30.8, Judaism 31.3
+     SIMILAR TO PAGAN, NOT THE SAME: dE 14.9 (dE00 7.1), in the all-countries view only, because no
+     country draws both. Judaism moving greener the same day is what makes the room in Brazil:
+     the best blue here cleared 25.7 with Judaism at 214 and 30.4 with it at 209. Its children now
+     take 226-230, and Brazil's Japanese new religions against Indigenous at L3 is 23.5 (146 and
+     99 dots). Contrast 3.85 -> 4.55.
+
+     WHAT IT DOES NOT FIX IN TAIWAN: Mahayana against Daoism, 22.0 over 3,321 and 3,257 dots.
+     Neither moved. */
+  eastasiannew:          [228,  90, 64],   // #5172f6  Anita, 2026-09-15; its children take 226-230
   caodaism:              [319,  78, 58],   // #e740c0
   confucianism:          [323,  76, 68],   // #eb6fbc
   unification:           [325,  78, 59],   // #e845a5  drawn in no country yet
@@ -2737,7 +3034,9 @@ const PIN = {
   'christianity.catholic.latin':     [38, 83, 56],   // MERGE_OWN keeps these identical
 
   // ---- Separatist and believers' churches: yellow-green
-  'christianity.anabaptist':         [72, 54, 67],
+  /* SATURATED, 54 -> 96. Anita, 2026-09-15: "also anabaptist #dbfc5a", after the faded Christian
+     `unspecified` #dbc96b (FOCUS_UNSPECIFIED) came out dE 15.9 from it. Measured in spec §6.16. */
+  'christianity.anabaptist':         [72, 96, 67],   // #dbfc5a — Anita, 2026-09-15
   'christianity.baptist':            [83, 72, 54],
   'christianity.friends':            [94, 82, 40],
   'christianity.plymouth':           [105, 54, 67],
@@ -2771,7 +3070,12 @@ const PIN = {
   /* Moved 2026-09-07 to clear Protestant-unspecified's blue — see its note below. */
   'christianity.hussite':            [236, 70, 56],
   'christianity.lutheran':           [262, 86, 68],
-  'christianity.reformed':           [244, 80, 76],  // #9791f3 — Anita
+  /* BRIGHTER AND BLUER. Anita, 2026-09-15: "lets make reformed #4e5ff9 and protestant unspec
+     #6c84e5", after the faded Protestant-unspecified came out dE 10.4 from the old #9791f3
+     [244, 80, 76] with Christianity selected, in nine countries. What it costs: Lutheran, the
+     pair the note above says has to work, 30.1 -> 18.6 (the US, Madagascar, South Africa,
+     Brazil, Hungary), and Anglican 54.5 -> 20.4 (the UK). Measured in spec §6.16. */
+  'christianity.reformed':           [234, 93, 64],  // #4e5ff9 — Anita, 2026-09-15 (was #9791f3)
   'christianity.anglican':           [255, 88, 60],  // #6c3ff3 — Anita
 
   // ---- No single line: purple -> magenta
@@ -2779,6 +3083,26 @@ const PIN = {
   'christianity.nondenominational':  [303, 88, 56],
   'christianity.maori':              [313, 48, 74],
   'christianity.filipinoindependent':[322, 86, 60],
+  /* AFRICAN INSTITUTED CHURCHES GO PINK, BESIDE THEIR OWN GROUP — Anita, 2026-09-14: "recolor
+     african churches to pink? or something else. currently their purple is quite similar to
+     the lutheran purple." The node had no pin, so the wheel gave it hsl(260,82,40): Lutheran's
+     hue at half the lightness, and contrast 1.88, under the floor, on 14,158 dots in South
+     Africa, the largest Christian row there.
+
+     ON DOCTRINE ITS NEAREST NEIGHBOUR IS PENTECOSTAL, AND THAT IS WHY IT IS NOT NEAR IT. Most
+     of what the node counts is the Zionist, Apostolic and Aladura churches, which are healing
+     and prophecy churches of the Pentecostal kind; the older Ethiopian churches came out of
+     the Methodist and Anglican missions. But Pentecostal is drawn beside it at size in exactly
+     the two countries that carry it, 8,483 against 14,158 in South Africa and 2,582 against
+     6,112 in Zimbabwe, and a colour near Pentecostal's would blur the one contrast those maps
+     have. Pink is where LINEAGE already files it, with the Maori and Filipino churches above.
+
+     SEARCHED over hue 290-10 against every row drawn with it in bj, ke, sz, za and zw: dE 38.4
+     to its nearest (Non-denominational, South Africa), 38.9 to Other Christian, which is the
+     pink-red it shares four countries with. Contrast 8.2. In the all-countries legend it is
+     16.6 from Trinitarian Pentecostal, which is Angola only, where this node draws no dots of
+     its own. */
+  'christianity.africaninstituted':  [314, 95, 74],  // #fc7ede
   'christianity.messianic':          [331, 54, 74],
   'christianity.other':              [340, 78, 58],
   /* PROTESTANT-UNSPECIFIED IS ITS OWN BLUE — Anita, 2026-09-07, and it reverses her own call
@@ -2811,7 +3135,12 @@ const PIN = {
      it used to be blue. Reformed and Anglican did not move. If the trade reads wrong on the
      map, the lever is Lutheran's lightness rather than its hue — it is the only node here
      with room left underneath it. */
-  'christianity.protestant':         [228, 97, 66],   // #5476fc — Anita's colour
+  /* FADED, SATURATION 97 -> 70. Anita, 2026-09-15: "lets also fade protestant unspecifeid to
+     #6c84e4", alongside the family shades in FOCUS_UNSPECIFIED, then #6c84e5 when Reformed moved
+     to clear it. This node has no children, so it is always an unspecified answer and its colour
+     changes here rather than there. Hue and lightness kept. The overview still draws it in the
+     Reformation swatch (PIN_OVERVIEW). */
+  'christianity.protestant':         [228, 70, 66],   // #6c84e5 — Anita, 2026-09-15 (was #5476fc)
   /* EVANGELICAL-UNSPECIFIED SITS WITH THE BELIEVERS' CHURCHES, not in the residual block —
      Anita, 2026-09-05: "maybe evangelical same color as... baptist? not sure what it's
      closest to". Baptist is the right guess and Kenya is why the node exists: KNBS's
@@ -2867,40 +3196,10 @@ const PIN = {
      the pair on screen wins. */
   'christianity.evangelical':        [113, 54, 57],  // #64cd56 — Anita
 
-  /* MALAWI'S MERGED CELL WAS A SHADE OF `Other Christian`, WHICH IS THE ONE THING IT IS NOT
-     — 2026-09-08. Anita, looking at the Christianity scope over Malawi: "we should maybe make
-     adventist,baptist, or apostolic category (only exists in malawi) green to match the
-     adventist / baptist / apostolic colors?"
-
-     She had found a real contradiction rather than a preference. `christianity.
-     sdabaptistapostolic` is not in this table, so the generated wheel put it in the `No
-     single line` lineage group with `christianity.other` — and in the Christianity scope that
-     group is hue 340, so the two came out **#ba124b and #e74078: the same hue, differing only
-     in lightness.** The node's own entry in branches.py argues at length that sending these
-     1,644,829 people to `christianity.other` "would file them as bodies with no branch when
-     the truth is that they have three". The tree said one thing and the palette said the
-     other, in the only view where the distinction is visible.
-
-     THE OVERVIEW HAD ALREADY GOT IT RIGHT, which is what makes the fix obvious: there the
-     node draws **#b0eb24, hue 78**, a yellow-green, because the overview divides
-     Christianity's own band rather than the full wheel. So the swatch was changing colour
-     between two views of the same dots. This pin is that same #b0eb24, which makes the node
-     view-independent — the one thing a reader can carry from the overview into the scope.
-
-     AND HUE 78 IS WHERE ITS THREE CONSTITUENTS LIVE. On this wheel Baptist is 83, Pentecostal
-     160 (the reading of Malawi's `Apostolic` that is not African-instituted) and Adventist
-     190; 78 sits at the head of that arc, one step below Baptist, in the yellow-greens the
-     believers' churches occupy. It is not the midpoint of the three — the midpoint is 136 and
-     that is Methodist's slot — and it does not need to be: what the colour has to say is
-     *these are Sabbath-and-prophecy churches, not a residual*, and the green end says it.
-
-     NOTHING IT IS DRAWN BESIDE IS NEAR IT. The node exists in one country, and Malawi's scope
-     draws five other categories: Catholic 38, Pentecostal 160, Presbyterian 250, Anglican 255
-     and Other Christian 340. The nearest is Catholic at 40° of hue. Anabaptist (72) and
-     Baptist (83) are 6° and 5° away and neither is drawn in Malawi at all, so the pair a
-     reader compares is never the pair that is close — the same trade `christianity.
-     evangelical` takes in the note above. */
-  'christianity.sdabaptistapostolic':[ 78, 83, 53],  // #b0eb24 — the overview's own swatch
+  /* `christianity.sdabaptistapostolic` had a pin here from 2026-09-08, #b0eb24, so Malawi's
+     merged SDA/Baptist/Apostolic cell would not read as a shade of Other Christian. The node
+     was retired into `christianity.other` on 2026-09-14 (spec §10.7), which is the reading the
+     pin existed to avoid; Anita's call, for a node that only one census cell ever reached. */
 
   /* ISLAM'S SUBTREE IS AUTHORED TOO, 2026-09-08 — Anita, after Türkiye: "maybe lets tweak the
      colors for if we have just islam selected ... maybe have sunni take the yellow-green
@@ -2973,6 +3272,12 @@ const PIN = {
   'islam.shia':                      [202, 80, 46],
   'islam.shia.jaafari':              [218, 68, 66],
   'islam.ahmadiyya':                 [325, 54, 67],
+
+  /* NICHIREN IS YELLOW — Anita, 2026-09-14. The allocator gave it #1228ba: contrast 1.8 on the
+     map, dimmer than `unaffiliated`, which is dim on purpose, and 23 degrees from Mahayana's own
+     unspecified #1268ba at the same saturation and lightness. Japan's opened Mahayana legend
+     showed two near-identical dark blues, one of them the least visible dots on the map. */
+  'buddhism.mahayana.nichiren':      [52, 90, 55],
 };
 
 /* The same escape hatch for the overview band (§6.9). Separate table because the two palettes
@@ -3063,6 +3368,74 @@ const PIN_OVERVIEW = {
      OVERVIEW_FLAT, where the colour and the reason for its new value both live. */
   'christianity.protestant':          [46.4, 89.5, 73.9],  // #f8dd81 — Anita, with the group
   'christianity.evangelical':         [61, 98, 48],
+  /* HELD WHERE IT WAS BEFORE §10.7 TOOK TWO MEMBERS OUT OF `No single line` — 2026-09-14. United
+     moved to Reformation and Malawi's merged node was retired, so the group's four remaining
+     drawn members each got a wider slice and Non-denominational slid from hue 71.4 to 70.2,
+     toward the Methodist-and-Pentecostal swatch at 66. check_overview measured the US pair
+     (21,095 dots against 9,750 Methodists and 6,007 Pentecostals) going from dE 11.2 to 10.8.
+     This is the colour it had, so the move changed nothing here. 11.2 is still under the
+     checker's within-family 12; that was true before and is not fixed by this. */
+  'christianity.nondenominational':   [71.4, 75, 66],
+
+  /* MAHAYANA A LITTLE GREYER — Anita, 2026-09-14: "we can maybe make mahayana a little bit less
+     saturated. just a tad grayer". Mahayana has five children, so Vajrayana lands six places
+     after it in BAND_TIERS' period-six cycle and takes the SAME tier: hsl(342.0,62,53) against
+     hsl(343.3,62,53), dE 1.9, over 62,427 and 6,307 dots in China. Hue and lightness are kept
+     exactly and only saturation comes down, 62 -> 45, the smallest step that clears the
+     in-family bar of 12: Vajrayana 15.7. Zen falls from 8.8 to 7.9, but Zen is Mahayana's own
+     child and only has a colour of its own at depth 3; Shingon rises past 12. WHAT IT COST, by
+     check_overview before and after: Hong Kong's Mahayana against Daoism drops under the
+     cross-family 25, to 22.0 (974 and 287 dots), and Japan's against Shinto, already under it,
+     goes from 22.1 to 20.0; Shinto's move lighter the same day (ROOT_HSL) then took that pair
+     past 25 and off the report. Saturation 40 measured better on every one of those (Daoism 23.3,
+     Shinto 21.8, Zen 12.4) and 35 clears 25 on both, at the price of a greyer Mahayana than
+     "a tad". Pinning holds Mahayana still when the
+     next node lands under Buddhism; it does not hold Vajrayana, and check_overview is what
+     would say so. */
+  'buddhism.mahayana':                [342.0, 45, 53],   // #bd5172 — Anita
+
+  /* VAJRAYANA MORE SATURATED AND DARKER — Anita, 2026-09-14, after the Mahayana pin above: "maybe
+     lets also bring up vajrayana saturation if thats possible, and bing it back a bit darker".
+     It was the generated hsl(343.3,62,53), the tier it shared with Mahayana; earlier the same day
+     it had been dark enough to sit under the contrast floor (1.8). Now 344/95/46: the nearest
+     Buddhist colours drawn beside it are Buddhism's own row at 17.2 and Theravada further off,
+     and contrast is 4.0. Won Buddhism (12.2) and the Vietnamese rows are closer on paper and
+     never share a country with it. By check_overview before and after: China loses both of its
+     Vajrayana findings (Chinese religions 21.9, Theravada 12.0) and the US its Theravada pair,
+     and at depth 3 Shingon (7.7) and Zen (9.5) clear. The one cost is Sikhism in the
+     all-countries view, 24.3 to 22.1, which no single country's view reports. */
+  'buddhism.vajrayana':               [344, 95, 46],     // #e50641 — Anita
+
+  /* FOUR ISLAMIC ROWS HELD AT THEIR PRE-SENEGAL COLOURS, 2026-09-15. Filing Senegal's orders
+     (Qadiriyya, Tijaniyya and the Mourides under `islam.sunni`, the Layène beside Bektashi)
+     re-divided Islam's band and moved rows nobody had changed. Against 844a2c7, the commit
+     before Senegal: Shia dE 30.4 (36,889 dots), Bektashi 30.3, Ahmadiyya 22.3, Ja'fari 5.2.
+     Anita wants one colour per category, so these are the old colours pinned back. Ja'fari was
+     not in the request and is pinned because Shia is: with Shia back and Ja'fari not, Türkiye's
+     Hanafi/Ja'fari pair sits at 8.3, and with both back it is its old 13.1. Ibadi also moved
+     (6.2) and is drawn nowhere, so it is left alone. The same move shifted 262 of the 715
+     focus-palette colours by more than dE 1; those are not pinned. */
+  'islam.shia':                       [106, 45, 56],
+  'islam.shia.jaafari':               [106, 66, 40],
+  'islam.bektashi':                   [120, 63, 27],
+  'islam.ahmadiyya':                  [112, 48, 52],
+
+  /* SENEGAL'S FOUR ORDERS, 2026-09-15. Left to the band they came out as one green: Tijaniyya
+     against the Layène 7.9 and Qadiriyya against the Mourides 9.3 in Senegal, and in the
+     all-countries view Tijaniyya 0.6 from Sunni Islam's own row. Searched jointly over hue
+     100-145 (Islam's side of the wheel, above the Christian chartreuse and below the teal
+     region) on CIE76 and CIEDE2000 both, because the first flatters saturated greens: an
+     earlier pick cleared 22.6 in CIE76 and was 5.1 in CIEDE2000. In Senegal now, CIE76 / CIEDE2000:
+       Tijaniyya / Qadiriyya   50.7 / 26.5      Mouride / Qadiriyya   29.0 / 14.5
+       Tijaniyya / Mouride     52.4 / 37.4      Mouride / Layène      47.6 / 16.5
+       Tijaniyya / Layène      45.2 / 34.0      Qadiriyya / Layène    67.5 / 21.9
+     Every other family is over 45. Two costs: Qadiriyya is 14.5 from Islam's own row but only
+     4.4 in CIEDE2000 (806 dots against 353), and Tijaniyya, the largest order, is a dark muted
+     green at contrast 3.4. */
+  'islam.sunni.tijaniyya':            [121, 35, 34],   // #387539
+  'islam.sunni.mouride':              [142, 95, 70],   // #6afb9f
+  'islam.sunni.qadiriyya':            [139, 95, 40],   // #05c742
+  'islam.layene':                     [145, 35, 76],   // #acd7be
 };
 
 /* THE OVERVIEW DRAWS A LINEAGE GROUP AS ONE COLOUR — Anita, 2026-09-05, and it is the
@@ -3294,6 +3667,27 @@ const OVERVIEW_ARC = {
    twenty colours. */
 const OVERVIEW_LEAF = new Set(['other']);
 
+/* AT L2 WITH NOTHING SELECTED, ONLY THESE THREE FAMILIES DIVIDE — §10.7, Anita, 2026-09-14. Every
+   other family is one category there, in its own colour, and starts closed.
+
+   It began as two names. Spiritualism: "i think its silly to expand it just to see 'unspecified'
+   and kardecist." Indigenous and traditional religions: "show the purple dot next to indigenous
+   and traditional religions parent, ofc. we can merge all the colors to one color for this all
+   religions L2 view (theyre already almost the same color)". Then the rule, the same day: "we
+   should start judaism collapsed. also east asian new religions start collapsed. only ones open
+   are christianity, islam and buddhism."
+
+   A list of the three that open rather than of the ones that close, because that is how the rule
+   was given and a family that lands later follows it without being named. It holds in the country
+   views too, so a dot's colour does not change when Auto moves from the world into a country
+   (§6.8). The cost there is real and small: Israel's four observance groups, the US's Jewish
+   movements, Mauritius's Hindu communities and Brazil's Umbanda and Candomblé are one row each at
+   L2. They were tiers of one hue already (ROOT_BAND's notes on Judaism and Hinduism say so and say
+   why), and they come back at L3 or on selecting the family. `other` is different in kind and
+   stays in OVERVIEW_LEAF, one category at every depth. `tools/check_overview.py` reads this set
+   out of this file too. */
+const OVERVIEW_DIVIDED_L2 = new Set(['christianity', 'islam', 'buddhism']);
+
 /* What a flattened group's slice is worth against a group that still divides — see the note
    by ROOT_BAND. Not zero: its members' CHILDREN still divide it, so press + under a
    flattened Reformation and Lutheran's synods still separate from Anglican's provinces. */
@@ -3410,7 +3804,16 @@ const ROOT_BAND = {
      detail is for. Same call as Hinduism's below, and for the same reason: "they seem quite
      similar and if people want to see detail they can click to disperse the colors."
      DO NOT "fix" the dE number by widening this band. */
-  judaism:       [197, 211],
+  /* TOP DOWN FROM 211 TO 207 ON 2026-09-15, because Judaism's root moved from 214 to 209 on
+     Anita's "shift jewish slightly greener", and a band must not contain its own root (see the
+     note below this table). The bottom stays at 197, which is what the teal region's stop at 193
+     is set against. [193, 207] was tried to keep the old width: it did a little better on the
+     US movements against `other` and took Israel's observance rows toward Zoroastrianism in the
+     all-countries view (Dati 17.5 -> 13.2). At [197, 207], by check_overview at L3: Orthodox
+     against `other` in the US 22.3 -> 23.2, Conservative 23.8 -> 24.4, Reconstructionist
+     24.2 -> 23.4; in the all-countries view Dati/Zoroastrianism 17.5 -> 15.5, Hiloni/Bon
+     6.0 -> 7.9. */
+  judaism:       [197, 207],
   buddhism:      [340, 352],   // the three vehicles; Shinto is 334 below and its own root 356 above
 
   /* ISLAM GETS A BAND, 2026-09-08 WITH TÜRKİYE — Anita: "you can expand islam hue band if u
@@ -3486,7 +3889,7 @@ const ROOT_BAND = {
 
 };
 
-/* A BAND MUST NOT CONTAIN ITS OWN ROOT'S HUE, which is why Judaism's runs BELOW 214 and
+/* A BAND MUST NOT CONTAIN ITS OWN ROOT'S HUE, which is why Judaism's runs BELOW 209 (214 until 2026-09-15) and
    Buddhism's below 356 rather than straddling them. A split family draws a row for its own
    dots at the root's exact colour (§6.6's `unspecified`, and it is 30% of Judaism and 60% of
    Buddhism worldwide), so a branch landing on the root hue is a branch that cannot be told
@@ -3751,6 +4154,30 @@ function buildOverview(gkids, rankOf) {
   for (const id in PIN_OVERVIEW) OVERVIEW_COLOR[id] = hsl(...PIN_OVERVIEW[id]);
 }
 
+/* A SELECTED FAMILY'S OWN DOTS DRAW IN A QUIETER SHADE OF IT — Anita, 2026-09-15: "currently we
+   just use the generic christianity color to denote unspecified christianity when we have
+   christianity selected ... lets have this unspecified color be desaturated in some cases, to
+   denote its kinda generic", and then "the unspecified colors should only apply when looking at a
+   specific religion. when looking at all religions we maintain the current group colors".
+
+   So this is the colour of a family's `unspecified` row (§6.6) while that family is the selection
+   and its children are drawn, and nothing else. Unselected, undivided, or in the all-religions
+   view, the family keeps ROOT_HSL's colour. Her four hexes, each the root's own hue with the
+   saturation taken down. The row's swatch shows it, so every colour on the map is still one in
+   the legend. A node with no line here keeps its usual colour on that row. Spec §6.16.
+
+   NOT ONLY FAMILIES. Sunni Islam joined the same day ("sunni unspecified to #7eb536"): it is split
+   whenever Islam is selected, since Islam opens at depth 2 (SCOPE_DEPTH), and its own dots are
+   the row PIN's Sunni note wanted to read like Islam's own. Both are faded now. `paletteFor` asks
+   the same question of any drawn node, so a line here works at any depth. */
+const FOCUS_UNSPECIFIED = {
+  christianity:          [ 50,  61, 64],   // #dbc96b, root #f8dc4f
+  islam:                 [138,  42, 44],   // #419f5d, root #26ba53
+  judaism:               [209,  58, 58],   // #5696d2, root #3197f6
+  buddhism:              [356,  47, 48],   // #b44149, root #d5101d
+  'islam.sunni':         [ 86,  54, 46],   // #7eb536, PIN #81cb20
+};
+
 /* A node BELOW the drawn cut takes its drawn ancestor's colour exactly, rather than a shade
    of it. It used to take a shade, which sounds harmless and was not: at depth 2 in the US,
    93% of the dots on screen were a shade of something whose own legend row sat a level
@@ -3787,8 +4214,15 @@ function paletteFor(sc, dep) {
   const table = sc ? NODE_COLOR : OVERVIEW_COLOR;
   const paint = id => USER_COLOR[id] || table[id];
   const out = {};
-  for (const id of drawnSet(sc, dep))
-    for (const m of subtree(id)) out[m] = paint(id);
+  const drawn = drawnSet(sc, dep);
+  /* The selected family's own dots take FOCUS_UNSPECIFIED once its children are drawn beside
+     them. Painted on the family's whole subtree like any drawn colour, so the children paint
+     over their parts and anything folded under it reads as unspecified too. */
+  const split = sc ? splitOver(new Set(drawn)) : new Set();
+  const paintDrawn = id => USER_COLOR[id]
+    || (split.has(id) && FOCUS_UNSPECIFIED[id] ? hsl(...FOCUS_UNSPECIFIED[id]) : table[id]);
+  for (const id of drawn)
+    for (const m of subtree(id)) out[m] = paintDrawn(id);
   /* A MERGED BRANCH'S OWN DOTS TAKE ITS CHILD'S COLOUR, so §6.6's `unspecified` row and that
      child are one thing on the map as well as in the legend (MERGE_OWN). Applied after the
      loop rather than inside it, because `drawnSet` pushes the parent first and the child
@@ -4220,8 +4654,272 @@ function applyCoverageWash() {
   map.setFilter('coverage-wash', ['in', ['get', 'rg'], ['literal', coverageLit()]]);
 }
 
+// ---------------------------------------------------------------- national estimates, §15
+/* THE FOURTH CELL OF THE DOT AND RING GRAMMAR: a figure for a whole country and no place inside
+   it. Pew's 2020 families wherever Pew counts, plus the hand rows in estimates_hand.py.
+   estimates.py has already applied §15.3's refusal, the `within` subtraction that keeps Alevis out
+   of Pew's Muslims, and the 10,000 floor, so this side draws what it is given and decides nothing.
+
+   OFF BY DEFAULT. Anita, 2026-09-14: *"lets first build this as a toggleable feature. nto enabled
+   by default."* Both files are fetched the first time it is turned on and never before, so the
+   default map pays nothing for it.
+
+   THE INTERIOR ANSWERS AND THE OUTLINE ONLY MARKS. Anita, 2026-09-14, reversing §15.2's stroke
+   target the day it shipped: *"the awkward part is when you mouse over a border and its not clear
+   how to get it to show the country on one side of the border or the other."* A border belongs to
+   two countries, and a stroke on it cannot say which it means. §15.2's objections were to a DWELL
+   over the interior, not to the interior itself: this card comes up at once, a dot under the
+   pointer still wins, and the outline is what tells a reader there is a card to find. The hit
+   layer is an invisible fill. Both layers are hidden by FILTER and never by opacity, because a
+   transparent mark still answers a hover (§4.3). */
+let estLoading = null;
+function loadEstimates() {
+  if (estLoading) return estLoading;
+  estLoading = Promise.all([
+    fetch(DATA_BASE + 'processed/estimates.json').then(r => r.json()),
+    fetch(DATA_BASE + 'processed/estimate_shapes.geojson').then(r => r.json()),
+  ]).then(([est, geo]) => {
+    EST = est;
+    const fill = map.getSource('estimate-shapes'), lines = map.getSource('estimate-lines');
+    if (fill) fill.setData(geo);
+    if (lines) lines.setData(estimateLines(geo));
+    applyPaint(); renderTree();
+  }).catch(() => { estLoading = null; });   // a failed fetch is retried by toggling again
+  return estLoading;
+}
+
+/* Polygons in, lines out. The hover reads the polygons and the drawn outline needs lines, and a line
+   layer drawn straight off Natural Earth's polygons draws their 180° cut as a border down the
+   Pacific, where Russia, Fiji and the United States are split. So a segment lying on the
+   antimeridian is left out of the lines, and stays in the polygons. */
+const EST_SEAM = 179.99;
+function estimateLines(geo) {
+  const features = [];
+  for (const f of geo.features) {
+    const polys = f.geometry.type === 'Polygon' ? [f.geometry.coordinates] : f.geometry.coordinates;
+    const lines = [];
+    for (const poly of polys) for (const ring of poly) {
+      let run = [];
+      for (let i = 1; i < ring.length; i++) {
+        const a = ring[i - 1], b = ring[i];
+        if (Math.abs(a[0]) >= EST_SEAM && Math.abs(b[0]) >= EST_SEAM) {
+          if (run.length >= 2) lines.push(run);
+          run = [];
+          continue;
+        }
+        if (!run.length) run = [a];
+        run.push(b);
+      }
+      if (run.length >= 2) lines.push(run);
+    }
+    if (lines.length) features.push({ type: 'Feature', properties: f.properties,
+                                       geometry: { type: 'MultiLineString', coordinates: lines } });
+  }
+  return { type: 'FeatureCollection', features };
+}
+
+/* Exactly the selected node. A Pew figure for Islam says nothing about Shia, and a Shia figure is
+   not one for Islam either: §6.12's asymmetry again.
+
+   NOTHING WHEN ONE COUNTRY IS THE SUBJECT, whether Auto chose it or the reader did. Anita,
+   2026-09-14: *"have outlines disappear when we have just one country in view (in auto mode or
+   manually)."* The outlines answer a question about the world, like the coverage wash's caption,
+   which also leaves in the one-country view. */
+function estimateLit() {
+  if (!showEstimates || !EST || !scope || country || !EST.world[scope]) return [];
+  return EST.world[scope].shown;
+}
+
+/* §15.6: the selected node's colour from the focus table and not from `colorOf`, which holds the
+   DRAWN categories and need not hold the node itself; select Islam and Sunni and Shia are what is
+   drawn. A hand-set colour still wins, as it does everywhere (§6.11). */
+function estimateColor() {
+  return (scope && (USER_COLOR[scope] || NODE_COLOR[scope])) || '#8a8a8a';
+}
+
+/* HOW MUCH OF THE COUNTRY THE FIGURE IS sets how strong its outline is. Anita's stops, 2026-09-14,
+   interpolated on the logarithm of the share and clamped at both ends. A range uses its upper end:
+   the weight is a picture of the figure, not a number the card has to state. */
+const EST_OPACITY = [[1, 1], [0.1, 0.6], [0.01, 0.3], [0.001, 0.15], [0.0001, 0.05]];
+function estOpacity(share) {
+  if (share >= 1) return 1;
+  for (let i = 1; i < EST_OPACITY.length; i++) {
+    const [s0, o0] = EST_OPACITY[i - 1], [s1, o1] = EST_OPACITY[i];
+    if (share >= s1) return o1 + (Math.log10(share / s1) / Math.log10(s0 / s1)) * (o0 - o1);
+  }
+  return EST_OPACITY[EST_OPACITY.length - 1][1];
+}
+
+/* Full strength to z6.5 and gone by z8.5: the coverage wash's own curve, for its reasons. The
+   question stops being interesting once you are inside a country, and the coarse outline stops
+   being convincing at about the same zoom. Both layers end at the far stop, so a faded country
+   cannot answer a hover either. Anita, 2026-09-14. */
+const EST_FADE = [6.5, 8.5];
+
+function applyEstimates() {
+  if (!map.getLayer('estimate-outline')) return;
+  const lit = estimateLit();
+  const f = ['in', ['get', 'cc'], ['literal', lit]];
+  map.setFilter('estimate-outline', f);
+  map.setFilter('estimate-hit', f);
+  if (!lit.length) return;
+  map.setPaintProperty('estimate-outline', 'line-color', estimateColor());
+  const byShare = ['match', ['get', 'cc']];
+  for (const cc of lit) {
+    const c = EST.countries[cc], e = c.est[scope];
+    byShare.push(cc, estOpacity((e.n !== undefined ? e.n : e.hi) / c.pop));
+  }
+  byShare.push(EST_OPACITY[EST_OPACITY.length - 1][1]);
+  map.setPaintProperty('estimate-outline', 'line-opacity',
+    ['interpolate', ['linear'], ['zoom'], EST_FADE[0], byShare, EST_FADE[1], 0]);
+}
+
+/* A figure, or the range a subtraction or a hand row left, with its share when there is a
+   population to take it of. */
+function estFigure(o, pop) {
+  if (o.n !== undefined) return fmtPop(o.n) + (pop ? ', ' + pctText(o.n / pop) : '');
+  return fmtPop(o.lo) + ' to ' + fmtPop(o.hi)
+    + (pop ? ', ' + pctText(o.lo / pop) + ' to ' + pctText(o.hi / pop) : '');
+}
+
+/* The card for the outline under a point, or null. The share is of Pew's 2020 population for the
+   country, the same total the figure was scaled by, and never of the dots (§15.4). */
+function estimateCardAt(point) {
+  if (!estimateLit().length || !map.getLayer('estimate-hit')) return null;
+  const hit = map.queryRenderedFeatures(point, { layers: ['estimate-hit'] })[0];
+  const cc = hit && hit.properties.cc;
+  const c = cc && EST.countries[cc], e = c && c.est[scope];
+  if (!e) return null;
+  const less = e.less
+    ? ' (not counting ' + e.less.map(id => BY_ID[id] ? BY_ID[id].label : id).join(', ') + ')' : '';
+  const src = e.src === 'pew' ? 'Pew Research Center, ' + e.year : e.source;
+  return `<span class="key outline" style="border-color:${estimateColor()}"></span><span>`
+    + esc(BY_ID[scope].label) + ' · ' + estFigure(e, c.pop) + ' of ' + esc(c.name) + esc(less)
+    + '<br><span class="sub">national figure, not placed on the map · ' + esc(src) + '</span></span>';
+}
+
+/* §10.6 — WHAT THE COUNTRY UNDER THE POINTER IS MADE OF, raised once the pointer has rested on
+   empty ground inside it. Anita, 2026-09-14: *"if we have a religion selected like "islam" and we
+   hover over a country (but not a dot in that country) and stay still for a bit, like 0.5s, we
+   show a tooltip thats like this country is x% islam. and then show breakdown of subcategories"*.
+
+   With a religion selected: that religion as a share of the country, then its divisions as
+   shares of the religion, so Sunni and Shia add up to Islam rather than to the country. With
+   nothing selected: the families as shares of the country. Either way the top CARD_ROWS, stopping
+   early at anything under CARD_MIN of what they are a share of.
+
+   THE ROWS FOLLOW THE TICKBOXES AND THE PERCENTAGES DO NOT, §10.3's rule. A hidden row leaves the
+   card and the denominator stays the whole country. A row that is only partly hidden is replaced
+   by its visible parts, so after "hide all, tick Baptist" the card reads Baptist and not
+   Christianity. */
+const CARD_ROWS = 5, CARD_MIN = 0.01;
+
+function countryCardAt(lngLat) {
+  const cc = countryAt(lngLat.lng, lngLat.lat);
+  // in a one-country view nobody else's dots are drawn, so nobody else's card is about this map
+  if (!cc || !META[cc] || (country && cc !== country)) return null;
+  const dots = (rolledTally(tallyFor(cc), cc) || {}).dots || {};
+  const sub = {}, shown = {};         // node -> dots in its subtree here, and the visible part
+  let total = 0;
+  for (const id in dots) {
+    const n = dots[id];
+    if (!n || !BY_ID[id]) continue;
+    total += n;
+    const vis = !USER_HIDDEN.has(id);
+    for (let x = id; x; x = parentOf(x)) {
+      if (!BY_ID[x]) continue;
+      sub[x] = (sub[x] || 0) + n;
+      if (vis) shown[x] = (shown[x] || 0) + n;
+    }
+  }
+  const domain = scope ? (sub[scope] || 0) : total;
+  if (!domain) return null;
+
+  const rows = [];
+  const ownRow = (id) => { if (dots[id] && !USER_HIDDEN.has(id)) rows.push({ id, n: dots[id], own: true }); };
+  const take = (id) => {
+    const v = shown[id] || 0;
+    if (!v) return;
+    if (v === sub[id]) { rows.push({ id, n: v }); return; }
+    ownRow(id);
+    for (const k of FULL_KIDS[id] || []) take(k);
+  };
+  if (scope) {
+    // an undivided religion gets no rows at all, rather than one reading "unspecified 100%"
+    const kids = (FULL_KIDS[scope] || []).filter(k => sub[k]);
+    if (kids.length) { ownRow(scope); kids.forEach(take); }
+  } else {
+    FULL_ROOTS.forEach(take);
+    if (!rows.length) return null;
+  }
+  // MERGE_OWN: Catholic's own dots are drawn as Latin Catholic, so they are counted there too
+  for (const par in MERGE_OWN) {
+    const i = rows.findIndex(r => r.own && r.id === par);
+    const kid = rows.find(r => !r.own && r.id === MERGE_OWN[par]);
+    if (i >= 0 && kid) { kid.n += rows[i].n; kid.also = par; rows.splice(i, 1); }
+  }
+  rows.sort((a, b) => b.n - a.n);
+  let top = rows.filter(r => r.n / domain >= CARD_MIN).slice(0, CARD_ROWS);
+  // Pakistan's Islam divides only below the cut, and "unspecified 100%" on its own says nothing
+  if (top.length === 1 && top[0].own && top[0].id === scope) top = [];
+
+  /* The key is the legend's. A row that is one colour on the map shows that colour, and a row
+     drawn in several (Christianity with nothing selected, Islam split into Sunni and Shia) shows
+     its own `unspecified` colour. Anita, 2026-09-14: *"its a bit weird how christianity doesnt
+     get a color in this context. could we have it use the unspecified yellow color? in general
+     use the unspecified color here."* A branch with no dots of its own on the map has no such
+     colour in `colorOf`, and takes the one its palette table authored for it. */
+  const usable = (c) => c && c !== '#666' && c !== OUT_COLOR;
+  const keyOf = (r) => {
+    const ids = r.own ? [r.id]
+      : Object.keys(dots).filter(x => dots[x] && !USER_HIDDEN.has(x)
+                                   && (x === r.id || x.startsWith(r.id + '.')));
+    if (r.also && dots[r.also]) ids.push(r.also);
+    const cs = new Set(ids.map(x => colorOf[x]));
+    let c = cs.size === 1 ? [...cs][0] : null;
+    if (!usable(c)) c = colorOf[r.id];
+    if (!usable(c)) c = USER_COLOR[r.id] || (scope ? NODE_COLOR : OVERVIEW_COLOR)[r.id];
+    return usable(c)
+      ? `<span class="key" style="background:${c}"></span>` : '<span class="key"></span>';
+  };
+  const labelOf = (r) => !r.own ? BY_ID[r.id].label
+    : r.id === scope ? 'unspecified' : BY_ID[r.id].label + ', unspecified';
+  // the people as well as the share, Anita 2026-09-14: *"hover over iraq see shia 45% and 21m"*
+  const line = (r, of, cls) => `<div class="cm-r${cls}">${keyOf(r)}`
+    + `<span class="cm-l">${esc(labelOf(r))}</span><span class="cm-p">${pctText(r.n / of)}</span>`
+    + `<span class="cm-n">${fmtPop(r.n * DOT_VALUE)}</span></div>`;
+
+  let html = `<div class="cm"><b>${esc(META[cc].name)}</b>`;
+  if (scope) {
+    html += line({ id: scope, n: domain }, total, '');
+    if (top.length) html += `<div class="cm-c">share of ${esc(BY_ID[scope].label)}</div>`
+      + top.map(r => line(r, domain, ' in')).join('');
+  } else {
+    html += top.map(r => line(r, total, '')).join('');
+  }
+  return html + '</div>';
+}
+
+/* The line §15.8 calls the point of the section: what the estimates come to for the selected
+   node, beside the drawn count and never added to it (§3.1, §13). For Pew's families that is
+   Pew's own world. A node only hand rows cover names its countries instead, because "worldwide"
+   would claim a coverage nobody has. */
+function estimateLine() {
+  if (!showEstimates || !EST || !scope || country) return '';   // leaves with the outlines
+  const w = EST.world[scope];
+  if (!w) return '';
+  const nameOf = cc => (EST.countries[cc] || META[cc] || {}).name || cc.toUpperCase();
+  TIPS.estimates = w.shown.length
+    ? 'outlined: ' + esc(w.shown.map(nameOf).sort((a, b) => a.localeCompare(b)).join(', '))
+    : 'no country outlined: every figure is already drawn as dots or is under 10,000';
+  if (w.pew) return `${estFigure(w)} worldwide, Pew ${EST.pew_year}`;
+  const where = (w.ccs || []).map(nameOf);
+  return `${estFigure(w)} estimated in ` + (where.length === 1 ? where[0] : `${w.countries} countries`);
+}
+
 function applyPaint() {
   applyCoverageWash();
+  applyEstimates();
   if (!map.getLayer('dots')) return;
   const expr = colorExpr();
   const live = activeDotLayer();
@@ -4692,7 +5390,8 @@ function renderTree() {
       const groups = new Set(vis.map(k => LINEAGE_GROUP[k]).filter(Boolean));
       const caption = id === scope && groups.size > 1;
       let group = null;
-      for (const k of vis) {
+      for (const k of legendSeq(id, vis)) {
+        if (typeof k !== 'string') { heading(k, level + 1); continue; }
         const g = caption ? LINEAGE_GROUP[k] : null;
         if (g && g !== group) {
           html.push(`<div class="lin" style="padding-left:${6 + (level + 1) * 11}px">`
@@ -4735,7 +5434,38 @@ function renderTree() {
     if (scope === id) html.push('<div class="scope-edge"></div>');
   };
 
-  for (const r of drawnRoots()) row(r, 0);
+  /* §10.7's heading: a closed line standing in for a run of rows. Its markup is the §6.10 bucket's,
+     with a label that is a name rather than a count, a swatch only where every member is drawn in
+     the same colour, and an open state that survives the rebuild (OPEN_GROUPS). Not a node, so no
+     data-id and no colour picker; the members inside it are full rows. */
+  const GROUP_IDS = new Map();
+  const heading = (g, level) => {
+    GROUP_IDS.set(g.key, g.ids);
+    const cols = new Set(g.ids.map(k => colorOf[k]));
+    const col = cols.size === 1 && !cols.has('#666') ? [...cols][0] : null;
+    const sum = g.ids.reduce((a, k) => a + rowCount(k), 0);
+    const fsum = g.ids.reduce((a, k) => a + visStateOf(k), 0);
+    const fst = fsum === 0 ? 0 : fsum === g.ids.length * 2 ? 2 : 1;
+    const open = OPEN_GROUPS.has(g.key);
+    // only a ROOT_GROUPS heading can be on screen while something is selected
+    const out = !!scope;
+    const par = parentOf(g.ids[0]);
+    const tip = g.note || `${fmtList(g.ids.map(k => BY_ID[k].label))}. One colour on the map at `
+      + `this level; press + or select ${BY_ID[par].label} to tell them apart.`;
+    html.push(`<div class="row grp${out ? ' out' : ''}${fst === 0 ? ' hid' : ''}" `
+      + `data-tw="grp:${esc(g.key)}" style="padding-left:${6 + level * 11}px" title="${esc(tip)}">`
+      + `<span class="tw">${open ? '▾' : '▸'}</span>`
+      + `<span class="hit"><span class="dot"${col ? ` style="background:${col}"` : ''}></span></span>`
+      + `<span class="lb">${esc(g.label)}</span>`
+      + countCell(sum, col || '#666', !!col && !out)
+      + cbox('data-vis-grp', g.key, fst) + '</div>');
+    html.push(`<div class="kids${open ? ' open' : ''}" data-kids="grp:${esc(g.key)}">`);
+    for (const k of g.ids) row(k, level + 1);
+    html.push('</div>');
+  };
+
+  for (const it of legendSeq(null, drawnRoots()))
+    if (typeof it === 'string') row(it, 0); else heading(it, 0);
   /* §6.10c's bucket, at the foot of the families and outside all of them, because that is what
      it is the residual of. It is the §6.10 bucket's markup with two differences, and both are
      the same difference: its members kept their own colours. So the mark is BLANK rather than a
@@ -4750,7 +5480,10 @@ function renderTree() {
     const fst = fsum === 0 ? 0 : fsum === ids.length * 2 ? 2 : 1;
     html.push(`<div class="row res${fst === 0 ? ' hid' : ''}" data-tw="rootfold" `
       + 'style="padding-left:6px" '
-      + `title="Under ${pctText(FOLD_SHARE)} of ${esc(ofWhat)} each, collapsed to one line. `
+      // §6.10d: the cut may be the people cap rather than the ladder's share, so say which
+      + `title="Under ${rootFoldCut(FOLD_SHARE, viewTotal()) < FOLD_SHARE * viewTotal()
+          ? `${fmtPop(ROOT_FOLD_MAX_PEOPLE)} people` : `${pctText(FOLD_SHARE)} of ${esc(ofWhat)}`} `
+      + 'each, collapsed to one line. '
       + 'They keep their own colours on the map; open this to see them">'
       + '<span class="tw">▸</span>'
       + '<span class="hit"><span class="dot"></span></span>'
@@ -4778,6 +5511,11 @@ function renderTree() {
     const box = el.querySelector(`[data-kids="${hit.dataset.tw}"]`);
     if (!box) return;
     box.classList.toggle('open');
+    const tw = hit.dataset.tw || '';
+    if (tw.startsWith('grp:')) {                         // §10.7: remembered across rebuilds
+      if (box.classList.contains('open')) OPEN_GROUPS.add(tw.slice(4));
+      else OPEN_GROUPS.delete(tw.slice(4));
+    }
     const t = hit.classList.contains('tw') ? hit : hit.querySelector('.tw');
     if (t) t.textContent = box.classList.contains('open') ? '▾' : '▸';
   };
@@ -4825,6 +5563,11 @@ function renderTree() {
     for (const id of ROOT_FOLD) setSubtreeVisible(id, cb.checked);
     afterTick();
   });
+  // §10.7's headings: every member, and everything under each
+  el.querySelectorAll('.cb input[data-vis-grp]').forEach(cb => cb.onchange = () => {
+    for (const id of GROUP_IDS.get(cb.dataset.visGrp) || []) setSubtreeVisible(id, cb.checked);
+    afterTick();
+  });
 
   /* "Viewing: Adventist subgroups (L3), United States" — the group, the cut, the country.
      "subgroups" only when the drawn rows are actually below the scope: select Islam, whose
@@ -4864,8 +5607,11 @@ function renderTree() {
      belongs next to how much of it was counted, not next to the religion picker. Nothing else
      about the note changed: still a few words, still absent for most countries. */
   const viewing = `Viewing: ${esc(what)} <span class="lv">(L${lv})</span>, ${esc(where)}`;
+  const estText = estimateLine();                       // §15.8, empty while the layer is off
   document.getElementById('scope-label').innerHTML = viewing
-    + (litCc.length ? `<div class="lit-note" data-tip="coverage">${esc(litText)}</div>` : '');
+    + (litCc.length ? `<div class="lit-note" data-tip="coverage">${esc(litText)}</div>` : '')
+    + (estText ? `<div class="lit-note est-note" data-tip="estimates" style="--est:${estimateColor()}">`
+      + `${esc(estText)}</div>` : '');
   /* The shut phone sheet wears the same sentence in its header. The coverage note does NOT come
      with it: it is a second line about the wash, and the header is one line high. */
   document.getElementById('head-scope').innerHTML = viewing;
@@ -4899,6 +5645,7 @@ function renderTree() {
   segSet('dotval-seg', DOT_VALUE);
   segSet('merge-seg', merged ? 1 : 0);
 
+  segSet('est-seg', showEstimates ? 1 : 0);
   segSet('rings-seg', showRings ? 1 : 0);
   const rings = document.getElementById('ctl-rings');
   rings.title = 'One ring per religion that is present in this country but too small to reach '
@@ -5177,6 +5924,22 @@ function renderProvenance() {
     + `<span class="pv">${esc(v)}</span></div>`).join('');
 }
 
+/* THE TITLE'S N COUNTS STATES, NOT TERRITORIES — Anita, 2026-09-14: "'religion in n
+   countries' project title should not count territories in the n, just so people dont get
+   confused why there are so many missing as we approach ~196". Every ISO 3166-1 code that is
+   not a sovereign state, not only the built ones, so a territory added later drops out of N
+   without anyone remembering this list. Only the title uses it; dots, legend and picker are
+   unchanged. Cook Islands and Niue are in it (in free association with New Zealand, not UN
+   members). Kosovo, Palestine, Taiwan and Western Sahara are not, and count if built. An entry
+   with no territory (`territory: false`, the Israeli settlements) is not a country and does not
+   count either. */
+const TERRITORIES = new Set([
+  'ai', 'aq', 'as', 'aw', 'ax', 'bl', 'bm', 'bq', 'bv', 'cc', 'ck', 'cw', 'cx', 'fk', 'fo',
+  'gf', 'gg', 'gi', 'gl', 'gp', 'gs', 'gu', 'hk', 'hm', 'im', 'io', 'je', 'ky', 'mf', 'mo',
+  'mp', 'mq', 'ms', 'nc', 'nf', 'nu', 'pf', 'pm', 'pn', 'pr', 're', 'sh', 'sj', 'sx', 'tc',
+  'tf', 'tk', 'um', 'vg', 'vi', 'wf', 'yt',
+]);
+
 function retitle() {
   const t = document.getElementById('title'), s = document.getElementById('subtitle');
   renderProvenance();
@@ -5199,7 +5962,7 @@ function retitle() {
     const names = BUILT.map(cc => META[cc].name_in || META[cc].name);
     t.textContent = !names.length ? 'Religion'
       : names.length <= 2 ? 'Religion in ' + fmtList(names)
-      : `Religion in ${names.length} countries`;
+      : `Religion in ${BUILT.filter(cc => !TERRITORIES.has(cc) && META[cc].territory !== false).length} countries`;
     /* THE SUBTITLE CARRIES §7c's WARNING IN THIS VIEW, because the block that carries it in a
        country view is not drawn here (see `renderProvenance`). Anita's words, 2026-09-07. The
        old line said the countries were "measured differently", which is true and is the
@@ -5325,7 +6088,7 @@ function viewportTally(shrink) {
   if (!SCATTER.ready) return { out, total };
   const data = SCATTER.data[SCATTER.edition()];
   if (!data) return { out, total };
-  const b = viewBounds();
+  const b = centreBounds();         // where Auto looks for the middle (see centreBounds)
   let w = b.w, s = b.s, e = b.e, n = b.n;
   if (shrink && shrink < 1) {
     const mx = (e - w) * (1 - shrink) / 2, my = (n - s) * (1 - shrink) / 2;
@@ -5505,9 +6268,32 @@ function bandBounds() {
     n: unmercY(yn - p.top * dy),
   };
 }
-/** The point the map is about: the middle of what can be seen of it. */
+/* WHERE AUTO LOOKS FOR "THE MIDDLE" — Anita, 2026-09-14, in two steps the same hour. First *"lets
+   just use the whole phone screen for the purpose of finding the center and center region"*, then
+   a middle ground: *"lets pretend its like half open and only occupies like the bottom ~20% of the
+   screen instead of 40%"*. So on the phone this is the screen with its bottom CENTRE_SHEET taken
+   off, whether the sheet is open, shut or anywhere between, and nothing taken off the top for the
+   title strip. The centre point and the middle-half box Auto samples (`viewCentre`,
+   `centreShares`, `viewOverlap`, `viewportTally`) ask this. The SCALE tests (`viewFill`,
+   `viewCover`, `tooWide`) still ask `viewBounds`, the map left between the panels.
+
+   A FIXED FRACTION, NEVER A MEASUREMENT OF THE PAGE. The band this replaced took its top edge from
+   the title strip's measured height, and the title changes with the selection, so choosing a
+   country moved the very centre it had been chosen by. On the desktop this is the whole canvas,
+   which is what `viewBounds` already was. */
+const CENTRE_SHEET = 0.2;
+function centreBounds() {
+  const b = map.getBounds();
+  const out = { w: b.getWest(), e: b.getEast(), s: b.getSouth(), n: b.getNorth() };
+  if (matchMedia('(max-width: 700px)').matches) {
+    const ys = mercY(out.s), yn = mercY(out.n);
+    out.s = unmercY(ys + (yn - ys) * CENTRE_SHEET);
+  }
+  return out;
+}
+/** The point the map is about: the middle of `centreBounds`. */
 function viewCentre() {
-  const v = viewBounds();
+  const v = centreBounds();
   return { lng: (v.w + v.e) / 2, lat: unmercY((mercY(v.s) + mercY(v.n)) / 2) };
 }
 
@@ -5685,7 +6471,7 @@ function framedIn(cc) {
 function viewOverlap(cc) {
   const v = META[cc] && META[cc].view;
   if (!v) return 0;
-  const b = viewBounds();
+  const b = centreBounds();         // where Auto looks for the middle (see centreBounds)
   let w = b.w, e = b.e, s = mercY(b.s), n = mercY(b.n);
   const dx = (e - w) * (1 - AUTO_BOX) / 2, dy = (n - s) * (1 - AUTO_BOX) / 2;
   w += dx; e -= dx; s += dy; n -= dy;
@@ -5757,8 +6543,148 @@ async function loadShapes() {
     }
   }
   SHAPES = out;
+  HULLS = buildHulls(out);
   lastLook = '';            // the answer has changed for a camera that has not moved
   considerCamera();
+}
+
+/* THE CENTRE HAS TO BE ON IT, AND FOR ISLANDS "ON IT" MEANS ITS HULL — Anita, 2026-09-14: *"we
+   shouldnt switch to viewing a country if it doesn't appear at the literal center point of the
+   screen? or like its convex hull doesn't contain the literal center point for island countries."*
+
+   Where the centre is inside a built country's outline, `countryAt` already answers and only that
+   country can be chosen. The two routes that can choose a country WITHOUT the centre on it are the
+   dot tally and the tiny-country branch, which run when the centre is over sea or over ground
+   nobody has built; those are what this gates, and only for SWITCHING TO a country. Keeping one is
+   still the hold and release tests' business.
+
+   ONE HULL PER COUNTRY, FROM ITS OUTLINE INSIDE ITS OWN VIEW BOX. The view box is the country's
+   opening frame and already leaves out far-flung territory: France's is metropolitan, the United
+   States' has no Hawaii or Alaska, Chile's no Easter Island, Russia's stops at 180°E. A hull of the
+   whole outline would have covered half an ocean for those. Longitudes are unwrapped around the
+   box, the way Fiji's and Kiribati's views already run past 180, and latitude is a Mercator y so
+   the hull is convex on screen.
+
+   NOT "AND NOBODY ELSE'S HULL", which the first version also required and the reach test took back
+   the same day: Indonesia's Natuna and Anambas islands put Indonesia's hull over the sea between
+   the two halves of Malaysia, so Malaysia's own framing sat inside both hulls and could never be
+   chosen. Where hulls overlap, the tally's 85% share of the dots and `contested` already decide
+   whose view it is. The small pad that lets a thin archipelago's hull count is `centreInHullOf`'s. */
+let HULLS = null;           // cc -> {ref, pts: [[x, mercY], ...] counter-clockwise}
+
+function lonNear(lng, ref) {
+  let x = lng;
+  while (x < ref - 180) x += 360;
+  while (x >= ref + 180) x -= 360;
+  return x;
+}
+
+/** Convex hull of [x, y] points, counter-clockwise (Andrew's monotone chain); null under three
+    corners. Sorts `pts` in place. */
+function convexHull(pts) {
+  if (pts.length < 3) return null;
+  const cross = (o, a, b) => (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0]);
+  pts.sort((a, b) => a[0] - b[0] || a[1] - b[1]);
+  const lower = [], upper = [];
+  for (const pt of pts) {
+    while (lower.length >= 2 && cross(lower[lower.length - 2], lower[lower.length - 1], pt) <= 0)
+      lower.pop();
+    lower.push(pt);
+  }
+  for (let i = pts.length - 1; i >= 0; i--) {
+    const pt = pts[i];
+    while (upper.length >= 2 && cross(upper[upper.length - 2], upper[upper.length - 1], pt) <= 0)
+      upper.pop();
+    upper.push(pt);
+  }
+  upper.pop(); lower.pop();
+  const hull = lower.concat(upper);
+  return hull.length >= 3 ? hull : null;
+}
+
+/* Outline points inside the country's own padded view box only, so far-flung territory (Hawaii,
+   Réunion, Easter Island) never widens it. Hawaii is held by the release test instead: see
+   `dotsOnScreen` and spec §9f, which records the separate island-group hulls tried and withdrawn
+   the same day. */
+function buildHulls(parts) {
+  const byCc = {};
+  for (const p of parts) (byCc[p.cc] = byCc[p.cc] || []).push(p);
+  const hulls = {};
+  for (const cc in byCc) {
+    const v = META[cc] && META[cc].view;
+    if (!v) continue;
+    const ref = (v[0] + v[2]) / 2;
+    const mx = 0.05 * (v[2] - v[0]) + 0.5, my = 0.05 * (v[3] - v[1]) + 0.5;
+    const pts = [];
+    for (const p of byCc[cc]) {
+      for (const q of p.ring) {
+        const x = lonNear(q[0], ref);
+        if (x < v[0] - mx || x > v[2] + mx || q[1] < v[1] - my || q[1] > v[3] + my) continue;
+        pts.push([x, mercY(q[1])]);
+      }
+    }
+    const hull = convexHull(pts);
+    if (hull) hulls[cc] = { ref, pts: hull };
+  }
+  return hulls;
+}
+
+/** Is (x, y), already unwrapped for this hull, inside it with every edge moved outward by `pad`
+    (Mercator degrees, the hull's own units)? */
+function inHull(P, x, y, pad) {
+  for (let i = 0, j = P.length - 1; i < P.length; j = i++) {
+    const ex = P[i][0] - P[j][0], ey = P[i][1] - P[j][1];
+    if (ex * (y - P[j][1]) - ey * (x - P[j][0]) < -pad * Math.hypot(ex, ey)) return false;
+  }
+  return true;
+}
+
+/** Every built country whose hull holds this point. */
+function hullsAt(lng, lat, pad = 0) {
+  const out = [];
+  if (!HULLS) return out;
+  const y = mercY(lat);
+  for (const cc in HULLS) {
+    const h = HULLS[cc];
+    if (inHull(h.pts, lonNear(lng, h.ref), y, pad)) out.push(cc);
+  }
+  return out;
+}
+
+/* May Auto switch to `cc` while the centre is over sea or unbuilt ground: its hull holds the
+   centre, or misses it by no more than CENTRE_HULL_PAD of the shorter side of `centreBounds`.
+   Before the shapes arrive there is nothing to test against, and that has to read as no evidence
+   rather than as a refusal, or a failed fetch would stop Auto choosing anything over water for
+   good (§9a).
+
+   THE PAD, MEASURED 2026-09-14 on a 1400x900 window, as the distance from the centre to the
+   country's hull over that shorter side. Framed and half a zoom level in, the Solomon Islands
+   missed their own hull by 0.8% and 1.1%, Tuvalu (atolls nearly in a line, so a sliver of a hull)
+   by 1.5% and 2.2%, Cyprus (framed over the north, which the Republic's outline leaves out) by
+   1.9% and 2.7%. The picks the gate exists to refuse sat further out: Peru over the Pacific 5.3%,
+   Sweden over unbuilt Norway 6.6%, Vietnam out at sea 11.6%. 4% falls between the two groups;
+   it is about 16px on a phone and 36px on that window. */
+const CENTRE_HULL_PAD = 0.04;
+function centreHullPad() {
+  const b = centreBounds();
+  return CENTRE_HULL_PAD * Math.min(b.e - b.w, mercY(b.n) - mercY(b.s));
+}
+function centreInHullOf(cc, c) {
+  if (!HULLS) return true;
+  if (!HULLS[cc]) return false;
+  return hullsAt(c.lng, c.lat, centreHullPad()).includes(cc);
+}
+
+/* KEEP A COUNTRY WHILE ITS DOTS ARE STILL ON SCREEN — Anita, 2026-09-14: *"since theres nothing
+   else around, i feel liek the correct thing to do here is to hold on to the USA selection for a
+   while even though hawaii land doesnt take up much space."* Over sea or unbuilt ground the release
+   test let go on `viewOverlap`, which measures the country's opening view box and scores 0 anywhere
+   near Hawaii, so the United States was dropped with all of Hawaii on screen: after 100px of panning
+   on a phone and 150px on the desktop. Now a country is kept while any of its dots are anywhere on
+   screen. Another country taking the middle (`outweighed`, the shapes branch) and zooming out (the
+   fill and span tests) still release it. */
+function dotsOnScreen(cc) {
+  return (viewportTally(1).out[cc] || 0) > 0;
 }
 
 /* Ray casting, in degrees, after a bounding-box reject that throws out all but a handful of
@@ -5827,7 +6753,7 @@ const AUTO_GRID = 7, AUTO_HOLD = 0.35, AUTO_RIVAL = 0.4, AUTO_OUTWEIGH = 0.25;
     sample counts, how many samples landed in ANY built country, and the grid size. */
 function centreShares() {
   if (!SHAPES) return null;
-  const b = viewBounds();
+  const b = centreBounds();         // where Auto looks for the middle (see centreBounds)
   let w = b.w, e = b.e, s = b.s, n = b.n;
   const dx = (e - w) * (1 - AUTO_BOX) / 2, dy = (n - s) * (1 - AUTO_BOX) / 2;
   w += dx; e -= dx; s += dy; n -= dy;
@@ -5913,11 +6839,22 @@ function outweighed(sh, cc) {
   return false;
 }
 
+/* AN ENTRY WITH NO TERRITORY IS NEVER THE CAMERA'S CHOICE. Anita, 2026-09-15, on the Israeli
+   settlements (`xs`): *"they dont actually have any territory so it shouldnt be possible to
+   auto-mode onto them. only way to see them should be in all countries mode, or selecting them
+   manually in the dropdown."* countries.py's `territory=False` arrives as META[cc].territory.
+   Such an entry has no shape, so `countryAt`, the samples and the hulls never name it; the dot
+   tally and the small-country branch below could, and are gated on this. */
+function autoMay(cc) {
+  return !!META[cc] && META[cc].territory !== false;
+}
+
 function considerCamera() {
   if (!autoCountry || autoLock || !map.getLayer('dots')) return;
+  // held only by hand: turning Auto on hands the choice to the camera, which lets it go
+  if (country !== null && !autoMay(country)) setCountry(null, { fly: false });
   const z = map.getZoom();
-  // the middle of the map you can SEE, which on the phone layout is not the middle of the
-  // canvas — see `viewBounds`
+  // where Auto looks for the middle — see `centreBounds`
   const c = viewCentre();
 
   /* Where the shapes can name the ground under the camera, THAT is the answer and the dots do
@@ -5965,7 +6902,7 @@ function considerCamera() {
       if (tooWide() || viewFill(country, bandBounds()) < AUTO_FILL_OUT
           || viewOverlap(country) < AUTO_OVER_OUT)
         setCountry(null, { fly: false });
-    } else if (!tooWide() && META[at] && framedIn(at)
+    } else if (!tooWide() && autoMay(at) && framedIn(at)
                && !contested(sh, at) && scopeDrawsIn(at)) {
       setCountry(at, { fly: false });     // straight across, with no all-countries frame between
     } else if (country !== null) {
@@ -6020,8 +6957,11 @@ function considerCamera() {
      it was; the cost is that a country is let go somewhat further out when zooming away from it,
      which is the direction this file already prefers — harder to change the legend than to set it.
      On the phone the two rectangles are the same one, so nothing there moves. */
+  /* The overlap proxy only lets go once none of the country's dots are left on screen (§9f,
+     `dotsOnScreen`): over the sea around Hawaii the United States' view box is 3,800 km away and
+     scores 0, which dropped the country with all of Hawaii still in view. */
   if (country !== null && (tooWide() || viewFill(country, bandBounds()) < AUTO_FILL_OUT
-                           || viewOverlap(country) < AUTO_OVER_OUT))
+                           || (viewOverlap(country) < AUTO_OVER_OUT && !dotsOnScreen(country))))
     setCountry(null, { fly: false });
   if (tooWide()) return;          // continental range: nothing is the subject, however large
   // the middle of the screen, falling back to the whole of it where the middle is empty —
@@ -6051,11 +6991,14 @@ function considerCamera() {
      Vincent. It can afford to go without: this branch already demands that exactly ONE built
      country is framed, with nothing else framed anywhere on screen and no rival holding the
      middle, which is a stronger statement about the view than any coverage number. */
+  /* BOTH ROUTES BELOW RUN ONLY WITH THE CENTRE OVER SEA OR UNBUILT GROUND (the shapes branch
+     above returned otherwise), so both must also find the centre inside one of the country's
+     hulls before switching to it. See `centreInHullOf` and spec §9f. */
   if (total < AUTO_MIN) {
-    const framed = BUILT.filter(cc => META[cc] && viewFill(cc) >= AUTO_FILL_IN
+    const framed = BUILT.filter(cc => autoMay(cc) && viewFill(cc) >= AUTO_FILL_IN
                                       && viewOverlap(cc) >= AUTO_OVER_IN);
     if (framed.length === 1 && framed[0] !== country && !contested(sh, framed[0])
-        && scopeDrawsIn(framed[0]))
+        && centreInHullOf(framed[0], c) && scopeDrawsIn(framed[0]))
       setCountry(framed[0], { fly: false });
     return;                           // otherwise nothing is loaded here; `idle` returns us
   }
@@ -6063,13 +7006,13 @@ function considerCamera() {
   if (key === lastLook) return;
   lastLook = key;
   let best = null;
-  for (const cc in out) if (!best || out[cc] > out[best]) best = cc;
+  for (const cc in out) if (autoMay(cc) && (!best || out[cc] > out[best])) best = cc;
   // `contested` here too, so "lean towards all countries" means the same thing on both routes
   // into a selection. It costs nothing on the cases this fallback exists for — Indonesia and
   // the Philippines framed from the sea each hold every sample that lands on a built country.
   if (best && best !== country && META[best] && out[best] / total >= AUTO_SHARE
       && framedIn(best) && viewOverlap(best) >= AUTO_OVER_IN
-      && !contested(sh, best) && scopeDrawsIn(best))
+      && !contested(sh, best) && centreInHullOf(best, c) && scopeDrawsIn(best))
     setCountry(best, { fly: false });
 }
 
@@ -6351,6 +7294,52 @@ void main() {
   gl_FragColor = vec4(v_color.rgb * a, a);
 }`,
 
+  // ---- §4.2f: the same dots as GL_POINTS, while they are small. On; ?points=0 turns it off.
+  /* One vertex a dot instead of the quad's four. The two traps above are both about LARGE dots,
+     so render() only takes this path while a dot is at most POINT_MAX_PX across: far under the
+     63-64 px phone limit, and small enough that a dot whose centre is just off screen and so
+     gets clipped was only ever a few device pixels at the very edge.
+     The pixels are the quad's pixels. A point covers the pixel centres inside a 2r square around
+     the dot, as the quad does, and gl_PointCoord * 2 - 1 at a pixel is exactly the value the
+     quad interpolates into v_corner there, so the fragment shader below is FRAG with one line
+     changed. Same arithmetic as VERT otherwise; its comments apply. Hidden is sent outside the
+     clip volume, since a point cannot be collapsed to zero size. */
+  VERT_PT: `
+precision highp float;
+attribute float a_xlo, a_xhi, a_ylo, a_yhi, a_ni;
+uniform mat4 u_matrix;
+uniform vec2 u_origin_hi, u_origin_lo;
+uniform float u_radius, u_palette_n, u_only_measured;
+uniform sampler2D u_palette;
+varying vec4 v_color;
+void main() {
+  float dx = (a_xhi - u_origin_hi.x) * 65536.0 + (a_xlo - u_origin_lo.x);
+  float dy = (a_yhi - u_origin_hi.y) * 65536.0 + (a_ylo - u_origin_lo.y);
+  float tier = floor(a_ni / 16384.0);
+  float isDerived = step(0.5, tier) * (1.0 - step(1.5, tier));
+  float isModelled = step(1.5, tier);
+  float slot = mod(a_ni, 16384.0) + u_only_measured * isDerived * u_palette_n;
+  vec4 pal = texture2D(u_palette, vec2((slot + 0.5) / (u_palette_n * 2.0), 0.5));
+  v_color = pal;
+  float shown = (pal.a > 0.5 ? 1.0 : 0.0) * (1.0 - u_only_measured * isModelled);
+  vec4 pos = u_matrix * vec4(vec2(dx, dy) / 4294967296.0, 0.0, 1.0);
+  gl_Position = shown > 0.5 ? pos : vec4(2.0, 2.0, 2.0, 1.0);
+  gl_PointSize = 2.0 * u_radius;
+}`,
+  FRAG_PT: `
+precision highp float;
+varying vec4 v_color;
+uniform float u_radius, u_alpha;
+void main() {
+  float d = length(gl_PointCoord * 2.0 - 1.0) * u_radius;
+  float aa = min(1.0, u_radius);
+  float a = (1.0 - smoothstep(u_radius - aa, u_radius, d)) * u_alpha;
+  if (a <= 0.0) discard;
+  gl_FragColor = vec4(v_color.rgb * a, a);
+}`,
+  usePoints: !/[?&]points=0(&|$)/.test(location.search),   // ?points=0 draws quads throughout
+  POINT_MAX_PX: 16,
+
   onAdd(m, gl) {
     this.map = m;
     this.webgl2 = typeof WebGL2RenderingContext !== 'undefined'
@@ -6386,6 +7375,27 @@ void main() {
     for (const k of ['u_matrix', 'u_origin_hi', 'u_origin_lo', 'u_pxsize', 'u_radius',
                      'u_palette', 'u_palette_n', 'u_alpha', 'u_only_measured'])
       this.loc[k] = gl.getUniformLocation(p, k);
+    /* §4.2f's program, on the quad program's attribute slots, so switching between the two from
+       one frame to the next never leaves a slot pointing somewhere stale. A failure here costs
+       only the option: render() goes on drawing quads. */
+    const pp = gl.createProgram();
+    gl.attachShader(pp, sh(gl.VERTEX_SHADER, this.VERT_PT));
+    gl.attachShader(pp, sh(gl.FRAGMENT_SHADER, this.FRAG_PT));
+    for (const k of ['a_xlo', 'a_xhi', 'a_ylo', 'a_yhi', 'a_ni'])
+      if (this.loc[k] >= 0) gl.bindAttribLocation(pp, this.loc[k], k);
+    gl.linkProgram(pp);
+    if (gl.getProgramParameter(pp, gl.LINK_STATUS)) {
+      this.pp = pp;
+      this.ploc = {};
+      for (const k of ['a_xlo', 'a_xhi', 'a_ylo', 'a_yhi', 'a_ni'])
+        this.ploc[k] = gl.getAttribLocation(pp, k);
+      for (const k of ['u_matrix', 'u_origin_hi', 'u_origin_lo', 'u_radius', 'u_palette',
+                       'u_palette_n', 'u_alpha', 'u_only_measured'])
+        this.ploc[k] = gl.getUniformLocation(pp, k);
+      this.pointMax = gl.getParameter(gl.ALIASED_POINT_SIZE_RANGE)[1];
+    } else {
+      console.warn('scatter: point program did not link, drawing quads', gl.getProgramInfoLog(pp));
+    }
     this.quad = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, this.quad);
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 1,-1, -1,1, 1,1]), gl.STATIC_DRAW);
@@ -6395,6 +7405,8 @@ void main() {
     for (const ed of ['fine', '10k'])
       for (const cc in this.data[ed]) this.upload(gl, this.data[ed][cc]);
     if (this.palette) this.uploadPalette(gl);
+    // §4.2e's culled copies hold buffers from whatever context came before; recompute them
+    for (const cc in this.data.fine) this.data.fine[cc].lod = null;
   },
 
   /* Kept so a lost context can be restored from the typed arrays we already hold — 24 MB of
@@ -6467,18 +7479,25 @@ void main() {
     const hi = [Math.floor(oxu / 65536), Math.floor(oyu / 65536)];
     const lo = [oxu - hi[0] * 65536, oyu - hi[1] * 65536];
 
-    gl.useProgram(this.p);
-    gl.uniformMatrix4fv(this.loc.u_matrix, false, new Float32Array(out));
-    gl.uniform2f(this.loc.u_origin_hi, hi[0], hi[1]);
-    gl.uniform2f(this.loc.u_origin_lo, lo[0], lo[1]);
-    gl.uniform2f(this.loc.u_pxsize, 2 / gl.drawingBufferWidth, 2 / gl.drawingBufferHeight);
-    gl.uniform1f(this.loc.u_radius, this.radiusPx() * dpr);
-    gl.uniform1f(this.loc.u_alpha, DOT_ALPHA);
-    gl.uniform1f(this.loc.u_only_measured, onlyMeasured ? 1 : 0);
-    gl.uniform1f(this.loc.u_palette_n, this.paletteN);
+    /* §4.2f: points while a dot is small and they were asked for, quads otherwise. `L` is the
+       chosen program's locations; the attribute slots are the same numbers in both. */
+    const rDev = this.radiusPx() * dpr;
+    const pts = !!(this.usePoints && this.pp
+                   && 2 * rDev <= Math.min(this.POINT_MAX_PX, this.pointMax));
+    const L = pts ? this.ploc : this.loc;
+    gl.useProgram(pts ? this.pp : this.p);
+    gl.uniformMatrix4fv(L.u_matrix, false, new Float32Array(out));
+    gl.uniform2f(L.u_origin_hi, hi[0], hi[1]);
+    gl.uniform2f(L.u_origin_lo, lo[0], lo[1]);
+    if (!pts) gl.uniform2f(L.u_pxsize, 2 / gl.drawingBufferWidth, 2 / gl.drawingBufferHeight);
+    gl.uniform1f(L.u_radius, rDev);
+    gl.uniform1f(L.u_alpha, DOT_ALPHA);
+    gl.uniform1f(L.u_only_measured, onlyMeasured ? 1 : 0);
+    gl.uniform1f(L.u_palette_n, this.paletteN);
     gl.activeTexture(gl.TEXTURE0);
     gl.bindTexture(gl.TEXTURE_2D, this.tex);
-    gl.uniform1i(this.loc.u_palette, 0);
+    gl.uniform1i(L.u_palette, 0);
+    this.drewPoints = pts;
 
     /* Every piece of state we rely on, every frame. setCustomLayerDefaults() only resets
        VAO/cullFace/activeTexture/pixelStore and MapLibre's Context caches the rest, so
@@ -6491,13 +7510,18 @@ void main() {
 
     const div = (i, d) => this.webgl2 ? gl.vertexAttribDivisor(i, d)
                                       : this.ext.vertexAttribDivisorANGLE(i, d);
-    gl.bindBuffer(gl.ARRAY_BUFFER, this.quad);
-    gl.enableVertexAttribArray(this.loc.a_corner);
-    gl.vertexAttribPointer(this.loc.a_corner, 2, gl.FLOAT, false, 0, 0);
-    div(this.loc.a_corner, 0);
+    if (pts) {
+      // one vertex a dot: no corner attribute, and nothing instanced
+      if (this.loc.a_corner >= 0) gl.disableVertexAttribArray(this.loc.a_corner);
+    } else {
+      gl.bindBuffer(gl.ARRAY_BUFFER, this.quad);
+      gl.enableVertexAttribArray(this.loc.a_corner);
+      gl.vertexAttribPointer(this.loc.a_corner, 2, gl.FLOAT, false, 0, 0);
+      div(this.loc.a_corner, 0);
+    }
     for (const k of ['a_xlo', 'a_xhi', 'a_ylo', 'a_yhi', 'a_ni']) {
-      gl.enableVertexAttribArray(this.loc[k]);
-      div(this.loc[k], 1);
+      gl.enableVertexAttribArray(L[k]);
+      div(L[k], pts ? 0 : 1);
     }
 
     const b = this.viewBounds();
@@ -6523,6 +7547,21 @@ void main() {
     if (b[2] - b[0] >= U32) worlds.push(0);
     else for (let k = Math.floor(b[0] / U32); k <= Math.floor(b[2] / U32); k++) worlds.push(k);
 
+    /* WebGL has no baseInstance, so a draw call always starts at instance 0 and the only way to
+       start partway in is to re-point the attributes. Consecutive visible buckets are merged
+       into runs first: at continental zoom that is one call for a country. */
+    const runsOf = (src, bx0, bx1) => {
+      const runs = [];
+      for (const bk of src.buckets) {
+        if (bk[2] < bx0 || bk[0] > bx1 || bk[3] < b[1] || bk[1] > b[3]) continue;
+        const last = runs[runs.length - 1];
+        if (last && last[0] + last[1] === bk[4]) last[1] += bk[5];
+        else runs.push([bk[4], bk[5]]);
+      }
+      return runs;
+    };
+    const zoom = this.map.getZoom();
+
     let drawn = 0;
     for (const k of worlds) {
       if (k !== 0) {
@@ -6530,36 +7569,37 @@ void main() {
         for (let i = 0; i < 4; i++) {
           shifted[12 + i] = m[i] * (ox + k) + m[4 + i] * oy + m[12 + i];
         }
-        gl.uniformMatrix4fv(this.loc.u_matrix, false, new Float32Array(shifted));
+        gl.uniformMatrix4fv(L.u_matrix, false, new Float32Array(shifted));
       } else {
-        gl.uniformMatrix4fv(this.loc.u_matrix, false, new Float32Array(out));
+        gl.uniformMatrix4fv(L.u_matrix, false, new Float32Array(out));
       }
       // The dots do not move; the view does. Test them against this copy's slice of it.
       const bx0 = b[0] - k * U32, bx1 = b[2] - k * U32;
 
       for (const d of this.active()) {
         if (!d.glPos) this.upload(gl, d);
-        /* WebGL has no baseInstance, so a draw call always starts at instance 0 and the only
-           way to start partway in is to re-point the attributes. Consecutive visible buckets
-           are merged into runs first: at continental zoom that is one call for a country. */
-        const runs = [];
-        for (const bk of d.buckets) {
-          if (bk[2] < bx0 || bk[0] > bx1 || bk[3] < b[1] || bk[1] > b[3]) continue;
-          const last = runs[runs.length - 1];
-          if (last && last[0] + last[1] === bk[4]) last[1] += bk[5];
-          else runs.push([bk[4], bk[5]]);
-        }
+        let runs = runsOf(d, bx0, bx1);
         if (!runs.length) continue;
-        const n = d.n;
+        /* §4.2e: the copy with buried dots left out, when this zoom has one ready and every dot
+           is shown. Asked only once the country is known to be on screen. */
+        let src = d;
+        const lod = this.lodFor(gl, d, zoom);
+        if (lod) {
+          src = lod;
+          runs = runsOf(lod, bx0, bx1);
+          if (!runs.length) continue;
+        }
+        const n = src.n;
         for (const [start, count] of runs) {
-          gl.bindBuffer(gl.ARRAY_BUFFER, d.glPos);
-          gl.vertexAttribPointer(this.loc.a_xlo, 1, gl.UNSIGNED_SHORT, false, 4, 4 * start);
-          gl.vertexAttribPointer(this.loc.a_xhi, 1, gl.UNSIGNED_SHORT, false, 4, 4 * start + 2);
-          gl.vertexAttribPointer(this.loc.a_ylo, 1, gl.UNSIGNED_SHORT, false, 4, 4 * (n + start));
-          gl.vertexAttribPointer(this.loc.a_yhi, 1, gl.UNSIGNED_SHORT, false, 4, 4 * (n + start) + 2);
-          gl.bindBuffer(gl.ARRAY_BUFFER, d.glNi);
-          gl.vertexAttribPointer(this.loc.a_ni, 1, gl.UNSIGNED_SHORT, false, 2, 2 * start);
-          if (this.webgl2) gl.drawArraysInstanced(gl.TRIANGLE_STRIP, 0, 4, count);
+          gl.bindBuffer(gl.ARRAY_BUFFER, src.glPos);
+          gl.vertexAttribPointer(L.a_xlo, 1, gl.UNSIGNED_SHORT, false, 4, 4 * start);
+          gl.vertexAttribPointer(L.a_xhi, 1, gl.UNSIGNED_SHORT, false, 4, 4 * start + 2);
+          gl.vertexAttribPointer(L.a_ylo, 1, gl.UNSIGNED_SHORT, false, 4, 4 * (n + start));
+          gl.vertexAttribPointer(L.a_yhi, 1, gl.UNSIGNED_SHORT, false, 4, 4 * (n + start) + 2);
+          gl.bindBuffer(gl.ARRAY_BUFFER, src.glNi);
+          gl.vertexAttribPointer(L.a_ni, 1, gl.UNSIGNED_SHORT, false, 2, 2 * start);
+          if (pts) gl.drawArrays(gl.POINTS, 0, count);
+          else if (this.webgl2) gl.drawArraysInstanced(gl.TRIANGLE_STRIP, 0, 4, count);
           else this.ext.drawArraysInstancedANGLE(gl.TRIANGLE_STRIP, 0, 4, count);
           drawn += count;
         }
@@ -6600,6 +7640,351 @@ const mercXn = (lng) => (lng + 180) / 360;
 const mercYn = (lat) => {
   const s = Math.sin(lat * Math.PI / 180);
   return 0.5 - Math.log((1 + s) / (1 - s)) / (4 * Math.PI);
+};
+
+// ---------------------------------------------------------------- buried-dot culling (§4.2e)
+/* THE ZOOMED-OUT PHONE. Anita, 2026-09-14: every religion shown, every country, most of the
+   world on screen is laggy on a phone. It is the most expensive frame this map draws, six million
+   instances, and most of them are painted over by later dots in the same few pixels.
+
+   A DOT IS SKIPPED ONLY WHEN THE DOTS DRAWN ON TOP OF IT ALREADY HIDE IT. Walking a country front
+   to back (last drawn first), a dot is kept if at some sample point it could still move the
+   colour by LOD_EPS given the dots already kept in front of it, and skipped otherwise. So this is
+   not the thinning §4.2 forbids: nothing is decided by rank or by chance, and a small group is
+   never skipped for being small, because nothing sits on top of it.
+
+   ONLY WHILE EVERY DOT IS SHOWN. Hide anything and a dot underneath can come back into view, so
+   the moment the palette hides one node a country has, that country draws its full buffer again.
+   Narrow selections were never the slow case.
+
+   Computed in a worker, per country per zoom level, for this screen's pixel ratio and the size
+   slider's value, and only for countries on screen. Until a level lands the full buffer draws, so
+   nothing ever waits on it. A level serves the zooms between the level below it and itself:
+   zooming OUT from where it was computed only makes the dots on top bigger.
+
+   Measured 2026-09-14 over all 126 countries at pixel ratio 3: z1 keeps 18% of dots, z2 25%,
+   z3 37%. The ladder stops at 3 because by then a phone holds a region rather than the world. */
+const LOD_LEVELS = [1, 1.25, 1.5, 2, 2.5, 3];
+const LOD_EPS = 0.5 / 255;
+
+/* The worker half. A function so it lives in this file like everything else; its source text is
+   what the Worker runs, and it is never called on the main thread. */
+function lodWorkerMain() {
+  const CPD = 3;            // grid cells per dot radius
+  const Q = 4;              // sub-cell positions a dot centre is snapped to
+  const STEP = 0.025;       // one unit of 8-bit optical depth
+  const PAGE = 256, PSH = 8, BSH = 3, BPP = PAGE >> BSH;
+  let cur = null;           // the last country's positions, so its next level needs no new copy
+
+  const smooth = (e0, e1, v) => {
+    const t = Math.min(1, Math.max(0, (v - e0) / (e1 - e0)));
+    return t * t * (3 - 2 * t);
+  };
+
+  /* For each snapped centre, the cells a dot reaches: how buried a cell must already be for the
+     dot to be invisible there (thr), and how much the dot buries it (inc). The alpha is the
+     fragment shader's own: DOT_ALPHA inside, smoothstep over the last min(1, r) device px. */
+  function stencils(rDev, alpha, eps) {
+    const r = CPD, aa = Math.min(1, rDev) / (rDev / CPD);
+    const R = Math.ceil(r) + 1;
+    const out = [];
+    for (let qx = 0; qx < Q; qx++) for (let qy = 0; qy < Q; qy++) {
+      const di = [], dj = [], thr = [], inc = [];
+      let maxThr = -1;
+      for (let i = -R; i <= R; i++) for (let j = -R; j <= R; j++) {
+        const d = Math.hypot(i + 0.5 - (qx + 0.5) / Q, j + 0.5 - (qy + 0.5) / Q);
+        const a = alpha * (1 - smooth(r - aa, r, d));
+        if (a <= 0) continue;
+        const t = a <= eps ? -1 : Math.min(254, Math.floor(Math.log(a / eps) / STEP));
+        const c = Math.min(255, Math.floor(-Math.log(1 - a) / STEP));
+        if (t < 0 && c === 0) continue;
+        di.push(i); dj.push(j); thr.push(t); inc.push(c);
+        if (t > maxThr) maxThr = t;
+      }
+      out.push({ di: Int32Array.from(di), dj: Int32Array.from(dj), thr: Int16Array.from(thr),
+                 inc: Uint8Array.from(inc), maxThr });
+    }
+    return { st: out, R };
+  }
+
+  function cull(x, y, n, rDev, world, alpha, eps, keep) {
+    const { st: stencilsQ, R } = stencils(rDev, alpha, eps);
+    const cellsPerWorld = world * CPD / rDev;
+    const toCell = cellsPerWorld / 4294967296;
+    // Optical depth in 256-cell pages, allocated only where a country has dots, with an 8-cell
+    // block minimum beside it so a dot in an already-buried patch is dismissed in a few reads.
+    const npx = Math.ceil(cellsPerWorld / PAGE) + 2;
+    const pages = new Array(npx * npx);
+    const page = (pi, pj) => {
+      const k = pi * npx + pj;
+      return pages[k] || (pages[k] = { q: new Uint8Array(PAGE * PAGE),
+        bmin: new Uint8Array(BPP * BPP), dirty: new Uint8Array(BPP * BPP) });
+    };
+    let kept = 0;
+    for (let k = n - 1; k >= 0; k--) {
+      const cx = x[k] * toCell, cy = y[k] * toCell;
+      const ci = Math.floor(cx), cj = Math.floor(cy);
+      const s = stencilsQ[(((cx - ci) * Q) | 0) * Q + (((cy - cj) * Q) | 0)];
+      const di = s.di, dj = s.dj, thr = s.thr, inc = s.inc, m = di.length;
+      const pi = ci >> PSH, pj = cj >> PSH;
+      const li = ci - (pi << PSH), lj = cj - (pj << PSH);
+      let vis = false;
+      if (li >= R && li + R < PAGE && lj >= R && lj + R < PAGE) {
+        const pg = page(pi, pj), q = pg.q;
+        let minq = 255;
+        const bi0 = (li - R) >> BSH, bi1 = (li + R) >> BSH;
+        const bj0 = (lj - R) >> BSH, bj1 = (lj + R) >> BSH;
+        for (let bi = bi0; bi <= bi1 && minq > s.maxThr; bi++) {
+          for (let bj = bj0; bj <= bj1; bj++) {
+            const b = bi * BPP + bj;
+            if (pg.dirty[b]) {
+              let mn = 255;
+              for (let rr = bi << BSH, re = rr + 8; rr < re; rr++) {
+                const row = rr * PAGE;
+                for (let cc = bj << BSH, ce = cc + 8; cc < ce; cc++) {
+                  const v = q[row + cc];
+                  if (v < mn) mn = v;
+                }
+              }
+              pg.bmin[b] = mn; pg.dirty[b] = 0;
+            }
+            if (pg.bmin[b] < minq) minq = pg.bmin[b];
+          }
+        }
+        if (minq > s.maxThr) continue;
+        for (let e = 0; e < m; e++) {
+          if (q[(li + di[e]) * PAGE + lj + dj[e]] <= thr[e]) { vis = true; break; }
+        }
+        if (!vis) continue;
+        for (let e = 0; e < m; e++) {
+          if (!inc[e]) continue;
+          const rr = li + di[e], cc = lj + dj[e], idx = rr * PAGE + cc;
+          const v = q[idx] + inc[e];
+          q[idx] = v > 255 ? 255 : v;
+          pg.dirty[(rr >> BSH) * BPP + (cc >> BSH)] = 1;
+        }
+      } else {
+        // near a page edge, every cell looked up on its own
+        for (let e = 0; e < m; e++) {
+          const gi = ci + di[e], gj = cj + dj[e];
+          if (gi < 0 || gj < 0) { vis = true; break; }
+          const pg = page(gi >> PSH, gj >> PSH);
+          if (pg.q[(gi & (PAGE - 1)) * PAGE + (gj & (PAGE - 1))] <= thr[e]) { vis = true; break; }
+        }
+        if (!vis) continue;
+        for (let e = 0; e < m; e++) {
+          const gi = ci + di[e], gj = cj + dj[e];
+          if (!inc[e] || gi < 0 || gj < 0) continue;
+          const pg = page(gi >> PSH, gj >> PSH);
+          const rr = gi & (PAGE - 1), cc = gj & (PAGE - 1), idx = rr * PAGE + cc;
+          const v = pg.q[idx] + inc[e];
+          pg.q[idx] = v > 255 ? 255 : v;
+          pg.dirty[(rr >> BSH) * BPP + (cc >> BSH)] = 1;
+        }
+      }
+      keep[k] = 1;
+      kept++;
+    }
+    return kept;
+  }
+
+  self.onmessage = (ev) => {
+    const m = ev.data;
+    if (m.x) cur = { x: new Uint32Array(m.x), y: new Uint32Array(m.y) };
+    const keep = new Uint8Array(m.n);
+    const kept = cull(cur.x, cur.y, m.n, m.rDev, m.world, m.alpha, m.eps, keep);
+    self.postMessage({ id: m.id, keep: keep.buffer, kept }, [keep.buffer]);
+  };
+}
+
+Object.assign(SCATTER, {
+  lodOff: /[?&]lod=0(&|$)/.test(location.search),   // ?lod=0 draws every dot, for comparison
+  paletteVersion: 0,
+  lodQueue: new Map(),      // 'cc|level' -> {cc, L, pri, key}
+  lodInFlight: null,
+  lodSeq: 0,
+  lodTimer: 0,
+  lodWorkerHas: null,
+});
+
+SCATTER.lodKey = function () {
+  return (window.devicePixelRatio || 1) + '|' + dotScale;
+};
+
+/* Whether every dot this country carries is drawn right now, by the shader's own rule. */
+SCATTER.lodAllShown = function (d) {
+  const key = this.paletteVersion + '|' + onlyMeasured;
+  if (d.lodShownKey === key) return d.lodShown;
+  if (!d.present) {
+    const seen = new Uint8Array(65536), list = [];
+    for (let i = 0; i < d.n; i++) {
+      const v = d.nid[i];
+      if (!seen[v]) { seen[v] = 1; list.push(v); }
+    }
+    d.present = list;
+  }
+  const N = this.paletteN, pal = this.palette;
+  let ok = true;
+  for (const v of d.present) {
+    const tier = v >> 14;
+    if (onlyMeasured && tier >= 2) { ok = false; break; }
+    const slot = (v & 0x3fff) + (onlyMeasured && tier === 1 ? N : 0);
+    if (pal[slot * 4 + 3] < 128) { ok = false; break; }
+  }
+  d.lodShownKey = key;
+  d.lodShown = ok;
+  return ok;
+};
+
+/* The culled copy of `d` to draw at this zoom, or null for the full buffer. Called from render()
+   only for a country with something on screen, which is what keeps the worker off-screen. */
+SCATTER.lodFor = function (gl, d, zoom) {
+  if (this.lodOff || this.edition() !== 'fine') return null;
+  const L = LOD_LEVELS.find(l => zoom <= l + 1e-6);
+  if (L === undefined || !this.lodAllShown(d)) return null;
+  const key = this.lodKey();
+  if (!d.lod || d.lod.key !== key) this.lodDrop(gl, d, key);
+  const lv = d.lod.levels[L];
+  if (!lv) {
+    // this level first; the rest of the ladder queues behind it so a pinch finds them waiting
+    this.lodRequest(d, L, 1);
+    for (const l of LOD_LEVELS) if (!d.lod.levels[l]) this.lodRequest(d, l, 0);
+    return null;
+  }
+  if (lv.pending) {
+    const e = this.lodQueue.get(d.cc + '|' + L);
+    if (e) e.pri = 1;
+    return null;
+  }
+  if (!lv.glPos) {
+    // uploaded here rather than when the worker answers: MapLibre re-syncs its GL state cache
+    // after a custom layer renders, and not after a bind made from a message handler
+    lv.glPos = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, lv.glPos);
+    gl.bufferData(gl.ARRAY_BUFFER, lv.pos, gl.STATIC_DRAW);
+    lv.glNi = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, lv.glNi);
+    gl.bufferData(gl.ARRAY_BUFFER, lv.ni, gl.STATIC_DRAW);
+    lv.pos = lv.ni = null;
+  }
+  return lv;
+};
+
+SCATTER.lodDrop = function (gl, d, key) {
+  if (d.lod && gl) {
+    for (const L in d.lod.levels) {
+      const lv = d.lod.levels[L];
+      if (lv.glPos) { gl.deleteBuffer(lv.glPos); gl.deleteBuffer(lv.glNi); }
+    }
+  }
+  for (const L of LOD_LEVELS) this.lodQueue.delete(d.cc + '|' + L);
+  d.lod = { key, levels: {} };
+};
+
+SCATTER.lodRequest = function (d, L, pri) {
+  d.lod.levels[L] = { pending: true };
+  this.lodQueue.set(d.cc + '|' + L, { cc: d.cc, L, pri, key: d.lod.key });
+  if (!this.lodTimer) this.lodTimer = setTimeout(() => { this.lodTimer = 0; this.lodPump(); }, 0);
+};
+
+SCATTER.lodWorker = function () {
+  if (this._lodWorker !== undefined) return this._lodWorker;
+  this._lodWorker = null;
+  try {
+    const src = '(' + lodWorkerMain.toString() + ')()';
+    const w = new Worker(URL.createObjectURL(new Blob([src], { type: 'text/javascript' })));
+    w.onmessage = (e) => this.lodDone(e.data);
+    w.onerror = (e) => {
+      console.warn('scatter: culling worker failed, drawing every dot', e.message);
+      this.lodOff = true;
+      this.lodInFlight = null;
+    };
+    this._lodWorker = w;
+  } catch (err) {
+    console.warn('scatter: no worker for culling, drawing every dot', String(err));
+    this.lodOff = true;
+  }
+  return this._lodWorker;
+};
+
+/* One job at a time: the level the camera is in before the rest of the ladder, and within that
+   the biggest country first, since it is the one costing the frame. */
+SCATTER.lodPump = function () {
+  if (this.lodInFlight || !this.lodQueue.size || this.lodOff) return;
+  const w = this.lodWorker();
+  if (!w) return;
+  const key = this.lodKey();
+  let best = null;
+  for (const [k, e] of this.lodQueue) {
+    const d = this.data.fine[e.cc];
+    if (!d || !d.lod || e.key !== key || d.lod.key !== key) { this.lodQueue.delete(k); continue; }
+    if (!best || e.pri > best.pri || (e.pri === best.pri && d.n > this.data.fine[best.cc].n))
+      best = e;
+  }
+  if (!best) return;
+  this.lodQueue.delete(best.cc + '|' + best.L);
+  const d = this.data.fine[best.cc];
+  const dpr = window.devicePixelRatio || 1;
+  const msg = { id: ++this.lodSeq, n: d.n, alpha: DOT_ALPHA, eps: LOD_EPS,
+                world: 512 * Math.pow(2, best.L) * dpr,
+                rDev: radiusFlatAt(ATOMIC_STOPS, best.L, 1) * dpr };
+  const transfer = [];
+  if (this.lodWorkerHas !== best.cc) {
+    const x = d.x.slice(), y = d.y.slice();
+    msg.x = x.buffer; msg.y = y.buffer;
+    transfer.push(x.buffer, y.buffer);
+    this.lodWorkerHas = best.cc;
+  }
+  this.lodInFlight = { id: msg.id, cc: best.cc, L: best.L, key };
+  w.postMessage(msg, transfer);
+};
+
+SCATTER.lodDone = function (msg) {
+  const job = this.lodInFlight;
+  this.lodInFlight = null;
+  if (job && job.id === msg.id) {
+    const d = this.data.fine[job.cc];
+    const lv = d && d.lod && d.lod.key === job.key && d.lod.levels[job.L];
+    if (lv && lv.pending) {
+      d.lod.levels[job.L] = this.lodCompact(d, new Uint8Array(msg.keep), msg.kept);
+      if (this.map) this.map.triggerRepaint();
+    }
+  }
+  this.lodPump();
+};
+
+/* The kept dots in their original draw order, in the buffer's own layout, with the buckets
+   renumbered so render() culls and runs them exactly as it does the full buffer. */
+SCATTER.lodCompact = function (d, keep, m) {
+  const pos = new Uint32Array(2 * m), ni = new Uint16Array(m), buckets = [];
+  let at = 0;
+  for (const bk of d.buckets.slice().sort((a, b) => a[4] - b[4])) {
+    const s0 = at;
+    for (let i = bk[4], e = bk[4] + bk[5]; i < e; i++) {
+      if (!keep[i]) continue;
+      pos[at] = d.x[i]; pos[m + at] = d.y[i]; ni[at] = d.nid[i];
+      at++;
+    }
+    if (at > s0) buckets.push([bk[0], bk[1], bk[2], bk[3], s0, at - s0]);
+  }
+  return { n: m, buckets, pos, ni, glPos: null, glNi: null };
+};
+
+// for the console and for the A/B screenshots
+SCATTER.lodIdle = function () { return !this.lodInFlight && !this.lodQueue.size; };
+SCATTER.lodStats = function () {
+  const out = {};
+  for (const cc in this.data.fine) {
+    const d = this.data.fine[cc];
+    if (!d.lod) continue;
+    for (const L in d.lod.levels) {
+      const lv = d.lod.levels[L];
+      if (lv.pending) continue;
+      const o = out[L] || (out[L] = { kept: 0, of: 0, countries: 0 });
+      o.kept += lv.n; o.of += d.n; o.countries++;
+    }
+  }
+  return out;
 };
 
 /* "loading…" goes when there are DOTS to look at, not when the style is ready. It used to be
@@ -6932,6 +8317,7 @@ SCATTER.watchMissing = function () {
    `setFilter`, and writing it costs 0.006ms against the filter's multi-second tile reparse. */
 SCATTER.setPalette = function () {
   if (!this.palette) return;
+  this.paletteVersion++;          // §4.2e re-asks "is every dot shown" when this moves
   const inScope = scope ? new Set(subtree(scope)) : null;
   /* §7a-i said both renderers must implement the roll-up "from the same helper, because
      `separate` and `merged` disagreeing about what the toggle means would be worse than
@@ -7285,6 +8671,18 @@ SCATTER.pick = function (point) {
    a camera that jumps once the data arrives is worse than a constant that needs widening the
    day a country outside it is built.
 
+   CENTRED ON THE PRIME MERIDIAN SINCE 2026-09-15 — Anita: "when we load in we center the view
+   slightly east. lets just center on prime meridian actually, feels less opinionated to me." The
+   data box above, -127 to 180, put the centre at 26.5°E. The box centred on 0 that holds both of
+   its edges runs -180 to 180, and that opened the world a quarter of a zoom level smaller.
+
+   SO IT IS A QUARTER ZOOM TIGHTER THAN THE WHOLE WORLD, AND NO LONGER THE DATA — Anita, the same
+   day: "lets start zoomed in a quarter of a zoom level too. we dont have to hold the whole world,
+   peopel can scroll." ±151.4 is 360 / 2^0.25 wide, so where the width sets the fit (every desktop
+   window short of an ultrawide) it opens exactly 0.25 in from the -180 to 180 fit. New Zealand,
+   Hawaii and western Alaska start off the edge. A phone's fit is clamped at minZoom either way, so
+   it does not change.
+
    ASYMMETRIC PADDING, AND ONLY THE RIGHT SIDE IS REAL. `panelPadding` is the wrong table for
    this one view: it reserves 250 px on the left for a panel that is a hundred pixels tall, so
    the world lands smaller for nothing, and at this zoom a world narrower than the window means
@@ -7295,16 +8693,22 @@ SCATTER.pick = function (point) {
    minZoom drops to 1 because 2 cannot hold the world on a narrow window — 512·2² px of world
    against a 390 px phone is 68° of longitude, which is a view of the Mediterranean. A view with
    more than 130° of longitude in it cannot take the legend anyway (`tooWide`), and every radius
-   stop table already runs down to z0. */
+   stop table already runs down to z0.
+
+   NO TILT — Anita, 2026-09-14: it was annoying, and the scatter's buried-dot culling (§4.2e)
+   assumes one scale across the whole view, which a tilted camera does not have. Rotation stays. */
 const map = new maplibregl.Map({
   container: 'map',
   style: 'https://tiles.openfreemap.org/styles/dark',
-  bounds: [[-127, -50], [180, 64]],
+  bounds: [[-151.4, -50], [151.4, 64]],
   fitBoundsOptions: {
     padding: { left: 14, top: 14, bottom: 14,
                right: panelPadding(document.getElementById('map')).right },
   },
   minZoom: 1,
+  maxPitch: 0,
+  pitchWithRotate: false,
+  touchPitch: false,
 });
 
 map.on('load', async () => {
@@ -7329,6 +8733,12 @@ map.on('load', async () => {
   BUILT = Object.keys(META).sort((a, b) => META[a].name.localeCompare(META[b].name));
   WORLD = { dots: tallies.dots || {}, rings: tallies.rings || {},
             dots10k: tallies.dots10k || null, rings10k: tallies.rings10k || {} };
+  // §10.7's sort key: each family's people across the archive, off the 1:1,000 edition
+  for (const id in WORLD.dots) {
+    const r = id.split('.')[0];
+    ROOT_WORLD_PEOPLE[r] = (ROOT_WORLD_PEOPLE[r] || 0)
+      + WORLD.dots[id] * (tallies.dot_value || 1000);
+  }
   /* Which editions this archive carries. Read from the build rather than assumed, so the
      viewer and a pmtiles made without --coarse cannot disagree about which layers exist. */
   if ((tallies.dot_values || []).includes(10000)) EDITIONS = ['', '10k'];
@@ -7362,12 +8772,15 @@ map.on('load', async () => {
      no-op. The same distinction on a dark map has to run the other way, so the countries
      that CAN answer are lifted a few percent instead.
 
-     And the lift has to clear the WATER, not just the land: at 5% the wash lands on
-     rgb(25,25,25), which is the sea's own colour and reads as a flooded country. 0.1 puts
-     it near rgb(27,27,27) — level with the water in lightness and separated from it by
-     being NEUTRAL where the sea is faintly blue, which is as quiet as this can get and
-     still be there. Anita walked it down 0.22 -> 0.15 -> 0.1 against the real map; the
-     lift kept reading as a thing in its own right rather than as backing for the dots.
+     Anita walked it down 0.22 -> 0.15 -> 0.1 against the real map; the lift kept reading as
+     a thing in its own right rather than as backing for the dots.
+
+     AND DOWN AGAIN TO 0.06, 2026-09-14. Anita: "the 'currently looking at these countries'
+     gray out overlay is like very similar to water color. lets make it a little darker
+     (like lower opacity)". At 0.1 a #a0a0a0 wash over rgb(12,12,12) lands on about
+     rgb(27,27,27), which is the sea's own lightness, so a lit country read as water and was
+     told apart from it only by the sea's faint blue. 0.06 lands on about rgb(21,21,21),
+     between the land and the water, so a lit country still reads as land.
 
      NEUTRAL GREY, AND NOT THE BLUE-GREY IT STARTED AS. A tinted wash competes with
      whatever it sits under: at #8fa0c0 it was a blue veil beneath Judaism's blue dots, and
@@ -7400,7 +8813,32 @@ map.on('load', async () => {
     filter: ['in', ['get', 'cc'], ['literal', []]],
     paint: {
       'fill-color': '#a0a0a0',
-      'fill-opacity': ['interpolate', ['linear'], ['zoom'], 3, 0.1, 6.5, 0.1, 8.5, 0],
+      'fill-opacity': ['interpolate', ['linear'], ['zoom'], 3, 0.06, 6.5, 0.06, 8.5, 0],
+    },
+  });
+
+  /* §15's outlines, created empty and filled by `loadEstimates`, which runs only once the layer is
+     turned on. Over the wash and under every dot: an outline is a note about a country, and a dot
+     inside it is still the more specific statement. Two sources from one file: the polygons answer
+     the hover, and the lines `estimateLines` makes from them are what is drawn.
+
+     HALF THE WIDTH IT FIRST SHIPPED AT, Anita 2026-09-14. The opacity is set per country by
+     `applyEstimates`, from how much of the country the figure is. */
+  map.addSource('estimate-shapes', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
+  map.addSource('estimate-lines', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
+  map.addLayer({
+    id: 'estimate-hit', type: 'fill', source: 'estimate-shapes', maxzoom: EST_FADE[1],
+    filter: ['in', ['get', 'cc'], ['literal', []]],
+    paint: { 'fill-color': '#000', 'fill-opacity': 0 },
+  });
+  map.addLayer({
+    id: 'estimate-outline', type: 'line', source: 'estimate-lines', maxzoom: EST_FADE[1],
+    filter: ['in', ['get', 'cc'], ['literal', []]],
+    layout: { 'line-join': 'round', 'line-cap': 'round' },
+    paint: {
+      'line-color': '#8a8a8a',
+      'line-opacity': ['interpolate', ['linear'], ['zoom'], EST_FADE[0], 0.9, EST_FADE[1], 0],
+      'line-width': ['interpolate', ['linear'], ['zoom'], 1, 0.4, 5, 0.65, 9, 0.9],
     },
   });
 
@@ -7537,6 +8975,47 @@ map.on('load', async () => {
     map.on('mouseleave', layer, () => pop.remove());
   }
 
+  /* §10.6's country card waits for the pointer to rest. Both hover paths below hand a move that
+     finds nothing under the pointer to `dwellArm`, and call `dwellStop` first wherever a dot or
+     an estimate card answers, which keeps §15.2's order: a dot, then an estimate, then this.
+     `dwellStop` leaves the popup alone, because a dot card may just have replaced the country
+     card in it. */
+  const DWELL_MS = 500, DWELL_SLOP = 4;
+  let dwellTimer = 0, dwellAt = null, dwellUp = false;
+  /* A TAP DOES NOT WAIT. Anita, 2026-09-14, on a phone: *"it brings it up half a second after
+     tapping. i guess on mobile we can just have it pop up instantly."* A tap arrives here as the
+     mousemove the browser sends once the touch ends, so a touch in the last second is what marks
+     it, and the mouse on a touch laptop still waits. */
+  const TAP_WINDOW_MS = 1000;
+  let lastTouch = -Infinity;
+  map.on('touchstart', () => { lastTouch = performance.now(); });
+  map.on('touchend', () => { lastTouch = performance.now(); });
+  const dwellStop = () => {
+    clearTimeout(dwellTimer);
+    dwellTimer = 0; dwellAt = null; dwellUp = false;
+  };
+  const dwellArm = (e) => {
+    const moving = map.isMoving();
+    // a hand resting on the mouse still moves it a pixel or two, and that is not leaving
+    if (dwellAt && !moving
+        && Math.hypot(e.point.x - dwellAt.x, e.point.y - dwellAt.y) <= DWELL_SLOP) return;
+    dwellStop();
+    pop.remove();
+    if (moving) return;
+    dwellAt = e.point;
+    const at = e.lngLat;
+    dwellTimer = setTimeout(() => {
+      dwellTimer = 0;
+      const html = countryCardAt(at);
+      if (!html) return;
+      pop.setLngLat(at).setHTML(html).addTo(map);
+      dwellUp = true;
+    }, performance.now() - lastTouch < TAP_WINDOW_MS ? 0 : DWELL_MS);
+  };
+  const dwellDrop = () => { if (dwellUp) pop.remove(); dwellStop(); };
+  map.on('movestart', dwellDrop);
+  map.on('mouseout', dwellDrop);
+
   /* The scatter is not a MapLibre layer, so it gets no delegated events and needs its own
      pair. SCATTER.pick answers with the dot that is actually VISIBLE at the cursor — the last
      one drawn that covers it (§4.2c) — where `e.features[0]` above answers with the first in
@@ -7544,13 +9023,32 @@ map.on('load', async () => {
   const scatterHover = (e) => {
     if (merged || !SCATTER.ready) return false;
     const hit = SCATTER.pick(e.point);
-    if (!hit) { pop.remove(); return false; }
+    if (!hit) {
+      /* No dot under the pointer, so the outlined country under it may answer (§15.11), and
+         failing that the country card is armed (§10.6). A dot always wins: it is the more
+         specific statement about the same place. */
+      const est = estimateCardAt(e.point);
+      if (est) { dwellStop(); pop.setLngLat(e.lngLat).setHTML(est).addTo(map); } else dwellArm(e);
+      return false;
+    }
+    dwellStop();
     const where = (!country && hit.c && META[hit.c])
       ? '<br><span class="sub">' + esc(META[hit.c].name) + '</span>' : '';
     pop.setLngLat(e.lngLat).setHTML(hoverCard(hit.n, { where })).addTo(map);
     return hit;
   };
   map.on('mousemove', scatterHover);
+  /* The merged renderer's half of §15's hover and §10.6's. Merged marks and rings answer through
+     their own delegated listeners above, so a country speaks only where none of them is under the
+     pointer. Over all ground rather than delegated to `estimate-hit`, because the country card is
+     armed anywhere, and `dwellArm` taking the popup down is what leaving an outline used to do. */
+  map.on('mousemove', e => {
+    if (!merged && SCATTER.ready) return;          // separate: scatterHover has already asked
+    const marks = [activeDotLayer(), activeRingLayer()].filter(l => map.getLayer(l));
+    if (map.queryRenderedFeatures(e.point, { layers: marks }).length) { dwellStop(); return; }
+    const html = estimateCardAt(e.point);
+    if (html) { dwellStop(); pop.setLngLat(e.lngLat).setHTML(html).addTo(map); } else dwellArm(e);
+  });
   map.on('dblclick', (e) => {
     if (merged || !SCATTER.ready) return;
     const hit = SCATTER.pick(e.point);
@@ -7632,6 +9130,13 @@ segWire('rings-seg', () => showRings ? 1 : 0, v => {
   showRings = !!v;
   rebuild();                       // ring-only nodes enter and leave the legend with them
   recolour(); applyPaint(); renderTree();
+});
+/* §15. The first time it is turned on it fetches the layer's two files; the outlines and the
+   caption line arrive when they land, from `loadEstimates`. */
+segWire('est-seg', () => showEstimates ? 1 : 0, v => {
+  showEstimates = !!v;
+  if (showEstimates) loadEstimates();
+  applyPaint(); renderTree();
 });
 /* Slider position -> multiplier, geometric so the ends are equally reachable and the midpoint
    is exactly 1. Range is 0.33x to 3x: below that a dot stops being visible at all, above it
