@@ -71,9 +71,40 @@ a:active {
 // title. The breakpoint is wider than minima's 600px to leave room for the bunny
 // counter. Links that don't fit go into the "more" dropdown (script in header.html).
 .nav-more[hidden] { display: none; }
+.nav-collapse-btn { display: none; }
 @media screen and (max-width: 680px) {
+  .site-header {
+    min-height: 0;
+  }
+  .site-header .wrapper {
+    padding-top: 3px;
+  }
   .site-title {
     line-height: 40px;
+  }
+  // triangle at the top right that hides/shows the link row (script in header.html)
+  .nav-collapse-btn {
+    display: block;
+    position: absolute;
+    top: 7px;
+    right: 4px;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    background: none;
+    border: 0;
+    cursor: pointer;
+
+    // right-angle triangle pointing down while open, left while collapsed
+    svg {
+      display: block;
+      margin: auto;
+      fill: var(--teal);
+    }
+  }
+  .nav-collapsed {
+    .nav-collapse-btn svg { transform: rotate(90deg); }
+    .site-nav { display: none; }
   }
   // the shorter title line lifts the title 7px; lift the bunny counter with it
   #bunny-counter {

@@ -1,4 +1,8 @@
 <header class="site-header">
+  <script>
+    // Applied before the nav is parsed, so a collapsed nav never flashes open.
+    try { if (localStorage.getItem('navCollapsed') === '1') document.currentScript.parentNode.classList.add('nav-collapsed'); } catch (e) {}
+  </script>
 
   <div class="wrapper">
     {%- assign default_paths = site.pages | map: "path" -%}
@@ -12,6 +16,9 @@
     </span>
 
     {%- if titles_size > 0 -%}
+      <button type="button" class="nav-collapse-btn" aria-controls="site-nav" aria-label="hide links" aria-expanded="true">
+        <svg viewBox="0 0 10 5" width="10" height="5" aria-hidden="true"><polygon points="0,0 10,0 5,5"/></svg>
+      </button>
       <nav class="site-nav" id="site-nav">
         <div class="nav-links">
           {%- for path in page_paths -%}
@@ -77,6 +84,25 @@
           });
           if (document.fonts && document.fonts.ready) document.fonts.ready.then(layout);
           layout();
+
+          // Triangle at the top right hides/shows the link row on phones. The
+          // choice is kept in localStorage so it holds across pages.
+          var header = nav.closest('.site-header');
+          var collapseBtn = header.querySelector('.nav-collapse-btn');
+          function setCollapsed(collapsed) {
+            header.classList.toggle('nav-collapsed', collapsed);
+            collapseBtn.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+            collapseBtn.setAttribute('aria-label', collapsed ? 'show links' : 'hide links');
+          }
+          setCollapsed(header.classList.contains('nav-collapsed'));
+          collapseBtn.addEventListener('click', function() {
+            var collapsed = !header.classList.contains('nav-collapsed');
+            setCollapsed(collapsed);
+            try { localStorage.setItem('navCollapsed', collapsed ? '1' : '0'); } catch (e) {}
+            if (!collapsed) layout();   // the row had no width while hidden
+            // The header changed height; full-screen maps refit on resize.
+            window.dispatchEvent(new Event('resize'));
+          });
         })();
       </script>
     {%- endif -%}
