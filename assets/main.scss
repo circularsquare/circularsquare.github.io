@@ -67,59 +67,80 @@ a:active {
 
 .site-header { border-top: 5px solid var(--teal); border-bottom: 1px solid var(--teal); min-height: 55.95px; position: relative; }
 
-// Make nav collapse into hamburger earlier to leave room for bunny counter
-.site-nav {
-  @media screen and (max-width: 680px) {
-    position: absolute;
-    top: 9px;
-    right: calc(var(--spacing-unit, 30px) / 2);
-    background-color: var(--lgreen);
-    border: 1px solid var(--teal);
-    border-radius: 5px;
-    text-align: right;
+// Phone widths: instead of a hamburger, the links drop to a thin row under the
+// title. The breakpoint is wider than minima's 600px to leave room for the bunny
+// counter. Links that don't fit go into the "more" dropdown (script in header.html).
+.nav-more[hidden] { display: none; }
+@media screen and (max-width: 680px) {
+  .site-title {
+    line-height: 40px;
+  }
+  // the shorter title line lifts the title 7px; lift the bunny counter with it
+  #bunny-counter {
+    transform: translateY(-7px);
+  }
+  .site-nav {
+    // undo minima's floating hamburger box
+    position: static;
+    float: none;
+    clear: both;
+    background: none;
+    border: 0;
+    border-radius: 0;
+    text-align: left;
 
-    label[for="nav-trigger"] {
-      display: block;
-      float: right;
-      width: 36px;
-      height: 36px;
-      z-index: 2;
-      cursor: pointer;
+    display: flex;
+    align-items: center;
+    line-height: 1.5;
+    margin-bottom: 4px;
+
+    .nav-links {
+      display: flex;
+      gap: 14px;
+      min-width: 0;
+      overflow: hidden;
+      white-space: nowrap;
     }
-
-    .menu-icon {
-      display: block;
-      float: right;
-      width: 36px;
-      height: 26px;
-      line-height: 0;
-      padding-top: 10px;
-      text-align: center;
-
-      > svg {
-        fill: var(--teal);
-      }
-    }
-
-    input ~ .trigger {
-      clear: both;
-      display: none;
-    }
-
-    input:checked ~ .trigger {
-      display: block;
-      padding-bottom: 5px;
-    }
-
     .page-link {
       display: block;
-      padding: 5px 10px;
-      margin-left: 0;
+      margin: 0;
+      padding: 4px 0;
+      font-size: 13px;
     }
-
     .page-link:not(:last-child) {
       margin-right: 0;
     }
+    .nav-home {
+      display: none;
+    }
+  }
+  .nav-more {
+    position: relative;
+    flex: none;
+    margin-left: 14px;
+  }
+  .nav-more-btn {
+    font: inherit;
+    font-size: 13px;
+    background: none;
+    border: 0;
+    padding: 4px 0;
+    cursor: pointer;
+  }
+  .nav-more-menu {
+    display: none;
+    position: absolute;
+    top: 100%;
+    right: 0;
+    z-index: 1000;
+    background-color: var(--lgreen);
+    border: 1px solid var(--teal);
+    border-radius: 5px;
+    padding: 4px 0;
+    text-align: right;
+
+    &.open { display: block; }
+    .page-link { padding: 5px 12px; }
   }
 }
 .site-footer { border-top: 1px solid var(--teal); padding: 10px 0px; margin-top: auto;}
