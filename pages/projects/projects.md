@@ -8,11 +8,11 @@ permalink: /projects/
 
 - maps
     - interactive 
-        - <a href="/ancestrydotsna" data-thumb="/assets/thumbs/ancestrydots.png">ancestry dot map</a> (<a href="/ancestrydotsna">usa + canada</a>) (<a href="/ancestrydots">usa</a>)
-        - <a href="/religiondots">religion dot map</a> (wip)
-        - <a href="/japanrail" data-thumb="/assets/thumbs/japanrail.png">japan rail</a>
-        - <a href="/korearail" data-thumb="">korea rail</a> (wip)
-        - <a href="/nycriders" data-thumb="/assets/thumbs/nycriders.png">nyc riders</a>
+        - <a href="/ancestrydotsna" data-thumb="/assets/thumbs/ancestrydots.png">ancestry dot map</a> (<a href="/ancestrydotsna">usa + canada</a>) (<a href="/ancestrydots">usa</a>) (<a href="/assets/posters/ancestrydots.png" data-thumb="/assets/thumbs/posters/ancestrydots.jpg">poster</a>)
+        - <a href="/religiondots">religion dot map</a> (in progress)
+        - <a href="/japanrail" data-thumb="/assets/thumbs/japanrail.png">japan rail</a> (posters: <a href="/assets/posters/japanrail.png" data-thumb="/assets/thumbs/posters/japanrail.jpg">english</a>, <a href="/assets/posters/japanrail_ja.png" data-thumb="/assets/thumbs/posters/japanrail_ja.jpg">japanese</a>)
+        - <a href="/korearail" data-thumb="">korea rail</a>
+        - <a href="/nycriders" data-thumb="/assets/thumbs/nycriders.png">nyc riders</a> (<a href="/assets/posters/nycriders.png" data-thumb="/assets/thumbs/posters/nycriders.jpg">poster</a>)
         - <a href="/londonriders">london riders</a>
         - <a href="/flights" data-thumb="/assets/thumbs/flights.jpg">flight traffic</a>
         - <a href="/cityhistory" data-thumb="/assets/thumbs/cityhistory.png">city history</a>
@@ -43,9 +43,7 @@ permalink: /projects/
 - [photos](/photos/)
 - [audio](/audio/)
 - <a href="bread" data-thumb="/assets/thumbs/breads.png">bread</a>
-- [my github](https://github.com/circularsquare)
 - [(other people's maps i like)](/lists/maps/)
 
-<br/>
 <iframe src="//incr.easrng.net/badge?key=amanita" style="background: url(//incr.easrng.net/bg.gif)" title="increment badge" width="88" height="31" frameborder="0"></iframe>
 
