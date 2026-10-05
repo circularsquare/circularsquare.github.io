@@ -1,0 +1,43 @@
+---
+layout: null
+title: shonei
+permalink: /shonei/
+---
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>shonei</title>
+  <link rel="icon" href="/shonei-web/TemplateData/favicon.ico">
+  <meta name="description" content="shonei - a side view base building game about a settlement of mice. play in your browser.">
+  <style>
+    /* The game is a separate GitHub Pages site (circularsquare/shonei-web, served at
+       /shonei-web/) shown full-window here. The bar sits ABOVE the game rather than over it
+       so it can never cover the game's own corner buttons. */
+    html, body { margin: 0; height: 100%; background: #2b2d4b; overflow: hidden; }
+    body { display: flex; flex-direction: column; font: 13px/1 monospace; }
+    nav { flex: 0 0 24px; display: flex; align-items: center; gap: 16px; padding: 0 10px;
+          background: #22243c; color: #cdb57f; }
+    nav a { color: #cdb57f; text-decoration: none; }
+    nav a:hover { text-decoration: underline; }
+    nav .title { font-weight: bold; margin-right: auto; }
+    iframe { flex: 1 1 auto; width: 100%; border: 0; display: block; }
+  </style>
+</head>
+<body>
+  <nav>
+    <span class="title">shonei</span>
+    <a href="/aboutshonei/">about</a>
+    <a href="https://anitagarden.itch.io/shonei">download</a>
+    <a href="/">anita.garden</a>
+  </nav>
+  <iframe id="game" src="/shonei-web/" title="shonei" allow="fullscreen; autoplay"></iframe>
+  <script>
+    // Keyboard input only reaches the game while its frame has focus, so hand it focus on
+    // load instead of making the player click once before hotkeys work.
+    var game = document.getElementById('game');
+    game.addEventListener('load', function () { game.focus(); });
+  </script>
+</body>
+</html>

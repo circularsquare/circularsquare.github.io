@@ -41,3 +41,6 @@ stuff i want to watch/read
 - berserk
 - hajime no ippo
 - i don't know which is love
+- madoka
+- hunter hunter?
+- azumanga daioh

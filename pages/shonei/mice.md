@@ -4,7 +4,7 @@ title: mice
 permalink: /shonei/mice/
 ---
 
-mice are the main inhabitants of [shonei](/shonei/). 
+mice are the main inhabitants of [shonei](/aboutshonei/). 
 
 ![asd](/assets/shonei/mouse.png)
 

@@ -4,7 +4,7 @@ title: buildings
 permalink: /shonei/buildings/
 ---
 
-buildings, or structures, are things that can be constructed in [shonei](/shonei/).
+buildings, or structures, are things that can be constructed in [shonei](/aboutshonei/).
 
 #### navigation structures 
 - platform 

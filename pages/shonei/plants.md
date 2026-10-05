@@ -4,7 +4,7 @@ title: plants
 permalink: /shonei/plants/
 ---
 
-the plants of [shonei](/shonei/) include 
+the plants of [shonei](/aboutshonei/) include 
 - wheat 
 - rice 
 - soybean

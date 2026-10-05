@@ -4,7 +4,7 @@ title: research
 permalink: /shonei/research/
 ---
 
-research is carried out by [scientists](/shonei/work/) in [shonei](/shonei/).
+research is carried out by [scientists](/shonei/work/) in [shonei](/aboutshonei/).
 
 there are a number of technologies that can be researched, like "weaving" or "mechanics". 
 
