@@ -36,7 +36,7 @@ permalink: /projects/
     - <a href="/circles" data-thumb="/assets/thumbs/citycircles.png">city circles quiz</a>
     - <a href="/assets/guessthecity.html" data-thumb="/assets/thumbs/guessthecity.png">guess the city</a>
     - [bluebs](https://circularsquare.github.io/bluebs/)
-    - [shonei](/aboutshonei/) 
+    - [shonei](/shonei/) 
   <br><br>
 
 - [this site](site/)
