@@ -206,11 +206,12 @@ sitemap: false
       flex: 1; min-width: 0; height: 7px;
       display: flex; align-items: center; cursor: help;
     }
-    #mixtotal {
+    /* `#head-mix*` is the same bar again in the shut phone sheet's header (§9c); see there. */
+    #mixtotal, #head-mixtotal {
       flex: none; width: 36px; text-align: right; cursor: help;
       color: #888; font-variant-numeric: tabular-nums; font-size: 11px; line-height: 1.15;
     }
-    #mixtrack {
+    #mixtrack, #head-mixtrack {
       width: 100%; height: 5px; border-radius: 3px;
       display: flex; overflow: hidden; background: #2a2a2a; pointer-events: none;
     }
@@ -218,11 +219,11 @@ sitemap: false
        white on every span inside it, and a segment must take exactly the width it is
        given. `pointer-events: none` keeps the pointer on `#mixbar`, which is what resolves
        the hover — a 0.2px child cannot be hovered and does not have to be. */
-    #mixtrack i { flex: none; height: 100%; pointer-events: none; }
+    #mixtrack i, #head-mixtrack i { flex: none; height: 100%; pointer-events: none; }
     /* The undrawn share: people the source never counted, so no colour of the map's own can
        stand for them. Diagonal grey on grey is the one fill here that is visibly NOT a
        religion, and it reads as hatching rather than as a category at any width. */
-    #mixtrack i.nd {
+    #mixtrack i.nd, #head-mixtrack i.nd {
       background: repeating-linear-gradient(-45deg,
         #4e4e4e 0 2px, #303030 2px 4px);
     }
@@ -438,6 +439,18 @@ sitemap: false
        hand the gap on itself — including when it is empty and drawing nothing. */
     .ctl-sub + .ctl { margin-top: 5px; }
 
+    /* REGIONS MODE (regions.py). The dot-only controls go, and the shading's key takes a line
+       under the scope bar: a strip from the land colour to the selected religion's, with the
+       share at each stop under it. */
+    body.regions #ctl-dotval, body.regions #ctl-merge,
+    body.regions #ctl-rings { display: none; }
+    #region-ramp { display: none; padding: 6px 10px 7px; border-bottom: 1px solid #2a2a2a;
+                   color: #888; font-size: 11px; }
+    body.regions #region-ramp { display: block; }
+    #region-ramp-bar { height: 8px; border-radius: 2px; margin-top: 4px; }
+    #region-ramp-ticks { display: flex; justify-content: space-between; margin-top: 2px;
+                         font-size: 10px; color: #777; }
+
     /* THE ONE CONTINUOUS CONTROL IN A COLUMN OF SEGMENTED PAIRS, and it takes the row's shape
        rather than keeping the one it had under the picker. Every other row here is
        `label … [chip][chip]`, so the label holds the left edge and the reading holds the right;
@@ -597,6 +610,14 @@ sitemap: false
     }
     .maplibregl-popup-content .key.ring { background: none; border: 1.5px solid; }
     .maplibregl-popup-content .key.outline { background: none; border: 1.5px solid; border-radius: 2px; }
+    /* The map's own hatching (`hatchImage`), as a key: lines in the same grey at the same angle. */
+    .maplibregl-popup-content .key.nd, #prov .ndk {
+      border-radius: 2px; background: #141414
+        repeating-linear-gradient(-45deg, #5c5c5c 0 1.2px, transparent 1.2px 4.2px);
+    }
+    #prov .ndk {
+      display: inline-block; width: 13px; height: 9px; margin-right: 5px; vertical-align: -1px;
+    }
     .maplibregl-popup-content .sub { color: #999; }
     /* §10.6's country card: the country's name, then one line per religion with the same 9px
        key, its name and its share. `.in` is a division of the selected religion, indented one
@@ -650,6 +671,24 @@ sitemap: false
       box-shadow: 0 4px 14px rgba(0,0,0,0.55); pointer-events: none;
     }
     #tip.show { display: block; }
+
+    /* THE FIRST-LOAD HINT — Anita, 2026-10-03: a small note on first load that a religion can be
+       clicked for its breakdown. The tooltip's own tokens, so it reads as one of the page's
+       cards and not a banner. Placed by `placeHint` beside the legend (above the sheet on the
+       phone), and gone for good once a religion is selected or the × is pressed. Under the
+       panels (999 against their 1000), so an open country menu draws over it. */
+    #hint {
+      position: fixed; z-index: 999; display: none; max-width: 210px;
+      background: #151515; border: 1px solid #2a2a2a; border-radius: 6px;
+      padding: 7px 24px 7px 9px; font-size: 11px; line-height: 1.45; color: #ddd;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.55);
+    }
+    #hint.show { display: block; }
+    #hint-close {
+      position: absolute; top: 5px; right: 6px; color: #777; cursor: pointer;
+      font-size: 13px; line-height: 1; padding: 2px 3px;
+    }
+    #hint-close:hover { color: #fff; }
 
     /* ---- the phone, §9c --------------------------------------------------
        Anita, 2026-09-09, with a screenshot of the page at 390px: the legend covered the map
@@ -787,9 +826,25 @@ sitemap: false
       #panel.shut #panel-head b { display: none; }
       #panel.shut #head-scope {
         display: block; flex: 1; min-width: 0; color: #fff; font-size: 12px;
-        overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+      }
+      #panel.shut #head-scope-text {
+        display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
       }
       #panel.shut #head-scope .lv { color: #8a8a8a; font-variant-numeric: tabular-nums; }
+      /* §10.4'S BAR UNDER THE SCOPE LINE — Anita, 2026-10-03: the shut sheet should show *"the
+         thin segmented coloured bar"* as well as the sentence. The same segments and total
+         `renderMix` writes into the open sheet, stacked under the line inside the 42px the
+         header already is, so nothing that measures the shut sheet moves. No tooltip on this
+         copy: the whole header is the tap that opens the sheet, and the bar in the open sheet
+         still answers a hover. */
+      #head-mixrow { display: flex; align-items: center; gap: 5px; margin-top: 3px; }
+      #head-mixtrack { flex: 1; min-width: 0; }
+      #head-mixtotal { cursor: inherit; }
+      /* `hide all` IS DESKTOP-ONLY — Anita, 2026-10-03: on the phone it is *"potentially more
+         harmful than positive"*: one stray tap empties the map, and a whole-taxonomy reset is not
+         a thing a phone reader is there to do. `show all` stays, because it is the way back from
+         a map with nothing on it (see `renderTree`). */
+      #vis-all.hide-all { display: none; }
       /* The head is the target — a chevron is 8px of glyph and this is the one control on the
          page a reader uses before any other. The two depth buttons take their own taps out of
          it, which they do by stopping the click. */
@@ -875,6 +930,7 @@ sitemap: false
     <div id="loading-sub"></div>
   </div>
   <div id="tip"></div>
+  <div id="hint"><span id="hint-text"></span><span id="hint-close" title="Close">×</span></div>
 
   <div id="left">
     <div id="title">Religion</div>
@@ -898,7 +954,7 @@ sitemap: false
            shut: with the body of the sheet gone the word "Religions" names a panel nobody can
            see, and what a reader needs from a closed legend is which one is on the map. Written
            by the same line that writes the scope bar, and hidden at every other time. -->
-      <span id="head-scope"></span>
+      <span id="head-scope"><span id="head-scope-text"></span><span id="head-mixrow"><i id="head-mixtrack"></i><span id="head-mixtotal"></span></span></span>
       <button id="depth-minus" title="Less detail">&minus;</button>
       <button id="depth-plus" title="More detail">+</button>
       <!-- The sheet's disclosure, and only on the phone layout, where the panel is a sheet
@@ -906,6 +962,7 @@ sitemap: false
       <span id="sheet-grip">▾</span>
     </div>
     <div id="scope-bar"><span id="scope-label">all religions</span><a id="vis-all"></a><a id="scope-clear">clear</a><div id="mixrow"><div id="mixbar" data-tip="mix"><i id="mixtrack"></i></div><div id="mixtotal" data-tip="mixtotal"></div></div></div>
+    <div id="region-ramp"><span id="region-ramp-text"></span><div id="region-ramp-bar"></div><div id="region-ramp-ticks"></div></div>
     <div id="tree"></div>
     <div id="legend-note">
       <!-- §4.1a's spatial carry used to be spelled out here and is not any more — Anita,
@@ -920,6 +977,11 @@ sitemap: false
            the grid without saying the same thing twice ("1 dot = [1,000][10,000] people").
            The about panel still opens with the sentence, which is where it was always doing
            the explaining. -->
+      <div class="ctl" id="ctl-mode" title="Dots: one dot per 1,000 people, placed where they live. Regions: each counting unit shaded by the share of the selected religion, drawn only over the land where people live.">
+        <span class="cl">map style</span>
+        <span class="segs" id="mode-seg"><span class="seg" data-v="0">dots</span><span class="seg" data-v="1">regions</span></span>
+      </div>
+
       <div class="ctl" id="ctl-dotval" title="People per dot. 1:10,000 draws a tenth as many marks and is much lighter to render, but small groups stop reaching a whole dot and drop off the map — where their count is measured they become presence rings, and where it is derived they simply go.">
         <span class="cl">people per dot</span>
         <span class="segs" id="dotval-seg"><span class="seg" data-v="1000">1,000</span><span class="seg" data-v="10000">10,000</span></span>
@@ -1016,6 +1078,10 @@ sitemap: false
        a population grid decides where inside the unit the dots fall, so that a large and mostly
        empty district does not wash evenly in colour. Either way it says nothing about where
        inside a unit a group lives.</p>
+    <p>Grey hatching marks places where people live and no source on this map counted them:
+       part of a country its census or survey did not reach, such as Abkhazia, South Ossetia
+       or Karabakh, or a country this map has no figures for. Hover over one, or tap it, for
+       the reason.</p>
     <div id="about-country"></div>
     <p class="credits">Administrative boundaries come from the OCHA Common Operational Datasets on
        the <a href="https://data.humdata.org/" target="_blank" rel="noopener">Humanitarian Data
@@ -1172,6 +1238,9 @@ let showRings = false;
 /* §15's layer: off by default, and its two files are not fetched until the reader turns it on. */
 let showEstimates = false;
 let EST = null;            // estimates.json, once it has loaded
+/* Regions mode: the counting units shaded by the selected node's share (regions.py), in place
+   of the dots. Its tiles are not fetched until the reader first switches to it. */
+let regionsMode = false;
 
 /* §7's confidence treatment, second attempt — and it is a MODE, not a modifier, which is the
    whole reason it survives where the 2026-09-04 desaturation did not. The palette is untouched:
@@ -1268,6 +1337,7 @@ const NOT_A_RELIGION_IDS = ['unaffiliated', 'secular', 'parody',
    gets out of this browser and into PIN / PIN_OVERVIEW, where §6.8 says a hand correction
    belongs and where every viewer gets it. */
 const STORE_KEY = 'religiondots.overrides.v1';
+const HINT_KEY = 'religiondots.hint.v1';   // the first-load hint, once dismissed; see `showHint`
 const HIDDEN_DEFAULT = [];
 let USER_COLOR = {};                       // node id -> css colour, wins over both palettes
 
@@ -3021,7 +3091,8 @@ const PIN = {
   /* #e27373 — Anita's colour. Hue 0 like Church of the East above it, and separated from it
      by lightness alone (67 against 40), which is the same trade `sikhism` takes against
      Buddhism at the family level. */
-  'christianity.oriental':           [0, 66, 59],    // #db5151 — Anita
+  'christianity.oriental':           [351.7, 65.7, 58.8],  // #db5164 — Anita, 2026-10-04, a touch pinker
+                                                     // for more contrast with Eastern Orthodox (was #db5151)
   'christianity.orthodox':           [13, 84, 59],   // #ee653f — Anita
   /* #ba8a12. Was hue 30, a plain orange; this is the gold end of the same idea and it opens
      15 degrees of daylight between Catholic and Eastern Orthodox, which is the pair the
@@ -4346,8 +4417,18 @@ function colorExpr() {
   for (const n of NODES)
     rstops.push(n.id, colorOf[roll[n.id] || n.id] || '#666');
   const rolled = rstops.length ? ['match', ['get', 'n'], ...rstops, '#666'] : '#666';
-  return ['case', ['==', ['get', 't'], 1], rolled, own];
+  return ['case', rollsExpr(), rolled, own];
 }
+
+/* THE TIERS THAT ROLL UP: derived (1) and assigned (3), spec §7e. An assigned dot is one whose
+   religion was counted here and whose branch or school was assigned from outside the source
+   (islam_assign.py), so with inferred dots not shown it goes back to the counted religion
+   exactly as a derived one does. Written as two `==` rather than `in`, because a measured dot
+   has no `t` at all and `get` returns null for it. */
+function rollsExpr() {
+  return ['any', ['==', ['get', 't'], 1], ['==', ['get', 't'], 3]];
+}
+const ROLLS = t => t === 1 || t === 3;
 
 /* "is this feature inside the current scope" — exact node, or a descendant, which needs the
    trailing dot so `christianity.catholic` does not also match a sibling starting with it. */
@@ -4397,7 +4478,7 @@ function layerFilter(scopeToo) {
     // measured in this country. Everything else stays and colorExpr has recoloured it.
     parts.push(['!', ['any',
                       ['==', ['get', 't'], 2],
-                      ['all', ['==', ['get', 't'], 1],
+                      ['all', rollsExpr(),
                               ['in', ['get', 'n'], ['literal', orphans]]]]]);
   }
   if (scopeToo && scope) parts.push(inScopeExpr());
@@ -4654,6 +4735,62 @@ function applyCoverageWash() {
   map.setFilter('coverage-wash', ['in', ['get', 'rg'], ['literal', coverageLit()]]);
 }
 
+// ---------------------------------------------------------------- not drawn, hatched
+/* WHERE PEOPLE LIVE AND NOBODY COUNTED THEM. Anita, 2026-10-03: *"since there are few empty
+   regions left on the map now (like abkhazia, karabakh, sinai) we should mark them in a way that
+   kinda indicates that theyre not drawn. like diagonal grey bands or something."* A blank on a dot
+   map reads as "nobody lives here", and these blanks are the opposite.
+
+   `not_drawn.py` builds the file: part of a built country that no counted unit reaches
+   (`kind: part`, with its `cc`), and a Natural Earth country nobody has built (`kind: whole`). The
+   card names the country and, for a part, prints its `gap`, which is the source's own account of
+   who it left out. With one country on screen only that country's hatching stays, because every
+   other country is blank then for a different reason (the view, not the source). */
+let NOT_DRAWN_CC = new Set();     // built countries with hatched ground, for the provenance key
+
+/* Thin "/" lines on nothing, the legend bar's §10.4 hatch at the same angle. Generated rather than
+   shipped: one tile, seamless because the line test is periodic in x + y. */
+function hatchImage() {
+  const pr = Math.min(2, Math.max(1, Math.round(window.devicePixelRatio || 1)));
+  const s = 6 * pr, w = 1.1 * pr;                 // period and line width, device pixels
+  const data = new Uint8Array(s * s * 4);
+  for (let y = 0; y < s; y++) for (let x = 0; x < s; x++) {
+    const t = (x + y + 1) % s;
+    const d = Math.min(t, s - t) / Math.SQRT2;    // distance across the line
+    const a = Math.max(0, Math.min(1, w / 2 + 0.5 - d));
+    const i = (y * s + x) * 4;
+    data[i] = data[i + 1] = data[i + 2] = 0x6e;
+    data[i + 3] = Math.round(a * 255);
+  }
+  return { img: { width: s, height: s, data }, pr };
+}
+
+async function loadNotDrawn() {
+  const gj = await fetch(DATA_BASE + 'processed/not_drawn.geojson')
+    .then(r => r.json()).catch(() => null);
+  if (!gj) return;
+  NOT_DRAWN_CC = new Set(gj.features.map(f => f.properties.cc).filter(Boolean));
+  const src = map.getSource('not-drawn');
+  if (src) src.setData(gj);
+  renderProvenance();
+}
+
+function applyNotDrawn() {
+  if (!map.getLayer('not-drawn')) return;
+  map.setFilter('not-drawn', country ? ['==', ['get', 'cc'], country] : null);
+}
+
+function notDrawnCardAt(point) {
+  if (!map.getLayer('not-drawn')) return null;
+  const f = map.queryRenderedFeatures(point, { layers: ['not-drawn'] })[0];
+  if (!f) return null;
+  const p = f.properties, m = p.cc ? META[p.cc] : null;
+  const why = m ? (m.gap || 'not counted by ' + (m.name_in || m.name) + '’s source')
+                : 'no figures for this country on the map';
+  return `<span class="key nd"></span><span>${esc(m ? m.name : p.name)}, not drawn`
+    + `<br><span class="sub">${esc(why)}</span></span>`;
+}
+
 // ---------------------------------------------------------------- national estimates, §15
 /* THE FOURTH CELL OF THE DOT AND RING GRAMMAR: a figure for a whole country and no place inside
    it. Pew's 2020 families wherever Pew counts, plus the hand rows in estimates_hand.py.
@@ -4773,6 +4910,424 @@ function applyEstimates() {
   map.setPaintProperty('estimate-outline', 'line-opacity',
     ['interpolate', ['linear'], ['zoom'], EST_FADE[0], byShare, EST_FADE[1], 0]);
 }
+
+// ---------------------------------------------------------------- regions mode
+/* Each counting unit as one polygon, shaded by the selected node's share of its people
+   (regions.py, tiled by regions_tiles.py). Every feature carries `c` country, `u` unit, `p`
+   people, and one property per node AND per ancestor of one, so the selected node's people are
+   one `get` at any level. At every zoom, units too small to see are pooled with their neighbours
+   and carry `m`, how many units the shape holds; its counts are their sums, so its share is
+   the true share of everyone in it. */
+/* Share -> how far along the ramp: 0 is the land, 1 the religion's own colour, and past 1 the
+   colour lifted toward white, so a 95% region still reads apart from a 50% one. Logarithmic at
+   the bottom, because the groups this map is about are fractions of a percent. The first cut
+   ran opacity from 0 to 0.95 and Kazakhstan's 35% north and 95% south came out one green. */
+const REGION_RAMP = [[0, 0], [0.001, 0.15], [0.01, 0.3], [0.05, 0.5], [0.2, 0.75], [0.5, 1],
+                     [0.8, 1.3], [1, 1.55]];
+const REGION_TICKS = [0.001, 0.01, 0.05, 0.2, 0.5, 0.8, 1];
+const LAND_RGB = [12, 12, 12];      // OpenFreeMap dark's land
+
+function regionShareExpr() {
+  return ['/', ['coalesce', ['get', scope], 0], ['max', ['get', 'p'], 1]];
+}
+
+function regionT(share) {
+  for (let i = 1; i < REGION_RAMP.length; i++) {
+    const [s0, o0] = REGION_RAMP[i - 1], [s1, o1] = REGION_RAMP[i];
+    if (share <= s1) return o0 + (share - s0) / (s1 - s0) * (o1 - o0);
+  }
+  return REGION_RAMP[REGION_RAMP.length - 1][1];
+}
+
+/* A position on the ramp as a colour: land toward `hex` up to 1, then `hex` toward white. */
+function rampColor(hex, t) {
+  const c = [1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16));
+  const mix = t <= 1 ? c.map((v, i) => LAND_RGB[i] + (v - LAND_RGB[i]) * t)
+                     : c.map(v => v + (255 - v) * (t - 1));
+  return 'rgb(' + mix.map(Math.round).join(',') + ')';
+}
+
+function renderRegionRamp() {
+  const text = document.getElementById('region-ramp-text');
+  const bar = document.getElementById('region-ramp-bar');
+  const ticks = document.getElementById('region-ramp-ticks');
+  /* With nothing selected each area wears its largest religion's colour, so there is no one
+     colour to draw the key in; it is drawn in grey, for the lightness alone. */
+  const hex = scope ? hslToHex(estimateColor()) : '#a8a8a8';
+  text.textContent = scope ? BY_ID[scope].label + ', share of each area’s people'
+    : 'Largest religion in each area, paler the more of the people it holds. Pies show '
+      + 'every religion, sized by population.';
+  /* The ticks are evenly spaced and the shares under them are not, so the strip is drawn
+     stop by stop at those same positions rather than as one smooth gradient. */
+  const stops = REGION_TICKS.map((s, i) =>
+    rampColor(hex, regionT(s) * (scope ? 1 : PIE_FILL)) + ' '
+    + (i / (REGION_TICKS.length - 1) * 100).toFixed(1) + '%');
+  bar.style.background = 'linear-gradient(to right, ' + stops.join(', ') + ')';
+  ticks.innerHTML = REGION_TICKS.map(s => '<span>' + (s >= 0.01 ? Math.round(s * 100) : s * 100) + '%</span>').join('');
+  bar.style.display = ticks.style.display = '';
+}
+
+function applyRegions() {
+  document.body.classList.toggle('regions', regionsMode);
+  // the dot-size slider sizes the pies in regions mode
+  document.querySelector('#ctl-dotsize .cl').textContent = regionsMode ? 'pie size' : 'dot size';
+  if (!map.getLayer('regions-fill')) return;
+  const vis = regionsMode ? 'visible' : 'none';
+  for (const l of ['regions-fill', 'regions-seam', 'regions-line'])
+    map.setLayoutProperty(l, 'visibility', vis);
+  if (!regionsMode) return;
+  renderRegionRamp();
+  const f = country ? ['==', ['get', 'c'], country] : null;
+  for (const l of ['regions-fill', 'regions-seam', 'regions-line']) map.setFilter(l, f);
+  if (scope) {
+    const hex = hslToHex(estimateColor());
+    const color = ['interpolate', ['linear'], regionShareExpr(),
+                   ...REGION_RAMP.flatMap(([s, t]) => [s, rampColor(hex, t)])];
+    /* FULLY OPAQUE, and it has to be. At 0.92 a tile and the coarser tile MapLibre draws
+       beside it while the first loads showed as a paler square where they overlapped (Anita,
+       over Germany), and the seam line read as a faint outline over its own fill. The ramp
+       already starts from the land's own colour, so opacity was buying nothing. */
+    map.setPaintProperty('regions-fill', 'fill-color', color);
+    map.setPaintProperty('regions-fill', 'fill-opacity', 1);
+    map.setPaintProperty('regions-seam', 'line-color', color);
+    map.setPaintProperty('regions-seam', 'line-opacity', 1);
+  } else {
+    const color = largestExpr();
+    map.setPaintProperty('regions-fill', 'fill-color', color);
+    map.setPaintProperty('regions-fill', 'fill-opacity', 1);
+    map.setPaintProperty('regions-seam', 'line-color', color);
+    map.setPaintProperty('regions-seam', 'line-opacity', 1);
+  }
+  pieLayer.palette();               // the legend's colours may have moved
+  pieDirty = true;
+  map.triggerRepaint();
+}
+
+/* The top-level religions, every one in the taxonomy rather than those present here, since
+   one tile can hold several countries. Hidden ones are left out of the fill and the pies
+   alike, so hiding a religion hands each area to its next largest, as the dots do. */
+function rootIds() {
+  return NODES.filter(n => !n.id.includes('.')).map(n => n.id).filter(r => !isHidden(r));
+}
+function rootColor(r) { return USER_COLOR[r] || colorOf[r] || NODE_COLOR[r] || '#666'; }
+
+/* No selection: each area in its LARGEST religion's colour, on the same ramp the single-
+   religion view uses, by that religion's share. MapLibre cannot loop over properties, so the
+   expression names every root: the largest count is `m`, and the first root equal to it wins. */
+/* MUTED UNDER THE PIES. The pies have no rim (languagedots' look, Anita 2026-10-04), so on a
+   full-strength fill a pie's largest wedge vanished into the fill of its own colour and Germany
+   read as a field of crescents. The fill keeps its order, lighter the larger the share, but at
+   PIE_FILL of the ramp, a dark backdrop the pies stand out from. */
+const PIE_FILL = 0.4;
+function largestExpr() {
+  const roots = rootIds();
+  const vals = roots.map(r => ['coalesce', ['get', r], 0]);
+  const share = ['/', ['var', 'm'], ['max', ['get', 'p'], 1]];
+  const cases = [];
+  roots.forEach((r, i) => {
+    const hex = hslToHex(rootColor(r));
+    cases.push(['==', vals[i], ['var', 'm']],
+               ['interpolate', ['linear'], share,
+                ...REGION_RAMP.flatMap(([s, t]) => [s, rampColor(hex, t * PIE_FILL)])]);
+  });
+  return ['let', 'm', ['max', 0, ...vals], ['case', ...cases, rampColor('#0c0c0c', 0)]];
+}
+
+/* The card for the region under a point, or null. With a selection it is that node's share;
+   without one, the unit's three largest families, which is what a pie will show later. */
+function regionCardAt(point) {
+  if (!regionsMode || !map.getLayer('regions-fill')) return null;
+  const hit = map.queryRenderedFeatures(point, { layers: ['regions-fill'] })[0];
+  if (!hit) return null;
+  const p = hit.properties, pop = p.p || 0;
+  const where = META[p.c] ? esc(META[p.c].name) : p.c;
+  let body;
+  if (scope) {
+    const n = p[scope] || 0;
+    body = `<span class="key" style="background:${estimateColor()}"></span>`
+      + esc(BY_ID[scope].label) + ': ' + pctText(pop ? n / pop : 0) + ' (' + fmtPop(n) + ')';
+  } else {
+    const shown = new Set(rootIds());
+    const roots = Object.keys(p).filter(k => shown.has(k))
+      .sort((a, b) => p[b] - p[a]).slice(0, 3);
+    body = roots.map(k => `<span class="key" style="background:${rootColor(k)}"></span>`
+      + esc(BY_ID[k].label) + ' ' + pctText(p[k] / pop)).join('<br>');
+  }
+  const what = p.m ? p.m.toLocaleString() + ' areas pooled at this zoom, zoom in for each'
+                   : 'one area';
+  return '<span>' + body + '<br><span class="sub">' + fmtPop(pop) + ' people, ' + what
+       + ', ' + where + '</span></span>';
+}
+
+// ---------------------------------------------------------------- regions mode: pies
+/* With nothing selected, a pie per area over the largest-religion fill: every top-level
+   religion, area by population. Anita's spec, 2026-10-04: pies sized by population, merged
+   where there are too many; and, the same day, drawn like languagedots' pies: no border, the
+   dots' own transparency, and light enough to pan without lag.
+
+   THE POINTS ARE THEIR OWN TILE LAYER, `pies` (regions_tiles.py): one per shape per zoom,
+   inside its largest part, with only the top-level counts. Each carries `z`, its zoom, and `i`,
+   its index there, so taking exactly the current zoom's points and deduplicating on `i` counts
+   no pie twice, whatever parent and child tiles MapLibre is holding.
+
+   MERGED ON SCREEN, WITHIN ONE COUNTRY. Pies that overlap, or sit closer than PIE_SPACING, are
+   summed into one at their population-weighted centre, biggest first, and only with pies of
+   the same country: two censuses are never blended into one picture. Re-merged when the view
+   settles (`idle`, gated on `pieDirty`); between those nothing about a pie is recomputed.
+
+   DRAWN ON THE GPU, languagedots' layer carried over: each pie is one instance of a quad (its
+   centre in mercator units, its radius, up to PIE_WEDGES cumulative wedge fractions with a
+   palette index each), and a fragment shader works out which wedge a pixel is in. A pan or a
+   zoom only changes the matrix. The first version here drew on a 2D canvas, projecting every
+   pie and blitting a sprite per pie on every frame. Wedges go in the taxonomy's own order, so
+   a religion's wedge sits in the same place in every pie. */
+/* Tuned on India at z4, the densest case: at 0.0018 and 0.8 the Gangetic plain merged in a
+   cascade into 100M-person giants among crowds of small pies. */
+/* And again for the borderless, see-through pies, where every overlap shows as a blend: 0.55
+   let neighbours overlap by almost half, which read as mush over the Gangetic plain. */
+const PIE_K = 0.0013;          // px of radius per sqrt(person) at zoom 0
+const PIE_MIN_R = 2.5, PIE_MAX_R = 36;
+const PIE_OVERLAP = 0.85;      // merge when centres are closer than this share of r1 + r2,
+const PIE_SPACING = 22;        // or closer than this many px: rural Germany at z5 was 2,500
+                               // minimum-size pies, too many to read, none overlapping
+const PIE_WEDGES = 8;          // more religions than this: the smallest share one last wedge
+let PIES = [], pieDirty = true;
+
+/* Radius from people and zoom. Area grows with the square root of the map's own scale, not
+   with it: a pie keeps to its area as the map zooms but does not swell to fill it. The pie-size
+   slider is the dot-size slider's multiplier, relabelled in regions mode. The shader applies
+   the same formula and clamp; this copy is for the merging. */
+function pieScale(zoom) { return Math.pow(2, zoom / 2) * dotScale; }
+function pieR(pop, zoom) {
+  return Math.min(PIE_MAX_R, Math.max(PIE_MIN_R, PIE_K * Math.sqrt(pop) * pieScale(zoom)));
+}
+
+/* Every root in taxonomy order, hidden or not: the palette texture's index. */
+function allRootIds() { return NODES.filter(n => !n.id.includes('.')).map(n => n.id); }
+
+function rebuildPies() {
+  pieDirty = false;
+  PIES = [];
+  if (regionsMode && !scope && map.getSource('regions')) {
+    const src = map.getSource('regions');
+    const z = Math.max(0, Math.min(src.maxzoom || 8, Math.floor(map.getZoom())));
+    const roots = rootIds();
+    const seen = new Set(), items = [];
+    for (const f of map.querySourceFeatures('regions',
+         { sourceLayer: 'pies', filter: ['==', ['get', 'z'], z] })) {
+      const p = f.properties;
+      if (seen.has(p.i)) continue;
+      seen.add(p.i);
+      if (country && p.c !== country) continue;
+      const k = {};
+      let tot = 0;
+      for (const r of roots) if (p[r]) { k[r] = p[r]; tot += p[r]; }
+      if (!tot) continue;
+      const [lng, lat] = f.geometry.coordinates;
+      const pt = map.project([lng, lat]);
+      items.push({ x: pt.x, y: pt.y, pop: p.p || tot, k, cc: p.c });
+    }
+    // Biggest first, each joining the nearest placed pie of its country it is too close to;
+    // two passes, since a merged pie grows into neighbours the first pass had left alone.
+    const zoom = map.getZoom();
+    let list = items.sort((a, b) => b.pop - a.pop);
+    for (let pass = 0; pass < 2; pass++) {
+      const cell = 2 * PIE_MAX_R, grid = new Map(), placed = [];
+      for (const it of list) {
+        it.r = pieR(it.pop, zoom);
+        let best = null, bestD = Infinity;
+        const cx = Math.floor(it.x / cell), cy = Math.floor(it.y / cell);
+        for (let dx = -1; dx <= 1; dx++) for (let dy = -1; dy <= 1; dy++) {
+          for (const q of grid.get((cx + dx) * 100003 + (cy + dy)) || []) {
+            if (q.cc !== it.cc) continue;
+            const d = Math.hypot(q.x - it.x, q.y - it.y);
+            if (d < Math.max((q.r + it.r) * PIE_OVERLAP, PIE_SPACING) && d < bestD) {
+              best = q; bestD = d;
+            }
+          }
+        }
+        if (best) {
+          const w = best.pop + it.pop;
+          best.x = (best.x * best.pop + it.x * it.pop) / w;
+          best.y = (best.y * best.pop + it.y * it.pop) / w;
+          best.pop = w;
+          for (const r in it.k) best.k[r] = (best.k[r] || 0) + it.k[r];
+          best.r = pieR(best.pop, zoom);
+        } else {
+          placed.push(it);
+          const kk = cx * 100003 + cy;
+          if (!grid.has(kk)) grid.set(kk, []);
+          grid.get(kk).push(it);
+        }
+      }
+      list = placed.sort((a, b) => b.pop - a.pop);
+    }
+    // Into mercator units, which is all the shader needs; smallest first, so the biggest are
+    // drawn last and sit on top.
+    PIES = list.map(it => {
+      const ll = map.unproject([it.x, it.y]);
+      return { x: mercXn(ll.lng), y: mercYn(ll.lat), r0: PIE_K * Math.sqrt(it.pop), k: it.k };
+    }).sort((a, b) => a.r0 - b.r0);
+  }
+  pieLayer.upload();
+}
+
+const pieLayer = {
+  id: 'region-pies', type: 'custom', renderingMode: '2d',
+  onAdd(m, gl) {
+    this.gl = gl;
+    if (!(typeof WebGL2RenderingContext !== 'undefined' && gl instanceof WebGL2RenderingContext)) {
+      console.warn('region pies need WebGL2'); this.dead = true; return;
+    }
+    const vs = `#version 300 es
+      in vec2 a_corner;
+      in vec3 a_pie;                  // centre x, y in mercator units; radius px before scale
+      in vec4 a_cum0; in vec4 a_cum1; in vec4 a_col0; in vec4 a_col1;
+      uniform mat4 u_matrix;
+      uniform float u_pxscale;        // pieScale(zoom)
+      uniform float u_world;          // 512 * 2^zoom, px per mercator unit
+      uniform vec2 u_clamp;           // PIE_MIN_R, PIE_MAX_R
+      out vec2 v_c; out float v_px;
+      flat out vec4 v_cum0; flat out vec4 v_cum1; flat out vec4 v_col0; flat out vec4 v_col1;
+      void main() {
+        float px = clamp(a_pie.z * u_pxscale, u_clamp.x, u_clamp.y);
+        float r = (px + 1.0) / u_world;            // one px of margin for the antialiased edge
+        v_c = a_corner * (px + 1.0) / max(px, 1e-6);
+        v_px = px;
+        v_cum0 = a_cum0; v_cum1 = a_cum1; v_col0 = a_col0; v_col1 = a_col1;
+        gl_Position = u_matrix * vec4(a_pie.xy + a_corner * r, 0.0, 1.0);
+      }`;
+    const fs = `#version 300 es
+      precision highp float;
+      in vec2 v_c; in float v_px;
+      flat in vec4 v_cum0; flat in vec4 v_cum1; flat in vec4 v_col0; flat in vec4 v_col1;
+      uniform sampler2D u_pal; uniform float u_alpha;
+      out vec4 frag;
+      void main() {
+        float d = length(v_c);
+        float a = clamp((1.0 - d) * v_px + 0.5, 0.0, 1.0);
+        if (a <= 0.0) discard;
+        float f = fract(atan(v_c.x, -v_c.y) / 6.2831853 + 1.0);   // from north, clockwise
+        float idx = v_col1.w;
+        if (f < v_cum1.z) idx = v_col1.z;
+        if (f < v_cum1.y) idx = v_col1.y;
+        if (f < v_cum1.x) idx = v_col1.x;
+        if (f < v_cum0.w) idx = v_col0.w;
+        if (f < v_cum0.z) idx = v_col0.z;
+        if (f < v_cum0.y) idx = v_col0.y;
+        if (f < v_cum0.x) idx = v_col0.x;
+        vec3 rgb = texelFetch(u_pal, ivec2(int(idx), 0), 0).rgb;
+        float alpha = u_alpha * a;
+        frag = vec4(rgb * alpha, alpha);
+      }`;
+    const sh = (type, src) => {
+      const s = gl.createShader(type); gl.shaderSource(s, src); gl.compileShader(s);
+      if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(s));
+      return s;
+    };
+    const p = this.prog = gl.createProgram();
+    gl.attachShader(p, sh(gl.VERTEX_SHADER, vs)); gl.attachShader(p, sh(gl.FRAGMENT_SHADER, fs));
+    gl.linkProgram(p);
+    if (!gl.getProgramParameter(p, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(p));
+    this.loc = {};
+    for (const n of ['u_matrix', 'u_pxscale', 'u_world', 'u_clamp', 'u_pal', 'u_alpha'])
+      this.loc[n] = gl.getUniformLocation(p, n);
+    this.vao = gl.createVertexArray();
+    gl.bindVertexArray(this.vao);
+    const quad = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, quad);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, 1, 1, -1, -1, 1, 1, -1, 1]), gl.STATIC_DRAW);
+    const ac = gl.getAttribLocation(p, 'a_corner');
+    gl.enableVertexAttribArray(ac);
+    gl.vertexAttribPointer(ac, 2, gl.FLOAT, false, 0, 0);
+    this.inst = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, this.inst);
+    const stride = 19 * 4;
+    [['a_pie', 3, 0], ['a_cum0', 4, 3], ['a_cum1', 4, 7], ['a_col0', 4, 11], ['a_col1', 4, 15]]
+      .forEach(([name, size, off]) => {
+        const l = gl.getAttribLocation(p, name);
+        gl.enableVertexAttribArray(l);
+        gl.vertexAttribPointer(l, size, gl.FLOAT, false, stride, off * 4);
+        gl.vertexAttribDivisor(l, 1);
+      });
+    gl.bindVertexArray(null);
+    this.pal = gl.createTexture();
+    this.count = 0;
+    this.palette();
+    this.upload();
+  },
+  /* each root's colour, by its index in allRootIds(); redone with the legend's colours */
+  palette() {
+    const gl = this.gl;
+    if (!gl || this.dead || !this.pal) return;
+    const ids = allRootIds();
+    const px = new Uint8Array(Math.max(1, ids.length) * 4);
+    ids.forEach((id, i) => {
+      const hex = hslToHex(rootColor(id));
+      px[i * 4] = parseInt(hex.slice(1, 3), 16); px[i * 4 + 1] = parseInt(hex.slice(3, 5), 16);
+      px[i * 4 + 2] = parseInt(hex.slice(5, 7), 16); px[i * 4 + 3] = 255;
+    });
+    gl.bindTexture(gl.TEXTURE_2D, this.pal);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, Math.max(1, ids.length), 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, px);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+  },
+  upload() {
+    const gl = this.gl;
+    if (!gl || this.dead || !this.inst) return;
+    const idx = {};
+    allRootIds().forEach((id, i) => { idx[id] = i; });
+    const a = new Float32Array(PIES.length * 19);
+    let o = 0;
+    for (const c of PIES) {
+      let parts = Object.entries(c.k).map(([n, p]) => ({ n, p }));
+      if (parts.length > PIE_WEDGES) {
+        // keep the largest, and draw the rest as one wedge in the largest of their colours:
+        // those are slivers under a pixel wide
+        const big = [...parts].sort((u, v) => v.p - u.p);
+        const keep = big.slice(0, PIE_WEDGES - 1), rest = big.slice(PIE_WEDGES - 1);
+        keep.push({ n: rest[0].n, p: rest.reduce((s, q) => s + q.p, 0) });
+        parts = keep;
+      }
+      parts.sort((u, v) => (idx[u.n] ?? 1e9) - (idx[v.n] ?? 1e9));
+      const tot = parts.reduce((s, q) => s + q.p, 0);
+      a[o] = c.x; a[o + 1] = c.y; a[o + 2] = c.r0;
+      let cum = 0;
+      for (let k = 0; k < PIE_WEDGES; k++) {
+        const q = parts[Math.min(k, parts.length - 1)];
+        if (k < parts.length) cum += q.p / tot;
+        a[o + 3 + k] = k < parts.length - 1 ? cum : 2.0;     // the last wedge runs to the end
+        a[o + 11 + k] = idx[q.n] ?? 0;
+      }
+      o += 19;
+    }
+    gl.bindBuffer(gl.ARRAY_BUFFER, this.inst);
+    gl.bufferData(gl.ARRAY_BUFFER, a, gl.DYNAMIC_DRAW);
+    this.count = PIES.length;
+    map.triggerRepaint();
+  },
+  render(gl, matrix) {
+    if (this.dead || !regionsMode || scope || !this.count) return;
+    const z = map.getZoom();
+    gl.useProgram(this.prog);
+    gl.bindVertexArray(this.vao);
+    gl.uniformMatrix4fv(this.loc.u_matrix, false, matrix);
+    gl.uniform1f(this.loc.u_pxscale, pieScale(z));
+    gl.uniform1f(this.loc.u_world, 512 * Math.pow(2, z));
+    gl.uniform2f(this.loc.u_clamp, PIE_MIN_R, PIE_MAX_R);
+    gl.uniform1f(this.loc.u_alpha, DOT_ALPHA);
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, this.pal);
+    gl.uniform1i(this.loc.u_pal, 0);
+    gl.enable(gl.BLEND);
+    gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
+    gl.disable(gl.DEPTH_TEST);
+    gl.drawArraysInstanced(gl.TRIANGLES, 0, 6, this.count);
+    gl.bindVertexArray(null);
+  },
+};
 
 /* A figure, or the range a subtraction or a hand row left, with its share when there is a
    population to take it of. */
@@ -4919,16 +5474,21 @@ function estimateLine() {
 
 function applyPaint() {
   applyCoverageWash();
+  applyNotDrawn();
   applyEstimates();
+  applyRegions();
   if (!map.getLayer('dots')) return;
   const expr = colorExpr();
   const live = activeDotLayer();
+  // regions mode draws no dot of either renderer and no ring
+  if (map.getLayer('scatter'))
+    map.setLayoutProperty('scatter', 'visibility', regionsMode ? 'none' : 'visible');
   /* Visibility on ALL of them (a layout property, no per-feature work). The merged layers are
      shown only when consolidation is ON: `separate` is now SCATTER's job, and the two must
      never both draw or every dot would be painted twice, once as itself and once inside a
      merged mark. */
   for (const l of dotLayerIds())
-    map.setLayoutProperty(l, 'visibility', (merged && l === live) ? 'visible' : 'none');
+    map.setLayoutProperty(l, 'visibility', (merged && !regionsMode && l === live) ? 'visible' : 'none');
   SCATTER.setPalette();                 // colour AND visibility for the unmerged dots
   for (const l of edDotIds()) {
     map.setPaintProperty(l, 'circle-color', expr);
@@ -4962,7 +5522,7 @@ function applyPaint() {
      a Sikh ring, and get told "Wesleyan Church". Filtering removes them from the query. */
   const liveRing = activeRingLayer();
   for (const l of ringLayerIds()) {
-    if (showRings && l === liveRing) {
+    if (showRings && !regionsMode && l === liveRing) {
       map.setLayoutProperty(l, 'visibility', 'visible');
       map.setFilter(l, layerFilter(true));
       map.setPaintProperty(l, 'circle-stroke-opacity', 0.95);
@@ -5191,6 +5751,9 @@ function renderMix() {
   el.innerHTML = MIX.map(s => s.id === null
     ? `<i class="nd" style="flex:${s.dots} 1 0"></i>`
     : `<i style="flex:${s.dots} 1 0;background:${colorOf[s.id] || '#666'}"></i>`).join('');
+  // the shut phone sheet's copy (§9c): same segments, same total, written in the same pass
+  document.getElementById('head-mixtrack').innerHTML = el.innerHTML;
+  document.getElementById('head-mixrow').style.display = MIX.length ? '' : 'none';
 
   /* THE DRAWN TOTAL, not the bar's. `viewTotal` is the scope, so the figure is the sum of the
      coloured segments and matches the rows below it; the hatched share sits outside it and the
@@ -5199,6 +5762,7 @@ function renderMix() {
   const tot = document.getElementById('mixtotal');
   const dots = viewTotal();
   tot.textContent = fmtPop(dots * DOT_VALUE);
+  document.getElementById('head-mixtotal').textContent = tot.textContent;
   const g = undrawnShare();
   TIPS.mixtotal = esc(popTitle(dots)) + ' · ' + esc(scopeLabel())
     + (country ? ' in ' + esc(META[country].name) : '')
@@ -5510,7 +6074,7 @@ function renderTree() {
     e.stopPropagation();
     const box = el.querySelector(`[data-kids="${hit.dataset.tw}"]`);
     if (!box) return;
-    box.classList.toggle('open');
+    box.classList.toggle('open');                       // not the hint's cue: Anita 2026-10-03, only selecting a religion clears it
     const tw = hit.dataset.tw || '';
     if (tw.startsWith('grp:')) {                         // §10.7: remembered across rebuilds
       if (box.classList.contains('open')) OPEN_GROUPS.add(tw.slice(4));
@@ -5614,7 +6178,7 @@ function renderTree() {
       + `${esc(estText)}</div>` : '');
   /* The shut phone sheet wears the same sentence in its header. The coverage note does NOT come
      with it: it is a second line about the wash, and the header is one line high. */
-  document.getElementById('head-scope').innerHTML = viewing;
+  document.getElementById('head-scope-text').innerHTML = viewing;
   document.getElementById('scope-clear').style.display = scope ? '' : 'none';
   renderMix();                                          // §10.4, the same sentence drawn
 
@@ -5638,10 +6202,12 @@ function renderTree() {
   const allShown = ROOTS.every(id => visStateOf(id) === 2);
   const va = document.getElementById('vis-all');
   va.textContent = allShown ? 'hide all' : 'show all';
+  va.classList.toggle('hide-all', allShown);            // the phone layout drops this one
   va.title = allShown
     ? 'Take every religion off the map — then tick back just the ones you want to see'
     : 'Put every religion back on the map';
 
+  segSet('mode-seg', regionsMode ? 1 : 0);
   segSet('dotval-seg', DOT_VALUE);
   segSet('merge-seg', merged ? 1 : 0);
 
@@ -5702,6 +6268,7 @@ function renderTree() {
     refolding = true;
     try { recolour(); applyPaint(); renderTree(); } finally { refolding = false; }
   }
+  placeHint();                       // the scope bar's height decides where the rows start
 }
 
 /* A SEGMENTED CONTROL IS WRITTEN BY NAMING THE LIVE SEGMENT, never by rewriting a label.
@@ -5757,7 +6324,8 @@ function renderTierControl() {
   tier.title = 'A derived dot is one nobody counted HERE: the number was measured somewhere '
     + '— a coarser unit, an older census, a broader category — and carried to this '
     + 'place by allocation or rescaling. A modelled dot is weaker still: nothing in that unit '
-    + 'was counted at all, and a national figure was spread over it. Hiding both leaves only '
+    + 'was counted at all, and a national figure was spread over it. An assigned dot was counted '
+    + 'in its religion, and its branch was given from national estimates. Not shown leaves only '
     + 'what a source actually reported.';
 }
 
@@ -5795,6 +6363,7 @@ function renderTierControl() {
 const SCOPE_DEPTH = { islam: 2 };
 
 function setScope(id) {
+  if (id) hintDone();                // a breakdown opened is the first-load hint's job done
   scope = id;
   depth = id ? (SCOPE_DEPTH[id] || 1) : 2;
   recolour(); applyPaint(); renderTree();
@@ -5831,16 +6400,20 @@ function fmtList(names) {
    figures as modelled. */
 function tierWords(sh, fill) {
   if (!sh) return null;
-  const d = sh.derived, n = sh.modelled, m = sh.measured;
+  const d = sh.derived, n = sh.modelled, m = sh.measured, a = sh.assigned || 0;
   /* NEITHER END ROUNDS PAST ITSELF. `Math.round` alone printed China as "100% filled in,
      <1% modelled", which asks the reader to believe two numbers that cannot both be true;
      the shares are 99.96% and 0.04%. A non-zero share never shows as 0% and a share under 1
      never shows as 100%, so the terms in a sentence always add up. */
   const pc = v => v <= 0 ? '0%' : v >= 1 ? '100%'
     : v < 0.005 ? '<1%' : v > 0.995 ? '>99%' : Math.round(v * 100) + '%';
-  const terse = (d === 0 && n === 0) ? 'all counted'
-    : [d > 0 ? pc(d) + ' derived' : '', n > 0 ? pc(n) + ' modelled' : '']
-        .filter(Boolean).join(', ');
+  /* `assigned` (spec 7e) is named in the caption and nowhere in `plain`: the switch does change
+     those dots (an assigned Sunni dot goes back to Islam), so a caption of "all counted" beside
+     it would read as a switch that does nothing, while the header row is about what was counted,
+     and an assigned dot's religion was. The header's own `assigned` row says what was assigned. */
+  const terse = (d === 0 && n === 0 && a === 0) ? 'all counted'
+    : [d > 0 ? pc(d) + ' derived' : '', n > 0 ? pc(n) + ' modelled' : '',
+       a > 0 ? pc(a) + ' assigned' : ''].filter(Boolean).join(', ');
   /* THE WORD `modelled` IS IN THE LABEL, so a country whose only inferred tier is `modelled`
      gives the bare number and France reads `100%`. `derived` is a different claim from the
      label's and always names itself.
@@ -5867,6 +6440,11 @@ TIPS.counted = 'Counted: the source published this figure, for this place, from 
   + 'allocation. Modelled: nobody counted it anywhere, and a national figure was spread over '
   + 'the map from something else. The last two are this project’s arithmetic rather than the '
   + 'source’s, and the <i>inferred dots</i> control in the legend takes them back off.';
+TIPS.assigned = 'A branch or school this project gave from outside the source. The source '
+  + 'counted the religion and did not ask which branch, so the branch comes from published '
+  + 'estimates for the whole country, and the share they give to other branches is left with no '
+  + 'branch. The country’s note names the estimates. The <i>inferred dots</i> control in the '
+  + 'legend takes the assignment back off.';
 TIPS.how = 'What kind of instrument produced the numbers. A national census question is the '
   + 'strongest thing here and most of this map is one; a sample survey is a much weaker '
   + 'claim about any single place, however good its national figure; a register was never a '
@@ -5908,6 +6486,12 @@ function renderProvenance() {
      directly under this block, and letting a row appear a second after load would shift it
      out from under the reader's cursor. */
   rows.push(['data modelled', tw ? tw.plain : '', tw && tw.weak ? ' weak' : '', 'counted']);
+  /* SPEC 7e: WHAT WAS ASSIGNED, IN WORDS AND WITHOUT A SHARE — Anita's shape for it, 2026-09-14:
+     "we should also specify what we assigned". A branch or school given from outside the source
+     (Sunni, from national estimates), set per country in countries.py. It shows whatever tier the
+     dots carry, because in Morocco they are modelled and in Indonesia assigned, and the reader
+     needs the same sentence in both. */
+  if (m.assigned) rows.push(['assigned', m.assigned, '', 'assigned']);
   if (m.grain) rows.push(['granularity', m.grain, '', 'grain']);
   /* §6.12's `gap`, MOVED HERE from the legend's scope bar — Anita, 2026-09-07. It went there
      first because that is beside the map, "where a reader is when the question occurs to
@@ -5915,13 +6499,15 @@ function renderProvenance() {
      source, and a reader who has just read that a country is 41% filled in is exactly the
      reader who wants to know who was left out. Fifteen countries have one and that is the
      healthy state: a row every country carries is a row nobody reads. */
-  if (m.gap) rows.push(['not drawn', m.gap, '', 'gap']);
+  /* A country with hatched ground on the map gets the hatch as this row's key, so the pattern is
+     read off the sentence that explains it (`loadNotDrawn`). */
+  if (m.gap) rows.push(['not drawn', m.gap, NOT_DRAWN_CC.has(country) ? ' nd' : '', 'gap']);
   /* esc()'d, all of it. `how` and `grain` used to carry their own <b> and were injected raw;
      with the bold gone (Anita, 2026-09-07) there is no markup left in either, so nothing has
      to be trusted. `plain` is built above out of numbers and fixed words. */
   box.innerHTML = rows.map(([l, v, cls, tip]) =>
     `<div class="pr${cls}" data-tip="${tip}"><span class="pl">${esc(l)}</span>`
-    + `<span class="pv">${esc(v)}</span></div>`).join('');
+    + `<span class="pv">${cls === ' nd' ? '<span class="ndk"></span>' : ''}${esc(v)}</span></div>`).join('');
 }
 
 /* THE TITLE'S N COUNTS STATES, NOT TERRITORIES — Anita, 2026-09-14: "'religion in n
@@ -6515,7 +7101,7 @@ function viewOverlap(cc) {
    given the URL, because both of them pointing at the same 4.8 MB file means two requests in
    flight at once on a cold load, racing each other, neither able to use the other's response.
    The wash appears when the shapes land, which is the same moment Auto can start using them. */
-let SHAPES = null;          // [{cc, ring, w, e, s, n}] — one entry per part, null until loaded
+let SHAPES = null;          // [{cc, ring, w, e, s, n, area}] — one per part, smallest first, null until loaded
 
 async function loadShapes() {
   const gj = await fetch(DATA_BASE + 'processed/country_shapes.geojson')
@@ -6528,20 +7114,34 @@ async function loadShapes() {
     const polys = f.geometry.type === 'Polygon' ? [f.geometry.coordinates]
                                                 : f.geometry.coordinates;
     /* Outer rings only. The holes in these shapes are lakes and enclaves, and neither is a
-       reason to say "no country here": standing the camera on Lesotho and being told nothing
-       would be worse than being told South Africa. */
+       reason to say "no country here": standing the camera on an enclave nobody has built
+       (San Marino, say) and being told nothing would be worse than being told Italy. */
     for (const poly of polys) {
       const ring = poly[0];
-      let w = 180, e = -180, s = 90, n = -90;
-      for (const p of ring) {
+      let w = 180, e = -180, s = 90, n = -90, a = 0;
+      for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+        const p = ring[i];
         if (p[0] < w) w = p[0];
         if (p[0] > e) e = p[0];
         if (p[1] < s) s = p[1];
         if (p[1] > n) n = p[1];
+        a += ring[j][0] * p[1] - p[0] * ring[j][1];
       }
-      out.push({ cc: f.properties.cc, ring, w, e, s, n });
+      out.push({ cc: f.properties.cc, ring, w, e, s, n, area: Math.abs(a) / 2 });
     }
   }
+  /* SMALLEST PART FIRST, so a built enclave answers for itself — fixed 2026-10-03, found by the
+     `ls` review: South Africa's outer ring covers Lesotho and came first in the list, so
+     `countryAt` and `centreShares`, which both take the first ring that holds the point, said
+     South Africa and Auto drew Lesotho as an empty hole. A ring inside another always has the
+     smaller area, so sorting by area makes the first hit the innermost. It also fixes Llivia
+     (es in fr), Sarvak (tj in uz), Artsvashen (am in az) and Nahwa (ae in Oman's Madha). Ties
+     are exact duplicates, Bonaire, Sint Eustatius and Saba in both nl and bq and Tokelau's
+     atolls in both nz and tk, and go to the smaller country, the more specific entry.
+     Elsewhere only the ~200 m slivers where simplified borders overlap change hands. */
+  const total = {};
+  for (const p of out) total[p.cc] = (total[p.cc] || 0) + p.area;
+  out.sort((a, b) => a.area - b.area || total[a.cc] - total[b.cc]);
   SHAPES = out;
   HULLS = buildHulls(out);
   lastLook = '';            // the answer has changed for a camera that has not moved
@@ -7254,10 +7854,11 @@ void main() {
      people and the number was carried to a finer place, so there IS a level they were
      counted at; modelled means nobody was counted at any level, so there is nothing to fall
      back to. Rolling the US residual up to Christianity would assert a count that was never
-     made. tier 1 = derived, 2 = modelled. */
+     made. tier 1 = derived, 2 = modelled, 3 = assigned (spec 7e), and assigned rolls up as
+     derived does: the religion was counted, only the branch was assigned. */
   float tier = floor(a_ni / 16384.0);
-  float isDerived = step(0.5, tier) * (1.0 - step(1.5, tier));
-  float isModelled = step(1.5, tier);
+  float isDerived = step(0.5, tier) * (1.0 - step(1.5, tier)) + step(2.5, tier);
+  float isModelled = step(1.5, tier) * (1.0 - step(2.5, tier));
   float slot = mod(a_ni, 16384.0) + u_only_measured * isDerived * u_palette_n;
   vec4 pal = texture2D(u_palette, vec2((slot + 0.5) / (u_palette_n * 2.0), 0.5));
   v_color = pal;
@@ -7316,8 +7917,8 @@ void main() {
   float dx = (a_xhi - u_origin_hi.x) * 65536.0 + (a_xlo - u_origin_lo.x);
   float dy = (a_yhi - u_origin_hi.y) * 65536.0 + (a_ylo - u_origin_lo.y);
   float tier = floor(a_ni / 16384.0);
-  float isDerived = step(0.5, tier) * (1.0 - step(1.5, tier));
-  float isModelled = step(1.5, tier);
+  float isDerived = step(0.5, tier) * (1.0 - step(1.5, tier)) + step(2.5, tier);
+  float isModelled = step(1.5, tier) * (1.0 - step(2.5, tier));
   float slot = mod(a_ni, 16384.0) + u_only_measured * isDerived * u_palette_n;
   vec4 pal = texture2D(u_palette, vec2((slot + 0.5) / (u_palette_n * 2.0), 0.5));
   v_color = pal;
@@ -7464,6 +8065,10 @@ void main() {
        ON left every separate dot on screen underneath the marks that consolidate them, so the
        control looked like it did nothing but add a few big circles. */
     if (merged) return;
+    /* Regions mode draws no dot, and that is enforced here as well as by the layer's
+       `visibility`: with only the latter, dots kept drawing over the regions in the
+       all-countries view (France and a stray rectangle over the Baltic, 2026-10-04). */
+    if (regionsMode) return;
     if (this.unsupported || !this.p || !this.palette) return;
     const tr = this.map.transform;
     const dpr = window.devicePixelRatio || 1;
@@ -7827,8 +8432,8 @@ SCATTER.lodAllShown = function (d) {
   let ok = true;
   for (const v of d.present) {
     const tier = v >> 14;
-    if (onlyMeasured && tier >= 2) { ok = false; break; }
-    const slot = (v & 0x3fff) + (onlyMeasured && tier === 1 ? N : 0);
+    if (onlyMeasured && tier === 2) { ok = false; break; }
+    const slot = (v & 0x3fff) + (onlyMeasured && ROLLS(tier) ? N : 0);
     if (pal[slot * 4 + 3] < 128) { ok = false; break; }
   }
   d.lodShownKey = key;
@@ -7995,6 +8600,7 @@ SCATTER.lodStats = function () {
 function doneLoading() {
   const el = document.getElementById('loading');
   if (el) el.remove();
+  showHint();
 }
 
 /* THE PROGRESS BAR, AND WHY IT CAN BE AN HONEST FRACTION RATHER THAN A CREEPING GUESS.
@@ -8395,7 +9001,12 @@ SCATTER.rollMutes = function () {
   for (const d of all) {
     if (d.anyMeasured === undefined) {
       d.anyMeasured = false;
-      for (let i = 0; i < d.n; i++) if ((d.nid[i] >> 14) === 0) { d.anyMeasured = true; break; }
+      // assigned (3) counts: its religion was counted and only the branch was not (spec 7e),
+      // so a country whose counted Muslims are all assigned Sunni (Djibouti) has a level to fall to
+      for (let i = 0; i < d.n; i++) {
+        const t = d.nid[i] >> 14;
+        if (t === 0 || t === 3) { d.anyMeasured = true; break; }
+      }
     }
     if (!d.anyMeasured) out.add(d.cc);
   }
@@ -8439,23 +9050,27 @@ SCATTER.tierShares = function (cc) {
   const ed = this.data[this.edition()] || {};
   const all = cc ? (ed[cc] ? [ed[cc]] : []) : Object.values(ed);
   if (!all.length) return null;
-  let n = 0, der = 0, mod = 0;
+  let n = 0, der = 0, mod = 0, asg = 0;
   for (const d of all) {
     if (d.tierN === undefined) {
-      let a = 0, b = 0;
+      let a = 0, b = 0, c = 0;
       for (let i = 0; i < d.n; i++) {
-        const t = d.nid[i] >> 14;             // 0 measured, 1 derived, 2 modelled
-        if (t === 1) a++; else if (t === 2) b++;
+        const t = d.nid[i] >> 14;             // 0 measured, 1 derived, 2 modelled, 3 assigned
+        if (t === 1) a++; else if (t === 2) b++; else if (t === 3) c++;
       }
-      d.tierN = [a, b];
+      d.tierN = [a, b, c];
     }
-    n += d.n; der += d.tierN[0]; mod += d.tierN[1];
+    n += d.n; der += d.tierN[0]; mod += d.tierN[1]; asg += d.tierN[2];
   }
   /* `measured` is subtracted in INTEGERS and divided once, not computed as `1 - derived -
      modelled` by the caller. A fully inferred country is the case that matters: der + mod ===
      n exactly, so this returns exactly 0 and the header can say "none of it", where the
-     float subtraction leaves 1.1e-16 and it says "<1% — we modelled the rest". */
-  return n ? { measured: (n - der - mod) / n, derived: der / n, modelled: mod / n } : null;
+     float subtraction leaves 1.1e-16 and it says "<1% — we modelled the rest".
+     ASSIGNED STAYS INSIDE `measured` (spec 7e): its religion was counted, only the branch was
+     assigned, and the `assigned` row says which. It is also reported on its own, for the
+     control's caption, which has to say why the switch changes a country that is all counted. */
+  return n ? { measured: (n - der - mod) / n, derived: der / n, modelled: mod / n,
+               assigned: asg / n } : null;
 };
 
 /* The same pass, but PER NODE — spec §7a-i-1. `tierShares` answers "how much of this country
@@ -8483,7 +9098,10 @@ SCATTER.tierTally = function (cc) {
     if (!d.tierByNode) {
       const m = new Map();
       for (let i = 0; i < d.n; i++) {
-        const v = d.nid[i], t = v >> 14, k = v & 0x3fff;
+        const v = d.nid[i], k = v & 0x3fff;
+        // assigned (3) goes in the derived slot: here the question is where a dot goes when
+        // inferred dots are not shown, and an assigned dot goes where a derived one does (7e)
+        const t = (v >> 14) === 3 ? 1 : v >> 14;
         let a = m.get(k);
         if (!a) m.set(k, a = [0, 0, 0]);
         a[t]++;
@@ -8632,7 +9250,7 @@ SCATTER.pick = function (point) {
         // modelled is still removed outright: nothing counted it at any level, so there is no
         // level to fall back to and no slot in the palette's second half to find
         if (onlyMeasured && tier === 2) continue;
-        const slot = (v & 0x3fff) + (onlyMeasured && tier === 1 ? this.paletteN : 0);
+        const slot = (v & 0x3fff) + (onlyMeasured && ROLLS(tier) ? this.paletteN : 0);
         if (this.palette[slot * 4 + 3] < 128) continue;
         const ex = d.x[i] - mx, ey = d.y[i] - my;
         const d2 = ex * ex + ey * ey;
@@ -8651,7 +9269,7 @@ SCATTER.pick = function (point) {
      double-click reads the same value, so the pair keeps §4.2c's promise that a selection is
      the thing the card just named. */
   const v = best.nid[bestI], id = this.nodes[v & 0x3fff];
-  const rolled = (onlyMeasured && (v >> 14) === 1) ? (rollUpMap()[id] || id) : id;
+  const rolled = (onlyMeasured && ROLLS(v >> 14)) ? (rollUpMap()[id] || id) : id;
   return { n: rolled, c: best.cc };
 };
 
@@ -8817,6 +9435,18 @@ map.on('load', async () => {
     },
   });
 
+  /* The hatching (`loadNotDrawn`), over the wash and under every dot and outline. A pattern is
+     the same size on screen at every zoom, so it reads at world zoom and at country zoom alike,
+     and it does not fade with the wash: a reader zoomed into Abkhazia still needs telling. */
+  const hatch = hatchImage();
+  map.addImage('nd-hatch', hatch.img, { pixelRatio: hatch.pr });
+  map.addSource('not-drawn', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
+  map.addLayer({
+    id: 'not-drawn', type: 'fill', source: 'not-drawn',
+    paint: { 'fill-pattern': 'nd-hatch', 'fill-opacity': 0.65, 'fill-antialias': false },
+  });
+  loadNotDrawn();
+
   /* §15's outlines, created empty and filled by `loadEstimates`, which runs only once the layer is
      turned on. Over the wash and under every dot: an outline is a note about a country, and a dot
      inside it is still the more specific statement. Two sources from one file: the polygons answer
@@ -8841,6 +9471,43 @@ map.on('load', async () => {
       'line-width': ['interpolate', ['linear'], ['zoom'], 1, 0.4, 5, 0.65, 9, 0.9],
     },
   });
+
+  /* Regions mode (applyRegions), hidden until the reader switches to it, and no tile is fetched
+     before then: MapLibre only loads a source a visible layer uses. Over the wash and the
+     outlines, under every dot. regions_tiles.py builds the archive. */
+  // `?regions=<file>` reads another archive from processed/, for trying a subset build
+  // (regions_tiles.py --countries ... --out) without replacing the real one
+  const regionsFile = (new URLSearchParams(location.search).get('regions') || 'regions.pmtiles')
+    .replace(/[^\w.-]/g, '');
+  map.addSource('regions', { type: 'vector', url: 'pmtiles://' + DATA_BASE + 'processed/' + regionsFile });
+  map.addLayer({
+    id: 'regions-fill', type: 'fill', source: 'regions', 'source-layer': 'regions',
+    layout: { visibility: 'none' },
+    paint: { 'fill-color': '#888', 'fill-opacity': 0, 'fill-antialias': false },
+  });
+  /* Each region's own outline in its own fill colour, a pixel wide. Neighbours are simplified
+     separately, so their shared edge no longer coincides and the land showed through as dark
+     hairlines between them, worst at world zoom. This covers the seam; applyRegions gives it
+     the fill's colour. */
+  map.addLayer({
+    id: 'regions-seam', type: 'line', source: 'regions', 'source-layer': 'regions',
+    layout: { visibility: 'none', 'line-join': 'round' },
+    paint: { 'line-color': '#888', 'line-opacity': 0, 'line-width': 1 },
+  });
+  /* The pies (pieLayer) are re-merged once the view settles; the GPU draws them every frame. */
+  map.on('moveend', () => { pieDirty = true; });
+  map.on('sourcedata', e => { if (e.sourceId === 'regions') pieDirty = true; });
+  map.on('idle', () => { if (pieDirty && regionsMode) rebuildPies(); });
+  map.addLayer({
+    id: 'regions-line', type: 'line', source: 'regions', 'source-layer': 'regions',
+    layout: { visibility: 'none' },
+    paint: {
+      'line-color': '#9a9a9a',
+      'line-opacity': ['interpolate', ['linear'], ['zoom'], 3, 0.08, 8, 0.22],
+      'line-width': ['interpolate', ['linear'], ['zoom'], 3, 0.3, 9, 0.8],
+    },
+  });
+  map.addLayer(pieLayer);           // the pies, over the regions and their outlines
 
   map.addLayer({
     id: 'dots', type: 'circle', source: 'tiles', 'source-layer': 'dots',
@@ -8944,7 +9611,7 @@ map.on('load', async () => {
      disagree about what the control means). `t` is 1 for derived, and colorExpr() has already
      painted a derived mark in its rolled ancestor's colour, so the card and the selection have
      to follow it there. Rings carry no `t` and never roll. */
-  const drawnAs = (p) => (onlyMeasured && p.t === 1)
+  const drawnAs = (p) => (onlyMeasured && ROLLS(p.t))
     ? (rollUpMap()[p.n] || p.n) : p.n;
 
   for (const layer of [...dotLayerIds(), ...ringLayerIds()]) {
@@ -9003,10 +9670,11 @@ map.on('load', async () => {
     pop.remove();
     if (moving) return;
     dwellAt = e.point;
-    const at = e.lngLat;
+    const at = e.lngLat, pt = e.point;
     dwellTimer = setTimeout(() => {
       dwellTimer = 0;
-      const html = countryCardAt(at);
+      // hatched ground first: inside South Sudan's outline, Jonglei's answer is that nobody asked
+      const html = notDrawnCardAt(pt) || countryCardAt(at);
       if (!html) return;
       pop.setLngLat(at).setHTML(html).addTo(map);
       dwellUp = true;
@@ -9021,7 +9689,7 @@ map.on('load', async () => {
      one drawn that covers it (§4.2c) — where `e.features[0]` above answers with the first in
      tile order, which is a different dot wherever dots overlap. */
   const scatterHover = (e) => {
-    if (merged || !SCATTER.ready) return false;
+    if (merged || regionsMode || !SCATTER.ready) return false;
     const hit = SCATTER.pick(e.point);
     if (!hit) {
       /* No dot under the pointer, so the outlined country under it may answer (§15.11), and
@@ -9043,7 +9711,10 @@ map.on('load', async () => {
      pointer. Over all ground rather than delegated to `estimate-hit`, because the country card is
      armed anywhere, and `dwellArm` taking the popup down is what leaving an outline used to do. */
   map.on('mousemove', e => {
-    if (!merged && SCATTER.ready) return;          // separate: scatterHover has already asked
+    if (!merged && !regionsMode && SCATTER.ready) return;   // separate: scatterHover has already asked
+    /* Regions mode: the region under the pointer answers first, as a dot would. */
+    const region = regionCardAt(e.point);
+    if (region) { dwellStop(); pop.setLngLat(e.lngLat).setHTML(region).addTo(map); return; }
     const marks = [activeDotLayer(), activeRingLayer()].filter(l => map.getLayer(l));
     if (map.queryRenderedFeatures(e.point, { layers: marks }).length) { dwellStop(); return; }
     const html = estimateCardAt(e.point);
@@ -9109,6 +9780,10 @@ document.getElementById('scope-clear').onclick = () => setScope(null);
    different answers cannot be served by an enter event. */
 document.getElementById('mixbar').onmousemove =
   e => aimMix(e.currentTarget, e.clientX);
+segWire('mode-seg', () => regionsMode ? 1 : 0, v => {
+  regionsMode = !!v;
+  applyPaint(); renderTree();
+});
 segWire('merge-seg', () => merged ? 1 : 0, v => {
   merged = !!v;
   applyPaint(); renderTree();
@@ -9144,6 +9819,8 @@ segWire('est-seg', () => showEstimates ? 1 : 0, v => {
 document.getElementById('dot-size').oninput = e => {
   dotScale = Math.pow(2, ((+e.target.value - 50) / 50) * 1.6);
   applySizes();
+  pieDirty = true;                  // in regions mode the same slider sizes the pies
+  map.triggerRepaint();
 };
 segWire('none-seg', () => NOT_A_RELIGION_IDS.some(id => USER_HIDDEN.has(id)) ? 0 : 1, v => {
   // §10.3: these are branches, so the control moves whole branches
@@ -9264,6 +9941,7 @@ document.getElementById('panel-head').onclick = e => {
   else if (openMetrics && openMetrics.vh !== window.innerHeight) {
     recolour(); applyPaint(); renderTree();
   }
+  placeHint();                       // it sits on the sheet's top edge, which just moved
 };
 /* Leaving the phone layout has to leave the class behind with it, or a rotation into landscape
    lands on a desktop panel translated off the bottom of the window with nothing to click. */
@@ -9272,7 +9950,57 @@ matchMedia('(max-width: 700px)').addEventListener('change', e => {
     sheet.classList.remove('shut');
     document.getElementById('sheet-grip').textContent = '▾';
   }
+  placeHint();
 });
+
+/* THE FIRST-LOAD HINT — Anita, 2026-10-03: *"Try clicking Christianity to see a detailed
+   breakdown"*, "tapping" on a touch screen. It names Christianity because that has by far the
+   richest breakdown; selecting a religion is otherwise not discoverable by looking at the map,
+   since a legend row reads as a key, not as a control.
+
+   Shown once the dots are up (`doneLoading`), and gone for good the first time ANY religion is
+   selected (`setScope`) or opened with its triangle (`renderTree`'s twisty), or the × is
+   pressed, remembered per browser in localStorage. Storage
+   failing only means the hint comes back next visit, so every read and write is wrapped.
+
+   Touch is the same test `pickReachPx` uses: a coarse pointer, or the phone layout. The
+   storage key, HINT_KEY, sits beside STORE_KEY at the top of the script. */
+function showHint() {
+  try { if (localStorage.getItem(HINT_KEY)) return; } catch (e) { /* show it */ }
+  if (scope) return;                 // already looking at a breakdown
+  const h = document.getElementById('hint');
+  if (h.classList.contains('show')) return;
+  const touch = matchMedia('(pointer: coarse)').matches
+             || matchMedia('(max-width: 700px)').matches;
+  document.getElementById('hint-text').textContent =
+    `Try ${touch ? 'tapping' : 'clicking'} Christianity to see a detailed breakdown.`;
+  h.classList.add('show');
+  placeHint();
+}
+function hintDone() {
+  const h = document.getElementById('hint');
+  if (h) h.classList.remove('show');
+  try { localStorage.setItem(HINT_KEY, '1'); } catch (e) { /* comes back next visit */ }
+}
+/* Beside the legend's first row on the desktop; on the phone, above the sheet's top edge,
+   open or shut. Read off the panel rather than fixed in the
+   stylesheet, because the scope bar's height and the sheet's state both move the target. */
+function placeHint() {
+  const h = document.getElementById('hint');
+  if (!h || !h.classList.contains('show')) return;
+  const p = document.getElementById('panel').getBoundingClientRect();
+  if (matchMedia('(max-width: 700px)').matches) {
+    h.style.left = 'auto';
+    h.style.right = '8px';
+    h.style.top = Math.max(8, p.top - h.offsetHeight - 6) + 'px';
+  } else {
+    const t = document.getElementById('tree').getBoundingClientRect();
+    h.style.right = 'auto';
+    h.style.left = Math.max(8, p.left - h.offsetWidth - 8) + 'px';
+    h.style.top = t.top + 'px';
+  }
+}
+document.getElementById('hint-close').onclick = hintDone;
 
 document.getElementById('info-btn').onclick = e => {
   e.stopPropagation();               // the closer above must not undo the toggle that opened it

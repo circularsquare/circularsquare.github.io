@@ -1,0 +1,2603 @@
+---
+sitemap: false
+---
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  {%- include analytics.html -%}
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Language Dots</title>
+  <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;700&display=swap" />
+  <style>
+    /* Type sizes, row metrics, the count column and its bars, the composition bar and the
+       segmented controls are religiondots' own tokens (its index.html carries the reasoning for
+       each); Anita asked for the two maps to match, 2026-10-04. */
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Nunito', sans-serif; }
+    html, body { height: 100%; }
+    body { background: #111; color: #eee; overflow: hidden; }
+    #map { position: absolute; inset: 0; }
+
+    #panel {
+      position: absolute; top: 8px; right: 8px; z-index: 1000;
+      background: rgba(20,20,20,0.758); border-radius: 8px;
+      font-size: 12px; color: #eee; width: 286px;
+      max-height: calc(100vh - 50px); display: flex; flex-direction: column;
+    }
+    #panel-head { display: flex; align-items: center; gap: 6px; padding: 8px 10px 6px;
+                  border-bottom: 1px solid #2a2a2a; }
+    #panel-head b { font-size: 12px; font-weight: 700; flex: 1; }
+    #panel-head button { background: none; border: 1px solid #555; color: #ccc; width: 22px;
+      height: 22px; border-radius: 4px; cursor: pointer; font-size: 12px; line-height: 1; }
+    #panel-head button:hover { background: #333; color: #fff; }
+    #panel.min > :not(#panel-head) { display: none; }
+
+    #scope-bar { padding: 5px 10px; border-bottom: 1px solid #2a2a2a; color: #888;
+                 font-size: 11px; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+    #scope-bar #scope { flex: 1; color: #fff; }
+    #mixrow { flex: 0 0 100%; margin-top: 5px; display: flex; align-items: center; gap: 5px; }
+    #mixbar { flex: 1; min-width: 0; height: 7px; display: flex; align-items: center; cursor: help; }
+    #mixtrack { width: 100%; height: 5px; border-radius: 3px; display: flex; overflow: hidden;
+                background: #2a2a2a; pointer-events: none; }
+    #mixtrack i { flex: none; height: 100%; pointer-events: none; }
+    #mixtotal { flex: none; width: 36px; text-align: right; color: #888;
+                font-variant-numeric: tabular-nums; font-size: 11px; line-height: 1.15; }
+
+    #meta { padding: 4px 10px 5px; border-bottom: 1px solid #2a2a2a; color: #999; font-size: 11px;
+            line-height: 1.4; }
+    #meta b { color: #ccc; font-weight: 600; }
+    #meta .r { display: flex; gap: 6px; }
+    #meta .r span:first-child { color: #6d6d6d; min-width: 48px; flex: none; }
+    /* capped at a quarter of the screen (Anita, 2026-10-06), so long text scrolls inside the
+       block and the legend stays in view below it */
+    #meta { max-height: 25vh; max-height: 25dvh; overflow-y: auto; flex: none; }
+    #meta::-webkit-scrollbar { width: 6px; }
+    #meta::-webkit-scrollbar-thumb { background: #555; border-radius: 3px; }
+    /* The parts of a country's population and the source that draws each (ENTRY `parts`):
+       a bar of their shares, then one row per part with its people, and the source under it. */
+    #meta .pbar { height: 5px; border-radius: 3px; display: flex; overflow: hidden;
+                  background: #2a2a2a; margin: 3px 0 5px; }
+    #meta .pbar i { flex: none; height: 100%; }
+    #meta .pt { display: flex; align-items: center; gap: 6px; color: #ccc; }
+    #meta .pt .sw { width: 8px; height: 8px; border-radius: 2px; flex: none; }
+    #meta .pt .pl { flex: 1; min-width: 0; }
+    #meta .pt .pn { flex: none; color: #888; font-variant-numeric: tabular-nums; }
+    #meta .ps { color: #888; padding-left: 14px; margin-bottom: 3px; }
+    #meta .r.gap-top { margin-top: 3px; }
+
+    /* Hideable blocks: a plain header that shows or hides the block under it. Open or shut is
+       remembered per viewer (Anita, 2026-10-04). */
+    .sec-h { display: flex; align-items: center; gap: 3px; cursor: pointer; user-select: none;
+             color: #888; font-size: 12px; font-weight: 700; line-height: 1.6; }
+    .sec-h:hover { color: #ddd; }
+    .sec-h .tw { width: 11px; flex: none; font-size: 12px; text-align: center; line-height: 1; }
+    .sec-b { padding: 1px 0 3px 14px; }
+    .sec.shut > .sec-b { display: none; }
+
+    #tree { overflow-y: auto; padding: 4px 0 8px; min-height: 0; flex: 1 1 auto; }
+    #tree::-webkit-scrollbar { width: 6px; }
+    #tree::-webkit-scrollbar-thumb { background: #555; border-radius: 3px; }
+    .row { display: flex; align-items: center; gap: 6px; padding: 1px 10px 1px 0;
+           cursor: pointer; line-height: 1.45; }
+    .row:hover { background: #262626; }
+    .row.sel { background: #2f3b47; }
+    .row .tw { width: 15px; color: #9a9a9a; font-size: 13px; flex: none; text-align: center; line-height: 1; }
+    .row .tw:hover { color: #ddd; }
+    .row .dot { width: 9px; height: 9px; border-radius: 50%; flex: none; }
+    .row .lb { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .row.own .lb { color: #8a8a8a; font-style: italic; }
+    .row .ct { flex: none; width: 36px; text-align: right; display: flex; flex-direction: column;
+               align-items: stretch; gap: 0; color: #888; font-variant-numeric: tabular-nums;
+               font-size: 11px; line-height: 1.15; }
+    .row .bar { height: 1px; display: flex; justify-content: flex-end; }
+    .row .bar i { display: block; height: 100%; flex: none; }
+
+    #legend-note { padding: 4px 10px 6px; border-top: 1px solid #2a2a2a; color: #999; font-size: 12px; }
+    #legend-note .sec-b { padding: 3px 0 2px; }
+    .ctl { display: flex; align-items: center; gap: 8px; }
+    .ctl + .ctl { margin-top: 5px; }
+    .ctl .cl { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .segs { display: flex; flex: none; background: #16191c; border: 1px solid #3d4750;
+            border-radius: 4px; overflow: hidden; }
+    .seg { padding: 3px 8px 4px; font-size: inherit; line-height: 1.3; color: #8b959e;
+           cursor: pointer; white-space: nowrap; user-select: none; }
+    .seg + .seg { border-left: 1px solid #3d4750; }
+    .seg:hover { background: #252c33; color: #e2e8ee; }
+    .seg.on, .seg.on:hover { background: #7d9cb8; color: #14181c; }
+    #cc-pick { flex: none; max-width: 170px; background: #16191c; color: #e2e8ee; font-size: 12px;
+               border: 1px solid #3d4750; border-radius: 4px; padding: 3px 6px 4px; outline: none; }
+    .ctl.slide .cl { flex: none; width: 72px; }
+    .ctl.slide .val { flex: none; width: 46px; text-align: right; color: #ccc;
+                      font-variant-numeric: tabular-nums; font-size: 11px; }
+    .ctl.slide input[type=range] { flex: 1; min-width: 0; -webkit-appearance: none; appearance: none;
+      height: 3px; background: #3a3a3a; border-radius: 2px; outline: none; margin: 0; cursor: pointer; }
+    .ctl.slide input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none;
+      width: 11px; height: 11px; border-radius: 50%; background: #ccc; cursor: pointer; }
+    .ctl.slide input[type=range]::-moz-range-thumb { width: 11px; height: 11px; border: none;
+      border-radius: 50%; background: #ccc; cursor: pointer; }
+    /* The about button and panel are nycriders' (the house style), bottom-left. */
+    #info-btn { position: absolute; bottom: 16px; left: 16px; z-index: 1002; width: 31px;
+                height: 31px; border-radius: 50%; border: none; background: #ddd; color: #111;
+                cursor: pointer; display: flex; align-items: center; justify-content: center; }
+    #info-btn:hover { background: #fff; }
+    #info-btn span { font-family: 'Times New Roman', Times, serif; font-style: italic;
+                     font-size: 19px; font-weight: bold; margin-left: -1px; }
+    /* Open on load, and put away by a click anywhere outside it (Anita, 2026-10-06). The scroll
+       lives on the body, so the close control stays put while the text moves (religiondots). */
+    #info-panel { position: absolute; bottom: 56px; left: 16px; z-index: 1002;
+                  background: rgba(20,20,20,0.758); max-width: min(384px, 100vw - 330px);
+                  max-height: calc(100vh - 80px); display: flex; flex-direction: column;
+                  padding: 11px 13px; border-radius: 8px; font-size: 12px; color: #ccc;
+                  line-height: 1.5; }
+    #info-panel.hidden { display: none; }
+    #info-body { overflow-y: auto; min-height: 0; }
+    #info-body::-webkit-scrollbar { width: 6px; }
+    #info-body::-webkit-scrollbar-thumb { background: #555; border-radius: 3px; }
+    #info-panel .credits { color: #8a8a8a; }
+    #info-panel-header { display: flex; justify-content: space-between; align-items: center;
+                         margin-bottom: 5px; }
+    #info-panel-title { font-size: 12px; font-weight: 700; color: #888; }
+    #info-panel-close { background: none; border: none; color: #888; font-size: 18px;
+                        cursor: pointer; padding: 0; line-height: 1; }
+    #info-panel-close:hover { color: #fff; }
+    #info-panel p { margin-bottom: 8px; }
+    #info-panel p:last-child { margin-bottom: 0; }
+    #info-panel a { color: #89b4fa; text-decoration: none; }
+    #info-panel a:hover { text-decoration: underline; }
+
+    #tip { position: absolute; pointer-events: none; z-index: 1001; background: rgba(20,20,20,.92);
+           border: 1px solid #3a3a3a; border-radius: 5px; padding: 5px 8px; font-size: 12px;
+           color: #ddd; display: none; white-space: nowrap; }
+    #tip .mx { display: flex; align-items: center; gap: 6px; }
+    #tip .mk { width: 9px; height: 9px; border-radius: 50%; flex: none; }
+    #tip .sub { color: #888; }
+    /* a pie's tooltip: its larger copy to the left of the rows */
+    #tip .pw { display: flex; align-items: flex-start; gap: 8px; }
+    #tip .pz { flex: none; display: block; }
+    /* the not-drawn card: the map's hatch as its key, and the source's own `gap` wrapped */
+    #tip .mk.nd { border-radius: 2px; background: repeating-linear-gradient(-45deg,
+                  #6e6e6e 0 1.2px, transparent 1.2px 4px); }
+    #tip .why { white-space: normal; max-width: 280px; margin-top: 2px; }
+    /* a clicked mark's tooltip stays put, and each language in it opens that row in the legend */
+    #tip.frozen { pointer-events: auto; }
+    #tip.frozen .mx[data-n] { cursor: pointer; margin: 0 -4px; padding: 0 4px; border-radius: 3px; }
+    #tip.frozen .mx[data-n]:hover { background: #333; }
+    /* a pinned pie's folded rows open into their languages, largest first, in a list that
+       scrolls inside the tooltip when long */
+    #tip .tw { display: none; color: #888; }
+    #tip.frozen .tw { display: inline; }
+    #tip.frozen .mx[data-x], #tip.frozen .more { cursor: pointer; margin: 0 -4px; padding: 0 4px; border-radius: 3px; }
+    #tip.frozen .mx[data-x]:hover, #tip.frozen .more:hover { background: #333; }
+    #tip .ex { padding: 0 4px 0 15px; max-height: 40vh; overflow-x: hidden; overflow-y: auto;
+               scrollbar-gutter: stable; scrollbar-width: thin; scrollbar-color: #555 transparent; }
+    #tip .more { color: #888; }
+    .row.flash, .row.flash:hover { background: #4f6173; }
+
+    /* the shut sheet's copy of the scope line and its bar; shown only there (phone block below) */
+    #head-scope { display: none; }
+    #head-mixrow { display: flex; align-items: center; gap: 5px; margin-top: 3px; }
+    #head-mixtrack { flex: 1; min-width: 0; height: 5px; border-radius: 3px; display: flex;
+                     overflow: hidden; background: #2a2a2a; }
+    #head-mixtrack i { flex: none; height: 100%; }
+    #head-mixtotal { flex: none; width: 36px; text-align: right; color: #888;
+                     font-variant-numeric: tabular-nums; font-size: 11px; line-height: 1.15; }
+
+    /* ---- THE PHONE, ported from religiondots' §9c (2026-10-06). Its index.html carries the
+       reasoning for each; in short:
+       - 700px, not 640: the breakpoint is where the desktop layout runs out of map. A landscape
+         phone (844x390) stays on the desktop layout and gets the max-height rule below.
+       - The legend is a SHEET along the bottom, 40dvh (the visual viewport, so the URL bar is not
+         counted), opaque, and the WHOLE SHEET SCROLLS AS ONE, so the settings come after the rows
+         instead of taking fixed room from them. viewPadding reserves the same 40%.
+       - Tapping anywhere on its header shuts it down to the header (a 42px height cap anchored to
+         the bottom, not a transform: religiondots' transform version stranded the control off
+         screen in one browser). Shut, the header shows the scope line and its bar instead of the
+         title, since the legend it names is not on screen.
+       - Rows a little tighter (more of the list in view), controls a little roomier (thumbs).
+       - MapLibre's attribution sits above the shut sheet, restyled dark, every name kept. */
+    @media (max-width: 700px) {
+      #panel {
+        position: fixed; top: auto; bottom: 0; left: 0; right: 0; width: auto;
+        max-height: 40vh; max-height: 40dvh;
+        border-radius: 10px 10px 0 0; border-top: 1px solid #2f2f2f; background: #151515;
+        display: block; overflow-y: auto; overscroll-behavior: contain;
+      }
+      #panel::-webkit-scrollbar { width: 6px; }
+      #panel::-webkit-scrollbar-thumb { background: #555; border-radius: 3px; }
+      #tree { overflow: visible; }
+      /* one scroll, not one inside another: the Data block's quarter-screen cap is the desktop's */
+      #meta { max-height: none; overflow: visible; }
+      #panel-head { position: sticky; top: 0; z-index: 2; background: #151515; height: 42px;
+                    padding: 0 10px; cursor: pointer; border-radius: 10px 10px 0 0; }
+      #panel-head button { width: 30px; height: 30px; font-size: 14px; }
+      #panel.min { height: 42px; max-height: 42px; overflow: hidden; }
+      #panel.min #panel-head b { display: none; }
+      #panel.min #head-scope { display: block; flex: 1; min-width: 0; color: #fff; font-size: 12px; }
+      #head-scope-text { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+      .row { line-height: 1.3; }
+      .seg { padding: 6px 10px 7px; }
+      .ctl + .ctl { margin-top: 8px; }
+      /* 16px: iOS zooms the page into any focused field set smaller */
+      #cc-pick { font-size: 16px; padding: 4px 6px; max-width: 200px; }
+      .ctl.slide input[type=range] { height: 4px; }
+      .ctl.slide input[type=range]::-webkit-slider-thumb { width: 20px; height: 20px; }
+      .ctl.slide input[type=range]::-moz-range-thumb { width: 20px; height: 20px; }
+      .ctl.slide { min-height: 26px; }
+
+      /* the sheet fills the bottom, so the about button and panel move to the top */
+      #info-btn { bottom: auto; top: 8px; left: 8px; width: 28px; height: 28px; }
+      #info-btn span { font-size: 17px; }
+      /* ends above the open sheet (60dvh down) rather than over its header, since both are open
+         on load; religiondots' about card opacity, as it sits over the busiest part of the map */
+      #info-panel { bottom: auto; top: 44px; left: 8px; right: 8px; max-width: none;
+                    max-height: calc(60vh - 52px); max-height: calc(60dvh - 52px); padding: 9px 11px;
+                    background: rgba(20,20,20,0.92); }
+      #tip { max-width: calc(100vw - 16px); white-space: normal; }
+
+      .maplibregl-ctrl-bottom-left, .maplibregl-ctrl-bottom-right { bottom: 44px; }
+      .maplibregl-ctrl-attrib,
+      .maplibregl-ctrl-attrib.maplibregl-compact-show { background: rgba(20,20,20,0.82); border-radius: 4px; }
+      .maplibregl-ctrl-attrib-inner, .maplibregl-ctrl-attrib-inner a { color: #8f8f8f; }
+      .maplibregl-ctrl-attrib .maplibregl-ctrl-attrib-button {
+        background-color: transparent; filter: invert(1) opacity(0.6);
+      }
+    }
+
+    /* A window short rather than narrow (a landscape phone): the panel's settings go past the end
+       of the rows and the legend takes the height back, as in religiondots. */
+    @media (max-height: 520px) {
+      #panel { display: block; overflow-y: auto; }
+      #panel::-webkit-scrollbar { width: 6px; }
+      #panel::-webkit-scrollbar-thumb { background: #555; border-radius: 3px; }
+      #panel-head { position: sticky; top: 0; z-index: 2; background: #151515; border-radius: 8px 8px 0 0; }
+      #tree { overflow: visible; }
+      #meta { max-height: none; overflow: visible; }
+    }
+
+    /* A tap leaves :hover stuck on the row it touched, which reads as a selection that did not
+       take (religiondots). */
+    @media (hover: none) {
+      .row:hover { background: none; }
+      .row.sel:hover { background: #2f3b47; }
+    }
+  </style>
+</head>
+<body>
+<div id="map"></div>
+<div id="tip"></div>
+<div id="panel">
+  <div id="panel-head"><b>Mother tongues</b><span id="head-scope"><span id="head-scope-text"></span><span id="head-mixrow"><span id="head-mixtrack"></span><span id="head-mixtotal"></span></span></span><button id="min" title="Hide panel">–</button></div>
+  <div id="scope-bar">
+    <span id="scope"></span>
+    <div id="mixrow"><div id="mixbar"><div id="mixtrack"></div></div><span id="mixtotal"></span></div>
+  </div>
+  <div id="meta"></div>
+  <div id="tree"></div>
+  <div id="legend-note" class="sec" data-sec="settings">
+    <div class="sec-h"><span class="tw"></span>Settings</div>
+    <div class="sec-b">
+    <div class="ctl"><span class="cl">Country</span><select id="cc-pick"></select></div>
+    <div class="ctl"><span class="cl">Colour by</span><div class="segs" id="mode-segs">
+      <span class="seg on" data-m="language">language</span><span class="seg" data-m="branch">branch</span><span class="seg" data-m="family">family</span>
+    </div></div>
+    <div class="ctl"><span class="cl">Draw as</span><div class="segs" id="draw-segs">
+      <span class="seg" data-d="dots">dots</span><span class="seg on" data-d="pies">pies</span>
+    </div></div>
+    <div class="ctl slide"><span class="cl">Size</span><input type="range" id="size" min="-2" max="3.25" step="0.25" value="0"><span class="val" id="size-val">1×</span></div>
+    <div class="ctl slide" title="How large one patch of map may draw, however many people it holds. Higher lets dense places spread into their neighbours; lower leaves gaps between them."><span class="cl">Cap</span><input type="range" id="cap" min="0" max="6" step="1" value="6"><span class="val" id="cap-val">none</span></div>
+    <div class="ctl slide"><span class="cl">Aggregation</span><input type="range" id="agg" min="0" max="3" step="1" value="1"><span class="val" id="agg-val">low</span></div>
+    </div>
+  </div>
+</div>
+<button id="info-btn" title="About this map"><span>i</span></button>
+<div id="info-panel">
+  <div id="info-panel-header">
+    <span id="info-panel-title">About</span>
+    <button id="info-panel-close" title="Close">&#10005;</button>
+  </div>
+  <!-- Anita's text, 2026-10-06. The credits paragraph keeps every attribution the data needs:
+       the basemap's (OpenFreeMap, OpenMapTiles, OpenStreetMap), and the CC BY sources shared
+       with religiondots (Kontur, WorldPop, OCHA COD, geoBoundaries) plus Glottolog. -->
+  <div id="info-body">
+  <p>The area of each bubble is proportional to the number of people.</p>
+  <p>Zoom into a country to see just that country. Zoom out to return to viewing all countries.</p>
+  <p>Click on a language group in the legend to filter to just show those languages.</p>
+  <p>If you see a language on the map and want to find it in the legend, you can hover or tap the map bubble to open the tooltip, and then click or tap the language.</p>
+  <p>Almost all data comes from national censuses. To see information about the data used, zoom into the country and expand the "Data" section near the top of the legend. Grey hatching marks places that have no data.</p>
+  <p>Base map: <a href="https://openfreemap.org/" target="_blank" rel="noopener">OpenFreeMap</a>, with <a href="https://openmaptiles.org/" target="_blank" rel="noopener">OpenMapTiles</a> and <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors' data.</p>
+  <p class="credits">Population grid: <a href="https://data.humdata.org/organization/kontur" target="_blank" rel="noopener">Kontur Population</a> (CC BY 4.0), and <a href="https://www.worldpop.org/" target="_blank" rel="noopener">WorldPop</a> (CC BY 4.0) for Eswatini. Boundaries: the OCHA Common Operational Datasets on the <a href="https://data.humdata.org/" target="_blank" rel="noopener">Humanitarian Data Exchange</a> and <a href="https://www.geoboundaries.org/" target="_blank" rel="noopener">geoBoundaries</a> (both CC BY 4.0), national agencies' own units where they publish them, and Natural Earth coastlines. Language groups checked against <a href="https://glottolog.org/" target="_blank" rel="noopener">Glottolog</a> (CC BY 4.0). Each country's census is cited in its Data section. Drawn with <a href="https://maplibre.org/" target="_blank" rel="noopener">MapLibre GL</a>.</p>
+  <p>See more maps at <a href="https://anita.garden/projects" target="_blank" rel="noopener">anita.garden/projects</a>!</p>
+  </div>
+</div>
+
+<script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+<script src="https://unpkg.com/pmtiles@3.2.0/dist/pmtiles.js"></script>
+<script>
+maplibregl.addProtocol('pmtiles', new pmtiles.Protocol().tile);
+
+/* WHERE THE DATA LIVES: next to this page in the maps tree, or on R2 once published. Published,
+   only this page goes to the website repo (Jekyll on GitHub Pages); the archive, counts.json,
+   not_drawn.geojson, taxonomy/languages.json and country_shapes.geojson all go to R2 under the
+   same relative paths (tools/deploy.py). The archive cannot go to Pages at all: Cloudflare
+   re-encodes the response there and breaks the range requests PMTiles reads with.
+
+   Decided by asking for a file only the maps tree has, never by the hostname: the website served
+   locally at localhost:4000/languagedots/ is localhost too, and has no data/ beside the page.
+   build_tail.json is never uploaded. A GET and a parse, so a soft 404 (200 with an HTML error
+   page) cannot pass. The published page pays one small 404 for it. religiondots' resolveDataBase()
+   is the original. */
+const DATA_R2 = 'https://pub-ae551368cea941f39101e13c84d60bde.r2.dev/languagedots/';
+let DATA_BASE = '';
+const dataBaseP = (async () => {
+  try {
+    const r = await fetch('data/processed/build_tail.json', { cache: 'no-store' });
+    if (r.ok) {
+      const m = await r.json();
+      if (m && Array.isArray(m.countries)) { DATA_BASE = ''; return; }
+    }
+  } catch (e) { /* absent, unreachable, or 200 with something that is not the file */ }
+  DATA_BASE = DATA_R2;
+})();
+
+const DOT_ALPHA = 0.85, DIM = '#3b3b3b';
+
+/* A DOT HAS A FIXED SIZE ON THE GROUND, not on the screen (spec §4.1). Every 1,000 people get
+   DOT_KM2 of ink at the default slider, a mark of p people gets p/1,000 times that, and the
+   radius in pixels doubles with every zoom level, exactly as the map does. A language too small
+   for one dot is a mark of its own true weight (no ring symbol).
+
+   Why: the screen-sized dots religiondots inherited (radius ∝ √k, growing only 1.26x per level
+   and capped at half a merge cell PER MARK) did two wrong things here. The cap stopped Hindi's
+   marks growing in dense cells while small languages' marks kept their full size, so minorities
+   got more than their share of ink; and at each whole zoom level the capped marks split into
+   uncapped ones, so coverage doubled in a jump (measured: 26% -> 50% across z5 over Bihar).
+
+   THE CAP IS PER CELL, NOT PER MARK. A city's ink, uncapped, spreads tens of kilometres past the
+   city (Delhi's 16M at 3 km² a dot is a disc 140 km across). So a cell's TOTAL ink is capped at
+   a disc of CAP_FRAC of the cell's width, and every language in the cell gets its share p/t of
+   that, the same shrink for all: the shares inside a cell stay honest and nothing spills. The
+   cap is a fraction of the CELL, which is a fixed piece of ground at the tile's own zoom `z`, so
+   it too grows with the map, and a cell splitting into four at a threshold keeps its ink.
+
+   Above the last zoom at which marks still split, nothing changes in the data, so the radius
+   stops growing in pixels and the dots spread apart like an ordinary dot map.
+
+   AGGREGATION picks which merge layer is drawn: tiles.py writes the same dots merged on a 32,
+   64, 128 and 256 cell grid per tile (`dotsm1`, `dots`, `dots1`, `dots2`), each step a quarter
+   of the ground per mark and 4x as many marks. Internally `detail` is the offset from CELL_BITS
+   (-1 to 2), so CELL_BITS + detail is the grid everywhere; the slider runs the other way (right
+   is more aggregated, coarser). Ink per person is unchanged, so this changes the grain and not
+   how full a place looks. (Fetching deeper tiles by declaring a 256 or
+   128px tileSize would have needed no extra layers, but MapLibre refuses any vector tileSize
+   other than 512.)
+
+   WHAT IS LEFT AT A THRESHOLD, measured over Bihar at detail 1: coverage dips 15-27% across
+   z5-z8, because four small marks leave a speckle of gaps where one big one did not. A per-level
+   sawtooth boost cannot fix it: MapLibre evaluates a zoom-and-data expression only at whole
+   zooms and blends between them, so a sawtooth comes out as a uniform enlargement (tried). */
+const ARCHIVE_MAXZ = 12;                   // tiles.py --max-zoom
+const CELL_BITS = 6;                       // tiles.py CELL_BITS; detail adds to it
+const CAP_FRAC = 0.65;                     // cap radius / cell width, at the cap slider's 1x
+// 3.9 = 3 x 1.3: Anita, 2026-10-06, the default 30% bigger, slider labels unchanged (1x is this)
+const DOT_KM2 = 3.9;
+let dotScale = 1;                          // the size slider: a multiplier on AREA
+/* The cap slider's stops, as multipliers on the cap disc's AREA; the last removes the cap
+   (Anita, 2026-10-04: "up to like 5x, and at the max it just removes the cap"). */
+const CAP_STOPS = [0.5, 1, 1.5, 2, 3, 5, Infinity];
+let capScale = Infinity;                   // no cap by default (Anita, 2026-10-04)
+const capFrac = () => isFinite(capScale) ? CAP_FRAC * Math.sqrt(capScale) : 1e6;
+let detail = 1;                            // grid levels finer than CELL_BITS, -1 to 2; set by the aggregation slider (medium default, Anita 2026-10-04)
+const AGG_LABELS = ['very low', 'low', 'medium', 'high'];  // slider 0-3 = detail 2, 1, 0, -1 (Anita's names, 2026-10-05)
+let drawAs = 'pies';                       // or 'dots'; pies by default (Anita, 2026-10-04)
+
+const r0Of = () => Math.sqrt(DOT_KM2 * dotScale * 1e6 / Math.PI) / (40075016.686 / 512);
+const cellPxOf = () => 512 / Math.pow(2, CELL_BITS + detail);
+
+/* A mark's radius at zoom 0 is sqrt(p/t) * min(r0 * sqrt(t/1000), cap * cellPx * 2^-z): its
+   share of the whole cell's disc, which is the cell's uncapped ink or the cap, whichever is
+   smaller. In pixels it doubles per zoom up to ARCHIVE_MAXZ and then holds. The dot layer below
+   computes it per mark on the GPU from the three per-mark factors and two uniforms, so the size
+   and cap sliders only change uniforms (and queue a re-sort). */
+function setDotSize() {
+  dotLayer.sortGen++;
+  map.triggerRepaint();
+}
+
+let NODES = {}, KIDS = {}, ORDER = {}, COUNTS = null;
+let cc = 'all', mode = 'language', selected = null;
+const open = new Set();
+
+/* AUTO COUNTRY. While the picker is on Auto, the camera chooses between all countries and one
+   country; see considerCamera. Picking anything else by hand (a country, or All countries) turns
+   Auto off until Auto is picked again, as in religiondots.
+
+   AREA ONLY, NEVER PEOPLE (Anita, 2026-10-06: "agnostic of population on screen and look only at
+   area, like religiondots ... just want the threshold to be a bit farther than religiondots").
+   This is religiondots' Auto ported whole (its considerCamera and the long notes there record
+   the bugs each piece fixes: phone bands, Hawaii, Bangladesh inside India's box, the centre
+   pixel). The evidence is the countries' framing boxes (`view`) and their outlines
+   (country_shapes.geojson, see SHAPES); the dots are never counted. The one test religiondots
+   still answers from its dots, "are any of this country's dots on screen" for Hawaii, asks the
+   outline instead (shapeOnScreen), and its dot-tally route over open sea asks the 7x7 outline
+   samples (centreShares) instead.
+
+   THE NUMBERS. Releasing is religiondots' exactly: AUTO_FILL_OUT 0.6, AUTO_OVER_OUT 0.25,
+   AUTO_HOLD 0.35, AUTO_OUTWEIGH 0.25, AUTO_SPAN_MAX 130, fill measured against the band the
+   panel leaves (bandBounds). Choosing is stricter, which is the "a bit farther": AUTO_FILL_IN
+   1.05 against religiondots' 0.85 and AUTO_COVER_IN 0.25 against its 0.2, measured as religiondots
+   measures it, against the whole canvas on a desktop and the band on a phone (viewBounds). On a
+   1541x964 window religiondots chooses a country whose height binds at 0.99 of the picker's
+   framing and one whose width binds at 1.31 (its two side panels make the canvas much wider than
+   its band); here those are 1.09 and 1.35. On a phone, 0.85 of the framing there and 1.05 here.
+   1 is the box touching two opposite edges, so 1.05 asks for a little past that. AUTO_RIVAL 0.4
+   and AUTO_OVER_IN 0.5 are religiondots'. AUTO_SHARE 0.85 is religiondots' share of the dots in
+   the middle, asked here of the outline samples that land on a country. */
+/* Anita, 2026-10-06 (later): still too eager, "it should cover way more of the screen before we
+   select". Entry raised to fill 1.5 (about half a zoom level past 1.05) and cover 0.5 (the
+   country's box over half the view); release untouched, so the gap to AUTO_FILL_OUT is wider. */
+const AUTO_FILL_IN = 1.5, AUTO_FILL_OUT = 0.6, AUTO_SPAN_MAX = 130,
+      AUTO_COVER_IN = 0.5,
+      AUTO_OVER_IN = 0.5, AUTO_OVER_OUT = 0.25,
+      AUTO_SHARE = 0.85, AUTO_BOX = 0.5;
+const AUTO_GRID = 7, AUTO_HOLD = 0.35, AUTO_RIVAL = 0.4, AUTO_OUTWEIGH = 0.25;
+const AUTO_NEVER = new Set(['xs']);        // no territory of its own (religiondots' rule): by hand only
+let autoOn = true;
+
+const parentOf = id => id.includes('.') ? id.slice(0, id.lastIndexOf('.')) : null;
+const depth = id => id.split('.').length;
+function familyOf(id) {                  // Indo-European is too broad to be one colour
+  const p = id.split('.');
+  return p[0] === 'indoeuropean' && p.length > 1 ? p.slice(0, 2).join('.') : p[0];
+}
+function branchOf(id) {
+  const f = familyOf(id), fd = depth(f);
+  const p = id.split('.');
+  return p.length > fd ? p.slice(0, fd + 1).join('.') : f;
+}
+function ownColour(id) { return KIDS[id] ? (NODES[id].color_own || NODES[id].color) : NODES[id].color; }
+function colourFor(id) {
+  if (!NODES[id]) return '#666666';        // in the tiles or counts but not (yet) in the taxonomy
+  if (mode === 'family') return NODES[familyOf(id)].color;
+  if (mode === 'branch') return NODES[branchOf(id)].color;
+  return ownColour(id);
+}
+const under = (id, anc) => id === anc || id.startsWith(anc + '.');
+const litColour = id => (!selected || under(id, selected)) ? colourFor(id) : DIM;
+// the selection as one colour (a pie's folded wedge of its smallest members): in language mode the
+// group's legend colour, otherwise the family or branch colour its members already share
+const selColour = () => mode === 'language' ? NODES[selected].color : colourFor(selected);
+
+function tallyOf(c) {
+  const e = COUNTS.countries[c], t = {};
+  for (const [n, k] of Object.entries(e.dots)) t[n] = (t[n] || 0) + k * COUNTS.dot_value;
+  for (const [n, p] of Object.entries(e.rings || {})) t[n] = (t[n] || 0) + p;
+  return t;
+}
+function scopeTally() {
+  if (cc !== 'all') return tallyOf(cc);
+  const t = {};
+  for (const c of Object.keys(COUNTS.countries))
+    for (const [n, v] of Object.entries(tallyOf(c))) t[n] = (t[n] || 0) + v;
+  return t;
+}
+function subtreeSums(tally) {
+  const sum = {};
+  for (const [n, v] of Object.entries(tally)) {
+    let p = n;
+    while (p) { sum[p] = (sum[p] || 0) + v; p = parentOf(p); }
+  }
+  return sum;
+}
+
+function fmt(n) {
+  if (n >= 1e9) return (n / 1e9).toFixed(2) + 'b';
+  if (n >= 1e6) return (n / 1e6).toFixed(n >= 1e7 ? 0 : 1) + 'm';
+  if (n >= 1e3) return Math.round(n / 1e3) + 'k';
+  return String(Math.round(n));
+}
+const pct = s => (s >= 0.1 ? (100 * s).toFixed(0) : s >= 0.01 ? (100 * s).toFixed(1) : (100 * s).toPrecision(1)) + '%';
+
+/* religiondots §10.3's share scale: a fifth of the bar per decade (10% fills 80%, 1% 60%,
+   0.1% 40%, 0.01% 20%), compressing below 0.01% so no bar reads as nothing. */
+function shareFill(s) {
+  const u = 1 + 0.2 * Math.log10(s);
+  if (u >= 0.2) return Math.min(1, u);
+  return 0.06 + (0.2 - 0.06) * Math.pow(0.5, (0.2 - u) / 0.2);
+}
+
+/* The rows in display order: every node with people, children by size, and a group's own
+   unnamed people as a row of their own just under it. The tree and the composition bar both
+   walk this, so the bar's segments run in the same order as the rows. */
+/* SMALL GROUPS FOLD (religiondots §6.10, simplified): under each group, two or more members
+   under FOLD_PEOPLE collapse into one "n small groups" row that opens like a group. Anita's
+   number, 2026-10-04: "<50k people". A fixed people cut rather than religiondots' share ladder
+   tuned to the panel's height; that ladder is the next step if this is not enough. Folded
+   languages keep their own colours on the map (unlike religiondots' child fold, which repaints
+   them in the parent's), and anything on the path to the selection never folds.
+   THE CUT SCALES WITH THE SCOPE (Anita, 2026-10-05: "perhaps 50k or 0.05%", after Yezidi, 30k
+   and 1% of Armenia, folded away in Armenia's view). Read as: a member folds only if it is under
+   min(FOLD_PEOPLE, FOLD_SHARE of the people in the current scope), so the world view keeps
+   200,000 and Armenia's cut is about 1,500.
+   200k, NOT 50k (Anita, 2026-10-06, once every country was in). The same fold now runs on the
+   top level too: top-level groups under the cut fold into one "n small groups" row there.
+   OTHER LANGUAGES (Anita, 2026-10-06): the per-region remainder roots ("Other African
+   languages", "Other or unclassified" and the like) gather under one "Other languages" row at
+   the top. The tree marks them by id: the root `other` and any root ending in `_other`
+   (africa_other, americas_other, ...), so new ones join without an edit here. The row only
+   groups and opens, as a fold row does; it cannot be selected, since a selection is one node of
+   the tree. With one such root in view there is nothing to gather and it stands alone. */
+const FOLD_PEOPLE = 200000, FOLD_SHARE = 0.0005, FOLD_MIN = 2;
+const AUTO_OPEN = 0.005;                   // groups over this share of the scope start open (setCountry)
+const openFold = new Set();
+let foldCut = FOLD_PEOPLE;                 // this view's cut, set by displayOrder
+const OTHER_KEY = '~other', TOP_KEY = '~top';   // open/openFold keys of the two rows no node owns
+const isOtherRoot = id => !parentOf(id) && /(^|_)other$/.test(id);
+let otherRoots = [];                       // this view's members of the Other languages row
+// does legend item k (a node, or the Other languages row) hold node id?
+const covers = (k, id) => k === OTHER_KEY ? otherRoots.some(m => under(id, m)) : under(id, k);
+
+function displayOrder(sum, tally) {
+  const out = [];
+  const bySize = (a, b) => sizeOf(b) - sizeOf(a);
+  const sizeOf = k => k === OTHER_KEY ? otherRoots.reduce((a, m) => a + sum[m], 0) : sum[k];
+  const onPath = k => selected && covers(k, selected);
+  foldCut = Math.min(FOLD_PEOPLE, Math.round(FOLD_SHARE * Object.values(tally).reduce((a, b) => a + b, 0)));
+  // the members of one group (key: the group's node id, or one of the two keys above), with
+  // two or more under the cut folded into one row at the end
+  const members = (items, key, lvl, vis) => {
+    let small = items.filter(k => sizeOf(k) < foldCut && !onPath(k));
+    if (small.length < FOLD_MIN) small = [];
+    items.filter(k => !small.includes(k)).forEach(k => walk(k, lvl, vis));
+    if (small.length) {
+      out.push({ id: key, lvl, fold: small, v: small.reduce((a, k) => a + sizeOf(k), 0), vis });
+      small.forEach(k => walk(k, lvl + 1, vis && openFold.has(key)));
+    }
+  };
+  const walk = (id, lvl, vis) => {
+    if (id === OTHER_KEY) {
+      out.push({ id, lvl, grp: true, synth: true, v: sizeOf(id), vis });
+      return members(otherRoots, id, lvl + 1, vis && open.has(id));
+    }
+    const kids = (KIDS[id] || []).filter(k => sum[k]).sort(bySize);
+    // A GROUP WITH ONE MEMBER (in this view) and no unnamed people of its own adds a line and
+    // nothing else, so its member takes its place: Korean at the top, not Koreanic > Korean
+    // (Anita, 2026-10-05). Decided per view, so a group shows again where it has more members.
+    if (kids.length === 1 && !tally[id] && selected !== id) return walk(kids[0], lvl, vis);
+    out.push({ id, lvl, grp: kids.length > 0, own: false, vis });
+    const kv = vis && open.has(id);
+    if (kids.length && tally[id]) out.push({ id, lvl: lvl + 1, grp: false, own: true, vis: kv });
+    members(kids, id, lvl + 1, kv);
+  };
+  const roots = Object.keys(NODES).filter(id => !parentOf(id) && sum[id]);
+  otherRoots = roots.filter(isOtherRoot).sort(bySize);
+  if (otherRoots.length < 2) otherRoots = [];
+  const top = roots.filter(id => !otherRoots.includes(id));
+  if (otherRoots.length) top.push(OTHER_KEY);
+  members(top.sort(bySize), TOP_KEY, 0, true);
+  return out;
+}
+
+function buildPanel() {
+  const tally = scopeTally();
+  const sum = subtreeSums(tally);
+  const total = Object.values(tally).reduce((a, b) => a + b, 0);
+  const rows = displayOrder(sum, tally);
+
+  // scope line and composition bar: leaves and own-rows, in row order
+  const where = cc === 'all' ? 'all countries' : COUNTS.countries[cc].name;
+  document.getElementById('scope').textContent =
+    `Viewing: ${selected ? NODES[selected].label : 'all languages'}, ${where}`;
+  const segs = rows.filter(r => !r.grp && !r.fold).map(r => ({ id: r.id, own: r.own, v: r.own ? tally[r.id] : sum[r.id] }));
+  document.getElementById('mixtrack').innerHTML = segs.map(s =>
+    `<i style="width:${(100 * s.v / total).toFixed(4)}%;background:${litColour(s.id)}"></i>`).join('');
+  document.getElementById('mixtotal').textContent = fmt(total);
+  // the shut phone sheet's header wears the same line and bar
+  document.getElementById('head-scope-text').textContent = document.getElementById('scope').textContent;
+  document.getElementById('head-mixtrack').innerHTML = document.getElementById('mixtrack').innerHTML;
+  document.getElementById('head-mixtotal').textContent = fmt(total);
+  MIX = { segs, total };
+
+  const tree = document.getElementById('tree');
+  tree.innerHTML = '';
+  /* PIES FOLD BY FAMILY (pieWedges): a family's small languages share one wedge in the family's
+     washed colour. So that the legend holds every colour drawn, in pies mode with Language
+     colouring each family's row shows that washed colour as the right half of its dot: the
+     roots and familyOf's Indo-European branches, the two levels a pie folds at. The row is the
+     family's own, or the row standing in for it when it has one member here (Korean). */
+  const famHalf = new Set();
+  if (drawAs === 'pies' && mode === 'language')
+    for (const r of rows) {
+      if (!r.grp || r.own || r.fold || r.synth) continue;
+      for (const f of [r.id.split('.')[0], familyOf(r.id)]) {
+        if (r.famHalf || famHalf.has(f) || !NODES[f].color_own) continue;
+        famHalf.add(f); r.famHalf = f;
+      }
+    }
+  for (const r of rows) {
+    if (!r.vis) continue;
+    if (r.fold) {
+      // the bucket: blank swatch, since its members keep their own colours
+      const v = r.v, s = v / total;
+      const row = document.createElement('div');
+      row.className = 'row own';
+      row.style.paddingLeft = (r.lvl * 14) + 'px';
+      row.title = `${r.fold.length} groups under ${fmt(foldCut)} people each, collapsed to one line. ` +
+                  'They keep their own colours on the map; open this to see them.';
+      row.innerHTML = `<span class="tw">${openFold.has(r.id) ? '▾' : '▸'}</span>` +
+        `<span class="dot" style="background:#555"></span>` +
+        `<span class="lb">${r.fold.length} small groups</span>` +
+        `<span class="ct"><span>${fmt(v)}</span>` +
+        `<span class="bar"><i style="width:${(shareFill(s) * 100).toFixed(1)}%;background:#777"></i></span></span>`;
+      row.onclick = () => { openFold.has(r.id) ? openFold.delete(r.id) : openFold.add(r.id); buildPanel(); };
+      tree.appendChild(row);
+      continue;
+    }
+    if (r.synth) {
+      // Other languages: like a fold row, a blank swatch and a click that opens it
+      const s = r.v / total;
+      const row = document.createElement('div');
+      row.className = 'row';
+      row.style.paddingLeft = (r.lvl * 14) + 'px';
+      row.title = `${otherRoots.length} groups of languages left over in each region, gathered on one line. ` +
+                  'They keep their own colours on the map; open this to see them.';
+      row.innerHTML = `<span class="tw">${open.has(r.id) ? '▾' : '▸'}</span>` +
+        `<span class="dot" style="background:#555"></span>` +
+        `<span class="lb">Other languages</span>` +
+        `<span class="ct" title="${Math.round(r.v).toLocaleString()} people · ${pct(s)} of ${where}"><span>${fmt(r.v)}</span>` +
+        `<span class="bar"><i style="width:${(shareFill(s) * 100).toFixed(1)}%;background:#777"></i></span></span>`;
+      row.onclick = () => { open.has(r.id) ? open.delete(r.id) : open.add(r.id); buildPanel(); };
+      tree.appendChild(row);
+      continue;
+    }
+    const v = r.own ? tally[r.id] : sum[r.id];
+    const s = v / total;
+    const col = r.own ? colourFor(r.id) : (r.grp ? NODES[r.id].color : colourFor(r.id));
+    const row = document.createElement('div');
+    row.className = 'row' + (r.own ? ' own' : '') + (!r.own && selected === r.id ? ' sel' : '');
+    row.style.paddingLeft = (r.lvl * 14) + 'px';
+    row.dataset.id = r.id;
+    if (r.own) row.dataset.own = '1';
+    // a group's own row reads "Other <group>" so it does not repeat its parent's label word for
+    // word (Anita, 2026-10-06: no "language not named")
+    const lab0 = NODES[r.id].label;
+    const label = r.own && !/^(other|unclassified|no established)\b/i.test(lab0) ? `Other ${lab0}` : lab0;
+    const dot = r.famHalf
+      ? `<span class="dot" style="background:linear-gradient(90deg,${col} 50%,${NODES[r.famHalf].color_own} 50%)"` +
+        ` title="Pale half: in pies, the smaller ${NODES[r.famHalf].label} languages drawn together in one slice"></span>`
+      : `<span class="dot" style="background:${col}"></span>`;
+    row.innerHTML = `<span class="tw">${r.grp ? (open.has(r.id) ? '▾' : '▸') : ''}</span>` + dot +
+      `<span class="lb" title="${label}">${label}</span>` +
+      `<span class="ct" title="${v.toLocaleString()} people · ${pct(s)} of ${where}"><span>${fmt(v)}</span>` +
+      `<span class="bar"><i style="width:${(shareFill(s) * 100).toFixed(1)}%;background:${col}"></i></span></span>`;
+    if (r.grp) row.querySelector('.tw').onclick = ev => {
+      ev.stopPropagation();
+      open.has(r.id) ? open.delete(r.id) : open.add(r.id);
+      buildPanel();
+    };
+    if (!r.own) row.onclick = () => select(selected === r.id ? null : r.id);
+    tree.appendChild(row);
+  }
+}
+let MIX = { segs: [], total: 1 };
+
+/* The hideable blocks. Defaults: settings open, data shut (Anita asked for both to hide, and
+   for source and what/grain/missing to be one "Data" block, 2026-10-04). localStorage can be
+   missing or throw (private windows, blocked site data), so every touch is wrapped and the
+   defaults stand without it. */
+const SEC_DEFAULT = { data: false, settings: true };
+// the key's "2" resets every viewer's saved open/shut state to these defaults (Anita wanted
+// Settings open by default, 2026-10-05, and hers had been saved shut)
+const SEC_KEY = 'ld.sec2.';
+function secOpen(k) {
+  try { const v = localStorage.getItem(SEC_KEY + k); if (v !== null) return v === '1'; } catch (e) {}
+  return SEC_DEFAULT[k];
+}
+function secSave(k, on) { try { localStorage.setItem(SEC_KEY + k, on ? '1' : '0'); } catch (e) {} }
+function wireSec(el) {
+  const k = el.dataset.sec, h = el.querySelector('.sec-h');
+  const show = on => { el.classList.toggle('shut', !on); h.querySelector('.tw').textContent = on ? '▾' : '▸'; };
+  show(secOpen(k));
+  h.onclick = () => { const on = el.classList.contains('shut'); show(on); secSave(k, on); };
+}
+const secHtml = (k, title, body) =>
+  `<div class="sec" data-sec="${k}"><div class="sec-h"><span class="tw"></span>${title}</div>` +
+  `<div class="sec-b">${body}</div></div>`;
+
+/* WHICH SOURCE DRAWS WHICH PART (Anita, 2026-10-06: "i want to be able to see if we mashed 3
+   data sources together and what covers what part"). A country's ENTRY `parts` (countries.py
+   docstring) lists the parts of its population, each with the source that draws it and its
+   people: a hand figure (`people`), the drawn people under some languages (`nodes`), or what is
+   left (`rest`). Shares are of the country's drawn total, so they add up to what the legend
+   shows. A country without `parts` keeps the old Source / What rows. */
+const PART_COLS = ['#7d9cb8', '#c4d2de', '#4f667c', '#a3b6c8', '#33424f'];
+function partsOf(c) {
+  const e = COUNTS.countries[c];
+  if (!e.parts || !e.parts.length) return null;
+  const t = tallyOf(c);
+  const total = Object.values(t).reduce((a, b) => a + b, 0);
+  const val = e.parts.map(p => p.people != null ? p.people
+    : p.nodes ? Object.entries(t).filter(([n]) => p.nodes.some(k => under(n, k))).reduce((a, [, v]) => a + v, 0)
+    : null);
+  const ri = e.parts.findIndex(p => p.rest);
+  if (ri >= 0) val[ri] = Math.max(0, total - val.reduce((a, v, i) => i === ri ? a : a + (v || 0), 0));
+  return e.parts.map((p, i) => ({ covers: p.covers, source: p.source, v: val[i],
+                                  s: val[i] == null || !total ? null : val[i] / total }));
+}
+
+function buildMeta() {
+  const m = document.getElementById('meta');
+  if (cc === 'all') { m.innerHTML = 'All countries'; return; }
+  const e = COUNTS.countries[cc];
+  const parts = partsOf(cc);
+  let body;
+  if (parts) {
+    const bar = parts.length > 1 && parts.every(p => p.s != null)
+      ? `<div class="pbar">${parts.map((p, i) =>
+          `<i style="width:${(100 * p.s).toFixed(3)}%;background:${PART_COLS[i % PART_COLS.length]}"></i>`).join('')}</div>`
+      : '';
+    body = bar + parts.map((p, i) =>
+      `<div class="pt"><span class="sw" style="background:${parts.length > 1 ? PART_COLS[i % PART_COLS.length] : 'transparent'}"></span>` +
+      `<span class="pl">${esc(p.covers)}</span>` +
+      (p.v != null ? `<span class="pn">${fmt(p.v)}${parts.length > 1 ? ' · ' + pct(p.s) : ''}</span>` : '') +
+      `</div><div class="ps">${esc(p.source)}</div>`).join('') +
+      `<div class="r gap-top"><span>Grain</span><span>${esc(e.grain)}</span></div>` +
+      (e.gap ? `<div class="r"><span>Missing</span><span>${esc(e.gap)}</span></div>` : '') +
+      `<div class="r"><span>Sources</span><span>${esc(e.source)}</span></div>`;
+  } else {
+    body = `<div class="r"><span>Source</span><span>${esc(e.source)}</span></div>` +
+      `<div class="r"><span>What</span><span>${esc(e.how)}</span></div>` +
+      `<div class="r"><span>Grain</span><span>${esc(e.grain)}</span></div>` +
+      (e.gap ? `<div class="r"><span>Missing</span><span>${esc(e.gap)}</span></div>` : '');
+  }
+  m.innerHTML = secHtml('data', 'Data', body);
+  m.querySelectorAll('.sec').forEach(wireSec);
+}
+const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+
+function select(id) {
+  selected = id;
+  let p = id && parentOf(id);
+  while (p) { open.add(p); p = parentOf(p); }
+  if (id && isOtherRoot(id.split('.')[0])) open.add(OTHER_KEY);
+  applyColours(false);
+  if (drawAs === 'pies') { sortPies(); pieLayer.upload(); }
+  buildPanel();
+}
+
+/* One language's row in the legend, from a pinned tooltip (Anita, 2026-10-05: hovering a Bambara
+   pie names Bambara, but not where it sits in the tree). Opens the panel, every group above the
+   row and any "n small groups" row it is folded into, scrolls to it and marks it for a moment.
+   own: the group's "language not named" row rather than the group's own row. */
+function reveal(id, own) {
+  if (document.getElementById('panel').classList.contains('min')) document.getElementById('min').click();
+  for (let p = parentOf(id); p; p = parentOf(p)) open.add(p);
+  if (own) open.add(id);
+  const tally = scopeTally();
+  for (const r of displayOrder(subtreeSums(tally), tally)) {
+    if (r.fold && r.fold.some(k => covers(k, id))) openFold.add(r.id);
+    if (r.synth && covers(r.id, id)) open.add(r.id);
+  }
+  buildPanel();
+  const tree = document.getElementById('tree');
+  const row = [...tree.querySelectorAll('.row')].find(el => el.dataset.id === id && !!el.dataset.own === own);
+  if (!row) return;
+  tree.scrollTop = row.offsetTop - tree.offsetTop - (tree.clientHeight - row.offsetHeight) / 2;
+  row.classList.add('flash');
+  setTimeout(() => row.classList.remove('flash'), 1500);
+}
+
+/* A pinned tooltip: set by clicking a mark, cleared by clicking empty map, Esc, or a change of
+   country or drawing. It follows its spot on the map as the map moves. */
+let frozen = null;                         // the lng/lat it is pinned to
+/* A pinned pie's folded rows open into their languages (Anita, 2026-10-06): the pie (its cell,
+   kept as pinned even when the pie list is rebuilt under it), the rows open, and the open rows
+   showing every member rather than the top 10. */
+let tipHit = null;
+const tipOpen = new Set(), tipAll = new Set();
+function unfreeze() {
+  const tip = document.getElementById('tip');
+  frozen = null; tipHit = null; tip.classList.remove('frozen'); tip.style.display = 'none';
+}
+
+/* Colours, selection and the country filter live in the two GPU layers' palette textures and
+   uniforms, so none of them touches MapLibre's `dots` layer (whose data-driven colour or filter
+   would re-parse every loaded tile in the worker). `rebuild` false: the pie list stays as it is
+   (a selection only re-sorts it, which select does). */
+function applyColours(rebuild = true) {
+  if (!map.getLayer('dots')) return;
+  pieLayer.palette();
+  dotLayer.palette();
+  if (rebuild) schedulePies();
+  map.triggerRepaint();
+}
+
+const PHONE = '(max-width: 700px)';         // the stylesheet's phone breakpoint
+const isPhone = () => matchMedia(PHONE).matches;
+/* On the phone the bottom is the OPEN sheet's 40dvh (plus its border and a hair), always, and not
+   the sheet as it is now (religiondots' panelPadding): bandBounds divides by these numbers, so a
+   padding that followed the live sheet would change what a country scores every time the sheet
+   was tapped shut, and Auto would drop it. */
+function viewPadding() {
+  if (isPhone()) return { top: 20, left: 10, right: 10, bottom: Math.round(innerHeight * 0.42) };
+  const p = document.getElementById('panel').getBoundingClientRect();
+  return { top: 20, left: 20, bottom: 20, right: innerWidth - p.left + 20 };
+}
+// the "all" view frames every drawn country: the union of their framing boxes
+function allView() {
+  const bs = Object.values(COUNTS.countries).map(e => e.view || e.bbox);
+  return [Math.min(...bs.map(b => b[0])), Math.min(...bs.map(b => b[1])),
+          Math.max(...bs.map(b => b[2])), Math.max(...bs.map(b => b[3]))];
+}
+
+/* auto: a change made by the camera (considerCamera). It keeps the selected language, which Auto
+   never switches into a country without (see hasSel), where a pick by hand clears it as before. */
+function setCountry(c, fly = true, auto = false) {
+  cc = c;
+  if (!auto || !hasSel(c)) selected = null;
+  unfreeze();
+  updatePick();
+  // in a chosen country every group, at any level, holding over AUTO_OPEN of its people starts
+  // open (Anita, 2026-10-06; before, only top-level groups). The world view keeps only
+  // Indo-European open: the same rule there opened 954 legend rows against 108.
+  // A group's people include its children's, so a group that passes has parents that pass too.
+  open.clear(); open.add('indoeuropean');
+  if (c !== 'all') {
+    const sum = subtreeSums(scopeTally());
+    const total = Object.keys(sum).filter(id => !parentOf(id)).reduce((a, id) => a + sum[id], 0);
+    for (const id of Object.keys(sum)) if (KIDS[id] && sum[id] > AUTO_OPEN * total) open.add(id);
+  }
+  for (let p = selected && parentOf(selected); p; p = parentOf(p)) open.add(p);
+  buildMeta(); buildPanel(); applyColours(); applyNotDrawn();
+  if (fly) map.fitBounds(c === 'all' ? allView() : (COUNTS.countries[c].view || COUNTS.countries[c].bbox),
+                         { padding: viewPadding(), animate: false });
+}
+
+/* The picker: Auto first, naming what it has chosen, then All countries and every country. */
+function updatePick() {
+  const pick = document.getElementById('cc-pick'), o = pick.querySelector('option[value="auto"]');
+  if (o) o.textContent = `Auto (${cc === 'all' ? 'all countries' : COUNTS.countries[cc].name})`;
+  pick.value = autoOn ? 'auto' : cc;
+}
+
+// does country c have any of the selected language (or group)? true with nothing selected
+function hasSel(c) {
+  if (!selected || c === 'all') return true;
+  return Object.entries(tallyOf(c)).some(([n, v]) => v > 0 && under(n, selected));
+}
+
+/* ---- AUTO COUNTRY: the camera's half (thresholds and reasoning at AUTO_FILL_IN, near the top).
+   Religiondots' functions under its names, in degrees: longitude, and latitude as a Mercator y in
+   degrees (mercDeg), so a north-south span can be measured against an east-west one. */
+
+function mercDeg(lat) {
+  return Math.log(Math.tan(Math.PI / 4 + Math.max(-85, Math.min(85, lat)) * Math.PI / 360))
+         * 180 / Math.PI;
+}
+function unmercDeg(y) {
+  return (Math.atan(Math.exp(y * Math.PI / 180)) - Math.PI / 4) * 360 / Math.PI;
+}
+// a rectangle of canvas pixels as bounds; longitudes stay unwrapped, as getBounds gives them
+function pxBounds(l, t, r, b) {
+  const nw = map.unproject([l, t]), se = map.unproject([r, b]);
+  return { w: nw.lng, e: se.lng, s: se.lat, n: nw.lat };
+}
+function canvasBounds() {
+  const cv = map.getCanvas();
+  return pxBounds(0, 0, cv.clientWidth, cv.clientHeight);
+}
+/* The band beside the panel (desktop) or between the top and the open sheet (phone): the map
+   viewPadding frames a country into, so a country the picker has framed scores 1 against it.
+   The release half of the fill test asks this, as in religiondots (its §9d-i). */
+function bandBounds() {
+  const cv = map.getCanvas(), W = cv.clientWidth, H = cv.clientHeight, pad = viewPadding();
+  const l = Math.min(pad.left, W - 60), r = Math.max(l + 50, W - pad.right);
+  const t = Math.min(pad.top, H - 60), b = Math.max(t + 50, H - pad.bottom);
+  return pxBounds(l, t, r, b);
+}
+/* What the CHOOSING tests measure, as religiondots measures it: the whole canvas on a desktop
+   (its AUTO_FILL_IN was tuned so) and the band on a phone, where the sheet is most of the screen. */
+function viewBounds() { return isPhone() ? bandBounds() : canvasBounds(); }
+/* WHERE AUTO LOOKS FOR THE MIDDLE. On the phone, religiondots' centreBounds (Anita, 2026-09-14
+   there): the whole screen less its bottom CENTRE_SHEET, whether the sheet is open or shut, a
+   fixed fraction and never a measurement of the page. On the desktop the band, not the canvas as
+   in religiondots: its panels sit on both sides and leave the canvas centre in the middle of the
+   map, where the one panel here, on the right, would put the canvas centre 150px off it. */
+const CENTRE_SHEET = 0.2;
+function centreBounds() {
+  if (!isPhone()) return bandBounds();
+  const cv = map.getCanvas();
+  return pxBounds(0, 0, cv.clientWidth, cv.clientHeight * (1 - CENTRE_SHEET));
+}
+function viewCentre() {
+  const v = centreBounds();
+  return { lng: (v.w + v.e) / 2, lat: unmercDeg((mercDeg(v.s) + mercDeg(v.n)) / 2) };
+}
+const viewOf = c => COUNTS.countries[c] && (COUNTS.countries[c].view || COUNTS.countries[c].bbox);
+// an entry with no territory (xs) is never the camera's choice; by hand only
+const autoMay = c => !!COUNTS.countries[c] && !AUTO_NEVER.has(c);
+
+// continental range: too much of the world on screen for any one country to be its subject
+function tooWide() {
+  const b = viewBounds();
+  return Math.min(360, Math.abs(b.e - b.w)) > AUTO_SPAN_MAX;
+}
+// share of the bounds this country's box spans, along whichever axis it fills more of
+function viewFill(c, b = viewBounds()) {
+  const v = viewOf(c);
+  if (!v) return 0;
+  const vw = b.e - b.w, vh = mercDeg(b.n) - mercDeg(b.s);
+  if (!(vw > 0) || !(vh > 0)) return 0;
+  return Math.max((v[2] - v[0]) / vw, (mercDeg(v[3]) - mercDeg(v[1])) / vh);
+}
+// share of the bounds the box actually covers, both axes, each capped at 1 (religiondots' cover)
+function viewCover(c) {
+  const v = viewOf(c);
+  if (!v) return 0;
+  const b = viewBounds();
+  const vw = b.e - b.w, vh = mercDeg(b.n) - mercDeg(b.s);
+  if (!(vw > 0) || !(vh > 0)) return 0;
+  return Math.min(1, (v[2] - v[0]) / vw) * Math.min(1, (mercDeg(v[3]) - mercDeg(v[1])) / vh);
+}
+function framedIn(c) {
+  return viewFill(c) >= AUTO_FILL_IN && viewCover(c) >= AUTO_COVER_IN;
+}
+// the box against the middle AUTO_BOX of the view, as a share of the most they could overlap
+function viewOverlap(c) {
+  const v = viewOf(c);
+  if (!v) return 0;
+  const b = centreBounds();
+  let w = b.w, e = b.e, s = mercDeg(b.s), n = mercDeg(b.n);
+  const dx = (e - w) * (1 - AUTO_BOX) / 2, dy = (n - s) * (1 - AUTO_BOX) / 2;
+  w += dx; e -= dx; s += dy; n -= dy;
+  const lap = Math.round(((w + e) - (v[0] + v[2])) / 720) * 360;
+  const bw = v[0] + lap, be = v[2] + lap, bs = mercDeg(v[1]), bn = mercDeg(v[3]);
+  const ix = Math.max(0, Math.min(e, be) - Math.max(w, bw)) / Math.min(e - w, be - bw);
+  const iy = Math.max(0, Math.min(n, bn) - Math.max(s, bs)) / Math.min(n - s, bn - bs);
+  return ix > 0 && iy > 0 ? ix * iy : 0;
+}
+
+/* SHAPES: one outer ring per part of every country, smallest first, from country_shapes.geojson
+   next to this page. Religiondots' data/processed/country_shapes.geojson (Natural Earth 10m, with
+   its own additions such as Somaliland in Somalia and Aland in Finland) for the 208 codes both
+   maps have, Natural Earth 10m admin_0_countries for the eight it lacks (gu mc mo pf sm tc va vi),
+   simplified to 0.02 degrees with islets under ~25 km² dropped from countries that have bigger
+   land, outer rings only, coordinates to 3 decimals, so the file is 1.8 MB rather than 8.9
+   (shapely.simplify 0.02, preserve_topology). Made once with a throwaway script on 2026-10-06; it
+   needs remaking only when a country is added. Smallest part first so an enclave
+   (Lesotho, San Marino, the Vatican) answers for itself rather than the country around it.
+   Null until loaded, and Auto waits for it: with no outlines there is no evidence. */
+let SHAPES = null, HULLS = null;
+function setShapes(gj) {
+  if (!gj || !COUNTS) return;
+  const out = [];
+  for (const f of gj.features) {
+    const polys = f.geometry.type === 'Polygon' ? [f.geometry.coordinates] : f.geometry.coordinates;
+    for (const poly of polys) {
+      const ring = poly[0];
+      let w = 180, e = -180, s = 90, n = -90, a = 0;
+      for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+        const p = ring[i];
+        if (p[0] < w) w = p[0];
+        if (p[0] > e) e = p[0];
+        if (p[1] < s) s = p[1];
+        if (p[1] > n) n = p[1];
+        a += ring[j][0] * p[1] - p[0] * ring[j][1];
+      }
+      out.push({ cc: f.properties.cc, ring, w, e, s, n, area: Math.abs(a) / 2 });
+    }
+  }
+  const total = {};
+  for (const p of out) total[p.cc] = (total[p.cc] || 0) + p.area;
+  out.sort((a, b) => a.area - b.area || total[a.cc] - total[b.cc]);
+  SHAPES = out;
+  HULLS = buildHulls(out);
+  considerCamera();
+}
+
+function inRing(r, x, lat) {
+  let inside = false;
+  for (let i = 0, j = r.length - 1; i < r.length; j = i++) {
+    const xi = r[i][0], yi = r[i][1], xj = r[j][0], yj = r[j][1];
+    if ((yi > lat) !== (yj > lat) && x < (xj - xi) * (lat - yi) / (yj - yi) + xi) inside = !inside;
+  }
+  return inside;
+}
+const wrapLng = lng => ((lng + 180) % 360 + 360) % 360 - 180;
+/* Which country's outline holds this point, or null (sea, or land no country here covers). A
+   part under `minDeg` across is skipped, so the camera is never "over" an enclave too small to
+   see: centred on the Vatican at zoom 5 (under a pixel) the answer is Italy, not a Vatican that
+   cannot be chosen at that zoom and would otherwise let Italy go. */
+function countryAt(lng, lat, minDeg = 0) {
+  if (!SHAPES) return null;
+  const x = wrapLng(lng);
+  for (const p of SHAPES)
+    if (x >= p.w && x <= p.e && lat >= p.s && lat <= p.n
+        && Math.max(p.e - p.w, p.n - p.s) >= minDeg && inRing(p.ring, x, lat)) return p.cc;
+  return null;
+}
+/* The middle AUTO_BOX of the view as a 7x7 grid of point-in-country tests: per-country counts,
+   how many samples landed in any country, and the grid size. */
+function centreShares() {
+  if (!SHAPES) return null;
+  const b = centreBounds();
+  let w = b.w, e = b.e, s = b.s, n = b.n;
+  const dx = (e - w) * (1 - AUTO_BOX) / 2, dy = (n - s) * (1 - AUTO_BOX) / 2;
+  w += dx; e -= dx; s += dy; n -= dy;
+  const cand = SHAPES.filter(p => !(p.s > n || p.n < s));
+  const N = AUTO_GRID, count = {};
+  let hits = 0;
+  for (let iy = 0; iy < N; iy++) {
+    const lat = s + (n - s) * (iy + 0.5) / N;
+    for (let ix = 0; ix < N; ix++) {
+      const x = wrapLng(w + (e - w) * (ix + 0.5) / N);
+      for (const p of cand) {
+        if (x < p.w || x > p.e || lat < p.s || lat > p.n || !inRing(p.ring, x, lat)) continue;
+        count[p.cc] = (count[p.cc] || 0) + 1; hits++;
+        break;
+      }
+    }
+  }
+  return { count, hits, total: N * N };
+}
+// a country that already has the legend keeps it while it holds AUTO_HOLD of the whole grid
+function stillHolds(sh, c) {
+  return !!(sh && c && (sh.count[c] || 0) / sh.total >= AUTO_HOLD);
+}
+// another country holds AUTO_RIVAL of the samples that hit land: nobody is chosen (gates choosing only)
+function contested(sh, at) {
+  if (!sh || !sh.hits) return false;
+  for (const k in sh.count) if (k !== at && sh.count[k] / sh.hits >= AUTO_RIVAL) return true;
+  return false;
+}
+// over sea: another country holds AUTO_OUTWEIGH more of the land samples than this one
+function outweighed(sh, c) {
+  if (!sh || !sh.hits) return false;
+  const mine = (sh.count[c] || 0) / sh.hits;
+  for (const k in sh.count) if (k !== c && sh.count[k] / sh.hits - mine >= AUTO_OUTWEIGH) return true;
+  return false;
+}
+/* Any part of this country's outline on the visible map. Religiondots asks its dots here
+   (`dotsOnScreen`, Anita 2026-09-14: hold the United States while Hawaii is on screen though its
+   view box is 3,800 km away); this asks the parts' boxes, which needs no people. */
+function shapeOnScreen(c) {
+  if (!SHAPES) return false;
+  const b = bandBounds();
+  const mid = (b.w + b.e) / 2;
+  for (const p of SHAPES) {
+    if (p.cc !== c || p.s > b.n || p.n < b.s) continue;
+    const lap = Math.round((mid - (p.w + p.e) / 2) / 360) * 360;
+    if (p.w + lap <= b.e && p.e + lap >= b.w) return true;
+  }
+  return false;
+}
+
+/* Hulls: religiondots' gate on the two routes that can choose a country with the centre over sea
+   (Anita, 2026-09-14 there: the centre has to be on it, and for islands "on it" means its hull).
+   One convex hull per country, of its outline inside its own padded view box, in mercDeg. */
+function lonNear(lng, ref) {
+  let x = lng;
+  while (x < ref - 180) x += 360;
+  while (x >= ref + 180) x -= 360;
+  return x;
+}
+function convexHull(pts) {
+  if (pts.length < 3) return null;
+  const cross = (o, a, b) => (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0]);
+  pts.sort((a, b) => a[0] - b[0] || a[1] - b[1]);
+  const lower = [], upper = [];
+  for (const pt of pts) {
+    while (lower.length >= 2 && cross(lower[lower.length - 2], lower[lower.length - 1], pt) <= 0) lower.pop();
+    lower.push(pt);
+  }
+  for (let i = pts.length - 1; i >= 0; i--) {
+    const pt = pts[i];
+    while (upper.length >= 2 && cross(upper[upper.length - 2], upper[upper.length - 1], pt) <= 0) upper.pop();
+    upper.push(pt);
+  }
+  upper.pop(); lower.pop();
+  const hull = lower.concat(upper);
+  return hull.length >= 3 ? hull : null;
+}
+function buildHulls(parts) {
+  const byCc = {};
+  for (const p of parts) (byCc[p.cc] = byCc[p.cc] || []).push(p);
+  const hulls = {};
+  for (const c in byCc) {
+    const v = viewOf(c);
+    if (!v) continue;
+    const ref = (v[0] + v[2]) / 2;
+    const mx = 0.05 * (v[2] - v[0]) + 0.5, my = 0.05 * (v[3] - v[1]) + 0.5;
+    const pts = [];
+    for (const p of byCc[c]) for (const q of p.ring) {
+      const x = lonNear(q[0], ref);
+      if (x < v[0] - mx || x > v[2] + mx || q[1] < v[1] - my || q[1] > v[3] + my) continue;
+      pts.push([x, mercDeg(q[1])]);
+    }
+    const hull = convexHull(pts);
+    if (hull) hulls[c] = { ref, pts: hull };
+  }
+  return hulls;
+}
+function inHull(P, x, y, pad) {
+  for (let i = 0, j = P.length - 1; i < P.length; j = i++) {
+    const ex = P[i][0] - P[j][0], ey = P[i][1] - P[j][1];
+    if (ex * (y - P[j][1]) - ey * (x - P[j][0]) < -pad * Math.hypot(ex, ey)) return false;
+  }
+  return true;
+}
+// religiondots' pad: 4% of the shorter side of the middle, so a thin archipelago's hull counts
+const CENTRE_HULL_PAD = 0.04;
+function centreInHullOf(c, at) {
+  if (!HULLS) return true;
+  const h = HULLS[c];
+  if (!h) return false;
+  const b = centreBounds();
+  const pad = CENTRE_HULL_PAD * Math.min(b.e - b.w, mercDeg(b.n) - mercDeg(b.s));
+  return inHull(h.pts, lonNear(at.lng, h.ref), mercDeg(at.lat), pad);
+}
+
+/* Religiondots' considerCamera, with the dots taken out (see the note at AUTO_FILL_IN). Two
+   routes, by what is under the centre of the view:
+   - a country's outline: that country is the only candidate. Kept while it fills AUTO_FILL_OUT
+     of the band; a neighbour the centre has drifted into does not take over while the kept
+     country still holds AUTO_HOLD of the middle (Bangladesh against Kolkata); otherwise the
+     country under the centre is chosen if framed (AUTO_FILL_IN, AUTO_COVER_IN) and no other
+     country holds AUTO_RIVAL of the middle's land samples, else all countries.
+   - sea or land no country here covers: the kept country goes when another holds AUTO_OUTWEIGH
+     more of the middle, when it fills under AUTO_FILL_OUT, or when its box has left the middle
+     (AUTO_OVER_OUT) with none of its outline on screen (Hawaii). A country is chosen from here
+     when it holds AUTO_SHARE of the land samples, is framed, its box covers the middle
+     (AUTO_OVER_IN) and its hull holds the centre (Indonesia from the Java Sea); or, with no land
+     in the middle at all, when it is the one country framed there (an atoll nation). */
+function considerCamera() {
+  if (!autoOn || !COUNTS || !SHAPES || !map.getLayer('dots')) return;
+  const go = c => { if (c !== cc) setCountry(c, false, true); };
+  if (cc !== 'all' && !autoMay(cc)) go('all');      // held only by hand; Auto lets it go
+  let cur = cc === 'all' ? null : cc;
+  const released = k => tooWide() || viewFill(k, bandBounds()) < AUTO_FILL_OUT;
+  const cb = canvasBounds(), px = (cb.e - cb.w) / (map.getCanvas().clientWidth || 1);
+  const c = viewCentre(), sh = centreShares(), at = countryAt(c.lng, c.lat, 4 * px);
+  if (at !== null) {
+    if (at === cur) {
+      if (released(at)) go('all');
+    } else if (cur && stillHolds(sh, cur)) {
+      if (released(cur) || viewOverlap(cur) < AUTO_OVER_OUT) go('all');
+    } else if (!tooWide() && autoMay(at) && framedIn(at) && !contested(sh, at) && hasSel(at)) {
+      go(at);
+    } else if (cur) {
+      go('all');
+    }
+    return;
+  }
+  if (cur && (outweighed(sh, cur) || released(cur)
+              || (viewOverlap(cur) < AUTO_OVER_OUT && !shapeOnScreen(cur)))) {
+    go('all'); cur = null;
+  }
+  if (tooWide()) return;
+  if (sh.hits) {
+    let best = null;
+    for (const k in sh.count) if (autoMay(k) && (!best || sh.count[k] > sh.count[best])) best = k;
+    if (best && best !== cur && sh.count[best] / sh.hits >= AUTO_SHARE && framedIn(best)
+        && viewOverlap(best) >= AUTO_OVER_IN && !contested(sh, best)
+        && centreInHullOf(best, c) && hasSel(best))
+      go(best);
+    return;
+  }
+  // no land in the middle at all: exactly one country framed around it (religiondots' small-
+  // country branch, without AUTO_COVER_IN for the same reason as there: odd-shaped island boxes)
+  const framed = Object.keys(COUNTS.countries).filter(k => autoMay(k)
+    && viewFill(k) >= AUTO_FILL_IN && viewOverlap(k) >= AUTO_OVER_IN);
+  if (framed.length === 1 && framed[0] !== cur && centreInHullOf(framed[0], c) && hasSel(framed[0]))
+    go(framed[0]);
+}
+
+/* ---- NOT DRAWN, HATCHED (Anita, 2026-10-06: "hatching for regions with no data", as religiondots
+   does). not_drawn.py builds the file: part of a built country no counted unit reaches (`kind:
+   part`, with its `cc`: South Sudan's three unsampled states, Abkhazia), and land no entry here
+   takes (`kind: whole`: Western Sahara east of the berm, Jersey). A blank on a dot map reads as
+   "nobody lives here", and these blanks are the opposite. With one country chosen only its own
+   hatching stays, since every other country is blank then because of the choice. religiondots'
+   pattern, colour and opacity, so the two maps read alike. */
+function hatchImage() {
+  const pr = Math.min(2, Math.max(1, Math.round(window.devicePixelRatio || 1)));
+  const s = 6 * pr, w = 1.1 * pr;                 // period and line width, device pixels
+  const data = new Uint8Array(s * s * 4);
+  for (let y = 0; y < s; y++) for (let x = 0; x < s; x++) {
+    const t = (x + y + 1) % s;
+    const d = Math.min(t, s - t) / Math.SQRT2;    // distance across the line
+    const a = Math.max(0, Math.min(1, w / 2 + 0.5 - d));
+    const i = (y * s + x) * 4;
+    data[i] = data[i + 1] = data[i + 2] = 0x6e;
+    data[i + 3] = Math.round(a * 255);
+  }
+  return { img: { width: s, height: s, data }, pr };
+}
+function addNotDrawn() {
+  const hatch = hatchImage();
+  map.addImage('nd-hatch', hatch.img, { pixelRatio: hatch.pr });
+  map.addSource('not-drawn', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
+  // under the basemap's labels, like the dots
+  const firstLabel = map.getStyle().layers.find(l => l.type === 'symbol');
+  map.addLayer({ id: 'not-drawn', type: 'fill', source: 'not-drawn',
+    paint: { 'fill-pattern': 'nd-hatch', 'fill-opacity': 0.65, 'fill-antialias': false } },
+    firstLabel && firstLabel.id);
+  fetch(DATA_BASE + 'data/processed/not_drawn.geojson', { cache: 'no-store' }).then(r => r.ok ? r.json() : null)
+    .then(gj => { if (gj) map.getSource('not-drawn').setData(gj); }).catch(() => {});
+}
+function applyNotDrawn() {
+  if (map.getLayer('not-drawn'))
+    map.setFilter('not-drawn', cc === 'all' ? null : ['==', ['get', 'cc'], cc]);
+}
+function notDrawnAt(point) {
+  if (!map.getLayer('not-drawn')) return null;
+  const f = map.queryRenderedFeatures(point, { layers: ['not-drawn'] })[0];
+  if (!f) return null;
+  const p = f.properties, e = p.cc && COUNTS.countries[p.cc];
+  const why = e ? (e.gap || 'not counted by this country’s source') : 'no figures for this place on this map';
+  return `<div class="mx"><span class="mk nd"></span>${esc(e ? e.name : p.name)}, not drawn</div>` +
+         `<div class="sub why">${esc(why)}</div>`;
+}
+
+/* MapLibre's `dots` circle layer draws nothing (constant opacity 0, so MapLibre skips it at draw
+   time); it is kept so that the source's tiles load and stay parsed, which both GPU layers read
+   (a layer with visibility none would leave the source unloaded). Its paint is all constants,
+   so the worker's layout of it is as cheap as it gets and nothing ever reloads the source.
+   The archive has one layer, `marks`, holding all four Aggregation steps: tiles.py stores a mark
+   the steps share once, with `l` a bitmask of the steps that draw it (1 dotsm1, 2 dots, 4 dots1,
+   8 dots2). A step is the marks whose `l` has its bit, exactly what its own layer held before
+   (2026-10-06). layerName() still names the step, as the decode cache's key. */
+const layerName = () => ({ '-1': 'dotsm1', 0: 'dots', 1: 'dots1', 2: 'dots2' })[detail];
+const STEP_BIT = { dotsm1: 1, dots: 2, dots1: 4, dots2: 8 };
+function addData() {
+  if (!map.getSource('ld'))
+    map.addSource('ld', { type: 'vector', url: 'pmtiles://' + DATA_BASE + 'data/processed/languagedots.pmtiles' });
+  if (!map.getLayer('dots'))
+    map.addLayer({ id: 'dots', type: 'circle', source: 'ld', 'source-layer': 'marks',
+      paint: { 'circle-color': '#000', 'circle-opacity': 0, 'circle-radius': 1, 'circle-stroke-width': 0 } });
+  if (!map.getLayer('gpudots')) map.addLayer(dotLayer);
+  if (!map.getLayer('pies')) map.addLayer(pieLayer);
+  if (COUNTS) applyColours();
+}
+function setDetail(d) {                    // d: grid levels finer than CELL_BITS, -1 to 2
+  detail = d;
+  document.getElementById('agg').value = 2 - d;
+  document.getElementById('agg-val').textContent = AGG_LABELS[2 - d];
+  // same tiles, another bitmask: the dots rebuild on the next frame (their signature names the
+  // step) and the pies now
+  map.triggerRepaint();
+  pieDirty = true;
+  schedulePies();
+}
+
+/* ---- PIES (spec §4.3). One pie per merge cell, from the same tile features the dots use: the
+   cell's disc (same size, same per-cell cap as the dots), cut into its languages in tree order
+   so a family's wedges sit together. No border and the dots' opacity, so it stays as light as
+   the dot map.
+
+   Which cell a mark belongs to is not stored: a mark sits at the people-weighted mean of its
+   dots, which is inside its cell, so flooring its position on that zoom's cell grid recovers
+   the cell. The dots layer stays in the style at opacity 0 while pies show, because
+   querySourceFeatures returns nothing for a layer with visibility none.
+
+   DRAWN ON THE GPU, as a MapLibre custom layer. The first version drew on a 2D canvas and
+   projected every pie's centre and filled every wedge on every frame, and Anita found it laggy
+   to pan and zoom (~45k pies at z5). Now each pie is one instance of a quad: its centre in
+   mercator units, its radius, and up to PIE_K cumulative wedge fractions with a palette index
+   each; a fragment shader works out which wedge a pixel is in. A pan or zoom only changes the
+   matrix. The pie list itself is rebuilt from the tiles only when the map comes to rest.
+
+   PIE_K = 9 WEDGES. A cell with more languages keeps its PIE_TOP largest and folds the rest by
+   family, then into grey; see pieWedges for how, with and without a selection. */
+const PIE_K = 9, PIE_TOP = 5;
+const PIE_STRIDE = 22;                     // x, y, r0, 8 cumulative fractions, 8 colours, ring share and colour, 9th colour
+let PIES = [], pieDirty = true;
+
+function mercY(lat) {
+  const s = Math.sin(Math.max(-85.05112878, Math.min(85.05112878, lat)) * Math.PI / 180);
+  return 0.5 - Math.log((1 + s) / (1 - s)) / (4 * Math.PI);
+}
+
+function rebuildPies() {
+  pieDirty = false;
+  if (drawAs !== 'pies') { PIES = []; pieLayer.upload(); return; }
+  const bit = STEP_BIT[layerName()];
+  const feats = map.querySourceFeatures('ld', { sourceLayer: 'marks' }).filter(f => f.properties.l & bit);
+  const want = Math.min(ARCHIVE_MAXZ, Math.max(0, Math.floor(map.getZoom())));
+  // during loading two zooms can be present at once; draw only the one nearest the view's
+  let bestZ = null;
+  for (const f of feats) {
+    const z = f.properties.z;
+    if (bestZ === null || Math.abs(z - want) < Math.abs(bestZ - want)) bestZ = z;
+  }
+  // numeric cell keys (cx * N + cy, then the country), not strings: this loop runs over every
+  // loaded feature each time the map stops, and string keys were most of its 245 ms
+  const cells = new Map(), ccIdx = {};
+  const N = Math.pow(2, (bestZ || 0) + CELL_BITS + detail);
+  for (const f of feats) {
+    const pr = f.properties;
+    if (pr.z !== bestZ || (cc !== 'all' && pr.c !== cc)) continue;
+    const [lon, lat] = f.geometry.coordinates;
+    const wx = (lon + 180) / 360, wy = mercY(lat);
+    const ci = ccIdx[pr.c] ?? (ccIdx[pr.c] = Object.keys(ccIdx).length);
+    const key = (Math.floor(wx * N + 1e-7) * N + Math.floor(wy * N + 1e-7)) * 8 + ci;
+    let cell = cells.get(key);
+    if (!cell) cells.set(key, cell = { x: 0, y: 0, w: 0, t: pr.t, z: pr.z, parts: [] });
+    // the same mark can arrive twice, from a neighbouring tile's buffer
+    if (cell.parts.some(q => q.n === pr.n)) continue;
+    cell.x += wx * pr.p; cell.y += wy * pr.p; cell.w += pr.p;
+    cell.parts.push({ n: pr.n, p: pr.p });
+  }
+  const r0 = r0Of(), cellPx = cellPxOf();
+  PIES = [];
+  for (const c of cells.values()) {
+    c.x /= c.w; c.y /= c.w;
+    c.r0 = Math.min(r0 * Math.sqrt(c.t / 1000), capFrac() * cellPx * Math.pow(2, -c.z));
+    PIES.push(c);
+  }
+  sortPies();
+  pieLayer.upload();
+}
+
+/* Pies draw in list order, and pieAt searches from the end, so the last is on top. With nothing
+   selected, smallest first, so a bigger pie covers a smaller one. With a language or group
+   selected, by its people in the cell (the colouring's `under` test), fewest first, so the pies
+   holding most of it are on top; radius breaks ties, so cells with none of it keep the usual
+   order beneath. */
+function sortPies() {
+  if (!selected) { PIES.sort((a, b) => a.r0 - b.r0); return; }
+  for (const c of PIES) {
+    let s = 0;
+    for (const q of c.parts) if (under(q.n, selected)) s += q.p;
+    c.sel = s;
+  }
+  PIES.sort((a, b) => a.sel - b.sel || a.r0 - b.r0);
+}
+
+/* A pie's wedges, at most PIE_K, in tree order: {p, col (pie palette index), ord}, plus `n` (the
+   language) for a wedge of one language, or `k` (how many) and `lump` for a folded wedge. Every
+   wedge's angle is its people's share of the cell, whatever is selected, and the hover tooltip
+   lists these same wedges, so the two always account for the same 100%. A cell with more
+   languages than wedges folds the smallest, never into a single language's colour.
+   - Nothing selected: the PIE_TOP (5) largest, then the rest folded BY FAMILY (Anita, 2026-10-06,
+     option A of followups.md's grey-wedge item: one grey wedge was 43% of Qatar's pies, 17% of
+     Munich's, 13% of London's). The family is familyOf: the root, except Indo-European, which
+     splits at its branches (Indo-Aryan, Germanic, Romance...), the same unit as Family colouring,
+     so Qatar's tail says Indo-Aryan rather than Indo-European. But where a pie's tail is many
+     small European branches (Munich: Slavic, Romance, Iranian, Hellenic, Albanian...), the
+     branches crowd each other into the grey, so each pie also tries Indo-European whole and
+     takes it if that at least halves the grey (Munich as one pie: 6.4% grey by branch, 1.1%
+     whole). Only halving, so Qatar keeps "Indo-Aryan" (12.7% by branch, 9.3% whole).
+     The largest families get a wedge each, up to 3, or 4 when exactly 4 are left (no grey is
+     needed then); anything after them is one grey "N other languages" wedge (OTHER). A family
+     wedge is drawn in the family node's own palette entry: in Language colouring that is its
+     washed "language not named" colour, the same washing, so on the map it reads as "some
+     Indo-Aryan language, none drawn singly here", true of both; the tooltip tells them apart,
+     and the legend shows that colour on the family's row in pies mode (buildPanel). A family
+     with one language left draws that language in its own colour. In Family or Branch colouring
+     the entry is the family's colour, which the legend's family row already shows.
+   - Something selected: selected and unselected people never share a wedge. The selection's
+     members come first; everyone else who does not fit is the other-languages wedge (DIM, so no
+     family fold: it would be DIM either way). If the
+     selection alone has more members than wedges, its largest keep wedges and its smallest share
+     one, in the selection's own colour (the group's legend colour), beside the rest of it.
+   Until 2026-10-05 the fold took the colour of its largest member: ~10% of New York's many
+   small languages drew as one solid pink language, and with Dravidian selected Mumbai (5%
+   Dravidian) drew 95% green, because the leftover's largest member was itself Dravidian. */
+const OTHER = '#6a6a6a';
+let PIE_X = 0;                             // texels after the nodes: DIM, OTHER, selection
+const piePalExtra = () => PIE_X || (PIE_X = Object.keys(ORDER).length);
+function pieWedges(parts) {
+  const col = n => ORDER[n] ?? 0, ord = n => ORDER[n] ?? 1e9;
+  const one = q => ({ p: q.p, col: col(q.n), ord: ord(q.n), n: q.n });
+  const sum = qs => qs.reduce((s, q) => s + q.p, 0);
+  const desc = (u, v) => v.p - u.p;
+  const X = piePalExtra();
+  // a folded wedge keeps its members (`qs`, the cell's own parts) for the pinned tooltip's list
+  const others = qs => ({ p: sum(qs), col: selected ? X : X + 1, ord: 2e9, k: qs.length, lump: 'other', qs });
+  let out;
+  if (parts.length <= PIE_K) out = parts.map(one);
+  else if (!selected) {
+    const big = [...parts].sort(desc), tail = big.slice(PIE_TOP);
+    const fold = keyOf => {
+      const fams = new Map();
+      for (const q of tail) {
+        const f = NODES[q.n] ? keyOf(q.n) : null;   // not in the taxonomy: straight to grey
+        if (!fams.has(f)) fams.set(f, []);
+        fams.get(f).push(q);
+      }
+      const groups = [...fams.entries()].filter(([f]) => f !== null).sort((u, v) => sum(v[1]) - sum(u[1]));
+      let grey = fams.get(null) || [];
+      const slots = PIE_K - PIE_TOP;
+      const nf = groups.length + (grey.length ? 1 : 0) <= slots ? groups.length : slots - 1;
+      const w = groups.slice(0, nf).map(([f, qs]) => qs.length === 1 ? one(qs[0])
+        : { p: sum(qs), col: col(f), ord: ord(f), lump: 'fam', f,
+            k: qs.filter(q => !KIDS[q.n]).length, unnamed: qs.some(q => KIDS[q.n]), qs });
+      for (const [, qs] of groups.slice(nf)) grey = grey.concat(qs);
+      if (grey.length === 1 && NODES[grey[0].n]) w.push(one(grey[0]));
+      else if (grey.length) w.push(others(grey));
+      return { w, grey: sum(grey) };
+    };
+    const byFamily = fold(familyOf), byRoot = fold(n => n.split('.')[0]);
+    out = big.slice(0, PIE_TOP).map(one).concat((byRoot.grey <= byFamily.grey / 2 ? byRoot : byFamily).w);
+  } else {
+    const sel = parts.filter(q => under(q.n, selected)).sort(desc);
+    const oth = parts.filter(q => !under(q.n, selected)).sort(desc);
+    if (sel.length + (oth.length ? 1 : 0) > PIE_K) {
+      const ks = PIE_K - (oth.length ? 2 : 1), kept = sel.slice(0, ks), rest = sel.slice(ks);
+      out = kept.map(one);
+      out.push({ p: sum(rest), col: X + 2, ord: Math.max(...kept.map(q => ord(q.n))) + 0.5,
+                 k: rest.length, lump: 'sel', qs: rest });
+      if (oth.length) out.push(others(oth));
+    } else {
+      const slots = PIE_K - sel.length;               // at least 1 left for the others
+      out = sel.map(one);
+      if (oth.length <= slots) out.push(...oth.map(one));
+      else {
+        out.push(...oth.slice(0, slots - 1).map(one));
+        out.push(others(oth.slice(slots - 1)));
+      }
+    }
+  }
+  return out.sort((u, v) => u.ord - v.ord);
+}
+
+/* ---- LOCATOR RINGS (2026-10-05). Anita: "select a small language and be able to zoom out at the
+   world and see where it is ... maybe a faint ring? We don't want to do this for languages that
+   are clearly visible." While something is selected, a faint ring in the selection's colour is
+   drawn around each dot or pie whose selected people would otherwise be too little ink to see.
+
+   THE TEST IS INK ON SCREEN, in px², so it turns itself up as you zoom out and off as you zoom in.
+   A mark's selected ink is its area (dots) or its selected wedges' share of its area (pies).
+   Judged per mark it fails: at world zoom every Hindi dot is a fraction of a pixel, yet Hindi
+   fills India. So each frame the layer first adds up the selection's ink into a coarse screen
+   grid (RING.bin px cells, on the GPU, into a float texture), and a mark gets a ring only if
+   - the selection's ink within one cell of it is under RING.ink (about a 2.5 px disc), and
+   - the selection's ink on the whole screen is under RING.total (about an 11 px disc): a
+     language that is plainly there, like Spanish at world zoom, gets no rings anywhere, even
+     around its scattered speakers far from home.
+   The ring sits RING.gap px outside the mark, RING.width px thick, at up to RING.alpha, so a
+   cluster of them reads as a soft halo. Drawn last, above every mark.
+   RINGS SCALE WITH PEOPLE (Anita, 2026-10-05: thresholds 8x lower, thinner and lighter, and "the
+   ring should scale with amount of people", down to ~10% opacity, later 20%): k = the mark's own selected
+   ink on a log scale, 1/1000 of RING.ink -> 0, RING.ink -> 1. A ring's floor radius runs from
+   RING.minLo to RING.min px and its opacity from 20% to 100% of RING.alpha with k.
+   OPACITY FLOOR DOUBLED (Anita, 2026-10-05: no ring showed for any language under 1,000
+   people). The ring pass did draw them (checked headless with RING.alpha forced up: Kawesqar's
+   one pie at z2 got its ring); they were invisible because at world zoom such a mark's ink is
+   near or under 1/1000 of RING.ink, so k is about 0 and the ring was a 2 px circle at 4.5-9%
+   opacity (Kawesqar's 656 people: k 0.10, 8.7%). Now 9-16%.
+   Without a float render target (EXT_color_buffer_float) it falls back to the per-mark test. */
+const RING = { ink: 2.5, total: 50, bin: 12, gap: 3, min: 6, minLo: 2, width: 0.8, alpha: 0.45 };
+const RING_K = x => `clamp(log(max(${x}, 1e-6) * 1000.0) / log(1000.0), 0.0, 1.0)`;
+const RING_GLSL = `
+      uniform sampler2D u_ink; uniform vec2 u_inkSize;
+      uniform float u_hasInk, u_tink, u_rgap, u_rmin, u_rminLo, u_rw;
+      uniform vec2 u_px2clip;
+      bool ringWanted(vec4 c0, float ink) {      // ink in units of RING.ink
+        if (u_hasInk < 0.5) return ink < 1.0;
+        ivec2 b = ivec2(floor((c0.xy / c0.w * 0.5 + 0.5) * u_inkSize)), hi = ivec2(u_inkSize) - 1;
+        float s = 0.0;
+        for (int dy = -1; dy <= 1; dy++) for (int dx = -1; dx <= 1; dx++)
+          s += texelFetch(u_ink, clamp(b + ivec2(dx, dy), ivec2(0), hi), 0).r;
+        return s < 1.0;
+      }`;
+const RING_FRAG = `
+        if (u_mode > 1.5) {                      // a ring of radius v_R px, fainter for fewer people
+          float a = u_ralpha * mix(0.2, 1.0, ${RING_K('v_ink')})
+                  * clamp(u_rw * 0.5 - abs(length(v_ex) - v_R) + 0.5, 0.0, 1.0);
+          if (a <= 0.0) discard;
+          frag = vec4(v_col * a, a); return;
+        }
+        if (u_mode > 0.5) { frag = vec4(v_ink, 0.0, 0.0, 0.0); return; }   // ink, added up`;
+const RING_UNIFORMS = ['u_ink', 'u_inkSize', 'u_hasInk', 'u_tink', 'u_rgap', 'u_rmin', 'u_rminLo', 'u_rw',
+                       'u_px2clip', 'u_mode', 'u_ralpha'];
+const INK = {
+  /* The shared offscreen grid, one texel per RING.bin px, float32 where the GPU can blend it
+     (EXT_float_blend), else half-float. The screen's total is read back and summed here: a
+     mipmap's 1x1 level was tried first and lost most of it (odd-sized levels drop their last
+     row and column, and the mean underflows a half-float). */
+  begin(gl) {
+    if (this.ok === undefined) {
+      this.ok = !!gl.getExtension('EXT_color_buffer_float');
+      this.f32 = this.ok && !!gl.getExtension('EXT_float_blend');
+      if (this.ok) this.fbo = gl.createFramebuffer();
+    }
+    if (!this.ok) return false;
+    const cv = map.getCanvas();
+    const w = Math.max(1, Math.ceil(cv.clientWidth / RING.bin)), h = Math.max(1, Math.ceil(cv.clientHeight / RING.bin));
+    if (!this.tex || w !== this.w || h !== this.h) {
+      if (this.tex) gl.deleteTexture(this.tex);
+      this.w = w; this.h = h; this.buf = new Float32Array(w * h * 4);
+      this.tex = gl.createTexture();
+      gl.bindTexture(gl.TEXTURE_2D, this.tex);
+      gl.texImage2D(gl.TEXTURE_2D, 0, this.f32 ? gl.RGBA32F : gl.RGBA16F, w, h, 0, gl.RGBA,
+                    this.f32 ? gl.FLOAT : gl.HALF_FLOAT, null);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+      gl.bindFramebuffer(gl.FRAMEBUFFER, this.fbo);
+      gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, this.tex, 0);
+      if (gl.checkFramebufferStatus(gl.FRAMEBUFFER) !== gl.FRAMEBUFFER_COMPLETE) {
+        this.ok = false; gl.bindFramebuffer(gl.FRAMEBUFFER, null); return false;
+      }
+    }
+    this.fresh = false;
+    gl.activeTexture(gl.TEXTURE1);                  // never sample the grid while drawing into it
+    gl.bindTexture(gl.TEXTURE_2D, null);
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindFramebuffer(gl.FRAMEBUFFER, this.fbo);
+    gl.viewport(0, 0, w, h);
+    gl.disable(gl.DEPTH_TEST); gl.disable(gl.STENCIL_TEST); gl.disable(gl.SCISSOR_TEST);
+    gl.colorMask(true, true, true, true);
+    gl.clearColor(0, 0, 0, 0);
+    gl.clear(gl.COLOR_BUFFER_BIT);
+    gl.enable(gl.BLEND);
+    gl.blendFunc(gl.ONE, gl.ONE);
+    return true;
+  },
+  end(gl) {
+    gl.readPixels(0, 0, this.w, this.h, gl.RGBA, gl.FLOAT, this.buf);
+    let s = 0;
+    for (let i = 0; i < this.buf.length; i += 4) s += this.buf[i];
+    this.total = s;                                  // in units of RING.ink
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+    gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight);
+    this.fresh = true;
+  },
+  /* whether to draw rings at all this frame: not when the selection is plainly on screen */
+  wanted() { return !(this.ok && this.fresh) || this.total < RING.total / RING.ink; },
+  /* the ring uniforms, and the grid on texture unit 1 */
+  uniforms(gl, loc) {
+    const cv = map.getCanvas(), on = this.ok && this.fresh;
+    gl.activeTexture(gl.TEXTURE1);
+    gl.bindTexture(gl.TEXTURE_2D, on ? this.tex : null);
+    gl.uniform1i(loc.u_ink, 1);
+    gl.uniform2f(loc.u_inkSize, on ? this.w : 1, on ? this.h : 1);
+    gl.uniform1f(loc.u_hasInk, on ? 1 : 0);
+    gl.uniform1f(loc.u_tink, RING.ink);
+    gl.uniform1f(loc.u_rgap, RING.gap);
+    gl.uniform1f(loc.u_rmin, RING.min);
+    gl.uniform1f(loc.u_rminLo, RING.minLo);
+    gl.uniform1f(loc.u_rw, RING.width);
+    gl.uniform1f(loc.u_ralpha, RING.alpha);
+    gl.uniform2f(loc.u_px2clip, 2 / cv.clientWidth, 2 / cv.clientHeight);
+    gl.activeTexture(gl.TEXTURE0);
+  },
+};
+
+const pieLayer = {
+  id: 'pies', type: 'custom', renderingMode: '2d',
+  onAdd(m, gl) {
+    this.gl = gl;
+    if (!(typeof WebGL2RenderingContext !== 'undefined' && gl instanceof WebGL2RenderingContext)) {
+      console.warn('pies need WebGL2'); this.dead = true; return;
+    }
+    const vs = `#version 300 es
+      in vec2 a_corner;
+      in vec3 a_pie;                  // centre x, y in mercator units; radius in px at zoom 0
+      in vec4 a_cum0; in vec4 a_cum1; in vec4 a_col0; in vec4 a_col1;
+      in vec2 a_sel;                  // the selection's share of the pie, and its colour's index
+      in float a_col8;                // the 9th wedge's colour
+      uniform mat4 u_matrix;
+      uniform float u_pxscale;        // 2^min(zoom, ARCHIVE_MAXZ)
+      uniform float u_world;          // 512 * 2^zoom, px per mercator unit
+      uniform float u_mode;           // 0 pies, 1 the selection's ink into the grid, 2 rings
+      uniform sampler2D u_pal;
+      out vec2 v_c; out float v_px;
+      flat out vec4 v_cum0; flat out vec4 v_cum1; flat out vec4 v_col0; flat out vec4 v_col1;
+      flat out float v_col8;
+      out vec2 v_ex; flat out vec3 v_col; flat out float v_ink; flat out float v_R;
+      ${RING_GLSL}
+      void main() {
+        float px = a_pie.z * u_pxscale;
+        if (u_mode > 0.5) {
+          if (a_sel.x <= 0.0) { gl_Position = vec4(2.0, 2.0, 2.0, 1.0); return; }
+          vec4 c0 = u_matrix * vec4(a_pie.xy, 0.0, 1.0);
+          float ink0 = a_sel.x * 3.14159265 * px * px / u_tink;
+          v_ink = ink0;
+          if (u_mode < 1.5) { gl_Position = c0; gl_PointSize = 1.0; return; }
+          if (!ringWanted(c0, ink0)) { gl_Position = vec4(2.0, 2.0, 2.0, 1.0); return; }
+          v_col = texelFetch(u_pal, ivec2(int(a_sel.y), 0), 0).rgb;
+          v_R = max(px + u_rgap, mix(u_rminLo, u_rmin, ${RING_K('ink0')}));
+          v_ex = a_corner * (v_R + u_rw);
+          gl_Position = c0 + vec4(v_ex * u_px2clip * c0.w, 0.0, 0.0);
+          return;
+        }
+        float r = (px + 1.0) / u_world;            // one px of margin for the antialiased edge
+        v_c = a_corner * (px + 1.0) / max(px, 1e-6);
+        v_px = px;
+        v_cum0 = a_cum0; v_cum1 = a_cum1; v_col0 = a_col0; v_col1 = a_col1; v_col8 = a_col8;
+        gl_Position = u_matrix * vec4(a_pie.xy + a_corner * r, 0.0, 1.0);
+      }`;
+    const fs = `#version 300 es
+      precision highp float;
+      in vec2 v_c; in float v_px;
+      flat in vec4 v_cum0; flat in vec4 v_cum1; flat in vec4 v_col0; flat in vec4 v_col1;
+      flat in float v_col8;
+      in vec2 v_ex; flat in vec3 v_col; flat in float v_ink; flat in float v_R;
+      uniform sampler2D u_pal; uniform float u_alpha, u_mode, u_ralpha, u_rw;
+      out vec4 frag;
+      void main() {
+        ${RING_FRAG}
+        float d = length(v_c);
+        float a = clamp((1.0 - d) * v_px + 0.5, 0.0, 1.0);
+        if (a <= 0.0) discard;
+        float f = fract(atan(v_c.x, -v_c.y) / 6.2831853 + 1.0);   // from north, clockwise
+        float idx = v_col8;
+        if (f < v_cum1.w) idx = v_col1.w;
+        if (f < v_cum1.z) idx = v_col1.z;
+        if (f < v_cum1.y) idx = v_col1.y;
+        if (f < v_cum1.x) idx = v_col1.x;
+        if (f < v_cum0.w) idx = v_col0.w;
+        if (f < v_cum0.z) idx = v_col0.z;
+        if (f < v_cum0.y) idx = v_col0.y;
+        if (f < v_cum0.x) idx = v_col0.x;
+        vec3 rgb = texelFetch(u_pal, ivec2(int(idx), 0), 0).rgb;
+        float alpha = u_alpha * a;
+        frag = vec4(rgb * alpha, alpha);
+      }`;
+    const sh = (type, src) => {
+      const s = gl.createShader(type); gl.shaderSource(s, src); gl.compileShader(s);
+      if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(s));
+      return s;
+    };
+    const p = this.prog = gl.createProgram();
+    gl.attachShader(p, sh(gl.VERTEX_SHADER, vs)); gl.attachShader(p, sh(gl.FRAGMENT_SHADER, fs));
+    gl.linkProgram(p);
+    if (!gl.getProgramParameter(p, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(p));
+    this.loc = {};
+    for (const n of ['u_matrix', 'u_pxscale', 'u_world', 'u_pal', 'u_alpha', ...RING_UNIFORMS])
+      this.loc[n] = gl.getUniformLocation(p, n);
+    this.vao = gl.createVertexArray();
+    gl.bindVertexArray(this.vao);
+    const quad = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, quad);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, 1, 1, -1, -1, 1, 1, -1, 1]), gl.STATIC_DRAW);
+    const ac = gl.getAttribLocation(p, 'a_corner');
+    gl.enableVertexAttribArray(ac);
+    gl.vertexAttribPointer(ac, 2, gl.FLOAT, false, 0, 0);
+    this.inst = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, this.inst);
+    const stride = PIE_STRIDE * 4;
+    [['a_pie', 3, 0], ['a_cum0', 4, 3], ['a_cum1', 4, 7], ['a_col0', 4, 11], ['a_col1', 4, 15], ['a_sel', 2, 19], ['a_col8', 1, 21]]
+      .forEach(([name, size, off]) => {
+        const l = gl.getAttribLocation(p, name);
+        gl.enableVertexAttribArray(l);
+        gl.vertexAttribPointer(l, size, gl.FLOAT, false, stride, off * 4);
+        gl.vertexAttribDivisor(l, 1);
+      });
+    gl.bindVertexArray(null);
+    this.pal = gl.createTexture();
+    this.count = 0;
+    this.palette();
+    this.upload();
+  },
+  /* the colour of every node, by tree index; redone when the colouring or selection changes */
+  palette() {
+    const gl = this.gl;
+    if (!gl || this.dead || !this.pal) return;
+    const ids = Object.keys(ORDER), X = ids.length;
+    const px = new Uint8Array((X + 3) * 4);
+    const put = (i, hex) => {
+      px[i] = parseInt(hex.slice(1, 3), 16); px[i + 1] = parseInt(hex.slice(3, 5), 16);
+      px[i + 2] = parseInt(hex.slice(5, 7), 16); px[i + 3] = 255;
+    };
+    for (const id of ids) put(ORDER[id] * 4, litColour(id));
+    // after the nodes, the folded wedges' colours (pieWedges): other languages while something
+    // is selected, the same with nothing selected, and the selection's own smallest members
+    put(X * 4, DIM);
+    put((X + 1) * 4, OTHER);
+    put((X + 2) * 4, selected ? selColour() : OTHER);
+    gl.bindTexture(gl.TEXTURE_2D, this.pal);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, X + 3, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, px);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+  },
+  upload() {
+    const gl = this.gl;
+    if (!gl || this.dead || !this.inst) return;
+    const a = new Float32Array(PIES.length * PIE_STRIDE);
+    let o = 0;
+    for (const c of PIES) {
+      const parts = pieWedges(c.parts);
+      const tot = parts.reduce((s, q) => s + q.p, 0);
+      a[o] = c.x; a[o + 1] = c.y; a[o + 2] = c.r0;
+      let cum = 0;
+      for (let k = 0; k < PIE_K; k++) {
+        const q = parts[Math.min(k, parts.length - 1)];
+        if (k < parts.length) cum += q.p / tot;
+        // 8 boundaries for 9 wedges; the last wedge runs to the end
+        if (k < PIE_K - 1) a[o + 3 + k] = k < parts.length - 1 ? cum : 2.0;
+        a[k < PIE_K - 1 ? o + 11 + k : o + 21] = q.col;
+      }
+      if (selected) {            // for the locator ring: the selection's share, in its largest member's colour
+        let s = 0, big = null;
+        for (const q of c.parts) if (under(q.n, selected)) { s += q.p; if (!big || q.p > big.p) big = q; }
+        a[o + 19] = s / tot; a[o + 20] = big ? ORDER[big.n] ?? 0 : 0;
+      }
+      o += PIE_STRIDE;
+    }
+    gl.bindBuffer(gl.ARRAY_BUFFER, this.inst);
+    gl.bufferData(gl.ARRAY_BUFFER, a, gl.DYNAMIC_DRAW);
+    this.count = PIES.length;
+    map.triggerRepaint();
+  },
+  /* before the frame: the selection's ink into the ring grid (see LOCATOR RINGS) */
+  prerender(gl, matrix) {
+    if (this.dead || drawAs !== 'pies' || !this.count || !selected || !INK.begin(gl)) return;
+    this.setup(gl, matrix);
+    gl.uniform1f(this.loc.u_mode, 1);
+    gl.drawArraysInstanced(gl.POINTS, 0, 1, this.count);
+    gl.bindVertexArray(null);
+    INK.end(gl);
+  },
+  render(gl, matrix) {
+    if (this.dead || drawAs !== 'pies' || !this.count) return;
+    this.setup(gl, matrix);
+    gl.uniform1f(this.loc.u_mode, 0);
+    gl.enable(gl.BLEND);
+    gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
+    gl.disable(gl.DEPTH_TEST);
+    gl.drawArraysInstanced(gl.TRIANGLES, 0, 6, this.count);
+    if (selected && INK.wanted()) {
+      INK.uniforms(gl, this.loc);
+      gl.uniform1f(this.loc.u_mode, 2);
+      gl.drawArraysInstanced(gl.TRIANGLES, 0, 6, this.count);
+    }
+    gl.bindVertexArray(null);
+  },
+  setup(gl, matrix) {
+    const z = map.getZoom();
+    gl.useProgram(this.prog);
+    gl.bindVertexArray(this.vao);
+    gl.uniformMatrix4fv(this.loc.u_matrix, false, matrix);
+    gl.uniform1f(this.loc.u_pxscale, Math.pow(2, Math.min(z, ARCHIVE_MAXZ)));
+    gl.uniform1f(this.loc.u_world, 512 * Math.pow(2, z));
+    gl.uniform1f(this.loc.u_alpha, DOT_ALPHA);
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, this.pal);
+    gl.uniform1i(this.loc.u_pal, 0);
+    gl.uniform1f(this.loc.u_tink, RING.ink);
+  },
+};
+
+/* The pie under a screen point: compared in mercator units, so no per-pie projection. Searched
+   from the end of the list, so where pies overlap it finds the one drawn on top. */
+/* A FINGER IS NOT A CURSOR (religiondots' PICK_TOUCH_SLOP, Anita 2026-09-10 and -14 there): on a
+   touch screen or the phone layout, when no mark covers the point, the nearest centre within
+   20px answers, so a 40px target near the platforms' 44-48px. A fallback, not a bigger mark: a
+   mark that covers the point still wins. */
+const PICK_TOUCH_SLOP = 20;
+const touchReach = () => matchMedia('(pointer: coarse)').matches || isPhone() ? PICK_TOUCH_SLOP : 0;
+
+function pieAt(point) {
+  const ll = map.unproject(point);
+  const mx = (ll.lng + 180) / 360, my = mercY(ll.lat);
+  const z = map.getZoom(), world = 512 * Math.pow(2, z), pxs = Math.pow(2, Math.min(z, ARCHIVE_MAXZ));
+  const reach = touchReach() / world;
+  let near = null, nearD2 = Infinity;
+  for (let i = PIES.length - 1; i >= 0; i--) {
+    const c = PIES[i];
+    const r = c.r0 * pxs / world, dx = c.x - mx, dy = c.y - my, d2 = dx * dx + dy * dy;
+    if (d2 <= r * r) return c;
+    if (d2 <= reach * reach && d2 < nearD2) { near = c; nearD2 = d2; }
+  }
+  return near;
+}
+
+/* ---- DOTS ON THE GPU (2026-10-05). The circle layer recoloured by a data-driven expression, and
+   MapLibre answers any change to one by re-parsing every loaded tile in the worker: a selection
+   took 0.35-2.3 s over dense views, 1.9-4.1 s measured headless on 2026-10-05. Now each mark is
+   one instance of a quad in a custom layer, coloured through a palette texture, so a selection or
+   a colour mode only rewrites the palette (0.5 ms; the select call is ~20 ms, most of it the
+   legend panel's rebuild).
+
+   WHICH MARKS. Each frame the layer asks the source for the tiles MapLibre would draw right now
+   (the renderable set: loaded tiles of the current zoom, plus the parents or children standing
+   in for any still loading). When that set changes, the buffer is rebuilt from it: so a tile's
+   marks appear as soon as it loads, also mid-pan, and leave when MapLibre stops drawing the tile
+   (a zoom past it, aggregation, falling out of view). Rebuilds are at most one per DOT_GAP ms,
+   except that a tile covering ground the buffer has nothing for is drawn at once; in between
+   the previous set stays on screen. Measured over northern India: a newly loaded tile is drawn
+   within one frame, and marks of the previous zoom or aggregation linger at most ~75 ms. Each
+   tile is decoded once per layer (straight from MapLibre's parsed tile, no worker round trip)
+   and cached; a rebuild is 4-30 ms for 40k-470k marks. Points outside a tile's own extent (its
+   buffer, duplicated from the neighbour) are dropped, as MapLibre's circle layer drops them.
+
+   ORDER. The buffer is sorted by radius once per rebuild (a counting sort on the log radius,
+   1/1024 of a doubling apart), so bigger marks draw over smaller ones across the whole map, as
+   the circle layer's sort key did. With a selection the layer draws twice from the same buffer: first every
+   mark outside it, then the selection's marks, so the selection is on top everywhere, bigger on
+   top within it, without re-sorting. Which marks are selected is a flag in the palette's alpha.
+
+   LOOK. The same radius as the circle layer had (computed per mark on the GPU from p, t and z,
+   see setDotSize), the same DOT_ALPHA, and MapLibre's own circle edge: alpha falls from 1 to 0
+   over the outermost device pixel of the radius. Positions are split into a float32 high and
+   low part and drawn relative to the view's centre, so they stay exact at high zoom. */
+const DOT_STRIDE = 9;                      // xh, yh, xl, yl, sqrt(p/t), sqrt(t/1000), 2^-z, palette, country
+const DOT_GAP = 60;                        // ms between rebuilds while tiles keep arriving
+const DOT_CACHE = 2.5e6;                   // decoded marks kept for tiles not on screen (~100 MB)
+const CC_IDX = new Map();                  // country code -> small integer, as met in the tiles
+const EXTRA_IDS = [];                      // mark names missing from the taxonomy: grey, after the nodes
+let IDS = [];                              // palette index -> node id
+function palIdx(n) {
+  const o = ORDER[n];
+  if (o !== undefined) return o;
+  let i = EXTRA_IDS.indexOf(n);
+  if (i < 0) { EXTRA_IDS.push(n); i = EXTRA_IDS.length - 1; dotLayer.palDirty = true; }
+  return IDS.length + i;
+}
+
+/* One Aggregation step of one tile's marks, read from the raw Mapbox Vector Tile bytes
+   (Tile.layers = 3; Layer: name 1, features 2, keys 3, values 4, extent 5; Feature: tags 2,
+   geometry 4): the `marks` layer's features whose `l` has the step's bit (see addData). Returns
+   the instance floats (see DOT_STRIDE) and each mark's people. Points outside the tile's own
+   extent are skipped, as MapLibre's circle layer skips them. */
+function decodeMarks(buf, step, c, wrap) {
+  const lname = 'marks', bit = STEP_BIT[step];
+  const b = new Uint8Array(buf), dv = new DataView(b.buffer, b.byteOffset, b.byteLength);
+  const td = new TextDecoder();
+  let pos = 0;
+  const vint = () => { let v = 0, s = 1, x; do { x = b[pos++]; v += (x & 0x7f) * s; s *= 128; } while (x & 0x80); return v; };
+  const skip = w => {
+    if (w === 0) vint(); else if (w === 1) pos += 8; else if (w === 5) pos += 4;
+    else if (w === 2) { const l = vint(); pos += l; } else throw new Error('bad wire type ' + w);
+  };
+  const str = () => { const l = vint(); const s = td.decode(b.subarray(pos, pos + l)); pos += l; return s; };
+  const S = DOT_STRIDE, sc = 1 / Math.pow(2, c.z);
+  while (pos < b.length) {
+    const k = vint();
+    if (k !== 26) { skip(k & 7); continue; }                     // field 3, length-delimited: a layer
+    const end = vint() + pos;
+    let name = null, extent = 4096;
+    const keys = [], vals = [], feats = [];
+    while (pos < end) {
+      const fk = vint(), tag = fk >> 3;
+      if (fk === 10) { name = str(); if (name !== lname) break; }
+      else if (fk === 18) { const l = vint(); feats.push(pos, l); pos += l; }
+      else if (fk === 26) keys.push(str());
+      else if (fk === 34) {
+        const ve = vint() + pos;
+        let v = null;
+        while (pos < ve) {
+          const vk = vint(), vt = vk >> 3;
+          if (vt === 1) v = str();
+          else if (vt === 2) { v = dv.getFloat32(pos, true); pos += 4; }
+          else if (vt === 3) { v = dv.getFloat64(pos, true); pos += 8; }
+          else if (vt === 4 || vt === 5) v = vint();
+          else if (vt === 6) { const u = vint(); v = u % 2 ? -(u + 1) / 2 : u / 2; }
+          else if (vt === 7) v = vint() !== 0;
+          else skip(vk & 7);
+        }
+        vals.push(v);
+      }
+      else if (fk === 40) extent = vint();
+      else skip(fk & 7);
+    }
+    if (name !== lname) { pos = end; continue; }
+    const kn = keys.indexOf('n'), kc = keys.indexOf('c'), kp = keys.indexOf('p'),
+          kt = keys.indexOf('t'), kz = keys.indexOf('z'), kl = keys.indexOf('l');
+    const palOf = new Map(), ccOf = new Map();
+    let cap = feats.length / 2, a = new Float32Array(cap * S), P = new Float32Array(cap), m = 0;
+    const xs = [], ys = [];
+    for (let f = 0; f < feats.length; f += 2) {
+      pos = feats[f];
+      const fe = pos + feats[f + 1];
+      let n = -1, cc = -1, p = 1, t = 1, z = 0, l = 0;
+      xs.length = 0; ys.length = 0;
+      while (pos < fe) {
+        const fk = vint(), tag = fk >> 3;
+        if (tag === 2 && (fk & 7) === 2) {
+          const te = vint() + pos;
+          while (pos < te) {
+            const ki = vint(), vi = vint();
+            if (ki === kn) n = vi; else if (ki === kc) cc = vi;
+            else if (ki === kp) p = vals[vi]; else if (ki === kt) t = vals[vi]; else if (ki === kz) z = vals[vi];
+            else if (ki === kl) l = vals[vi];
+          }
+          if (!(l & bit)) { pos = fe; break; }              // not in this step: geometry unread
+        } else if (tag === 4 && (fk & 7) === 2) {
+          const ge = vint() + pos;
+          let x = 0, y = 0, len = 0, cmd = 1;
+          while (pos < ge) {
+            if (len <= 0) { const cl = vint(); cmd = cl & 7; len = cl >> 3; }
+            len--;
+            if (cmd === 1 || cmd === 2) {
+              const dx = vint(), dy = vint();
+              x += dx % 2 ? -(dx + 1) / 2 : dx / 2; y += dy % 2 ? -(dy + 1) / 2 : dy / 2;
+              if (x >= 0 && x < extent && y >= 0 && y < extent) { xs.push(x); ys.push(y); }
+            }
+          }
+        } else skip(fk & 7);
+      }
+      if (!xs.length) continue;
+      let pi = palOf.get(n);
+      if (pi === undefined) palOf.set(n, pi = palIdx(vals[n]));
+      let ci = ccOf.get(cc);
+      if (ci === undefined) {
+        ci = CC_IDX.get(vals[cc]);
+        if (ci === undefined) CC_IDX.set(vals[cc], ci = CC_IDX.size);
+        ccOf.set(cc, ci);
+      }
+      const pp = Math.max(p, 1), tt = Math.max(t, 1);
+      const ra = Math.sqrt(pp / tt), rb = Math.sqrt(tt / 1000), rc = Math.pow(2, -z);
+      for (let i = 0; i < xs.length; i++) {
+        if (m >= cap) {                                    // a multipoint: grow
+          cap *= 2;
+          const a2 = new Float32Array(cap * S); a2.set(a); a = a2;
+          const P2 = new Float32Array(cap); P2.set(P); P = P2;
+        }
+        const X = wrap + (c.x + xs[i] / extent) * sc, Y = (c.y + ys[i] / extent) * sc, o = m * S;
+        a[o] = X; a[o + 1] = Y; a[o + 2] = X - a[o]; a[o + 3] = Y - a[o + 1];
+        a[o + 4] = ra; a[o + 5] = rb; a[o + 6] = rc; a[o + 7] = pi; a[o + 8] = ci;
+        P[m++] = p;
+      }
+    }
+    return { a: a.subarray(0, m * S), P: P.subarray(0, m), n: m, q: null, qKey: null };
+  }
+  return { a: new Float32Array(0), P: new Float32Array(0), n: 0, q: new Uint16Array(0), qKey: null };
+}
+
+/* Sort one tile's marks by radius at zoom 0, quantised to 1/1024 of a doubling, ascending. */
+function sortMarks(e, r0, cap, qKey) {
+  const S = DOT_STRIDE, n = e.n, a = e.a, K = 4194304;      // 2^22 > marks in any tile
+  const keys = new Float64Array(n);
+  for (let i = 0, o = 0; i < n; i++, o += S) {
+    const r = a[o + 4] * Math.min(r0 * a[o + 5], cap * a[o + 6]);
+    keys[i] = Math.max(0, Math.min(65535, Math.floor((Math.log2(r) + 40) * 1024))) * K + i;
+  }
+  keys.sort();
+  const a2 = new Float32Array(n * S), P2 = new Float32Array(n), q = new Uint16Array(n);
+  for (let j = 0; j < n; j++) {
+    const i = keys[j] % K;
+    q[j] = (keys[j] - i) / K;
+    for (let k = 0; k < S; k++) a2[j * S + k] = a[i * S + k];
+    P2[j] = e.P[i];
+  }
+  e.a = a2; e.P = P2; e.q = q; e.qKey = qKey;
+}
+
+const dotLayer = {
+  id: 'gpudots', type: 'custom', renderingMode: '2d',
+  cache: new Map(), cached: 0, sig: null, keys: new Set(), lastBuild: -1e9, timer: null, sortGen: 0,
+  count: 0, data: null, P: null, palDirty: false,
+  onAdd(m, gl) {
+    this.gl = gl;
+    if (!(typeof WebGL2RenderingContext !== 'undefined' && gl instanceof WebGL2RenderingContext)) {
+      console.warn('dots need WebGL2'); this.dead = true; return;
+    }
+    const vs = `#version 300 es
+      in vec2 a_corner;
+      in vec4 a_pos;                  // x, y in mercator units, high and low float32 parts
+      in vec4 a_r;                    // sqrt(p/t), sqrt(t/1000), 2^-z, palette index
+      in float a_cc;
+      uniform mat4 u_matrix;          // the map's matrix, moved to the view centre
+      uniform vec2 u_ch; uniform vec2 u_cl;
+      uniform float u_r0, u_cap, u_pxscale, u_world, u_dpr, u_cc, u_pass;
+      uniform float u_mode;           // 0 dots, 1 the selection's ink into the grid, 2 rings
+      uniform sampler2D u_pal;
+      out vec2 v_ex; flat out vec3 v_col; flat out float v_blur; flat out float v_ink; flat out float v_R;
+      ${RING_GLSL}
+      void main() {
+        vec4 col = texelFetch(u_pal, ivec2(int(a_r.w), 0), 0);
+        bool sel = col.a > 0.5;
+        bool skip = u_cc > -0.5 && abs(a_cc - u_cc) > 0.5;
+        if (u_mode > 0.5) skip = skip || !sel;
+        else skip = skip || (u_pass > -0.5 && sel != (u_pass > 0.5));
+        if (skip) {
+          gl_Position = vec4(2.0, 2.0, 2.0, 1.0);   // not in this pass: a zero-area quad
+          return;
+        }
+        float px = a_r.x * min(u_r0 * a_r.y, u_cap * a_r.z) * u_pxscale;
+        vec2 rel = (a_pos.xy - u_ch) + (a_pos.zw - u_cl);
+        v_col = col.rgb;
+        if (u_mode > 0.5) {
+          vec4 c0 = u_matrix * vec4(rel, 0.0, 1.0);
+          float ink0 = 3.14159265 * px * px / u_tink;
+          v_ink = ink0;
+          if (u_mode < 1.5) { gl_Position = c0; gl_PointSize = 1.0; return; }
+          if (!ringWanted(c0, ink0)) { gl_Position = vec4(2.0, 2.0, 2.0, 1.0); return; }
+          v_R = max(px + u_rgap, mix(u_rminLo, u_rmin, ${RING_K('ink0')}));
+          v_ex = a_corner * (v_R + u_rw);
+          gl_Position = c0 + vec4(v_ex * u_px2clip * c0.w, 0.0, 0.0);
+          return;
+        }
+        v_ex = a_corner;
+        v_blur = 1.0 / (u_dpr * max(px, 1e-6));
+        gl_Position = u_matrix * vec4(rel + a_corner * (px / u_world), 0.0, 1.0);
+      }`;
+    const fs = `#version 300 es
+      precision highp float;
+      in vec2 v_ex; flat in vec3 v_col; flat in float v_blur; flat in float v_ink; flat in float v_R;
+      uniform float u_alpha, u_mode, u_ralpha, u_rw;
+      out vec4 frag;
+      void main() {
+        ${RING_FRAG}
+        // MapLibre's circle: smoothstep(0, -blur, |extrude| - 1)
+        float t = clamp((1.0 - length(v_ex)) / v_blur, 0.0, 1.0);
+        float a = u_alpha * t * t * (3.0 - 2.0 * t);
+        if (a <= 0.0) discard;
+        frag = vec4(v_col * a, a);
+      }`;
+    const sh = (type, src) => {
+      const s = gl.createShader(type); gl.shaderSource(s, src); gl.compileShader(s);
+      if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(s));
+      return s;
+    };
+    const p = this.prog = gl.createProgram();
+    gl.attachShader(p, sh(gl.VERTEX_SHADER, vs)); gl.attachShader(p, sh(gl.FRAGMENT_SHADER, fs));
+    gl.linkProgram(p);
+    if (!gl.getProgramParameter(p, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(p));
+    this.loc = {};
+    for (const n of ['u_matrix', 'u_ch', 'u_cl', 'u_r0', 'u_cap', 'u_pxscale', 'u_world', 'u_dpr',
+                     'u_cc', 'u_pass', 'u_pal', 'u_alpha', ...RING_UNIFORMS])
+      this.loc[n] = gl.getUniformLocation(p, n);
+    this.vao = gl.createVertexArray();
+    gl.bindVertexArray(this.vao);
+    const quad = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, quad);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, 1, 1, -1, -1, 1, 1, -1, 1]), gl.STATIC_DRAW);
+    const ac = gl.getAttribLocation(p, 'a_corner');
+    gl.enableVertexAttribArray(ac);
+    gl.vertexAttribPointer(ac, 2, gl.FLOAT, false, 0, 0);
+    this.inst = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, this.inst);
+    [['a_pos', 4, 0], ['a_r', 4, 4], ['a_cc', 1, 8]].forEach(([name, size, off]) => {
+      const l = gl.getAttribLocation(p, name);
+      gl.enableVertexAttribArray(l);
+      gl.vertexAttribPointer(l, size, gl.FLOAT, false, DOT_STRIDE * 4, off * 4);
+      gl.vertexAttribDivisor(l, 1);
+    });
+    gl.bindVertexArray(null);
+    this.pal = gl.createTexture();
+    this.palette();
+  },
+  /* every node's lit colour by palette index, and in alpha whether it is in the selection */
+  palette() {
+    const gl = this.gl;
+    if (!gl || this.dead || !this.pal) return;
+    this.palDirty = false;
+    IDS = Object.keys(ORDER).sort((a, b) => ORDER[a] - ORDER[b]);
+    const n = IDS.length + EXTRA_IDS.length;
+    const px = new Uint8Array(Math.max(1, n) * 4);
+    this.selFlag = new Uint8Array(Math.max(1, n));
+    for (let i = 0; i < n; i++) {
+      const id = i < IDS.length ? IDS[i] : null;
+      const hex = id ? litColour(id) : '#666666';
+      const on = id && selected && under(id, selected) ? 1 : 0;
+      px[i * 4] = parseInt(hex.slice(1, 3), 16); px[i * 4 + 1] = parseInt(hex.slice(3, 5), 16);
+      px[i * 4 + 2] = parseInt(hex.slice(5, 7), 16); px[i * 4 + 3] = on ? 255 : 0;
+      this.selFlag[i] = on;
+    }
+    gl.bindTexture(gl.TEXTURE_2D, this.pal);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, Math.max(1, n), 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, px);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+  },
+  /* One tile's marks, decoded once per tile and layer and kept (most recently used last) up to
+     DOT_CACHE marks in all. Read straight from the tile's protobuf bytes, which MapLibre keeps
+     beside its parsed tile: about five times quicker than its feature objects, and it skips
+     the other aggregation steps' marks without reading their geometry. */
+  decode(tile, lname) {
+    const key = tile.tileID.canonical.key + '/' + tile.tileID.wrap + '/' + lname;
+    let e = this.cache.get(key);
+    if (e) { this.cache.delete(key); this.cache.set(key, e); return e; }
+    e = decodeMarks(tile.latestFeatureIndex.rawTileData, lname, tile.tileID.canonical, tile.tileID.wrap);
+    this.cache.set(key, e);
+    this.cached += e.n;
+    for (const [k, old] of this.cache) {
+      if (this.cached <= DOT_CACHE || old === e) break;
+      this.cache.delete(k); this.cached -= old.n;
+    }
+    return e;
+  },
+  /* the tiles MapLibre would draw now, deduplicated (two overzoomed copies of one tile) */
+  wanted() {
+    const sc = map.style && map.style.sourceCaches && map.style.sourceCaches.ld;
+    const tiles = [], keys = new Set(), seen = new Set();
+    if (!sc) return { tiles, keys, sig: '' };
+    for (const id of sc.getRenderableIds()) {
+      const t = sc.getTileByID(id);
+      if (!t || !t.latestFeatureIndex || !t.latestFeatureIndex.rawTileData) continue;
+      keys.add(String(id));
+      const k = t.tileID.canonical.key + '/' + t.tileID.wrap;
+      if (seen.has(k)) continue;
+      seen.add(k); tiles.push(t);
+    }
+    return { tiles, keys, sig: layerName() + '|' + this.sortGen + '|' + [...seen].sort().join(',') };
+  },
+  pending() { return drawAs === 'dots' && (!!this.timer || this.wanted().sig !== this.sig); },
+  gap(w) {
+    const drawn = this.tiles || [];
+    return w.tiles.some(t => {
+      const a = t.tileID.canonical;
+      return !drawn.some(b => {
+        const [h, l] = a.z <= b.z ? [a, b] : [b, a], d = l.z - h.z;
+        return (l.x >> d) === h.x && (l.y >> d) === h.y;
+      });
+    });
+  },
+  later(ms) {
+    if (!this.timer) this.timer = setTimeout(() => { this.timer = null; map.triggerRepaint(); }, ms);
+  },
+  sync() {
+    const w = this.wanted();
+    if (w.sig === this.sig) return;
+    // throttled, unless MapLibre now draws ground the buffer has nothing for (a gap)
+    const wait = DOT_GAP - (performance.now() - this.lastBuild);
+    if (wait > 0 && !this.gap(w)) { this.later(wait); return; }
+    // tiles not yet decoded: as many as fit in a few ms this frame, the rest over the next ones
+    // (the previous marks stay up meanwhile)
+    const lname = layerName(), t0 = performance.now();
+    for (const t of w.tiles) {
+      if (this.cache.has(t.tileID.canonical.key + '/' + t.tileID.wrap + '/' + lname)) continue;
+      if (performance.now() - t0 > 10) { this.later(0); return; }
+      this.decode(t, lname);
+    }
+    this.build(w);
+  },
+  /* Each tile is kept sorted by its quantised log radius (redone only when the size or cap
+     slider moves), so the global order is a counting sort that copies runs of equal radius:
+     stable, and bigger marks come later, so they draw on top. */
+  build(w) {
+    const lname = layerName();
+    const parts = w.tiles.map(t => this.decode(t, lname));
+    if (this.palDirty) this.palette();
+    const r0 = r0Of(), cap = capFrac() * cellPxOf(), qKey = r0 + '/' + cap;
+    const hist = new Uint32Array(65537);
+    let N = 0;
+    for (const e of parts) {
+      if (e.qKey !== qKey) sortMarks(e, r0, cap, qKey);
+      for (let i = 0; i < e.n; i++) hist[e.q[i] + 1]++;
+      N += e.n;
+    }
+    for (let k = 1; k <= 65536; k++) hist[k] += hist[k - 1];
+    const S = DOT_STRIDE, out = new Float32Array(N * S), P = new Float32Array(N);
+    for (const e of parts) {
+      for (let i = 0; i < e.n;) {
+        const q = e.q[i];
+        let j = i + 1;
+        while (j < e.n && e.q[j] === q) j++;
+        const d = hist[q];
+        out.set(e.a.subarray(i * S, j * S), d * S);
+        P.set(e.P.subarray(i, j), d);
+        hist[q] += j - i;
+        i = j;
+      }
+    }
+    this.data = out; this.P = P; this.count = N;
+    this.sig = w.sig; this.keys = w.keys; this.tiles = w.tiles.map(t => t.tileID.canonical);
+    this.lastBuild = performance.now();
+    const gl = this.gl;
+    gl.bindBuffer(gl.ARRAY_BUFFER, this.inst);
+    gl.bufferData(gl.ARRAY_BUFFER, out, gl.DYNAMIC_DRAW);
+  },
+  /* before the frame: the selection's ink into the ring grid (see LOCATOR RINGS) */
+  prerender(gl, matrix) {
+    if (this.dead || drawAs !== 'dots' || !selected) return;
+    this.sync();
+    if (!this.count || !INK.begin(gl)) return;
+    this.setup(gl, matrix);
+    gl.uniform1f(this.loc.u_mode, 1);
+    gl.drawArraysInstanced(gl.POINTS, 0, 1, this.count);
+    gl.bindVertexArray(null);
+    INK.end(gl);
+  },
+  render(gl, matrix) {
+    if (this.dead || drawAs !== 'dots') return;
+    this.sync();
+    if (!this.count) return;
+    this.setup(gl, matrix);
+    gl.uniform1f(this.loc.u_mode, 0);
+    gl.enable(gl.BLEND);
+    gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
+    gl.disable(gl.DEPTH_TEST);
+    for (const pass of selected ? [0, 1] : [-1]) {
+      gl.uniform1f(this.loc.u_pass, pass);
+      gl.drawArraysInstanced(gl.TRIANGLES, 0, 6, this.count);
+    }
+    if (selected && INK.wanted()) {
+      INK.uniforms(gl, this.loc);
+      gl.uniform1f(this.loc.u_mode, 2);
+      gl.drawArraysInstanced(gl.TRIANGLES, 0, 6, this.count);
+    }
+    gl.bindVertexArray(null);
+  },
+  setup(gl, matrix) {
+    const z = map.getZoom(), ctr = map.getCenter();
+    const cx = (ctr.lng + 180) / 360, cy = mercY(ctr.lat);
+    const m = new Float32Array(matrix);
+    for (let i = 0; i < 4; i++) m[12 + i] = matrix[i] * cx + matrix[4 + i] * cy + matrix[12 + i];
+    const chx = Math.fround(cx), chy = Math.fround(cy);
+    const cci = cc === 'all' ? -1 : (CC_IDX.has(cc) ? CC_IDX.get(cc) : 9999);
+    gl.useProgram(this.prog);
+    gl.bindVertexArray(this.vao);
+    gl.uniformMatrix4fv(this.loc.u_matrix, false, m);
+    gl.uniform2f(this.loc.u_ch, chx, chy);
+    gl.uniform2f(this.loc.u_cl, cx - chx, cy - chy);
+    gl.uniform1f(this.loc.u_r0, r0Of());
+    gl.uniform1f(this.loc.u_cap, capFrac() * cellPxOf());
+    gl.uniform1f(this.loc.u_pxscale, Math.pow(2, Math.min(z, ARCHIVE_MAXZ)));
+    gl.uniform1f(this.loc.u_world, 512 * Math.pow(2, z));
+    gl.uniform1f(this.loc.u_dpr, devicePixelRatio || 1);
+    gl.uniform1f(this.loc.u_cc, cci);
+    gl.uniform1f(this.loc.u_alpha, DOT_ALPHA);
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, this.pal);
+    gl.uniform1i(this.loc.u_pal, 0);
+    gl.uniform1f(this.loc.u_tink, RING.ink);
+  },
+};
+
+/* The dot under a screen point, the one drawn on top: the selection's marks first (they are
+   drawn last), each set searched from its end. Compared in mercator units. */
+function dotAt(point) {
+  const L = dotLayer, a = L.data;
+  if (!L.count || !a) return null;
+  const ll = map.unproject(point);
+  const mx = (ll.lng + 180) / 360, my = mercY(ll.lat);
+  const z = map.getZoom(), k = Math.pow(2, Math.min(z, ARCHIVE_MAXZ)) / (512 * Math.pow(2, z));
+  const r0 = r0Of() * k, cap = capFrac() * cellPxOf() * k;
+  const cci = cc === 'all' ? -1 : (CC_IDX.has(cc) ? CC_IDX.get(cc) : 9999);
+  const sel = L.selFlag;
+  const hit = i => { const pi = L.data[i * DOT_STRIDE + 7];
+                     return { n: pi < IDS.length ? IDS[pi] : EXTRA_IDS[pi - IDS.length], p: L.P[i] }; };
+  const reach = touchReach() / (512 * Math.pow(2, z));   // see PICK_TOUCH_SLOP
+  let near = -1, nearD2 = Infinity;
+  for (const pass of selected ? [1, 0] : [-1]) {
+    for (let i = L.count - 1, o = i * DOT_STRIDE; i >= 0; i--, o -= DOT_STRIDE) {
+      const dx = a[o] + a[o + 2] - mx, dy = a[o + 1] + a[o + 3] - my, d2 = dx * dx + dy * dy;
+      const r = a[o + 4] * Math.min(r0 * a[o + 5], cap * a[o + 6]);
+      if (d2 > r * r && d2 > reach * reach) continue;
+      if (pass >= 0 && sel[a[o + 7]] !== pass) continue;
+      if (cci >= 0 && a[o + 8] !== cci) continue;
+      if (d2 <= r * r) return hit(i);
+      if (d2 < nearD2) { near = i; nearD2 = d2; }
+    }
+  }
+  return near >= 0 ? hit(near) : null;
+}
+
+let pieTimer = null;
+function schedulePies() {
+  if (drawAs !== 'pies') return;
+  clearTimeout(pieTimer);
+  pieTimer = setTimeout(rebuildPies, 60);
+}
+
+function setDraw(d) {
+  drawAs = d;
+  unfreeze();
+  document.querySelectorAll('#draw-segs .seg').forEach(s => s.classList.toggle('on', s.dataset.d === d));
+  applyColours();
+  rebuildPies();
+  if (COUNTS) buildPanel();                // the family rows' washed half shows in pies only
+}
+
+const map = new maplibregl.Map({
+  container: 'map',
+  style: 'https://tiles.openfreemap.org/styles/dark',
+  // open on the world, roughly allView(), so the first fit is a nudge rather than a jump from
+  // India (Anita, 2026-10-05); allView() itself needs counts.json, which loads after this
+  bounds: [[-155, -56], [180, 78]],
+  fitBoundsOptions: { padding: viewPadding() },
+  attributionControl: { compact: true },
+  touchPitch: false,                       // a two-finger drag on a phone tilted the map (religiondots)
+});
+
+// Auto's country outlines (see SHAPES); a failed fetch leaves Auto on all countries
+// every fetch waits for dataBaseP, which sets DATA_BASE (local tree or R2)
+const shapesP = dataBaseP.then(() => fetch(DATA_BASE + 'country_shapes.geojson'))
+  .then(r => r.ok ? r.json() : null).catch(() => null);
+Promise.all([
+  dataBaseP.then(() => fetch(DATA_BASE + 'taxonomy/languages.json')).then(r => r.json()),
+  dataBaseP.then(() => fetch(DATA_BASE + 'data/processed/counts.json', { cache: 'no-store' }))
+    .then(r => r.json()),
+  new Promise(res => map.on('load', res)),
+]).then(([tax, counts]) => {
+  tax.nodes.forEach((n, i) => {
+    NODES[n.id] = n; ORDER[n.id] = i;
+    const p = parentOf(n.id); if (p) (KIDS[p] = KIDS[p] || []).push(n.id);
+  });
+  COUNTS = counts;
+  // every group starts shut except Indo-European, to keep the legend short (Anita, 2026-10-05)
+  open.add('indoeuropean');
+
+  // faint basemap labels: the data is the point, the place names are context
+  for (const l of map.getStyle().layers) {
+    if (l.type === 'symbol') {
+      map.setPaintProperty(l.id, 'text-color', 'rgba(170,170,170,0.55)');
+      map.setPaintProperty(l.id, 'text-halo-color', 'rgba(17,17,17,0.6)');
+    }
+  }
+  addData();
+  addNotDrawn();
+
+  const pick = document.getElementById('cc-pick');
+  const order = Object.keys(counts.countries).sort((a, b) => counts.countries[a].name.localeCompare(counts.countries[b].name));
+  pick.innerHTML = '<option value="auto">Auto (all countries)</option>' + ['all', ...order].map(c =>
+    `<option value="${c}">${c === 'all' ? 'All countries' : counts.countries[c].name}</option>`).join('');
+  // Auto hands the choice back to the camera at once; anything else holds until Auto is picked again
+  pick.onchange = () => {
+    if (pick.value === 'auto') { autoOn = true; updatePick(); considerCamera(); }
+    else { autoOn = false; setCountry(pick.value); }
+  };
+  document.querySelectorAll('#mode-segs .seg').forEach(s => s.onclick = () => {
+    mode = s.dataset.m;
+    document.querySelectorAll('#mode-segs .seg').forEach(x => x.classList.toggle('on', x === s));
+    applyColours(); buildPanel();
+  });
+  document.querySelectorAll('#draw-segs .seg').forEach(s => s.onclick = () => setDraw(s.dataset.d));
+  const size = document.getElementById('size');
+  size.oninput = () => {
+    dotScale = Math.pow(2, +size.value);
+    document.getElementById('size-val').textContent =
+      (+dotScale.toFixed(2)).toString() + '×';
+    setDotSize();
+    schedulePies();
+  };
+  const cap = document.getElementById('cap');
+  cap.oninput = () => {
+    capScale = CAP_STOPS[+cap.value];
+    document.getElementById('cap-val').textContent = isFinite(capScale) ? capScale + '×' : 'none';
+    setDotSize();
+    schedulePies();
+  };
+  document.getElementById('agg').oninput = e => setDetail(2 - e.target.value);
+  setCountry('all');
+  shapesP.then(setShapes);
+
+  // the pie list follows the tiles, and is rebuilt only when the map has stopped
+  map.on('moveend', schedulePies);
+  // Auto looks again when the camera stops and when the tiles for where it stopped have loaded
+  map.on('moveend', considerCamera);
+  map.on('idle', considerCamera);
+  map.on('idle', () => { if (drawAs === 'pies' && pieDirty) rebuildPies(); });
+  map.on('sourcedata', e => { if (e.sourceId === 'ld' && e.tile) pieDirty = true; });
+
+  const tip = document.getElementById('tip');
+  /* Beside the point, below right; flipped to the left or above where it would run off the
+     screen, and kept on it where neither side fits. */
+  const placeTip = pt => {
+    const w = tip.offsetWidth, h = tip.offsetHeight;
+    let x = pt.x + 12, y = pt.y + 12;
+    if (x + w > innerWidth - 4) x = pt.x - 12 - w;
+    if (y + h > innerHeight - 4) y = pt.y - 12 - h;
+    tip.style.left = Math.max(4, Math.min(x, innerWidth - 4 - w)) + 'px';
+    tip.style.top = Math.max(4, Math.min(y, innerHeight - 4 - h)) + 'px';
+  };
+  const showTip = (html, pt) => {
+    tip.innerHTML = html;
+    tip.style.display = 'block';
+    // the pie's larger copy (pieSvg) is a fixed five rows of text high (Anita, 2026-10-06: not
+    // scaled to how many rows the tooltip has), in the tooltip's top left corner
+    const svg = tip.querySelector('.pz');
+    if (svg) {
+      const row = tip.querySelector('.pr > *');
+      const s = Math.round(5 * (row ? row.offsetHeight : 18));
+      svg.setAttribute('width', s); svg.setAttribute('height', s);
+    }
+    placeTip(pt);
+  };
+  /* A pie's tooltip copy: the same wedges (pieWedges) in the same palette entries the map draws
+     them in, from north, clockwise, in the same order as the GPU layer's fragment shader. */
+  let palIds = null;
+  const palHex = i => {
+    const X = piePalExtra();
+    if (i === X) return DIM;
+    if (i === X + 1) return OTHER;
+    if (i === X + 2) return selected ? selColour() : OTHER;
+    palIds = palIds || Object.keys(ORDER);
+    return palIds[i] ? litColour(palIds[i]) : '#666666';
+  };
+  const pieSvg = ws => {
+    const tot = ws.reduce((a, q) => a + q.p, 0);
+    let a0 = 0, body = '';
+    for (const q of ws) {
+      const f = q.p / tot, col = q.hex || palHex(q.col);
+      if (f >= 0.9999) { body += `<circle r="1" fill="${col}"/>`; break; }
+      const a1 = a0 + f * 2 * Math.PI;
+      const p = a => `${Math.sin(a).toFixed(4)} ${(-Math.cos(a)).toFixed(4)}`;
+      if (f > 0) body += `<path d="M0 0L${p(a0)}A1 1 0 ${f > 0.5 ? 1 : 0} 1 ${p(a1)}Z" fill="${col}"/>`;
+      a0 = a1;
+    }
+    return `<svg class="pz" viewBox="-1.02 -1.02 2.04 2.04" width="64" height="64">${body}</svg>`;
+  };
+  // a group's own (unnamed) people carry just the group's label (Anita, 2026-10-06: no "language
+  // not named"); the washed colour already says it
+  const label = n => NODES[n] ? NODES[n].label : n;
+  // a tooltip row naming one legend row carries its id (see reveal); the grey leftover does not
+  const link = (n, own) => NODES[n] ? ` data-n="${n}"${own ? ' data-own="1"' : ''}` : '';
+  /* a family wedge (pieWedges): "9 other Indo-Aryan languages", or for a family whose label is
+     already a plural or a catch-all, "Creoles, 3 languages"; its own unnamed people, if any, are
+     said too */
+  /* "Odd" labels already read as a plural or a catch-all ("Papuan languages", "Language isolates",
+     "No established classification", "Creoles and contact varieties", "Loloish (Yi languages)",
+     "Unclassified Nuclear Torricelli"); an adjective before "languages" would read wrong. */
+  const groupCount = (id, k, plus) => {
+    const lab = NODES[id].label.trim();
+    const odd = /^other\b|\blanguages?\b|\bcreoles?\b|unclassified|classification|isolates?\b|varieties|dialects/i.test(lab);
+    // unnamed people in the wedge make the count a floor: "14+ other Sino-Tibetan languages"
+    const n = k + (plus ? '+' : ''), pl = k === 1 && !plus ? '' : 's';
+    if (!k) return lab;
+    return odd ? `${lab}, ${n} language${pl}` : `${n} other ${lab} language${pl}`;
+  };
+  const famLabel = q => groupCount(q.f, q.k, q.unnamed);
+  const lumpKey = q => q.lump === 'fam' ? 'f:' + q.f : q.lump;
+  // one language's row; `tot` is the cell's people
+  const langRow = (q, tot) => `<div class="mx"${link(q.n, !!KIDS[q.n])}><span class="mk" style="background:${colourFor(q.n)}"></span>` +
+    `${label(q.n)} <span class="sub">${pct(q.p / tot)}</span></div>`;
+  /* A folded row's members, while it is open: the 10 largest, then "N more", which shows the
+     rest; the list scrolls inside the tooltip when long. */
+  const TIP_TOP = 10;
+  const lumpList = (q, tot) => {
+    const k = lumpKey(q), ms = [...q.qs].sort((a, b) => b.p - a.p);
+    const all = tipAll.has(k) || ms.length <= TIP_TOP + 1;
+    let h = (all ? ms : ms.slice(0, TIP_TOP)).map(m => langRow(m, tot)).join('');
+    if (!all) h += `<div class="more" data-more="${k}">${ms.length - TIP_TOP} more ` +
+                   `<span class="sub">${pct((q.p - ms.slice(0, TIP_TOP).reduce((a, m) => a + m.p, 0)) / tot)}</span></div>`;
+    return `<div class="ex" data-k="${k}">${h}</div>`;
+  };
+  const pieTip = hit => {
+    // the pie's own wedges, largest first and the folded ones last, so the shares add up to 100%
+    const tot = hit.parts.reduce((a, q) => a + q.p, 0);
+    const last = q => q.lump === 'other' ? 2 : q.lump ? 1 : 0;
+    const ws = pieWedges(hit.parts);
+    const rows = [...ws].sort((a, b) => last(a) - last(b) || b.p - a.p).map(q => {
+      if (!q.lump) return langRow(q, tot);
+      const sw = q.lump === 'other' ? OTHER : q.lump === 'sel' ? selColour() : colourFor(q.f);
+      const name = q.lump === 'other' ? `${q.k} other languages`
+                 : q.lump === 'sel' ? groupCount(selected, q.k, false) : famLabel(q);
+      const k = lumpKey(q), on = hit === tipHit && tipOpen.has(k);
+      return `<div class="mx" data-x="${k}"><span class="mk" style="background:${sw}"></span>${name}` +
+             ` <span class="sub">${pct(q.p / tot)}</span><span class="tw">${on ? '▾' : '▸'}</span></div>` +
+             (on ? lumpList(q, tot) : '');
+    }).join('');
+    /* The tooltip's pie splits an open row's wedge into the languages its list shows, in their
+       own colours and the list's order (Anita, 2026-10-06); the "N more" tail stays one wedge in
+       the folded colour until it too is opened. The map's pie stays folded. */
+    const svgWs = hit !== tipHit ? ws : ws.flatMap(q => {
+      if (!q.lump || !tipOpen.has(lumpKey(q))) return [q];
+      const ms = [...q.qs].sort((a, b) => b.p - a.p);
+      const all = tipAll.has(lumpKey(q)) || ms.length <= TIP_TOP + 1;
+      const shown = all ? ms : ms.slice(0, TIP_TOP);
+      const out = shown.map(m => ({ p: m.p, hex: colourFor(m.n) }));
+      const rest = q.p - shown.reduce((a, m) => a + m.p, 0);
+      if (!all && rest > 0) out.push({ p: rest, col: q.col });
+      return out;
+    });
+    return `<div class="pw">${pieSvg(svgWs)}<div class="pr">` + rows +
+           `<div class="sub">${tot.toLocaleString()} people</div></div></div>`;
+  };
+  // the tooltip for the mark under a point, or null
+  const tipAt = pt => {
+    if (drawAs === 'pies') {
+      const hit = pieAt(pt);
+      return hit ? pieTip(hit) : null;
+    }
+    const f = dotAt(pt);
+    if (!f) return null;
+    const n = f.n;
+    const fam = NODES[familyOf(n)] ? NODES[familyOf(n)].label : '';
+    return `<div class="mx"${link(n, !!KIDS[n])}><span class="mk" style="background:${colourFor(n)}"></span>${label(n)}` +
+           ` <span class="sub">· ${fam} · ${f.p.toLocaleString()} people</span></div>`;
+  };
+  map.on('mousemove', e => {
+    const html = tipAt(e.point);
+    map.getCanvas().style.cursor = html ? 'pointer' : '';
+    if (frozen) return;
+    const nd = html ? null : notDrawnAt(e.point);   // hatched ground answers where no mark does
+    if (html || nd) showTip(html || nd, e.point); else tip.style.display = 'none';
+  });
+  /* A click on a mark pins its tooltip; a click on empty map lets it go. In dots mode the same
+     click still selects (or deselects) the dot's language, as before. */
+  map.on('click', e => {
+    // the click that put the about panel away does only that (see closeInfoOutside)
+    if (infoSwallow) { if (!frozen) tip.style.display = 'none'; return; }
+    // a newly pinned pie starts with its folded rows shut
+    tipHit = drawAs === 'pies' ? pieAt(e.point) : null;
+    tipOpen.clear(); tipAll.clear();
+    const html = tipAt(e.point);
+    if (!html) { unfreeze(); return; }
+    frozen = map.unproject(e.point);
+    showTip(html, e.point);
+    tip.classList.add('frozen');
+    if (drawAs === 'dots') { const f = dotAt(e.point); select(selected === f.n ? null : f.n); }
+  });
+  map.on('move', () => {
+    if (!frozen) return;
+    placeTip(map.project(frozen));
+  });
+  tip.onclick = e => {
+    // a folded row opens or shuts; "N more" shows the rest. Each open list keeps its scroll.
+    const x = frozen && tipHit && e.target.closest('[data-x],[data-more]');
+    if (x) {
+      if (x.dataset.more) tipAll.add(x.dataset.more);
+      else if (tipOpen.has(x.dataset.x)) { tipOpen.delete(x.dataset.x); tipAll.delete(x.dataset.x); }
+      else tipOpen.add(x.dataset.x);
+      const sc = {};
+      tip.querySelectorAll('.ex').forEach(l => { sc[l.dataset.k] = l.scrollTop; });
+      showTip(pieTip(tipHit), map.project(frozen));
+      tip.querySelectorAll('.ex').forEach(l => { if (sc[l.dataset.k]) l.scrollTop = sc[l.dataset.k]; });
+      return;
+    }
+    const r = frozen && e.target.closest('.mx[data-n]');
+    if (r) reveal(r.dataset.n, !!r.dataset.own);
+  };
+  /* Clearing the selection: Esc anywhere, or a double-click on empty map. The double-click only
+     clears, it does not also zoom, while something is selected; with nothing selected it zooms
+     as usual. "Empty" means no dot under the pointer (in pies mode, no pie). */
+  map.on('dblclick', e => {
+    if (!selected) return;
+    const hit = drawAs === 'pies' ? pieAt(e.point) : dotAt(e.point);
+    if (hit) return;
+    e.preventDefault();
+    select(null);
+  });
+  document.addEventListener('keydown', e => {
+    if (e.key !== 'Escape') return;
+    if (frozen) { unfreeze(); return; }
+    const info = document.getElementById('info-panel');
+    if (!info.classList.contains('hidden')) info.classList.add('hidden');
+    else if (selected) select(null);
+  });
+  document.getElementById('mixbar').onmousemove = e => {
+    if (frozen) return;
+    const b = e.currentTarget.getBoundingClientRect();
+    const x = (e.clientX - b.left) / b.width * MIX.total;
+    let acc = 0;
+    for (const s of MIX.segs) {
+      acc += s.v;
+      if (acc >= x) {
+        showTip(`<div class="mx"><span class="mk" style="background:${colourFor(s.id)}"></span>` +
+          `${NODES[s.id].label}` +
+          ` <span class="sub">${fmt(s.v)} · ${pct(s.v / MIX.total)}</span></div>`, { x: e.clientX, y: e.clientY });
+        return;
+      }
+    }
+  };
+  document.getElementById('mixbar').onmouseleave = () => { if (!frozen) tip.style.display = 'none'; };
+});
+
+wireSec(document.getElementById('legend-note'));
+document.getElementById('info-btn').onclick = () =>
+  document.getElementById('info-panel').classList.toggle('hidden');
+document.getElementById('info-panel-close').onclick = () =>
+  document.getElementById('info-panel').classList.add('hidden');
+
+/* THE ABOUT PANEL CLOSES ON A CLICK OR TAP ANYWHERE OUTSIDE IT (Anita, 2026-10-06). Caught on the
+   way down (capture), before the map or the legend sees the click. On the map that click does
+   nothing else: it would otherwise pin a tooltip, or in dots mode select a language, which reads
+   as the map doing something the reader did not ask for. On the legend it goes on as usual, since
+   there the reader aimed at a control. A drag that ends in a click (panning) is not a click. */
+let infoSwallow = false, downAt = null;
+document.addEventListener('pointerdown', e => { downAt = { x: e.clientX, y: e.clientY }; }, true);
+document.addEventListener('click', function closeInfoOutside(e) {
+  const info = document.getElementById('info-panel');
+  if (info.classList.contains('hidden') || info.contains(e.target) || e.target.closest('#info-btn')) return;
+  if (downAt && Math.hypot(e.clientX - downAt.x, e.clientY - downAt.y) > 5) return;
+  info.classList.add('hidden');
+  if (e.target.closest('#map')) { infoSwallow = true; setTimeout(() => { infoSwallow = false; }, 0); }
+}, true);
+
+document.getElementById('min').onclick = e => {
+  e.stopPropagation();                     // or the header's own tap below toggles it back
+  const p = document.getElementById('panel');
+  p.classList.toggle('min');
+  document.getElementById('min').textContent = p.classList.contains('min') ? '+' : '–';
+  if (p.classList.contains('min')) p.scrollTop = 0;
+};
+/* On the phone the whole sheet header is the target, not only the 30px button (religiondots:
+   a sheet the map depends on putting away needs a big target). */
+document.getElementById('panel-head').onclick = e => {
+  if (e.target.closest('button') || !isPhone()) return;
+  document.getElementById('min').click();
+};
+</script>
+</body>
+</html>
