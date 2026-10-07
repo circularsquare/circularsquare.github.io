@@ -27,8 +27,7 @@ sitemap: false
     }
     #panel-head { display: flex; align-items: center; gap: 6px; padding: 8px 10px 6px;
                   border-bottom: 1px solid #2a2a2a; }
-    #panel-head b { font-size: 12px; font-weight: 700; flex: 1; }
-    #panel-head button { background: none; border: 1px solid #555; color: #ccc; width: 22px;
+    #panel-head button { margin-left: auto; background: none; border: 1px solid #555; color: #ccc; width: 22px;
       height: 22px; border-radius: 4px; cursor: pointer; font-size: 12px; line-height: 1; }
     #panel-head button:hover { background: #333; color: #fff; }
     #panel.min > :not(#panel-head) { display: none; }
@@ -212,7 +211,6 @@ sitemap: false
                     padding: 0 10px; cursor: pointer; border-radius: 10px 10px 0 0; }
       #panel-head button { width: 30px; height: 30px; font-size: 14px; }
       #panel.min { height: 42px; max-height: 42px; overflow: hidden; }
-      #panel.min #panel-head b { display: none; }
       #panel.min #head-scope { display: block; flex: 1; min-width: 0; color: #fff; font-size: 12px; }
       #head-scope-text { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
@@ -268,7 +266,7 @@ sitemap: false
 <div id="map"></div>
 <div id="tip"></div>
 <div id="panel">
-  <div id="panel-head"><b>Mother tongues</b><span id="head-scope"><span id="head-scope-text"></span><span id="head-mixrow"><span id="head-mixtrack"></span><span id="head-mixtotal"></span></span></span><button id="min" title="Hide panel">–</button></div>
+  <div id="panel-head"><span id="head-scope"><span id="head-scope-text"></span><span id="head-mixrow"><span id="head-mixtrack"></span><span id="head-mixtotal"></span></span></span><button id="min" title="Hide panel">–</button></div>
   <div id="scope-bar">
     <span id="scope"></span>
     <div id="mixrow"><div id="mixbar"><div id="mixtrack"></div></div><span id="mixtotal"></span></div>
@@ -311,6 +309,12 @@ sitemap: false
   <p>See more maps at <a href="https://anita.garden/projects" target="_blank" rel="noopener">anita.garden/projects</a>!</p>
   </div>
 </div>
+<!-- The about panel opens by default on desktop only; on a phone (the 700px breakpoint, PHONE
+     below) it would cover the map, so it starts closed there (Anita, 2026-10-06). Here, right
+     after the panel, so it is never painted open first. -->
+<script>
+  if (matchMedia('(max-width: 700px)').matches) document.getElementById('info-panel').classList.add('hidden');
+</script>
 
 <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
 <script src="https://unpkg.com/pmtiles@3.2.0/dist/pmtiles.js"></script>
@@ -1299,39 +1303,92 @@ function mercY(lat) {
   return 0.5 - Math.log((1 + s) / (1 - s)) / (4 * Math.PI);
 }
 
+/* STAND-INS (2026-10-06). While a tile of the new zoom is still loading, MapLibre keeps drawing
+   what it already has for that ground: the loaded parent when zooming in, the loaded children
+   when zooming out (its renderable set). Both GPU layers draw from that same set, so the ground
+   is never empty while tiles arrive (Anita saw whole countries go black for seconds after a
+   zoom: the pies kept only the tiles of one zoom, so a parent standing in was dropped as soon
+   as one child had loaded). Where a stand-in parent and a loaded child overlap, the finer tile
+   wins: the parent's marks inside the child are left out, so nothing is drawn twice, and the
+   tooltip and pie hit tests, which read the drawn lists, never count a place twice. Children
+   standing in for a parent never overlap it (MapLibre keeps them only while the parent has no
+   data). `ids` are {z, x, y, wrap}; returns the mercator boxes of the tiles in `ids` finer than
+   `t` and inside it, the holes to cut from t's marks (almost always none). */
+function finerInside(ids, t) {
+  const out = [];
+  for (const u of ids) {
+    if (u.z <= t.z || u.wrap !== t.wrap) continue;
+    const d = u.z - t.z;
+    if ((u.x >> d) !== t.x || (u.y >> d) !== t.y) continue;
+    const s = Math.pow(2, -u.z);
+    out.push([u.wrap + u.x * s, u.y * s, u.wrap + (u.x + 1) * s, (u.y + 1) * s]);
+  }
+  return out;
+}
+const inHoles = (holes, x, y) => holes.some(h => x >= h[0] && x < h[2] && y >= h[1] && y < h[3]);
+/* the source's renderable tiles (see STAND-INS), one per canonical tile: overzoomed copies and
+   world copies of one tile hold the same marks */
+function renderableTiles(byWrap) {
+  const sc = map.style && map.style.sourceCaches && map.style.sourceCaches.ld;
+  const tiles = [], seen = new Set();
+  if (!sc) return tiles;
+  for (const id of sc.getRenderableIds()) {
+    const t = sc.getTileByID(id);
+    if (!t || !t.latestFeatureIndex || !t.latestFeatureIndex.rawTileData) continue;
+    const k = t.tileID.canonical.key + (byWrap ? '/' + t.tileID.wrap : '');
+    if (seen.has(k)) continue;
+    seen.add(k); tiles.push(t);
+  }
+  return tiles;
+}
+
 function rebuildPies() {
   pieDirty = false;
+  clearTimeout(pieTimer); pieTimer = null;
   if (drawAs !== 'pies') { PIES = []; pieLayer.upload(); return; }
   const bit = STEP_BIT[layerName()];
-  const feats = map.querySourceFeatures('ld', { sourceLayer: 'marks' }).filter(f => f.properties.l & bit);
-  const want = Math.min(ARCHIVE_MAXZ, Math.max(0, Math.floor(map.getZoom())));
-  // during loading two zooms can be present at once; draw only the one nearest the view's
-  let bestZ = null;
-  for (const f of feats) {
-    const z = f.properties.z;
-    if (bestZ === null || Math.abs(z - want) < Math.abs(bestZ - want)) bestZ = z;
-  }
+  // per tile rather than map.querySourceFeatures, to know which tile each mark came from: a
+  // tile's buffer (the neighbours' marks repeated) is left out, and so is a stand-in parent's
+  // ground that a loaded child already covers (STAND-INS). Two zooms can then be on screen at
+  // once, so each zoom keeps its own cells.
+  const tiles = renderableTiles(false);
+  const ids = tiles.map(t => ({ z: t.tileID.canonical.z, x: t.tileID.canonical.x, y: t.tileID.canonical.y, wrap: 0 }));
   // numeric cell keys (cx * N + cy, then the country), not strings: this loop runs over every
-  // loaded feature each time the map stops, and string keys were most of its 245 ms
-  const cells = new Map(), ccIdx = {};
-  const N = Math.pow(2, (bestZ || 0) + CELL_BITS + detail);
-  for (const f of feats) {
-    const pr = f.properties;
-    if (pr.z !== bestZ || (cc !== 'all' && pr.c !== cc)) continue;
-    const [lon, lat] = f.geometry.coordinates;
-    const wx = (lon + 180) / 360, wy = mercY(lat);
-    const ci = ccIdx[pr.c] ?? (ccIdx[pr.c] = Object.keys(ccIdx).length);
-    const key = (Math.floor(wx * N + 1e-7) * N + Math.floor(wy * N + 1e-7)) * 8 + ci;
-    let cell = cells.get(key);
-    if (!cell) cells.set(key, cell = { x: 0, y: 0, w: 0, t: pr.t, z: pr.z, parts: [] });
-    // the same mark can arrive twice, from a neighbouring tile's buffer
-    if (cell.parts.some(q => q.n === pr.n)) continue;
-    cell.x += wx * pr.p; cell.y += wy * pr.p; cell.w += pr.p;
-    cell.parts.push({ n: pr.n, p: pr.p });
-  }
+  // loaded feature each time the map stops, and string keys were most of its 245 ms. The
+  // country takes 8 bits (it had 3, and a ninth country on screen merged into the next cell's).
+  const cellsByZ = new Map(), ccIdx = {};
+  let nCc = 0;
+  const feats = [];
+  tiles.forEach((tile, i) => {
+    const id = ids[i], T = Math.pow(2, id.z), holes = finerInside(ids, id);
+    feats.length = 0;
+    tile.querySourceFeatures(feats, { sourceLayer: 'marks' });
+    for (const f of feats) {
+      const pr = f.properties;
+      if (!(pr.l & bit) || (cc !== 'all' && pr.c !== cc)) continue;
+      const g = f.geometry, pts = g.type === 'Point' ? [g.coordinates] : g.coordinates;
+      let wx = null, wy;
+      for (const [lon, lat] of pts) {          // the tile's own copy of the mark, not its buffer's
+        const x = (lon + 180) / 360, y = mercY(lat), fx = x * T - id.x, fy = y * T - id.y;
+        if (fx >= -1e-9 && fx < 1 - 1e-9 && fy >= -1e-9 && fy < 1 - 1e-9) { wx = x; wy = y; break; }
+      }
+      if (wx === null || (holes.length && inHoles(holes, wx, wy))) continue;
+      let cells = cellsByZ.get(pr.z);
+      if (!cells) cellsByZ.set(pr.z, cells = new Map());
+      const N = Math.pow(2, pr.z + CELL_BITS + detail);
+      const ci = ccIdx[pr.c] ?? (ccIdx[pr.c] = nCc++);
+      const key = (Math.floor(wx * N + 1e-7) * N + Math.floor(wy * N + 1e-7)) * 256 + ci;
+      let cell = cells.get(key);
+      if (!cell) cells.set(key, cell = { x: 0, y: 0, w: 0, t: pr.t, z: pr.z, parts: [] });
+      // one mark per language and cell; kept as a guard
+      if (cell.parts.some(q => q.n === pr.n)) continue;
+      cell.x += wx * pr.p; cell.y += wy * pr.p; cell.w += pr.p;
+      cell.parts.push({ n: pr.n, p: pr.p });
+    }
+  });
   const r0 = r0Of(), cellPx = cellPxOf();
   PIES = [];
-  for (const c of cells.values()) {
+  for (const cells of cellsByZ.values()) for (const c of cells.values()) {
     c.x /= c.w; c.y /= c.w;
     c.r0 = Math.min(r0 * Math.sqrt(c.t / 1000), capFrac() * cellPx * Math.pow(2, -c.z));
     PIES.push(c);
@@ -1468,6 +1525,8 @@ function pieWedges(parts) {
    one pie at z2 got its ring); they were invisible because at world zoom such a mark's ink is
    near or under 1/1000 of RING.ink, so k is about 0 and the ring was a 2 px circle at 4.5-9%
    opacity (Kawesqar's 656 people: k 0.10, 8.7%). Now 9-16%.
+   FLOOR RAISED 60% (Anita, 2026-10-06: still hard to see): 0.2 -> 0.32 of RING.alpha, so the
+   faintest ring is about 14% instead of 9%; the strongest is unchanged.
    Without a float render target (EXT_color_buffer_float) it falls back to the per-mark test. */
 const RING = { ink: 2.5, total: 50, bin: 12, gap: 3, min: 6, minLo: 2, width: 0.8, alpha: 0.45 };
 const RING_K = x => `clamp(log(max(${x}, 1e-6) * 1000.0) / log(1000.0), 0.0, 1.0)`;
@@ -1485,7 +1544,7 @@ const RING_GLSL = `
       }`;
 const RING_FRAG = `
         if (u_mode > 1.5) {                      // a ring of radius v_R px, fainter for fewer people
-          float a = u_ralpha * mix(0.2, 1.0, ${RING_K('v_ink')})
+          float a = u_ralpha * mix(0.32, 1.0, ${RING_K('v_ink')})
                   * clamp(u_rw * 0.5 - abs(length(v_ex) - v_R) + 0.5, 0.0, 1.0);
           if (a <= 0.0) discard;
           frag = vec4(v_col * a, a); return;
@@ -1797,7 +1856,8 @@ function pieAt(point) {
 
    WHICH MARKS. Each frame the layer asks the source for the tiles MapLibre would draw right now
    (the renderable set: loaded tiles of the current zoom, plus the parents or children standing
-   in for any still loading). When that set changes, the buffer is rebuilt from it: so a tile's
+   in for any still loading; a stand-in parent's marks under a loaded child are left out, see
+   STAND-INS). When that set changes, the buffer is rebuilt from it: so a tile's
    marks appear as soon as it loads, also mid-pan, and leave when MapLibre stops drawing the tile
    (a zoom past it, aggregation, falling out of view). Rebuilds are at most one per DOT_GAP ms,
    except that a tile covering ground the buffer has nothing for is drawn at once; in between
@@ -1958,6 +2018,17 @@ function sortMarks(e, r0, cap, qKey) {
     P2[j] = e.P[i];
   }
   e.a = a2; e.P = P2; e.q = q; e.qKey = qKey;
+}
+
+/* A sorted tile's marks without those inside `holes` (finerInside's boxes), still sorted. */
+function withoutHoles(e, holes) {
+  const S = DOT_STRIDE, a = new Float32Array(e.n * S), P = new Float32Array(e.n), q = new Uint16Array(e.n);
+  let m = 0;
+  for (let i = 0, o = 0; i < e.n; i++, o += S) {
+    if (inHoles(holes, e.a[o] + e.a[o + 2], e.a[o + 1] + e.a[o + 3])) continue;
+    a.set(e.a.subarray(o, o + S), m * S); P[m] = e.P[i]; q[m] = e.q[i]; m++;
+  }
+  return { a: a.subarray(0, m * S), P: P.subarray(0, m), q: q.subarray(0, m), n: m };
 }
 
 const dotLayer = {
@@ -2149,10 +2220,18 @@ const dotLayer = {
     const parts = w.tiles.map(t => this.decode(t, lname));
     if (this.palDirty) this.palette();
     const r0 = r0Of(), cap = capFrac() * cellPxOf(), qKey = r0 + '/' + cap;
+    for (const e of parts) if (e.qKey !== qKey) sortMarks(e, r0, cap, qKey);
+    // a stand-in parent loses the ground its loaded children cover (STAND-INS), for this build
+    // only: the cached entry stays whole
+    const ids = w.tiles.map(t => ({ z: t.tileID.canonical.z, x: t.tileID.canonical.x,
+                                    y: t.tileID.canonical.y, wrap: t.tileID.wrap }));
+    ids.forEach((id, k) => {
+      const holes = finerInside(ids, id);
+      if (holes.length) parts[k] = withoutHoles(parts[k], holes);
+    });
     const hist = new Uint32Array(65537);
     let N = 0;
     for (const e of parts) {
-      if (e.qKey !== qKey) sortMarks(e, r0, cap, qKey);
       for (let i = 0; i < e.n; i++) hist[e.q[i] + 1]++;
       N += e.n;
     }
@@ -2264,6 +2343,7 @@ function dotAt(point) {
 }
 
 let pieTimer = null;
+const PIE_GAP = 150;                       // ms between pie rebuilds while tiles keep arriving
 function schedulePies() {
   if (drawAs !== 'pies') return;
   clearTimeout(pieTimer);
@@ -2352,13 +2432,20 @@ Promise.all([
   setCountry('all');
   shapesP.then(setShapes);
 
-  // the pie list follows the tiles, and is rebuilt only when the map has stopped
+  // the pie list follows the tiles, and is rebuilt only when the map has stopped: then, and as
+  // each tile arrives after it (a stand-in giving way to the real tile, see STAND-INS)
   map.on('moveend', schedulePies);
   // Auto looks again when the camera stops and when the tiles for where it stopped have loaded
   map.on('moveend', considerCamera);
   map.on('idle', considerCamera);
   map.on('idle', () => { if (drawAs === 'pies' && pieDirty) rebuildPies(); });
-  map.on('sourcedata', e => { if (e.sourceId === 'ld' && e.tile) pieDirty = true; });
+  map.on('sourcedata', e => {
+    if (e.sourceId !== 'ld' || !e.tile) return;
+    pieDirty = true;
+    // at most one rebuild per PIE_GAP while tiles keep arriving; the camera's own moveend
+    // rebuilds once it stops
+    if (drawAs === 'pies' && !pieTimer && !map.isMoving()) pieTimer = setTimeout(rebuildPies, PIE_GAP);
+  });
 
   const tip = document.getElementById('tip');
   /* Beside the point, below right; flipped to the left or above where it would run off the
