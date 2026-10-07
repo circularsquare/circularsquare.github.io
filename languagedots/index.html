@@ -91,7 +91,69 @@ sitemap: false
                font-size: 11px; line-height: 1.15; }
     .row .bar { height: 1px; display: flex; justify-content: flex-end; }
     .row .bar i { display: block; height: 100%; flex: none; }
+    .row .pick { cursor: pointer; }
+    .row .pick:hover { box-shadow: 0 0 0 2px #777; }
 
+    /* The swatch editor, religiondots' and ancestrydots' (Anita, 2026-10-07: "it should look
+       the same as in those projects"). Fixed, since openPicker places it from viewport
+       coordinates; the sat and lit tracks are repainted from the current hue on every move. */
+    #swatch-pop {
+      position: fixed; z-index: 1200; width: 168px;
+      background: rgba(20,20,20,.94); border: 1px solid #3a3a3a; border-radius: 8px;
+      padding: 10px; font-size: 11px; color: #bbb;
+      box-shadow: 0 4px 16px rgba(0,0,0,.55);
+    }
+    #swatch-pop[hidden] { display: none; }
+    #swatch-pop .sp-name {
+      color: #fff; margin-bottom: 7px; max-width: 100%;
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    #cp-preview-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+    #cp-preview { width: 24px; height: 24px; border-radius: 50%; flex-shrink: 0; }
+    #cp-hex { font-size: 11px; color: #888; font-family: ui-monospace, Menlo, monospace; }
+    #cp-sliders input[type=range] {
+      width: 100%; height: 10px; -webkit-appearance: none; appearance: none;
+      border-radius: 5px; outline: none; cursor: pointer; margin: 3px 0;
+    }
+    #cp-sliders input[type=range]::-webkit-slider-thumb {
+      -webkit-appearance: none; width: 12px; height: 12px; border-radius: 50%;
+      background: #fff; border: 1px solid #555; cursor: pointer;
+    }
+    #cp-sliders input[type=range]::-moz-range-thumb {
+      width: 12px; height: 12px; border-radius: 50%;
+      background: #fff; border: 1px solid #555; cursor: pointer;
+    }
+    #cp-hue { background: linear-gradient(to right,#f00,#ff0,#0f0,#0ff,#00f,#f0f,#f00); }
+    #cp-palette { display: grid; grid-template-columns: repeat(8, 1fr); gap: 3px;
+                  margin-top: 8px; }
+    .cp-swatch { width: 14px; height: 14px; border-radius: 3px; cursor: pointer;
+                 border: 1px solid transparent; }
+    .cp-swatch:hover { border-color: #fff; }
+    #swatch-pop .sp-acts {
+      display: flex; gap: 10px; margin-top: 9px; padding-top: 7px;
+      border-top: 1px solid #2e2e2e;
+    }
+    #swatch-pop a { color: #89b4fa; cursor: pointer; }
+    #swatch-pop a.off { color: #666; cursor: default; }
+    #swatch-pop .sp-done { margin-left: auto; color: #888; }
+
+    /* the language search under the legend (Anita, 2026-10-07); its matches open upward */
+    #lsearch { position: relative; padding: 5px 10px; border-top: 1px solid #2a2a2a; flex: none; }
+    #ls-in { width: 100%; background: #16191c; color: #e2e8ee; font-size: 12px; border: 1px solid #3d4750;
+             border-radius: 4px; padding: 3px 6px 4px; outline: none; }
+    #ls-in::placeholder { color: #6f7a84; }
+    #ls-in:focus { border-color: #7d9cb8; }
+    #ls-res { position: absolute; left: 10px; right: 10px; bottom: 100%; z-index: 5; max-height: 260px;
+              overflow-y: auto; background: rgba(20,20,20,.97); border: 1px solid #3a3a3a; border-radius: 5px;
+              padding: 3px 0; font-size: 12px; }
+    #ls-res[hidden] { display: none; }
+    #ls-res .lr { display: flex; align-items: center; gap: 6px; padding: 2px 8px; cursor: pointer; }
+    #ls-res .lr.on, #ls-res .lr:hover { background: #2f3b47; }
+    #ls-res .lr .dot { width: 9px; height: 9px; border-radius: 50%; flex: none; }
+    #ls-res .lr .lb { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #ddd; }
+    #ls-res .lr .up { color: #777; }
+    #ls-res .lr .ct { flex: none; color: #888; font-variant-numeric: tabular-nums; font-size: 11px; }
+    #ls-res .none { padding: 2px 8px; color: #888; }
     #legend-note { padding: 4px 10px 6px; border-top: 1px solid #2a2a2a; color: #999; font-size: 12px; }
     #legend-note .sec-b { padding: 3px 0 2px; }
     .ctl { display: flex; align-items: center; gap: 8px; }
@@ -214,15 +276,29 @@ sitemap: false
       #panel.min #head-scope { display: block; flex: 1; min-width: 0; color: #fff; font-size: 12px; }
       #head-scope-text { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
+      /* shut, the total sits against the bar, not against the open button (Anita, 2026-10-07) */
+      #head-mixtotal { width: auto; text-align: left; margin-right: 10px; }
+
       .row { line-height: 1.3; }
-      .seg { padding: 6px 10px 7px; }
+      /* Settings: labels up and controls down, to meet in the middle (Anita, 2026-10-07: the
+         country box and slider thumbs read too big beside 12px labels) */
+      #legend-note { font-size: 14px; }
+      /* the whole sheet scrolls, so the search sticks to its bottom edge until the rows run out;
+         16px for iOS, as #cc-pick */
+      #lsearch { position: sticky; bottom: 0; z-index: 2; background: #151515; }
+      #ls-in { font-size: 16px; padding: 3px 6px; }
+      #ls-res { font-size: 14px; max-height: 30dvh; }
+      #ls-res .lr { padding: 5px 8px; }
+      .seg { padding: 5px 9px 6px; }
       .ctl + .ctl { margin-top: 8px; }
-      /* 16px: iOS zooms the page into any focused field set smaller */
-      #cc-pick { font-size: 16px; padding: 4px 6px; max-width: 200px; }
-      .ctl.slide input[type=range] { height: 4px; }
-      .ctl.slide input[type=range]::-webkit-slider-thumb { width: 20px; height: 20px; }
-      .ctl.slide input[type=range]::-moz-range-thumb { width: 20px; height: 20px; }
-      .ctl.slide { min-height: 26px; }
+      /* 16px: iOS zooms the page into any focused field set smaller; the padding is what shrinks */
+      #cc-pick { font-size: 16px; padding: 2px 4px; max-width: 190px; }
+      .ctl.slide .cl { width: 92px; }
+      .ctl.slide .val { font-size: 13px; }
+      .ctl.slide input[type=range] { height: 3px; }
+      .ctl.slide input[type=range]::-webkit-slider-thumb { width: 15px; height: 15px; }
+      .ctl.slide input[type=range]::-moz-range-thumb { width: 15px; height: 15px; }
+      .ctl.slide { min-height: 24px; }
 
       /* the sheet fills the bottom, so the about button and panel move to the top */
       #info-btn { bottom: auto; top: 8px; left: 8px; width: 28px; height: 28px; }
@@ -273,6 +349,7 @@ sitemap: false
   </div>
   <div id="meta"></div>
   <div id="tree"></div>
+  <div id="lsearch"><input id="ls-in" type="search" placeholder="Find a language" autocomplete="off" spellcheck="false"><div id="ls-res" hidden></div></div>
   <div id="legend-note" class="sec" data-sec="settings">
     <div class="sec-h"><span class="tw"></span>Settings</div>
     <div class="sec-b">
@@ -283,7 +360,7 @@ sitemap: false
     <div class="ctl"><span class="cl">Draw as</span><div class="segs" id="draw-segs">
       <span class="seg" data-d="dots">dots</span><span class="seg on" data-d="pies">pies</span>
     </div></div>
-    <div class="ctl slide"><span class="cl">Size</span><input type="range" id="size" min="-2" max="3.25" step="0.25" value="0"><span class="val" id="size-val">1×</span></div>
+    <div class="ctl slide"><span class="cl">Size</span><input type="range" id="size" min="0" max="11" step="1" value="4"><span class="val" id="size-val">1×</span></div>
     <div class="ctl slide" title="How large one patch of map may draw, however many people it holds. Higher lets dense places spread into their neighbours; lower leaves gaps between them."><span class="cl">Cap</span><input type="range" id="cap" min="0" max="6" step="1" value="6"><span class="val" id="cap-val">none</span></div>
     <div class="ctl slide"><span class="cl">Aggregation</span><input type="range" id="agg" min="0" max="3" step="1" value="1"><span class="val" id="agg-val">low</span></div>
     </div>
@@ -295,18 +372,30 @@ sitemap: false
     <span id="info-panel-title">About</span>
     <button id="info-panel-close" title="Close">&#10005;</button>
   </div>
-  <!-- Anita's text, 2026-10-06. The credits paragraph keeps every attribution the data needs:
+  <!-- Anita's text, 2026-10-06, revised 2026-10-07. The credits paragraph keeps every attribution the data needs:
        the basemap's (OpenFreeMap, OpenMapTiles, OpenStreetMap), and the CC BY sources shared
        with religiondots (Kontur, WorldPop, OCHA COD, geoBoundaries) plus Glottolog. -->
   <div id="info-body">
-  <p>The area of each bubble is proportional to the number of people.</p>
+  <p>This map aims to show language spoken at home. In countries where that's not published, the map shows "mother tongue", "native language", or language counts are estimated based off migration and ethnicity data. The area of each bubble is proportional to the number of people. In cases where people list multiple languages, they are split between the languages so as to not double count.</p>
   <p>Zoom into a country to see just that country. Zoom out to return to viewing all countries.</p>
-  <p>Click on a language group in the legend to filter to just show those languages.</p>
-  <p>If you see a language on the map and want to find it in the legend, you can hover or tap the map bubble to open the tooltip, and then click or tap the language.</p>
+  <p>Click on a language group in the legend to filter to just show those languages. If you see a language on the map and want to find it in the legend, you can hover or tap the map bubble to open the tooltip, and then click or tap the language.</p>
   <p>Almost all data comes from national censuses. To see information about the data used, zoom into the country and expand the "Data" section near the top of the legend. Grey hatching marks places that have no data.</p>
   <p>Base map: <a href="https://openfreemap.org/" target="_blank" rel="noopener">OpenFreeMap</a>, with <a href="https://openmaptiles.org/" target="_blank" rel="noopener">OpenMapTiles</a> and <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors' data.</p>
   <p class="credits">Population grid: <a href="https://data.humdata.org/organization/kontur" target="_blank" rel="noopener">Kontur Population</a> (CC BY 4.0), and <a href="https://www.worldpop.org/" target="_blank" rel="noopener">WorldPop</a> (CC BY 4.0) for Eswatini. Boundaries: the OCHA Common Operational Datasets on the <a href="https://data.humdata.org/" target="_blank" rel="noopener">Humanitarian Data Exchange</a> and <a href="https://www.geoboundaries.org/" target="_blank" rel="noopener">geoBoundaries</a> (both CC BY 4.0), national agencies' own units where they publish them, and Natural Earth coastlines. Language groups checked against <a href="https://glottolog.org/" target="_blank" rel="noopener">Glottolog</a> (CC BY 4.0). Each country's census is cited in its Data section. Drawn with <a href="https://maplibre.org/" target="_blank" rel="noopener">MapLibre GL</a>.</p>
   <p>See more maps at <a href="https://anita.garden/projects" target="_blank" rel="noopener">anita.garden/projects</a>!</p>
+  </div>
+</div>
+<div id="swatch-pop" hidden>
+  <div class="sp-name"></div>
+  <div id="cp-preview-row"><div id="cp-preview"></div><span id="cp-hex"></span></div>
+  <div id="cp-sliders">
+    <input type="range" id="cp-hue" min="0" max="360" value="0">
+    <input type="range" id="cp-sat" min="0" max="100" value="70">
+    <input type="range" id="cp-lit" min="0" max="100" value="50">
+  </div>
+  <div id="cp-palette"></div>
+  <div class="sp-acts">
+    <a id="sp-reset">reset</a><a id="sp-close" class="sp-done">done</a>
   </div>
 </div>
 <!-- The about panel opens by default on desktop only; on a phone (the 700px breakpoint, PHONE
@@ -667,10 +756,14 @@ function buildPanel() {
     // word (Anita, 2026-10-06: no "language not named")
     const lab0 = NODES[r.id].label;
     const label = r.own && !/^(other|unclassified|no established)\b/i.test(lab0) ? `Other ${lab0}` : lab0;
+    // the node whose colour the dot shows, which its swatch editor changes: in Family or Branch
+    // colouring a language row shows its family's or branch's colour
+    const swId = mode === 'language' || (r.grp && !r.own) ? r.id : (mode === 'family' ? familyOf : branchOf)(r.id);
+    const pick = `class="dot pick" data-swatch="${swId}"`;
     const dot = r.famHalf
-      ? `<span class="dot" style="background:linear-gradient(90deg,${col} 50%,${NODES[r.famHalf].color_own} 50%)"` +
-        ` title="Pale half: in pies, the smaller ${NODES[r.famHalf].label} languages drawn together in one slice"></span>`
-      : `<span class="dot" style="background:${col}"></span>`;
+      ? `<span ${pick} style="background:linear-gradient(90deg,${col} 50%,${NODES[r.famHalf].color_own} 50%)"` +
+        ` title="Pale half: in pies, the smaller ${NODES[r.famHalf].label} languages drawn together in one slice. Click to change the colour"></span>`
+      : `<span ${pick} style="background:${col}" title="Click to change the colour"></span>`;
     row.innerHTML = `<span class="tw">${r.grp ? (open.has(r.id) ? '▾' : '▸') : ''}</span>` + dot +
       `<span class="lb" title="${label}">${label}</span>` +
       `<span class="ct" title="${v.toLocaleString()} people · ${pct(s)} of ${where}"><span>${fmt(v)}</span>` +
@@ -681,6 +774,9 @@ function buildPanel() {
       buildPanel();
     };
     if (!r.own) row.onclick = () => select(selected === r.id ? null : r.id);
+    // a control inside a control: opening the editor must not also change the selection
+    const sw = row.querySelector('.pick');
+    sw.onclick = ev => { ev.stopPropagation(); openPicker(sw.dataset.swatch, sw); };
     tree.appendChild(row);
   }
 }
@@ -792,6 +888,66 @@ function reveal(id, own) {
   setTimeout(() => row.classList.remove('flash'), 1500);
 }
 
+/* THE LANGUAGE SEARCH (Anita, 2026-10-07: "a little language search bar at the bottom where we
+   can type in a language to find it"). Matches any node with people in the current scope (the
+   chosen country, or all), by its label, ignoring case and accents: labels starting with the text
+   first, then a word inside starting with it, then anywhere; ties by people. Picking one reveals
+   its legend row, as a language clicked in a pinned tooltip does; selecting it is the row's click. */
+const foldText = s => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+let lsHits = [], lsOn = 0;
+function lsFind(q) {
+  const f = foldText(q.trim());
+  if (!f) return [];
+  const sum = subtreeSums(scopeTally()), out = [];
+  for (const id of Object.keys(sum)) {
+    const n = NODES[id];
+    if (!n || !sum[id]) continue;
+    const l = foldText(n.label), i = l.indexOf(f);
+    if (i < 0) continue;
+    out.push({ id, v: sum[id], rank: i === 0 ? 0 : /[\s(\-/]/.test(l[i - 1]) ? 1 : 2 });
+  }
+  return out.sort((a, b) => a.rank - b.rank || b.v - a.v).slice(0, 12);
+}
+function lsShow() {
+  const res = document.getElementById('ls-res'), q = document.getElementById('ls-in').value;
+  lsHits = lsFind(q); lsOn = 0;
+  if (!q.trim()) { res.hidden = true; return; }
+  const where = cc === 'all' ? 'any country' : COUNTS.countries[cc].name;
+  res.innerHTML = lsHits.length ? lsHits.map((h, i) => {
+    const p = parentOf(h.id), up = p && NODES[p] ? ` <span class="up">${esc(NODES[p].label)}</span>` : '';
+    return `<div class="lr${i === lsOn ? ' on' : ''}" data-i="${i}"><span class="dot" style="background:${colourFor(h.id)}"></span>` +
+      `<span class="lb">${esc(NODES[h.id].label)}${up}</span><span class="ct">${fmt(h.v)}</span></div>`;
+  }).join('') : `<div class="none">No language matching that in ${esc(where)}</div>`;
+  res.hidden = false;
+}
+function lsPick(i) {
+  const h = lsHits[i];
+  if (!h) return;
+  document.getElementById('ls-res').hidden = true;
+  document.getElementById('ls-in').value = '';
+  document.getElementById('ls-in').blur();
+  reveal(h.id, false);
+}
+function wireSearch() {
+  const inp = document.getElementById('ls-in'), res = document.getElementById('ls-res');
+  inp.oninput = lsShow;
+  inp.onfocus = () => { if (inp.value.trim()) lsShow(); };
+  inp.onkeydown = e => {
+    if (e.key === 'Enter') { e.preventDefault(); lsPick(lsOn); }
+    else if (e.key === 'Escape') { inp.value = ''; res.hidden = true; inp.blur(); e.stopPropagation(); }
+    else if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+      e.preventDefault();
+      if (!lsHits.length) return;
+      lsOn = (lsOn + (e.key === 'ArrowDown' ? 1 : lsHits.length - 1)) % lsHits.length;
+      res.querySelectorAll('.lr').forEach((r, i) => r.classList.toggle('on', i === lsOn));
+      res.querySelector('.lr.on').scrollIntoView({ block: 'nearest' });
+    }
+  };
+  // mousedown, not click: the input's blur would otherwise come first
+  res.onmousedown = e => { const r = e.target.closest('.lr'); if (r) { e.preventDefault(); lsPick(+r.dataset.i); } };
+  inp.onblur = () => setTimeout(() => { res.hidden = true; }, 150);
+}
+
 /* A pinned tooltip: set by clicking a mark, cleared by clicking empty map, Esc, or a change of
    country or drawing. It follows its spot on the map as the map moves. */
 let frozen = null;                         // the lng/lat it is pinned to
@@ -815,6 +971,191 @@ function applyColours(rebuild = true) {
   dotLayer.palette();
   if (rebuild) schedulePies();
   map.triggerRepaint();
+}
+
+/* ---- THE SWATCH EDITOR (Anita, 2026-10-07), religiondots' §6.11 and ancestrydots' picker with
+   the same look: click a legend row's dot for hue, saturation and lightness sliders and a preset
+   grid. Changes hold in every country and colouring, and in this browser only (localStorage). A
+   colour worth keeping goes into the node's tree fragment: run copyOverrides() in the console for
+   paste-ready `id | label | L C h` lines, then taxonomy/build.py.
+   A group's washed "language not named" colour follows its new colour, washed as build.py washes
+   (L + 0.04, chroma x 0.35). Dragging repaints the palette textures once a frame; the legend is
+   rebuilt and the colour saved when the pointer comes up. There is no "hide": this map has no
+   hiding, only the selection. */
+const UC_KEY = 'ld.colours';
+let USER_COLOR = {};                       // node id -> '#rrggbb', wins over languages.json
+const DEFAULT_COL = {};                    // node id -> [color, color_own] as languages.json has them
+let pickNode = null;
+
+function loadUserColours() {
+  try { const o = JSON.parse(localStorage.getItem(UC_KEY) || '{}'); if (o && typeof o === 'object') USER_COLOR = o; }
+  catch (e) { /* private window, blocked storage: the defaults stand */ }
+}
+function saveUserColours() {
+  try { localStorage.setItem(UC_KEY, JSON.stringify(USER_COLOR)); } catch (e) {}
+}
+function setNodeColour(id) {
+  const n = NODES[id], d = DEFAULT_COL[id];
+  if (!n || !d) return;
+  const u = USER_COLOR[id];
+  n.color = u || d[0];
+  if (d[1]) n.color_own = u ? washHex(u) : d[1];
+}
+
+// sRGB hex <-> OKLCH, as taxonomy/build.py converts (out-of-gamut channels clipped)
+const lin = c => c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+const gam = c => c <= 0.0031308 ? 12.92 * c : 1.055 * c ** (1 / 2.4) - 0.055;
+function hexToOklch(hex) {
+  const [r, g, b] = [1, 3, 5].map(i => lin(parseInt(hex.slice(i, i + 2), 16) / 255));
+  const l = Math.cbrt(0.4122214708 * r + 0.5363325363 * g + 0.0514459929 * b);
+  const m = Math.cbrt(0.2119034982 * r + 0.6806995451 * g + 0.1073969566 * b);
+  const s = Math.cbrt(0.0883024619 * r + 0.2817188376 * g + 0.6299787005 * b);
+  const L = 0.2104542553 * l + 0.7936177850 * m - 0.0040720453 * s;
+  const A = 1.9779984951 * l - 2.4285922050 * m + 0.4505937099 * s;
+  const B = 0.0259040371 * l + 0.7827717662 * m - 0.8086757660 * s;
+  return [L, Math.hypot(A, B), ((Math.atan2(B, A) * 180 / Math.PI) + 360) % 360];
+}
+function oklchToHex(L, C, h) {
+  const A = C * Math.cos(h * Math.PI / 180), B = C * Math.sin(h * Math.PI / 180);
+  const l = (L + 0.3963377774 * A + 0.2158037573 * B) ** 3;
+  const m = (L - 0.1055613458 * A - 0.0638541728 * B) ** 3;
+  const s = (L - 0.0894841775 * A - 1.2914855480 * B) ** 3;
+  const rgb = [4.0767416621 * l - 3.3077115913 * m + 0.2309699292 * s,
+               -1.2684380046 * l + 2.6097574011 * m - 0.3413193965 * s,
+               -0.0041960863 * l - 0.7034186147 * m + 1.7076147010 * s];
+  return '#' + rgb.map(c => Math.round(255 * Math.min(1, Math.max(0, gam(Math.max(0, c)))))
+    .toString(16).padStart(2, '0')).join('');
+}
+function washHex(hex) {
+  const [L, C, h] = hexToOklch(hex);
+  return oklchToHex(Math.min(0.9, L + 0.04), C * 0.35, h);
+}
+/** (38, 83, 56) -> `#eca832`. */
+function hslHex(h, s, l) {
+  s /= 100; l /= 100;
+  const a = s * Math.min(l, 1 - l);
+  const ch = n => {
+    const k = (n + h / 30) % 12;
+    const v = l - a * Math.max(-1, Math.min(k - 3, 9 - k, 1));
+    return Math.round(v * 255).toString(16).padStart(2, '0');
+  };
+  return '#' + ch(0) + ch(8) + ch(4);
+}
+/** `#eca832` -> `[38, 83, 56]`. */
+function hexToHsl(hex) {
+  const m = /^#?([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i.exec(hex || '');
+  if (!m) return [0, 0, 50];
+  const [r, g, b] = m.slice(1).map(v => parseInt(v, 16) / 255);
+  const mx = Math.max(r, g, b), mn = Math.min(r, g, b), d = mx - mn;
+  const l = (mx + mn) / 2;
+  const s = d === 0 ? 0 : d / (1 - Math.abs(2 * l - 1));
+  let h = 0;
+  if (d) h = mx === r ? ((g - b) / d + (g < b ? 6 : 0))
+    : mx === g ? (b - r) / d + 2 : (r - g) / d + 4;
+  return [Math.round(h * 60), Math.round(s * 100), Math.round(l * 100)];
+}
+
+// the preset grid, ancestrydots' and religiondots': twelve hues and four neutrals
+const CP_PALETTE = [
+  [0, 70, 50], [20, 70, 50], [30, 70, 50], [50, 70, 50],
+  [75, 70, 50], [140, 70, 50], [175, 60, 45], [210, 70, 50],
+  [260, 60, 55], [280, 60, 50], [310, 70, 50], [335, 70, 50],
+  [0, 0, 50], [210, 15, 50], [25, 40, 35], [340, 60, 70],
+];
+function cpRefresh() {
+  const h = +document.getElementById('cp-hue').value;
+  const s = +document.getElementById('cp-sat').value;
+  const l = +document.getElementById('cp-lit').value;
+  const hex = hslHex(h, s, l);
+  document.getElementById('cp-preview').style.background = hex;
+  document.getElementById('cp-hex').textContent = hex;
+  // each track shows what IT would do, from where the other two currently are
+  document.getElementById('cp-sat').style.background =
+    `linear-gradient(to right, hsl(${h},0%,${l}%), hsl(${h},100%,${l}%))`;
+  document.getElementById('cp-lit').style.background =
+    `linear-gradient(to right, hsl(${h},${s}%,0%), hsl(${h},${s}%,50%), hsl(${h},${s}%,100%))`;
+  return hex;
+}
+function cpSyncActions() {
+  document.getElementById('sp-reset').className = pickNode && USER_COLOR[pickNode] ? '' : 'off';
+}
+let cpFrame = 0;
+function cpApply() {
+  if (!pickNode) return;
+  const hex = cpRefresh();
+  USER_COLOR[pickNode] = hex;
+  setNodeColour(pickNode);
+  cpSyncActions();
+  // the rows' own swatches follow the slider at once; the map, once a frame
+  document.querySelectorAll(`#tree .pick[data-swatch="${pickNode}"]`).forEach(d => { d.style.background = hex; });
+  if (!cpFrame) cpFrame = requestAnimationFrame(() => { cpFrame = 0; applyColours(false); });
+}
+/* pointer up, or a preset clicked: save, and rebuild what reads colours once (the legend, the
+   composition bar, the pie list) */
+function cpCommit() {
+  if (!pickNode) return;
+  saveUserColours();
+  applyColours(); buildPanel();
+}
+function openPicker(id, el) {
+  pickNode = id;
+  const pop = document.getElementById('swatch-pop');
+  pop.querySelector('.sp-name').textContent = NODES[id].label;
+  const [h, s, l] = hexToHsl(NODES[id].color);
+  document.getElementById('cp-hue').value = h;
+  document.getElementById('cp-sat').value = s;
+  document.getElementById('cp-lit').value = l;
+  cpRefresh();
+  cpSyncActions();
+  // anchored to the swatch, then pulled back inside the window
+  pop.hidden = false;
+  const r = el.getBoundingClientRect(), b = pop.getBoundingClientRect();
+  pop.style.left = Math.max(6, Math.min(r.left - 6, innerWidth - b.width - 8)) + 'px';
+  pop.style.top = Math.max(6, Math.min(r.bottom + 6, innerHeight - b.height - 8)) + 'px';
+}
+function closePicker() {
+  pickNode = null;
+  document.getElementById('swatch-pop').hidden = true;
+}
+/* For the console: the colours set here as tree-fragment lines (taxonomy/tree.d), to paste into
+   the fragment that defines each node. Copies them and returns the same text, for when the
+   clipboard is blocked. */
+function copyOverrides() {
+  const text = Object.entries(USER_COLOR).filter(([id]) => NODES[id]).map(([id, hex]) => {
+    const [L, C, h] = hexToOklch(hex);
+    return `${id} | ${NODES[id].label} | ${L.toFixed(2)} ${C.toFixed(2)} ${Math.round(h)}`;
+  }).join('\n') || '# no colours set';
+  try { navigator.clipboard.writeText(text).catch(() => {}); } catch (e) {}
+  return text;
+}
+function wirePicker() {
+  document.getElementById('cp-palette').innerHTML = CP_PALETTE.map(([h, s, l]) =>
+    `<div class="cp-swatch" data-h="${h}" data-s="${s}" data-l="${l}" style="background:hsl(${h},${s}%,${l}%)"></div>`).join('');
+  for (const which of ['cp-hue', 'cp-sat', 'cp-lit']) {
+    const el = document.getElementById(which);
+    el.oninput = cpApply;
+    el.onchange = cpCommit;
+  }
+  document.getElementById('cp-palette').onclick = e => {
+    const sw = e.target.closest('.cp-swatch');
+    if (!sw || !pickNode) return;
+    document.getElementById('cp-hue').value = sw.dataset.h;
+    document.getElementById('cp-sat').value = sw.dataset.s;
+    document.getElementById('cp-lit').value = sw.dataset.l;
+    cpApply(); cpCommit();
+  };
+  document.getElementById('sp-reset').onclick = () => {
+    if (!pickNode || !USER_COLOR[pickNode]) return;
+    delete USER_COLOR[pickNode];
+    setNodeColour(pickNode);
+    saveUserColours(); applyColours(); buildPanel();
+    closePicker();
+  };
+  document.getElementById('sp-close').onclick = closePicker;
+  // a click away or Esc closes it; its own clicks do not count as away
+  document.getElementById('swatch-pop').onclick = e => e.stopPropagation();
+  document.addEventListener('click', () => { if (pickNode) closePicker(); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && pickNode) closePicker(); });
 }
 
 const PHONE = '(max-width: 700px)';         // the stylesheet's phone breakpoint
@@ -1045,6 +1386,46 @@ function centreShares() {
   }
   return { count, hits, total: N * N };
 }
+/* THE LAND TEST (Anita, 2026-10-07: India was chosen while it held about half the land on screen
+   and Bangladesh sat in the middle; "we should only auto select if it's in the center of the
+   screen and it's like maybe over 65% of the land area visible, maybe weighted a bit to
+   prioritize the center"). A LAND_GRID x LAND_GRID grid over the view (the band beside the panel;
+   the screen above the sheet on a phone), even in Mercator, each sample weighted by a Gaussian of
+   its distance from the middle (LAND_SIGMA of the view's side), so the edges still count but the
+   middle counts most. Choosing needs AUTO_LAND_IN of the weighted land samples; keeping a country
+   does not ask it, so a chosen country is not dropped by a small pan. Memoised per camera. */
+/* Tried 2026-10-07 at 1920x965, one zoom past each country's framing (share at sigma 0.35 / 0.25 /
+   0.18): Anita's India view 0.36 / 0.42 / 0.52 (not to be chosen); Italy 0.70 / 0.80 / 0.92; Japan
+   0.74 / 0.84 / 0.94; Spain 0.38 / 0.42 / 0.49; Vietnam 0.19 / 0.22 / 0.25. 0.25 gives the
+   middle its weight without letting India's half of the screen through. Narrow countries (Chile,
+   Norway, Vietnam, Israel, Malawi) rarely pass at any zoom where their neighbour shows, and that
+   is fine (Anita: "people can just zoom in a lot if they really wanna see the narrow countries"). */
+const AUTO_LAND_IN = 0.65, LAND_GRID = 15, LAND_SIGMA = 0.25;
+let landMemo = { key: null, sh: null };
+function landShares() {
+  const b = centreBounds(), key = [b.w, b.e, b.s, b.n].join();
+  if (landMemo.key === key) return landMemo.sh;
+  const s0 = mercDeg(b.s), n0 = mercDeg(b.n), N = LAND_GRID;
+  const cand = SHAPES.filter(p => !(p.s > b.n || p.n < b.s));
+  const count = {};
+  let land = 0;
+  for (let iy = 0; iy < N; iy++) {
+    const v = (iy + 0.5) / N, lat = unmercDeg(n0 - (n0 - s0) * v);
+    for (let ix = 0; ix < N; ix++) {
+      const u = (ix + 0.5) / N, x = wrapLng(b.w + (b.e - b.w) * u);
+      const wgt = Math.exp(-((u - 0.5) ** 2 + (v - 0.5) ** 2) / (2 * LAND_SIGMA * LAND_SIGMA));
+      for (const p of cand) {
+        if (x < p.w || x > p.e || lat < p.s || lat > p.n || !inRing(p.ring, x, lat)) continue;
+        count[p.cc] = (count[p.cc] || 0) + wgt; land += wgt;
+        break;
+      }
+    }
+  }
+  landMemo = { key, sh: { count, land } };
+  return landMemo.sh;
+}
+const landShare = c => { const l = landShares(); return l.land ? (l.count[c] || 0) / l.land : 0; };
+
 // a country that already has the legend keeps it while it holds AUTO_HOLD of the whole grid
 function stillHolds(sh, c) {
   return !!(sh && c && (sh.count[c] || 0) / sh.total >= AUTO_HOLD);
@@ -1168,7 +1549,8 @@ function considerCamera() {
       if (released(at)) go('all');
     } else if (cur && stillHolds(sh, cur)) {
       if (released(cur) || viewOverlap(cur) < AUTO_OVER_OUT) go('all');
-    } else if (!tooWide() && autoMay(at) && framedIn(at) && !contested(sh, at) && hasSel(at)) {
+    } else if (!tooWide() && autoMay(at) && framedIn(at) && !contested(sh, at) && hasSel(at)
+               && landShare(at) >= AUTO_LAND_IN) {
       go(at);
     } else if (cur) {
       go('all');
@@ -1185,7 +1567,7 @@ function considerCamera() {
     for (const k in sh.count) if (autoMay(k) && (!best || sh.count[k] > sh.count[best])) best = k;
     if (best && best !== cur && sh.count[best] / sh.hits >= AUTO_SHARE && framedIn(best)
         && viewOverlap(best) >= AUTO_OVER_IN && !contested(sh, best)
-        && centreInHullOf(best, c) && hasSel(best))
+        && centreInHullOf(best, c) && hasSel(best) && landShare(best) >= AUTO_LAND_IN)
       go(best);
     return;
   }
@@ -1346,51 +1728,54 @@ function rebuildPies() {
   pieDirty = false;
   clearTimeout(pieTimer); pieTimer = null;
   if (drawAs !== 'pies') { PIES = []; pieLayer.upload(); return; }
-  const bit = STEP_BIT[layerName()];
   // per tile rather than map.querySourceFeatures, to know which tile each mark came from: a
   // tile's buffer (the neighbours' marks repeated) is left out, and so is a stand-in parent's
   // ground that a loaded child already covers (STAND-INS). Two zooms can then be on screen at
   // once, so each zoom keeps its own cells.
   const tiles = renderableTiles(false);
   const ids = tiles.map(t => ({ z: t.tileID.canonical.z, x: t.tileID.canonical.x, y: t.tileID.canonical.y, wrap: 0 }));
+  /* THE MARKS COME FROM THE DOT LAYER'S DECODE CACHE (2026-10-07), not tile.querySourceFeatures:
+     that built a GeoJSON feature for every mark of all four steps, and a rebuild took 330-450 ms
+     (1 s over one jump while tiles landed). decodeMarks reads the step's marks straight from the
+     tile's bytes, already without the tile's buffer, and keeps them, so a tile is read once
+     whichever layer asks and a rebuild only walks floats. Each mark's fields come back out of
+     its instance floats: position (hi + lo, less the tile's wrap), t from rb, z from rc, the
+     language from its palette index, the country from CC_IDX. */
+  if (!IDS.length) IDS = Object.keys(ORDER).sort((a, b) => ORDER[a] - ORDER[b]);
+  const lname = layerName(), S = DOT_STRIDE;
+  const ccSel = cc === 'all' ? -1 : (CC_IDX.has(cc) ? CC_IDX.get(cc) : -2);
   // numeric cell keys (cx * N + cy, then the country), not strings: this loop runs over every
-  // loaded feature each time the map stops, and string keys were most of its 245 ms. The
-  // country takes 8 bits (it had 3, and a ninth country on screen merged into the next cell's).
-  const cellsByZ = new Map(), ccIdx = {};
-  let nCc = 0;
-  const feats = [];
+  // loaded mark each time the map stops. The country takes 8 bits (it had 3, and a ninth country
+  // on screen merged into the next cell's).
+  const cellsByZ = new Map();
   tiles.forEach((tile, i) => {
-    const id = ids[i], T = Math.pow(2, id.z), holes = finerInside(ids, id);
-    feats.length = 0;
-    tile.querySourceFeatures(feats, { sourceLayer: 'marks' });
-    for (const f of feats) {
-      const pr = f.properties;
-      if (!(pr.l & bit) || (cc !== 'all' && pr.c !== cc)) continue;
-      const g = f.geometry, pts = g.type === 'Point' ? [g.coordinates] : g.coordinates;
-      let wx = null, wy;
-      for (const [lon, lat] of pts) {          // the tile's own copy of the mark, not its buffer's
-        const x = (lon + 180) / 360, y = mercY(lat), fx = x * T - id.x, fy = y * T - id.y;
-        if (fx >= -1e-9 && fx < 1 - 1e-9 && fy >= -1e-9 && fy < 1 - 1e-9) { wx = x; wy = y; break; }
-      }
-      if (wx === null || (holes.length && inHoles(holes, wx, wy))) continue;
-      let cells = cellsByZ.get(pr.z);
-      if (!cells) cellsByZ.set(pr.z, cells = new Map());
-      const N = Math.pow(2, pr.z + CELL_BITS + detail);
-      const ci = ccIdx[pr.c] ?? (ccIdx[pr.c] = nCc++);
+    const id = ids[i], holes = finerInside(ids, id), wrap = tile.tileID.wrap;
+    const e = dotLayer.decode(tile, lname), a = e.a, P = e.P;
+    for (let m = 0, o = 0; m < e.n; m++, o += S) {
+      const ci = a[o + 8];
+      if (ccSel !== -1 && ci !== ccSel) continue;
+      const wx = a[o] + a[o + 2] - wrap, wy = a[o + 1] + a[o + 3];
+      if (holes.length && inHoles(holes, wx, wy)) continue;
+      const z = Math.round(-Math.log2(a[o + 6])), pi = a[o + 7], p = P[m];
+      const n = pi < IDS.length ? IDS[pi] : EXTRA_IDS[pi - IDS.length];
+      let cells = cellsByZ.get(z);
+      if (!cells) cellsByZ.set(z, cells = new Map());
+      const N = Math.pow(2, z + CELL_BITS + detail);
       const key = (Math.floor(wx * N + 1e-7) * N + Math.floor(wy * N + 1e-7)) * 256 + ci;
       let cell = cells.get(key);
-      if (!cell) cells.set(key, cell = { x: 0, y: 0, w: 0, t: pr.t, z: pr.z, parts: [] });
+      if (!cell) cells.set(key, cell = { x: 0, y: 0, w: 0, t: a[o + 5] * a[o + 5] * 1000, z, parts: [] });
       // one mark per language and cell; kept as a guard
-      if (cell.parts.some(q => q.n === pr.n)) continue;
-      cell.x += wx * pr.p; cell.y += wy * pr.p; cell.w += pr.p;
-      cell.parts.push({ n: pr.n, p: pr.p });
+      if (cell.parts.some(q => q.n === n)) continue;
+      cell.x += wx * p; cell.y += wy * p; cell.w += p;
+      cell.parts.push({ n, p });
     }
   });
   const r0 = r0Of(), cellPx = cellPxOf();
   PIES = [];
   for (const cells of cellsByZ.values()) for (const c of cells.values()) {
     c.x /= c.w; c.y /= c.w;
-    c.r0 = Math.min(r0 * Math.sqrt(c.t / 1000), capFrac() * cellPx * Math.pow(2, -c.z));
+    c.h = markHash(c.x, c.y, c.z);           // the tie-break between equal pies (sortMarks)
+    c.r0 =Math.min(r0 * Math.sqrt(c.t / 1000), capFrac() * cellPx * Math.pow(2, -c.z));
     PIES.push(c);
   }
   sortPies();
@@ -1403,13 +1788,13 @@ function rebuildPies() {
    holding most of it are on top; radius breaks ties, so cells with none of it keep the usual
    order beneath. */
 function sortPies() {
-  if (!selected) { PIES.sort((a, b) => a.r0 - b.r0); return; }
+  if (!selected) { PIES.sort((a, b) => a.r0 - b.r0 || a.h - b.h); return; }
   for (const c of PIES) {
     let s = 0;
     for (const q of c.parts) if (under(q.n, selected)) s += q.p;
     c.sel = s;
   }
-  PIES.sort((a, b) => a.sel - b.sel || a.r0 - b.r0);
+  PIES.sort((a, b) => a.sel - b.sel || a.r0 - b.r0 || a.h - b.h);
 }
 
 /* A pie's wedges, at most PIE_K, in tree order: {p, col (pie palette index), ord}, plus `n` (the
@@ -2001,19 +2386,33 @@ function decodeMarks(buf, step, c, wrap) {
   return { a: new Float32Array(0), P: new Float32Array(0), n: 0, q: new Uint16Array(0), qKey: null };
 }
 
+/* 15 bits from a mark's position (mercator x, y) and palette index: the draw-order tie-break for
+   equal dots and pies, an even shuffle that does not depend on the order marks are stored in */
+function markHash(x, y, k) {
+  let h = Math.imul((x * 1e7) | 0, 0x9E3779B1) ^ Math.imul((y * 1e7) | 0, 0x85EBCA6B) ^ Math.imul(k | 0, 0xC2B2AE35);
+  h = Math.imul(h ^ (h >>> 15), 0x27D4EB2D);
+  return (h ^ (h >>> 13)) & 32767;
+}
+
 /* Sort one tile's marks by radius at zoom 0, quantised to 1/1024 of a doubling, ascending. */
 function sortMarks(e, r0, cap, qKey) {
   const S = DOT_STRIDE, n = e.n, a = e.a, K = 4194304;      // 2^22 > marks in any tile
+  /* EQUAL RADII TIE ON A HASH of the mark's position and language (2026-10-07), not on its place
+     in the tile: tiles.py stores marks in position order (it gzips about half smaller than the
+     old shuffle), and a tie on that order would always put, say, the western of two equal marks
+     on top. The hash is as good as a shuffle and the same on every load. Key: 16 bits of
+     radius, 15 of hash, 22 of index, exactly 53, so the float64 sort stays exact. */
   const keys = new Float64Array(n);
   for (let i = 0, o = 0; i < n; i++, o += S) {
     const r = a[o + 4] * Math.min(r0 * a[o + 5], cap * a[o + 6]);
-    keys[i] = Math.max(0, Math.min(65535, Math.floor((Math.log2(r) + 40) * 1024))) * K + i;
+    const rq = Math.max(0, Math.min(65535, Math.floor((Math.log2(r) + 40) * 1024)));
+    keys[i] = (rq * 32768 + markHash(a[o], a[o + 1], a[o + 7])) * K + i;
   }
   keys.sort();
   const a2 = new Float32Array(n * S), P2 = new Float32Array(n), q = new Uint16Array(n);
   for (let j = 0; j < n; j++) {
     const i = keys[j] % K;
-    q[j] = (keys[j] - i) / K;
+    q[j] = Math.floor((keys[j] - i) / K / 32768);
     for (let k = 0; k < S; k++) a2[j * S + k] = a[i * S + k];
     P2[j] = e.P[i];
   }
@@ -2368,7 +2767,19 @@ const map = new maplibregl.Map({
   fitBoundsOptions: { padding: viewPadding() },
   attributionControl: { compact: true },
   touchPitch: false,                       // a two-finger drag on a phone tilted the map (religiondots)
+  // zoomed out on a wide screen, the repeated worlds fetched and parsed every tile twice (3.4 of
+  // the world view's 6.9 MB, measured 2026-10-07); worldCopies() turns them back on once the world
+  // is wider than the screen, so Fiji and Chukotka can still be panned across the date line
+  renderWorldCopies: false,
 });
+
+const worldCopies = () => {
+  const on = 512 * Math.pow(2, map.getZoom()) > map.getCanvas().clientWidth;
+  if (on !== map.getRenderWorldCopies()) map.setRenderWorldCopies(on);
+};
+map.on('zoomend', worldCopies);
+map.on('resize', worldCopies);
+map.once('load', worldCopies);
 
 // Auto's country outlines (see SHAPES); a failed fetch leaves Auto on all countries
 // every fetch waits for dataBaseP, which sets DATA_BASE (local tree or R2)
@@ -2383,7 +2794,13 @@ Promise.all([
   tax.nodes.forEach((n, i) => {
     NODES[n.id] = n; ORDER[n.id] = i;
     const p = parentOf(n.id); if (p) (KIDS[p] = KIDS[p] || []).push(n.id);
+    DEFAULT_COL[n.id] = [n.color, n.color_own];
   });
+  // colours set in the swatch editor, before anything is painted
+  loadUserColours();
+  for (const id of Object.keys(USER_COLOR)) setNodeColour(id);
+  wirePicker();
+  wireSearch();
   COUNTS = counts;
   // every group starts shut except Indo-European, to keep the legend short (Anita, 2026-10-05)
   open.add('indoeuropean');
@@ -2414,10 +2831,11 @@ Promise.all([
   });
   document.querySelectorAll('#draw-segs .seg').forEach(s => s.onclick = () => setDraw(s.dataset.d));
   const size = document.getElementById('size');
+  // round stops (Anita, 2026-10-07; before, powers of two in quarter steps, up to 9.51x)
+  const SIZE_STOPS = [0.2, 0.4, 0.6, 0.8, 1, 1.5, 2, 3, 4, 6, 8, 10];
   size.oninput = () => {
-    dotScale = Math.pow(2, +size.value);
-    document.getElementById('size-val').textContent =
-      (+dotScale.toFixed(2)).toString() + '×';
+    dotScale = SIZE_STOPS[+size.value];
+    document.getElementById('size-val').textContent = dotScale + '×';
     setDotSize();
     schedulePies();
   };
@@ -2615,6 +3033,16 @@ Promise.all([
     }
     const r = frozen && e.target.closest('.mx[data-n]');
     if (r) reveal(r.dataset.n, !!r.dataset.own);
+  };
+  /* A double-click on a language there selects it, as a click on its legend row does, and a
+     second one clears it (Anita, 2026-10-07). Its two clicks have already revealed the row. A
+     group's unnamed people select the group. A pie's tooltip is redrawn in the new colours. */
+  tip.ondblclick = e => {
+    const r = frozen && e.target.closest('.mx[data-n]');
+    if (!r) return;
+    const id = r.dataset.n;
+    select(selected === id ? null : id);
+    if (tipHit) showTip(pieTip(tipHit), map.project(frozen));
   };
   /* Clearing the selection: Esc anywhere, or a double-click on empty map. The double-click only
      clears, it does not also zoom, while something is selected; with nothing selected it zooms
