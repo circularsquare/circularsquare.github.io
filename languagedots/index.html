@@ -137,6 +137,10 @@ sitemap: false
     #swatch-pop a.off { color: #666; cursor: default; }
     #swatch-pop .sp-done { margin-left: auto; color: #888; }
 
+    /* the long-press merge box (MERGE): drawn over the map while dragging, gone on release */
+    #mbox { position: absolute; z-index: 999; pointer-events: none; display: none;
+            border: 1px dashed #ddd; background: rgba(255,255,255,0.07); border-radius: 2px; }
+    #map { -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
     /* the language search under the legend (Anita, 2026-10-07); its matches open upward */
     #lsearch { position: relative; padding: 5px 10px; border-top: 1px solid #2a2a2a; flex: none; }
     #ls-in { width: 100%; background: #16191c; color: #e2e8ee; font-size: 12px; border: 1px solid #3d4750;
@@ -340,6 +344,7 @@ sitemap: false
 </head>
 <body>
 <div id="map"></div>
+<div id="mbox"></div>
 <div id="tip"></div>
 <div id="panel">
   <div id="panel-head"><span id="head-scope"><span id="head-scope-text"></span><span id="head-mixrow"><span id="head-mixtrack"></span><span id="head-mixtotal"></span></span></span><button id="min" title="Hide panel">–</button></div>
@@ -358,7 +363,7 @@ sitemap: false
       <span class="seg on" data-m="language">language</span><span class="seg" data-m="branch">branch</span><span class="seg" data-m="family">family</span>
     </div></div>
     <div class="ctl"><span class="cl">Draw as</span><div class="segs" id="draw-segs">
-      <span class="seg" data-d="dots">dots</span><span class="seg on" data-d="pies">pies</span>
+      <span class="seg" data-d="dots">dots</span><span class="seg on" data-d="pies">pies</span><span class="seg" data-d="none" title="Hide the dots and pies">none</span>
     </div></div>
     <div class="ctl slide"><span class="cl">Size</span><input type="range" id="size" min="0" max="11" step="1" value="4"><span class="val" id="size-val">1×</span></div>
     <div class="ctl slide" title="How large one patch of map may draw, however many people it holds. Higher lets dense places spread into their neighbours; lower leaves gaps between them."><span class="cl">Cap</span><input type="range" id="cap" min="0" max="6" step="1" value="6"><span class="val" id="cap-val">none</span></div>
@@ -483,7 +488,9 @@ let capScale = Infinity;                   // no cap by default (Anita, 2026-10-
 const capFrac = () => isFinite(capScale) ? CAP_FRAC * Math.sqrt(capScale) : 1e6;
 let detail = 1;                            // grid levels finer than CELL_BITS, -1 to 2; set by the aggregation slider (medium default, Anita 2026-10-04)
 const AGG_LABELS = ['very low', 'low', 'medium', 'high'];  // slider 0-3 = detail 2, 1, 0, -1 (Anita's names, 2026-10-05)
-let drawAs = 'pies';                       // or 'dots'; pies by default (Anita, 2026-10-04)
+// or 'dots'; pies by default (Anita, 2026-10-04); 'none' hides every mark, leaving the basemap and
+// the hatching (Anita, 2026-10-07): both GPU layers draw only for their own value, so nothing more
+let drawAs = 'pies';
 
 const r0Of = () => Math.sqrt(DOT_KM2 * dotScale * 1e6 / Math.PI) / (40075016.686 / 512);
 const cellPxOf = () => 512 / Math.pow(2, CELL_BITS + detail);
@@ -1180,6 +1187,7 @@ function allView() {
    never switches into a country without (see hasSel), where a pick by hand clears it as before. */
 function setCountry(c, fly = true, auto = false) {
   cc = c;
+  MERGE = null;                            // its people were the old country's (applyMerge)
   if (!auto || !hasSel(c)) selected = null;
   unfreeze();
   updatePick();
@@ -1775,11 +1783,44 @@ function rebuildPies() {
   for (const cells of cellsByZ.values()) for (const c of cells.values()) {
     c.x /= c.w; c.y /= c.w;
     c.h = markHash(c.x, c.y, c.z);           // the tie-break between equal pies (sortMarks)
-    c.r0 =Math.min(r0 * Math.sqrt(c.t / 1000), capFrac() * cellPx * Math.pow(2, -c.z));
+    c.r0 = Math.min(r0 * Math.sqrt(c.t / 1000), capFrac() * cellPx * Math.pow(2, -c.z));
     PIES.push(c);
   }
+  if (MERGE) applyMerge();
   sortPies();
   pieLayer.upload();
+}
+
+/* MERGING A REGION (Anita, 2026-10-07: "in pie mode we can long press to start a drag box where
+   we can select a region and merge all the points in that region into one big pie? clicking
+   anywhere else should release/undo it"). MERGE is the box in mercator units. Every pie whose
+   centre is inside it is replaced by one pie of all their people, centred on the box and filling
+   it (its diameter the box's shorter side), so it stays the size of the ground it covers as the
+   map zooms. Redone at every rebuild, from whatever cells are loaded then, so it survives pans
+   and zooms. Cleared by a click off it, Esc, or a change of country or drawing (clearMerge). */
+let MERGE = null;
+function applyMerge() {
+  const m = MERGE, keep = [], parts = new Map();
+  let w = 0;
+  for (const c of PIES) {
+    if (c.x >= m.x0 && c.x <= m.x1 && c.y >= m.y0 && c.y <= m.y1) {
+      for (const q of c.parts) parts.set(q.n, (parts.get(q.n) || 0) + q.p);
+      w += c.w;
+    } else keep.push(c);
+  }
+  if (w) {
+    const z = map.getZoom(), half = Math.min(m.x1 - m.x0, m.y1 - m.y0) / 2;
+    keep.push({ x: (m.x0 + m.x1) / 2, y: (m.y0 + m.y1) / 2, w, t: w, z: -1, h: 0, merged: true,
+                r0: half * 512 * Math.pow(2, z) / Math.pow(2, Math.min(z, ARCHIVE_MAXZ)),
+                parts: [...parts].map(([n, p]) => ({ n, p })) });
+  }
+  PIES = keep;
+}
+function clearMerge() {
+  if (!MERGE) return;
+  MERGE = null;
+  pieDirty = true;
+  rebuildPies();
 }
 
 /* Pies draw in list order, and pieAt searches from the end, so the last is on top. With nothing
@@ -2751,6 +2792,7 @@ function schedulePies() {
 
 function setDraw(d) {
   drawAs = d;
+  MERGE = null;
   unfreeze();
   document.querySelectorAll('#draw-segs .seg').forEach(s => s.classList.toggle('on', s.dataset.d === d));
   applyColours();
@@ -2981,6 +3023,7 @@ Promise.all([
   };
   // the tooltip for the mark under a point, or null
   const tipAt = pt => {
+    if (drawAs === 'none') return null;
     if (drawAs === 'pies') {
       const hit = pieAt(pt);
       return hit ? pieTip(hit) : null;
@@ -3004,6 +3047,12 @@ Promise.all([
   map.on('click', e => {
     // the click that put the about panel away does only that (see closeInfoOutside)
     if (infoSwallow) { if (!frozen) tip.style.display = 'none'; return; }
+    if (boxSwallow) return;                  // the release that ended a merge box
+    // a merged region: a click on its pie pins its tooltip as usual; anywhere else undoes it
+    if (MERGE) {
+      const hit = pieAt(e.point);
+      if (!hit || !hit.merged) { clearMerge(); unfreeze(); return; }
+    }
     // a newly pinned pie starts with its folded rows shut
     tipHit = drawAs === 'pies' ? pieAt(e.point) : null;
     tipOpen.clear(); tipAll.clear();
@@ -3018,6 +3067,71 @@ Promise.all([
     if (!frozen) return;
     placeTip(map.project(frozen));
   });
+
+  /* THE MERGE BOX GESTURE (see MERGE). In pies mode, a press held LONG_MS without moving more than
+     LONG_SLOP px starts a box (the map's drag-pan is switched off for the rest of the press, and a
+     phone buzzes once where it can); dragging sizes it; letting go merges the pies inside and pins
+     the merged pie's tooltip. A box under BOX_MIN px on a side merges nothing. Mouse, pen and
+     touch alike, through pointer events; a second finger (a pinch) cancels it. */
+  const LONG_MS = 450, LONG_SLOP = 6, BOX_MIN = 12;
+  const mapEl = document.getElementById('map'), boxEl = document.getElementById('mbox');
+  let lp = null, boxSwallow = false;
+  const local = e => { const r = mapEl.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; };
+  const drawBox = (x, y) => {
+    const l = Math.min(lp.x0, x), t = Math.min(lp.y0, y);
+    Object.assign(boxEl.style, { left: l + 'px', top: t + 'px', width: Math.abs(x - lp.x0) + 'px',
+                                 height: Math.abs(y - lp.y0) + 'px' });
+  };
+  const endPress = () => {
+    if (!lp) return;
+    clearTimeout(lp.timer);
+    if (lp.on) { map.dragPan.enable(); boxEl.style.display = 'none'; }
+    lp = null;
+  };
+  mapEl.addEventListener('pointerdown', e => {
+    if (lp) { endPress(); return; }                     // a second pointer: a pinch, not a box
+    if (drawAs !== 'pies' || !e.isPrimary || e.button !== 0) return;
+    const [x0, y0] = local(e);
+    lp = { x0, y0, x: x0, y: y0, on: false, timer: setTimeout(() => {
+      if (!lp) return;
+      lp.on = true;
+      map.dragPan.disable();
+      unfreeze();
+      drawBox(lp.x, lp.y);
+      boxEl.style.display = 'block';
+      if (navigator.vibrate) try { navigator.vibrate(15); } catch (err) { /* not allowed: fine */ }
+    }, LONG_MS) };
+  }, true);
+  window.addEventListener('pointermove', e => {
+    if (!lp || !e.isPrimary) return;
+    const [x, y] = local(e);
+    lp.x = x; lp.y = y;
+    if (!lp.on) { if (Math.hypot(x - lp.x0, y - lp.y0) > LONG_SLOP) endPress(); return; }
+    drawBox(x, y);
+  });
+  window.addEventListener('pointerup', e => {
+    if (!lp || !e.isPrimary) return;
+    const was = lp.on, { x0, y0, x, y } = lp;
+    endPress();
+    if (!was) return;
+    // the click that may follow this release must not undo what it just made
+    boxSwallow = true; setTimeout(() => { boxSwallow = false; }, 0);
+    if (Math.abs(x - x0) < BOX_MIN || Math.abs(y - y0) < BOX_MIN) return;
+    const a = map.unproject([Math.min(x0, x), Math.min(y0, y)]);
+    const b = map.unproject([Math.max(x0, x), Math.max(y0, y)]);
+    MERGE = { x0: (a.lng + 180) / 360, x1: (b.lng + 180) / 360, y0: mercY(a.lat), y1: mercY(b.lat) };
+    rebuildPies();
+    const big = PIES.find(c => c.merged);
+    if (!big) { MERGE = null; rebuildPies(); return; }   // no pie inside: nothing to merge
+    const pt = { x: (x0 + x) / 2, y: (y0 + y) / 2 };
+    tipHit = big; tipOpen.clear(); tipAll.clear();
+    frozen = map.unproject([pt.x, pt.y]);
+    showTip(pieTip(big), pt);
+    tip.classList.add('frozen');
+  });
+  window.addEventListener('pointercancel', endPress);
+  // a long press is not a request for the browser's own menu
+  mapEl.addEventListener('contextmenu', e => { if (drawAs === 'pies') e.preventDefault(); });
   tip.onclick = e => {
     // a folded row opens or shuts; "N more" shows the rest. Each open list keeps its scroll.
     const x = frozen && tipHit && e.target.closest('[data-x],[data-more]');
@@ -3049,13 +3163,14 @@ Promise.all([
      as usual. "Empty" means no dot under the pointer (in pies mode, no pie). */
   map.on('dblclick', e => {
     if (!selected) return;
-    const hit = drawAs === 'pies' ? pieAt(e.point) : dotAt(e.point);
+    const hit = drawAs === 'pies' ? pieAt(e.point) : drawAs === 'dots' ? dotAt(e.point) : null;
     if (hit) return;
     e.preventDefault();
     select(null);
   });
   document.addEventListener('keydown', e => {
     if (e.key !== 'Escape') return;
+    if (MERGE) { clearMerge(); unfreeze(); return; }
     if (frozen) { unfreeze(); return; }
     const info = document.getElementById('info-panel');
     if (!info.classList.contains('hidden')) info.classList.add('hidden');
