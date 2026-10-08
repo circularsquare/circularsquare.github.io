@@ -217,6 +217,7 @@ sitemap: false
     #tip .mx { display: flex; align-items: center; gap: 6px; }
     #tip .mk { width: 9px; height: 9px; border-radius: 50%; flex: none; }
     #tip .sub { color: #888; }
+    #tip .loc { color: #aaa; }
     /* a pie's tooltip: its larger copy to the left of the rows */
     #tip .pw { display: flex; align-items: flex-start; gap: 8px; }
     #tip .pz { flex: none; display: block; }
@@ -2800,6 +2801,104 @@ function setDraw(d) {
   if (COUNTS) buildPanel();                // the family rows' washed half shows in pies only
 }
 
+/* WHERE A TOOLTIP IS (Anita, 2026-10-08: show the city "so that its easy to get a sense of where we
+   are", and drop the "near" when it is very near, "very" depending on the city's size). The
+   basemap's own place points (OpenMapTiles `place`: class city/town/village and a rank, 1 the
+   most important; no population) in the tiles loaded now, gathered when the map comes to rest.
+   Each place gets an "in" radius from its class and rank (PLACE_R, km: a rank-1 city 30, Kayseri at
+   rank 6 9, a town 2.5, a village 1). The place chosen is the one nearest relative to its radius,
+   so a big city 20 km off beats a village 3 km off. Within its radius the line names it; out to
+   PLACE_NEAR radii it says "near"; beyond that only the country (from Auto's outlines). Far out
+   the tiles hold only big cities, so the line coarsens with the zoom, as the map's labels do. */
+const PLACE_NEAR = 6;
+let PLACES = [];
+function placeR(cls, rank) {
+  if (cls === 'village') return 1;
+  if (cls === 'town') return 2.5;
+  return rank <= 1 ? 30 : rank <= 2 ? 25 : rank <= 3 ? 20 : rank <= 4 ? 15 : rank <= 5 ? 12
+       : rank <= 6 ? 9 : rank <= 8 ? 7 : rank <= 10 ? 5 : 4;
+}
+const englishName = p => (p.name_en && p.name_en.length >= 3 ? p.name_en : p['name:latin'] || p.name);
+function gatherPlaces() {
+  if (!map.getSource('openmaptiles')) return;
+  const seen = new Set(), out = [];
+  for (const f of map.querySourceFeatures('openmaptiles', { sourceLayer: 'place' })) {
+    const p = f.properties, cls = p.class;
+    if (cls !== 'city' && cls !== 'town' && cls !== 'village') continue;
+    const [lng, lat] = f.geometry.coordinates, name = englishName(p);
+    const k = name + '|' + lng.toFixed(3) + '|' + lat.toFixed(3);
+    if (!name || seen.has(k)) continue;
+    seen.add(k);
+    out.push({ lng, lat, name, r: placeR(cls, p.rank) });
+  }
+  PLACES = out;
+}
+/* PROVINCES WHERE NO PLACE IS NEAR (Anita, 2026-10-08: "we show province only where we show no
+   city ... where we just show 'China' we should use province name instead"). Natural Earth's
+   first-level divisions (tools/make_admin1.py -> admin1_shapes.geojson, 0.84 MB gzipped), fetched
+   the first time a tooltip has no place; until it lands that tooltip shows the country alone. */
+let ADMIN1 = null, admin1P = null;
+function loadAdmin1() {
+  if (admin1P) return;
+  admin1P = dataBaseP.then(() => fetch(DATA_BASE + 'admin1_shapes.geojson')).then(r => r.ok ? r.json() : null)
+    .then(gj => {
+      if (!gj) return;
+      const out = [];
+      for (const f of gj.features) {
+        const polys = f.geometry.type === 'Polygon' ? [f.geometry.coordinates] : f.geometry.coordinates;
+        for (const poly of polys) {
+          const ring = poly[0];
+          let w = 180, e = -180, s = 90, n = -90;
+          for (const p of ring) { if (p[0] < w) w = p[0]; if (p[0] > e) e = p[0]; if (p[1] < s) s = p[1]; if (p[1] > n) n = p[1]; }
+          out.push({ name: f.properties.n, ring, w, e, s, n });
+        }
+      }
+      ADMIN1 = out;
+    }).catch(() => {});
+}
+function admin1At(lng, lat) {
+  if (!ADMIN1) { loadAdmin1(); return ''; }
+  const x = wrapLng(lng);
+  for (const p of ADMIN1)
+    if (x >= p.w && x <= p.e && lat >= p.s && lat <= p.n && inRing(p.ring, x, lat)) return p.name;
+  return '';
+}
+// "Kayseri, Türkiye", "near Kayseri, Türkiye", "Xinjiang, China", "China", or '' when nothing is known
+function placeLine(lng, lat) {
+  const kx = 111.32 * Math.cos(lat * Math.PI / 180), ky = 110.57;
+  let best = null, bestQ = Infinity;
+  for (const p of PLACES) {
+    const dx = (p.lng - lng) * kx, dy = (p.lat - lat) * ky;
+    const q = Math.sqrt(dx * dx + dy * dy) / p.r;
+    if (q < bestQ) { bestQ = q; best = p; }
+  }
+  const c = countryAt(lng, lat), country = c && COUNTS && COUNTS.countries[c] ? COUNTS.countries[c].name : '';
+  let where = !best || bestQ > PLACE_NEAR ? '' : (bestQ <= 1 ? '' : 'near ') + best.name;
+  if (!where) { where = admin1At(lng, lat); if (where === country) where = ''; }
+  return [where, country].filter(Boolean).join(', ');
+}
+const mercLat = y => Math.atan(Math.sinh(Math.PI * (1 - 2 * y))) * 180 / Math.PI;
+
+/* The basemap's tiles give Türkiye an English name of just "T" (2026-10-08; OpenFreeMap's data,
+   `name_en`), and the style shows `name_en` first, so the country read "T". Every label that
+   reads `name_en` falls back to the local Latin name when the English one is under 3 letters. */
+function guardEnglishName(id) {
+  const f = map.getLayoutProperty(id, 'text-field');
+  if (!f || !JSON.stringify(f).includes('"name_en"')) return;
+  const fix = e => Array.isArray(e)
+    ? (e.length === 2 && e[0] === 'get' && e[1] === 'name_en'
+        ? ['case', ['>=', ['length', ['to-string', ['coalesce', ['get', 'name_en'], '']]], 3],
+           ['get', 'name_en'], ['coalesce', ['get', 'name:latin'], ['get', 'name']]]
+        : e.map(fix))
+    : e;
+  map.setLayoutProperty(id, 'text-field', fix(f));
+}
+/* Arabic, Hebrew and other right-to-left place names need MapLibre's RTL text plugin, or they are
+   drawn letter by letter, unjoined and in reverse (a viewer's report, 2026-10-08). Lazy: fetched
+   only once such a label is on screen. */
+if (maplibregl.getRTLTextPluginStatus() === 'unavailable')
+  maplibregl.setRTLTextPlugin('https://unpkg.com/@mapbox/mapbox-gl-rtl-text@0.2.3/mapbox-gl-rtl-text.min.js', true)
+    .catch(() => {});
 const map = new maplibregl.Map({
   container: 'map',
   style: 'https://tiles.openfreemap.org/styles/dark',
@@ -2852,6 +2951,7 @@ Promise.all([
     if (l.type === 'symbol') {
       map.setPaintProperty(l.id, 'text-color', 'rgba(170,170,170,0.55)');
       map.setPaintProperty(l.id, 'text-halo-color', 'rgba(17,17,17,0.6)');
+      guardEnglishName(l.id);
     }
   }
   addData();
@@ -2899,6 +2999,7 @@ Promise.all([
   map.on('moveend', considerCamera);
   map.on('idle', considerCamera);
   map.on('idle', () => { if (drawAs === 'pies' && pieDirty) rebuildPies(); });
+  map.on('idle', gatherPlaces);              // the tooltip's place names (placeLine)
   map.on('sourcedata', e => {
     if (e.sourceId !== 'ld' || !e.tile) return;
     pieDirty = true;
@@ -3018,7 +3119,10 @@ Promise.all([
       if (!all && rest > 0) out.push({ p: rest, col: q.col });
       return out;
     });
-    return `<div class="pw">${pieSvg(svgWs)}<div class="pr">` + rows +
+    // where the pie is (placeLine); a merged region spans too much for one place
+    const loc = hit.merged ? '' : placeLine(hit.x * 360 - 180, mercLat(hit.y));
+    return `<div class="pw">${pieSvg(svgWs)}<div class="pr">` +
+           (loc ? `<div class="loc">${esc(loc)}</div>` : '') + rows +
            `<div class="sub">${tot.toLocaleString()} people</div></div></div>`;
   };
   // the tooltip for the mark under a point, or null
@@ -3032,7 +3136,9 @@ Promise.all([
     if (!f) return null;
     const n = f.n;
     const fam = NODES[familyOf(n)] ? NODES[familyOf(n)].label : '';
-    return `<div class="mx"${link(n, !!KIDS[n])}><span class="mk" style="background:${colourFor(n)}"></span>${label(n)}` +
+    const ll = map.unproject(pt), loc = placeLine(ll.lng, ll.lat);
+    return (loc ? `<div class="loc">${esc(loc)}</div>` : '') +
+           `<div class="mx"${link(n, !!KIDS[n])}><span class="mk" style="background:${colourFor(n)}"></span>${label(n)}` +
            ` <span class="sub">· ${fam} · ${f.p.toLocaleString()} people</span></div>`;
   };
   map.on('mousemove', e => {
