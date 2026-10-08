@@ -8,8 +8,8 @@ permalink: /projects/
 
 - maps
     - interactive 
+        - <a href="/languagedots" data-thumb="/assets/thumbs/languagedots.png">language dot map</a> 
         - <a href="/ancestrydotsna" data-thumb="/assets/thumbs/ancestrydots.png">ancestry dot map</a> (<a href="/ancestrydotsna">usa + canada</a>) (<a href="/ancestrydots">usa</a>) (<a href="/assets/posters/ancestrydots.png" data-thumb="/assets/thumbs/posters/ancestrydots.jpg">poster</a>)
-        - <a href="/languagedots">language dot map</a> 
         - <a href="/religiondots">religion dot map</a>
         - <a href="/japanrail" data-thumb="/assets/thumbs/japanrail.png">japan rail</a> (posters: <a href="/assets/posters/japanrail.png" data-thumb="/assets/thumbs/posters/japanrail.jpg">english</a>, <a href="/assets/posters/japanrail_ja.png" data-thumb="/assets/thumbs/posters/japanrail_ja.jpg">japanese</a>)
         - <a href="/korearail" data-thumb="">korea rail</a>
