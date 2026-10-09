@@ -13,6 +13,7 @@ permalink: /projects/
         - <a href="/religiondots">religion dot map</a>
         - <a href="/japanrail" data-thumb="/assets/thumbs/japanrail.png">japan rail</a> (posters: <a href="/assets/posters/japanrail.png" data-thumb="/assets/thumbs/posters/japanrail.jpg">english</a>, <a href="/assets/posters/japanrail_ja.png" data-thumb="/assets/thumbs/posters/japanrail_ja.jpg">japanese</a>)
         - <a href="/korearail" data-thumb="">korea rail</a>
+        - <a href="/noritetsu">noritetsu</a> (in progress)
         - <a href="/nycriders" data-thumb="/assets/thumbs/nycriders.png">nyc riders</a> (<a href="/assets/posters/nycriders.png" data-thumb="/assets/thumbs/posters/nycriders.jpg">poster</a>)
         - <a href="/londonriders">london riders</a>
         - <a href="/flights" data-thumb="/assets/thumbs/flights.jpg">flight traffic</a>
