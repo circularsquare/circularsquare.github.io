@@ -14,6 +14,8 @@ sitemap: false
     * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Nunito', sans-serif; }
     body { background: #111; }
     #map { width: 100vw; height: 100vh; }
+    /* §17's press and hold is a box, not a request for the browser's own menu or selection */
+    #map { -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
     .maplibregl-canvas-container.maplibregl-interactive,
     .maplibregl-canvas-container.maplibregl-interactive:active { cursor: default; }
 
@@ -442,8 +444,7 @@ sitemap: false
     /* REGIONS MODE (regions.py). The dot-only controls go, and the shading's key takes a line
        under the scope bar: a strip from the land colour to the selected religion's, with the
        share at each stop under it. */
-    body.regions #ctl-dotval, body.regions #ctl-merge,
-    body.regions #ctl-rings { display: none; }
+    body.regions #ctl-dotval, body.regions #ctl-dotsize, body.draw-pies #ctl-dotval { display: none; }
     #region-ramp { display: none; padding: 6px 10px 7px; border-bottom: 1px solid #2a2a2a;
                    color: #888; font-size: 11px; }
     body.regions #region-ramp { display: block; }
@@ -459,23 +460,29 @@ sitemap: false
 
        The reading is 30px and right-aligned against the same edge the chips end on, so the
        column of settings still reads down a straight right margin. */
-    #ctl-dotsize .cl { flex: none; }
-    #ctl-dotsize .val {
-      flex: none; width: 30px; text-align: right;
+    /* §17.10: three of them since languagedots' Size, Cap and Aggregation came over, so the
+       label takes a fixed width and the three tracks line up; the reading is wide enough for
+       "very low" and right-aligned against the same edge the chips end on. */
+    .ctl.slide .cl { flex: none; width: 72px; }
+    .ctl.slide .val {
+      flex: none; width: 48px; text-align: right;
       color: #ccc; font-variant-numeric: tabular-nums; font-size: 11px;
     }
-    #ctl-dotsize input[type=range] {
+    .ctl.slide input[type=range] {
       flex: 1; min-width: 0; -webkit-appearance: none; appearance: none; height: 3px;
       background: #3a3a3a; border-radius: 2px; outline: none; margin: 0; cursor: pointer;
     }
-    #ctl-dotsize input[type=range]::-webkit-slider-thumb {
+    .ctl.slide input[type=range]::-webkit-slider-thumb {
       -webkit-appearance: none; appearance: none; width: 11px; height: 11px;
       border-radius: 50%; background: #ccc; cursor: pointer;
     }
-    #ctl-dotsize input[type=range]::-moz-range-thumb {
+    .ctl.slide input[type=range]::-moz-range-thumb {
       width: 11px; height: 11px; border: none; border-radius: 50%;
       background: #ccc; cursor: pointer;
     }
+    /* what each draw-as mode cannot use leaves the block (§17.10) */
+    body.draw-dots #ctl-cap, body.draw-dots #ctl-agg,
+    body.regions #ctl-cap, body.regions #ctl-agg { display: none; }
 
     /* THE SWATCH EDITOR, ported from ancestrydots — Anita's call, 2026-09-03, because that
        one is already known to be pleasant to use and this map had no reason to invent a
@@ -530,6 +537,44 @@ sitemap: false
       border-radius: 50%; cursor: pointer; font-weight: bold;
     }
     #info-btn:hover { background: #fff; }
+    /* PLACE SEARCH (spec §16): the about button's twin, to its right. Opens upward on the
+       desktop, where the buttons sit at the bottom, and downward on the phone, where they sit at
+       the top. */
+    #place-btn {
+      position: absolute; bottom: 12px; left: 44px; z-index: 1001;
+      background: #ddd; color: #111; border: none; width: 26px; height: 26px;
+      border-radius: 50%; cursor: pointer; padding: 0;
+      display: flex; align-items: center; justify-content: center;
+    }
+    #place-btn:hover { background: #fff; }
+    #place-box {
+      position: absolute; bottom: 46px; left: 44px; z-index: 1001; width: 290px;
+      display: flex; flex-direction: column-reverse; gap: 4px;
+    }
+    #place-box[hidden] { display: none; }
+    #place-in {
+      width: 100%; background: rgba(20,20,20,0.92); border: 1px solid #2a2a2a; border-radius: 6px;
+      color: #eee; font-size: 12px; padding: 6px 9px; outline: none;
+    }
+    #place-in::placeholder { color: #666; }
+    #place-in:focus { border-color: #7d9cb8; }
+    #place-res {
+      background: rgba(20,20,20,0.92); border: 1px solid #2a2a2a; border-radius: 6px;
+      padding: 3px 0; font-size: 12px; max-height: calc(100vh - 140px); overflow-y: auto;
+    }
+    #place-res[hidden] { display: none; }
+    #place-res .pr {
+      padding: 3px 9px; color: #ddd; cursor: pointer; line-height: 1.4;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    #place-res .pr:hover, #place-res .pr.on { background: #2f3b47; }
+    #place-res .pr .pc { color: #777; margin-left: 6px; }
+    #place-res .none { padding: 3px 9px; color: #777; }
+    /* the one thing here that moves: a small ring beside "Searching" while Photon answers */
+    .spin { display: inline-block; width: 9px; height: 9px; margin-right: 7px; border-radius: 50%;
+            border: 1.5px solid #555; border-top-color: #aaa; vertical-align: -1px;
+            animation: place-spin .8s linear infinite; }
+    @keyframes place-spin { to { transform: rotate(360deg); } }
     #about {
       position: absolute; bottom: 46px; left: 12px; z-index: 1000; display: none;
       background: rgba(20,20,20,0.92); color: #ccc; border-radius: 8px;
@@ -636,6 +681,36 @@ sitemap: false
       font-variant-numeric: tabular-nums;
     }
     .maplibregl-popup-content .cm-c { color: #999; margin-top: 1px; }
+    /* §17's pie card: a larger copy of the pie beside §10.6's rows. A clicked pie's card stays
+       (`.pin`), takes the pointer, and its folded rows open into their members. */
+    .maplibregl-popup-content .pz { flex: none; display: block; margin-top: 2px; }
+    .maplibregl-popup.pin, .maplibregl-popup.pin .maplibregl-popup-content { pointer-events: auto; }
+    /* a big city's pie can hold two dozen rows, so a kept card scrolls rather than leave the screen */
+    .maplibregl-popup.pin .maplibregl-popup-content { max-height: 70vh; overflow-y: auto;
+      scrollbar-width: thin; scrollbar-color: #555 transparent; }
+    .maplibregl-popup-content .tw { display: none; flex: none; width: 10px; color: #888; }
+    .maplibregl-popup.pin .tw { display: inline; }
+    .maplibregl-popup.pin .cm-r[data-x], .maplibregl-popup.pin .cm-r[data-n],
+    .maplibregl-popup.pin .more {
+      cursor: pointer; margin: 0 -4px; padding: 0 4px; border-radius: 3px;
+    }
+    .maplibregl-popup.pin .cm-r[data-x]:hover, .maplibregl-popup.pin .cm-r[data-n]:hover,
+    .maplibregl-popup.pin .more:hover { background: #333; }
+    /* A NAME SITS ON ONE LINE (Anita, 2026-10-12, over the United States: "Christianity,
+       unspecified" and "Stone-Campbell Restorationist" broke one word to a line in a 240px card).
+       The card grows instead (PIE_CARD_MAX), and only a name past ~300px, or a narrow phone, is
+       cut with an ellipsis, the full name on hover. The share and people columns keep their
+       fixed widths, so they still line up. */
+    .maplibregl-popup-content .pc .cm-l {
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      max-width: min(300px, calc(100vw - 230px));
+    }
+    .maplibregl-popup-content .ex { padding-left: 15px; max-height: 40vh; overflow-y: auto; overflow-x: hidden;
+      scrollbar-width: thin; scrollbar-color: #555 transparent; }
+    .maplibregl-popup-content .more { color: #999; }
+    /* the press-and-drag box (§17), drawn over the map while it is being sized */
+    #mbox { position: fixed; z-index: 999; pointer-events: none; display: none;
+            border: 1px dashed #ddd; background: rgba(255,255,255,0.07); border-radius: 2px; }
     /* The tip is a triangle made of borders, so its colour goes on whichever side faces the
        content. A corner anchor leans on the same side as the edge anchor it is a corner of. */
     .maplibregl-popup-anchor-top .maplibregl-popup-tip,
@@ -870,6 +945,16 @@ sitemap: false
 
       /* Top right, above the sheet rather than under it, and `#left` is inset to clear it. */
       #info-btn { top: 8px; right: 8px; bottom: auto; left: auto; width: 28px; height: 28px; }
+      /* the place search button sits left of it; the popover drops under the strip's buttons and
+         ends well above the sheet. `#left` is inset a further 34px so its text clears the button. */
+      #place-btn { top: 8px; right: 42px; bottom: auto; left: auto; width: 28px; height: 28px; }
+      #place-box { top: 44px; bottom: auto; left: 8px; right: 8px; width: auto; flex-direction: column; }
+      /* 16px: iOS zooms the page into a focused field set smaller */
+      /* opaque here: it opens over the title and the country picker, which would show through */
+      #place-in { font-size: 16px; padding: 7px 9px; background: #151515; }
+      #place-res { font-size: 14px; max-height: calc(60dvh - 100px); background: #151515; }
+      #place-res .pr { padding: 8px 10px; }
+      #left { padding-right: 78px; }
       #about {
         top: 44px; right: 8px; left: 8px; bottom: auto; width: auto;
       }
@@ -924,6 +1009,7 @@ sitemap: false
 </head>
 <body>
   <div id="map"></div>
+  <div id="mbox"></div>
   <div id="loading">
     <div id="loading-text">loading…</div>
     <div id="loading-bar"><div id="loading-bar-fill"></div></div>
@@ -977,69 +1063,49 @@ sitemap: false
            the grid without saying the same thing twice ("1 dot = [1,000][10,000] people").
            The about panel still opens with the sentence, which is where it was always doing
            the explaining. -->
-      <div class="ctl" id="ctl-mode" title="Dots: one dot per 1,000 people, placed where they live. Regions: each counting unit shaded by the share of the selected religion, drawn only over the land where people live.">
-        <span class="cl">map style</span>
-        <span class="segs" id="mode-seg"><span class="seg" data-v="0">dots</span><span class="seg" data-v="1">regions</span></span>
+      <!-- §17.10, 2026-10-12: `map style: dots / regions` and `dot style: separate / pies` became
+           this one row, languagedots' `Draw as`. Pies are the default; `dots` is the old
+           `separate`. -->
+      <div class="ctl" id="ctl-draw" title="Pies: the people in each small patch of the map in one pie, cut into the religions drawn there. Click a pie to keep its card open. Press and hold on the map, then drag, to add up every pie inside a box. Dots: one dot per 1,000 people, placed where they live. Regions: each counting unit shaded by the share of the selected religion, drawn only over the land where people live.">
+        <span class="cl">draw as</span>
+        <span class="segs" id="draw-seg"><span class="seg" data-v="0">pies</span><span class="seg" data-v="1">dots</span><span class="seg" data-v="2">regions</span></span>
       </div>
 
-      <div class="ctl" id="ctl-dotval" title="People per dot. 1:10,000 draws a tenth as many marks and is much lighter to render, but small groups stop reaching a whole dot and drop off the map — where their count is measured they become presence rings, and where it is derived they simply go.">
+      <div class="ctl" id="ctl-dotval" title="People per dot. At 10,000 a tenth as many dots are drawn and the map is much lighter to render. A group with fewer than 10,000 people in a whole country no longer reaches a single dot: the dots leave it out, and the pies draw it at its real size.">
         <span class="cl">people per dot</span>
         <span class="segs" id="dotval-seg"><span class="seg" data-v="1000">1,000</span><span class="seg" data-v="10000">10,000</span></span>
-      </div>
-
-      <div class="ctl" id="ctl-merge" title="Separate: every dot drawn individually. Merged: nearby dots of one religion become a single mark with area proportional to how many, which stays legible when zoomed out.">
-        <span class="cl">dot style</span>
-        <span class="segs" id="merge-seg"><span class="seg" data-v="0">separate</span><span class="seg" data-v="1">merged</span></span>
       </div>
 
       <!-- IT USED TO SIT UNDER THE COUNTRY PICKER — Anita, 2026-09-09: *"maybe we should move
            the dot size slider into the settings (the other 5 settings for like shown / not
            shown toggles)."* It was in a box of its own on the left because it arrived before
            this block existed, and a panel with one row in it reads as the start of a list that
-           never came. It belongs with the other three that decide how a dot is DRAWN — how many
-           people it stands for, how big it is, and whether nearby ones merge — so it goes third
-           in that run rather than at the end of the block. -->
-      <div class="ctl" id="ctl-dotsize" title="How large every mark is drawn, from 0.3x to 3x. It changes nothing about what the map contains, only how much of it can be told apart at one zoom: small marks separate two colours inside a crowded city, large ones keep a thinly populated country visible from far out.">
-        <label class="cl" for="dot-size">dot size</label>
-        <input type="range" id="dot-size" min="0" max="100" value="50" />
-        <span class="val" id="dot-size-val">1.0×</span>
+           never came. Since §17.10 it is languagedots' Size, beside its Cap and Aggregation. -->
+      <div class="ctl slide" id="ctl-dotsize" title="How large the pies and dots are drawn. It changes nothing about what the map contains, only how much of it can be told apart at one zoom.">
+        <label class="cl" for="dot-size">size</label>
+        <input type="range" id="dot-size" min="0" max="11" step="1" value="4" />
+        <span class="val" id="dot-size-val">1×</span>
+      </div>
+      <div class="ctl slide" id="ctl-cap" title="How large one patch of map may draw, however many people it holds. Higher lets dense places spread into their neighbours; lower leaves gaps between them.">
+        <label class="cl" for="pie-cap">cap</label>
+        <input type="range" id="pie-cap" min="0" max="6" step="1" value="6" />
+        <span class="val" id="pie-cap-val">none</span>
+      </div>
+      <div class="ctl slide" id="ctl-agg" title="How large a patch of map one pie stands for. Higher puts more people in each pie and draws fewer pies.">
+        <label class="cl" for="pie-agg">aggregation</label>
+        <input type="range" id="pie-agg" min="0" max="3" step="1" value="1" />
+        <span class="val" id="pie-agg-val">low</span>
       </div>
 
-      <div class="ctl" id="ctl-rings">
-        <span class="cl">presence rings</span>
-        <span class="segs" id="rings-seg"><span class="seg" data-v="0">hidden</span><span class="seg" data-v="1">shown</span></span>
-      </div>
-
-      <!-- §15, the national estimate layer. Off by default, Anita 2026-09-14. -->
-      <div class="ctl" id="ctl-est" title="Shown: with a religion selected, a country gets an outline in that religion's colour where a national figure for it exists and the map does not already draw it as dots. Point at or tap inside an outlined country for the figure and its source. Outlines leave while one country is selected and fade as you zoom in. Most figures are Pew Research Center's 2020 estimates; a few smaller groups come from national surveys entered one at a time. The line under the religion's name gives the total.">
-        <span class="cl">national estimates</span>
-        <span class="segs" id="est-seg"><span class="seg" data-v="0">hidden</span><span class="seg" data-v="1">shown</span></span>
-      </div>
-
+      <!-- §17, 2026-10-12, Anita's call: `presence rings`, `national estimates` and `inferred
+           dots` left this block. Rings are gone (§4.3 reversed); the estimate outlines are always
+           on with a religion selected (§15); inferred dots are always shown, and the tier shares
+           the `inferred dots` line used to print are in the header's counted row and the about
+           panel (§7c). -->
       <div class="ctl" id="ctl-none">
         <span class="cl">show non-religions</span>
         <span class="segs" id="none-seg"><span class="seg" data-v="0">hidden</span><span class="seg" data-v="1">shown</span></span>
       </div>
-      <!-- "inferred" and not "derived": the control hides BOTH non-measured tiers, and calling
-           it `derived` made the line read "derived dots: shown - 7% derived, 12% modelled",
-           where the same word is once the umbrella and once one of the two things under it. -->
-      <!-- §7a's ROLL-UP — Anita, 2026-09-07. `hidden` used to REMOVE every inferred dot, and
-           on Israel that took 71% of the country off the map, including five million people
-           the census counted as Jews and only inferred the observance of. It now rolls each
-           inferred dot up to the nearest level its country actually MEASURED — Haredi becomes
-           plain Judaism rather than nothing — and removes it only where nothing above it was
-           measured at all, which is still all of China. -->
-      <!-- §7a-i-1, 2026-09-07: "the nearest level its country measured" now means the CELL
-           the source published, not an ancestor in this tree. Ireland's Anglicans were
-           counted in a Small Area cell called `Other religion` and roll sideways to it; the
-           UK's 22.1M `No religion` answers have no ancestor at all and used to leave the map
-           entirely. 185.9M orphaned became 52.6M, and the legend follows the dots into the
-           rolled state instead of standing still. -->
-      <div class="ctl" id="ctl-tier" title="Shown: dots are drawn at the finest branch the source supports, including branches that were inferred rather than counted. Not shown: the inferred divisions come off — each dot falls back to the category its own source counted it in, which may be a broader branch (an Israeli dot inferred as Haredi draws as plain Judaism) or the source's own catch-all cell (an Irish Anglican draws as Other religion, because that is the only cell the Small Area table has for them). The legend narrows to match. Only dots whose source counted nothing about them anywhere leave the map — all of China, and every dot modelled rather than counted.">
-        <span class="cl">inferred dots</span>
-        <span class="segs" id="tier-seg"><span class="seg" data-v="0">shown</span><span class="seg" data-v="1">not shown</span></span>
-      </div>
-      <div class="ctl-sub" id="tier-share"></div>
 
       <div class="ctl" id="ctl-reset">
         <span class="cl">reset colours</span>
@@ -1063,15 +1129,19 @@ sitemap: false
   </div>
 
   <button id="info-btn"><span style="font-family:'Times New Roman',serif;font-style:italic">i</span></button>
+  <button id="place-btn" title="Find a place" aria-label="Find a place"><svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="6.5" cy="6.5" r="4.6"/><path d="M10 10l4.2 4.2"/></svg></button>
+  <div id="place-box" hidden>
+    <input id="place-in" type="search" placeholder="Find a place" autocomplete="off" spellcheck="false" aria-label="Find a place">
+    <div id="place-res" hidden></div>
+  </div>
   <div id="about">
     <a id="about-close">×</a>
     <div id="about-body">
     <h3>Religion Dot Map</h3>
     <p>Every dot is <b id="about-dotval">1,000</b> people, the same number for every group, so
        two colours can be compared by counting. Fractional dots carry over to the next nearby
-       area until there are enough people to draw one. Rings mark a body that is present but
-       too small to reach one dot, or that reported congregations without a membership count.
-       A ring says only "here", never how many.</p>
+       area until there are enough people to draw one, so a group is left off only when it has
+       fewer people than one dot in its whole country.</p>
     <p>Dots are placed at random within small census units, not at anyone's address. Where those
        units are built to a few thousand people each, as they are in the United States and
        Australia, that is already enough to put people about where they live. Where they are not,
@@ -1150,14 +1220,24 @@ async function resolveDataBase() {
    `EDITIONS` is filled from counts.json, so a build made without `tiles.py --coarse` simply
    has one edition and the control hides itself. */
 let DOT_VALUE = 1000;
+/* §17.18: the reader's people-per-dot choice, which only the dots use. The pies and regions mode
+   always read the 1:1,000 edition (the control is not offered there), and the choice is kept for
+   when the reader goes back to dots. `syncDotValue` sets DOT_VALUE from the two. */
+let dotsDotValue = 1000;
+function syncDotValue() {
+  DOT_VALUE = (!regionsMode && !dotPies) ? dotsDotValue : 1000;
+  const el = document.getElementById('about-dotval');
+  if (el) el.textContent = DOT_VALUE.toLocaleString();
+}
 let EDITIONS = [''];                       // '' = 1:1,000, '10k' = 1:10,000
 const lp = () => (DOT_VALUE === 10000 ? '10k' : '');
 /* Only the MERGED layers are vector tiles now. The unmerged dots left the archive in §4.2d and
    are drawn by SCATTER from a flat buffer, so `atomic` is no longer a MapLibre layer and the
    merged/separate toggle switches between a tile layer and a custom one rather than between
-   two tile layers. */
+   two tile layers. SINCE §17 THE MERGED LAYER DRAWS NOTHING ITSELF: it is the pies' data,
+   kept in the style at opacity 0 so its tiles load (see rebuildDotPies), and it draws its
+   circles only in the no-instancing fallback (markFallback). */
 const dotLayerIds = () => EDITIONS.map(s => 'dots' + s);
-const ringLayerIds = () => EDITIONS.map(s => 'rings' + s);
 /* Just the CURRENT edition's layers. Painting is per-feature over every loaded tile, so it
    costs the same on a hidden layer as a visible one — the whole point of
    reference_maplibre_paint_perf. Adding a second edition doubled the layer count, and paying
@@ -1167,7 +1247,6 @@ const ringLayerIds = () => EDITIONS.map(s => 'rings' + s);
    to, which already does a full rebuild. */
 const edDotIds = () => ['dots' + lp()];
 const activeDotLayer = () => 'dots' + lp();
-const activeRingLayer = () => 'rings' + lp();
 
 /* The legend counts in people, not in dots. It used to print the dot count, which is the
    quantity the viewer actually holds but not one anybody thinks in — "Christianity 151,696"
@@ -1180,10 +1259,12 @@ function fmtPop(p) {
   if (p >= 1e7) return Math.round(p / 1e6) + 'm';
   if (p >= 1e6) return (p / 1e6).toFixed(1) + 'm';
   if (p >= 1e3) return Math.round(p / 1e3) + 'k';
-  return String(p);
+  // §17.11's groups under one dot make fractional dots, and so figures like 412.3
+  return String(Math.round(p));
 }
 function popTitle(dots) {
-  return `${(dots * DOT_VALUE).toLocaleString()} people · ${dots.toLocaleString()} dots`;
+  // whole dots, and the people of §17.11's groups under one dot (pies mode) rounded
+  return `${Math.round(dots * DOT_VALUE).toLocaleString()} people · ${Math.floor(dots).toLocaleString()} dots`;
 }
 /* ONE PERCENTAGE FORMAT for everything that prints a share of the scope — the row bars'
    tooltips (§10.3) and the composition bar's (§10.4), which sit six pixels apart and would be
@@ -1195,6 +1276,11 @@ function pctText(s) {
       : Number((s * 100).toPrecision(1)) + '%';
 }
 const OUT_COLOR = '#1c1c1c';
+/* §17.13: a HIDDEN religion's people stay on the map in this grey (languagedots' rule, Anita
+   2026-10-12). Neutral and L* 21, between the out-of-scope colour above (never drawn) and the
+   darkest of the not-a-religion ramp, `unrecorded` #444455 (blue-grey): CIE76 ΔE 11.0 and 13.7,
+   and the only neutral that dark on the map. */
+const HIDDEN_GREY = '#333333';
 
 let NODES = [], BY_ID = {}, KIDS = {}, ROOTS = [], PRESENT = new Set();
 let LINEAGE_RANK = {}, LINEAGE_GROUP = {}, LINEAGE_PARENTS = new Set();   // branches.py LINEAGE
@@ -1215,28 +1301,22 @@ let country = null;        // null = every built country at once, on the shared 
 let autoCountry = true;
 let scope = null;          // null = overview palette (spec §6)
 let depth = 2;             // how far below the scope the wheel is divided
-let merged = false;        // §4.2 consolidation: merged marks, or every dot separately
-let dotScale = 1;          // the size slider, a multiplier on every mark's radius
+/* §17: `draw as` is pies, dots or regions (setDraw), and these two booleans are what the rest
+   of the file reads. Pies are the default since §17.10 (Anita, 2026-10-12), replacing §4.2b's
+   merged marks; `dots` is the old `separate`. Nothing stores the choice, so nothing needed
+   migrating from `merged`. */
+let dotPies = true;
+/* The size slider as a multiplier on every mark's RADIUS: the square root of §17.10's Size,
+   which like languagedots' is a multiplier on area. */
+let dotScale = 1;
 
-/* A ring is now a statement about a whole country, not about one census tract: exactly one per
-   (country, religion), drawn only for a religion that reaches no dot ANYWHERE in that country.
-   Everything below one dot nationally is under 1,000 people by construction, so the ring says
-   "this is here and too small to draw", and it is placed at the group's largest concentration
-   because that is the most defensible single spot for a national claim.
-
-   It used to be one ring per (area, religion) and there were 152,396 of them against 204,046
-   dots. Nearly all were redundant: once dots carry their fractions between areas (§4.1a), a
-   below-floor area's people are already drawn a unit or two over, so the ring was saying "also
-   here" about people who were on the map already. The only genuinely undrawn people are a
-   node's final `total % dot_value`, which happens once per country, not once per tract.
-
-   Still off by default, which is Anita's call from when they were a blanket. The reason has
-   largely gone with the blanket — there are now tens of these, not tens of thousands — and the
-   cost of leaving them off is that a religion too small to draw is absent from the map AND from
-   the legend. One word here if that should change. */
-let showRings = false;
-/* §15's layer: off by default, and its two files are not fetched until the reader turns it on. */
-let showEstimates = false;
+/* Presence rings (§4.3) were removed on 2026-10-12, Anita's call (§17). A religion with fewer
+   people in a whole country than one dot is not drawn in either dot style; spec §17 says what
+   the archive would need to draw it at its real size in pies mode. */
+/* §15's layer is ALWAYS ON since §17 (Anita, 2026-10-12): its outlines show with a religion
+   selected, as they always did, and its two files are fetched the first time one is selected
+   (applyEstimates). A constant rather than gone, so §15's code still reads as it did. */
+const showEstimates = true;
 let EST = null;            // estimates.json, once it has loaded
 /* Regions mode: the counting units shaded by the selected node's share (regions.py), in place
    of the dots. Its tiles are not fetched until the reader first switches to it. */
@@ -1254,8 +1334,14 @@ let regionsMode = false;
 
    ONE FLAG FOR BOTH NON-MEASURED TIERS. `t` distinguishes derived (1) from modelled (2), and a
    three-state control would be more precise than anyone wants: the question people ask is "what
-   is counted", and both answers to that are "not this". */
-let onlyMeasured = false;
+   is counted", and both answers to that are "not this".
+
+   PINNED OFF SINCE §17 (Anita, 2026-10-12): the `inferred dots` control is gone and inferred dots
+   are always shown. The roll-up (§7a-i) runs through the scatter's shaders and palette, its hit
+   test, the legend's tallies, the merged layers' filter and §17's pies, so rather than unpick it
+   from all of them this is a constant: every `onlyMeasured` branch is now dead code that reads
+   as it did, and setting this back to a `let` with a control restores the mode whole. */
+const onlyMeasured = false;
 
 /* Countries whose source data is normalized but not yet mapped to the taxonomy, so they sit in
    data/normalized/ and not in the archive (sources.md §9a). Listed greyed out because the
@@ -1393,8 +1479,8 @@ function setSubtreeVisible(id, on) {
 }
 
 /* THE HIDDEN SET AS THE SMALLEST EQUIVALENT STATEMENT: the largest wholly-hidden subtrees,
-   then the nodes hidden on their own inside a subtree that is not. It is what goes to
-   localStorage, what `copyOverrides` pastes into `HIDDEN_DEFAULT`, and what the merged
+   then the nodes hidden on their own inside a subtree that is not. It is what `copyOverrides`
+   pastes into `HIDDEN_DEFAULT` (it went to localStorage too until §17.16), and what the merged
    layers' filter is built from — a prefix test over a handful of roots rather than an `in`
    over five hundred ids, re-evaluated per feature per tile on every filter change. */
 function hiddenCover() {
@@ -1427,13 +1513,10 @@ function loadOverrides() {
     if (!raw) return;
     const o = JSON.parse(raw);
     if (o && typeof o.colors === 'object') USER_COLOR = o.colors || {};
-    /* TWO KEYS, WHICH ARE `hiddenCover`'s TWO HALVES. `hidden` keeps both its name and its
-       old meaning — subtree roots — so a store written before §10.3 loads and still says what
-       it said. `hiddenOnly` is the new half and is usually empty. Writing one flat list of
-       every hidden id instead would be 570 entries after a single "hide all", and would put
-       the same 570 into a `HIDDEN_DEFAULT` meant to be read by a person. */
-    if (Array.isArray(o.hidden) || Array.isArray(o.hiddenOnly))
-      storedHidden = { roots: o.hidden || [], only: o.hiddenOnly || [] };
+    /* §17.16: THE HIDDEN SET IS NOT REMEMBERED (Anita, 2026-10-12: "so people aren't confused why
+       stuff is hidden"). Every load starts from HIDDEN_DEFAULT (empty: everything shown), and the
+       `hidden` / `hiddenOnly` keys an earlier version stored are ignored rather than read, so a
+       returning visitor does not get their old set back. Colours are still remembered. */
   } catch (e) { /* private window, cleared storage, corrupt value — defaults are fine */ }
 }
 
@@ -1445,11 +1528,10 @@ function expandHidden(cover) {
   for (const id of cover.only) if (BY_ID[id]) USER_HIDDEN.add(id);
 }
 
+/* Colours only since §17.16; the hidden set lives for the page and is not written. */
 function saveOverrides() {
   try {
-    const cov = hiddenCover();
-    localStorage.setItem(STORE_KEY,
-      JSON.stringify({ colors: USER_COLOR, hidden: cov.roots, hiddenOnly: cov.only }));
+    localStorage.setItem(STORE_KEY, JSON.stringify({ colors: USER_COLOR }));
   } catch (e) { /* nothing to do; the session still works, it just will not persist */ }
 }
 /* Counted over the COVER and not the raw set, so hiding one family reads as one override
@@ -1653,25 +1735,27 @@ function rebuild(keepScope) {
      Roman Catholics on `…catholic.latin` while the US files them on a leaf below it. Those
      people are a category the map has to be able to draw. */
   own = Object.assign({}, t.dots);
-  counts = Object.assign({}, t.dots);
+  /* §17.11: in pies mode the groups under one dot are drawn, at their real size, so they are in
+     the legend too, as the fractions of a dot they are. Dots mode does not draw them. */
+  if (dotPies && !regionsMode) {
+    const sub = subdotTally(country);
+    for (const id in sub) own[id] = (own[id] || 0) + sub[id];
+  }
+  counts = Object.assign({}, own);
   // roll dot counts up the tree so a branch shows its subtree's total
   for (const n of [...NODES].sort((a, b) => b.id.length - a.id.length)) {
     const p = parentOf(n.id);
     if (p && BY_ID[p]) counts[p] = (counts[p] || 0) + (counts[n.id] || 0);
   }
 
-  /* present = anything DRAWN here, plus every ancestor of it. Rings count only while rings are
-     being drawn: with them off, a node that has rings and no dots puts a row in the legend, with
-     a hollow swatch, and there is nothing anywhere on the map to match it. Czechia is the case
-     that made it obvious — 21 of its 48 rows were ring-only, so nearly half the legend was
-     unmatched. The panel is the key to the picture, so it holds exactly what the picture holds,
-     and turning rings on brings those rows back together with their marks. */
+  /* present = anything DRAWN here, plus every ancestor of it. Dots only: a node with rings and
+     no dots put a hollow-swatch row in the legend with nothing on the map to match it (Czechia,
+     21 of 48 rows), and since §17 there are no rings at all. The panel is the key to the
+     picture, so it holds exactly what the picture holds. */
   PRESENT = new Set();
-  for (const src of (showRings ? [t.dots, t.rings] : [t.dots])) {
-    for (const id in src) {
-      if (!src[id]) continue;
-      for (let x = id; x; x = parentOf(x)) if (BY_ID[x]) PRESENT.add(x);
-    }
+  for (const id in own) {
+    if (!own[id]) continue;
+    for (let x = id; x; x = parentOf(x)) if (BY_ID[x]) PRESENT.add(x);
   }
   /* "Nothing tallied YET" — and the test has to be against the UNROLLED tally, not this one.
      China's rows are every one of them derived from ethnicity with nothing counted above
@@ -4675,21 +4759,22 @@ function copyOverrides() {
    colour change came to arrive twenty seconds after it was made. */
 function applyColors(liveOnly) {
   if (!map.getLayer('dots')) return;
-  const expr = colorExpr();
-  /* `dots` is the merged edition's tile layer and is only visible when consolidation is on
-     (§4.2b); rings are usually off. Setting a paint property on a hidden layer costs the same
-     per-feature re-evaluation as setting it on a visible one, so a live drag skips both unless
-     they are the thing on screen, and picks them up when the drag ends. */
+  /* `dots` is the merged edition's tile layer, and since §17 it draws circles only in the
+     no-instancing fallback (markFallback); otherwise it is the pies' data at opacity 0 and its
+     colour is never set. */
   /* The unmerged dots are a palette-texture write, measured at 0.006ms, so a live drag can
      have them unconditionally — this is the path `pumpPaint` was built to ration and it no
      longer needs rationing. What still does is the merged tile layer, whose `circle-color` is
      re-evaluated per feature; it is only touched when it is the layer on screen. */
   SCATTER.setPalette();
-  if (merged || !liveOnly)
+  /* §17's pies read their colours from a palette texture too, keyed by node, so a colour
+     change is the same kind of cheap write and needs no rebuild of the pie list. */
+  pieLayer.palette();
+  if (markFallback()) {
+    const expr = colorExpr();
     for (const l of liveOnly ? [activeDotLayer()] : edDotIds())
       map.setPaintProperty(l, 'circle-color', expr);
-  if (!liveOnly || showRings)
-    map.setPaintProperty(activeRingLayer(), 'circle-stroke-color', expr);
+  }
 }
 
 /* Which countries the wash lights: the ones whose SOURCE CAN SEE what is selected.
@@ -4821,7 +4906,7 @@ function loadEstimates() {
     if (fill) fill.setData(geo);
     if (lines) lines.setData(estimateLines(geo));
     applyPaint(); renderTree();
-  }).catch(() => { estLoading = null; });   // a failed fetch is retried by toggling again
+  }).catch(() => { estLoading = null; });   // a failed fetch is retried at the next selection
   return estLoading;
 }
 
@@ -4895,6 +4980,10 @@ const EST_FADE = [6.5, 8.5];
 
 function applyEstimates() {
   if (!map.getLayer('estimate-outline')) return;
+  /* ALWAYS ON SINCE §17, AND FETCHED ON FIRST NEED: the first time a religion is selected, the
+     only state that draws an outline. A view with nothing selected never pays for the 2.2 MB of
+     shapes. `loadEstimates` repaints when they land. */
+  if (scope && !EST) loadEstimates();
   const lit = estimateLit();
   const f = ['in', ['get', 'cc'], ['literal', lit]];
   map.setFilter('estimate-outline', f);
@@ -4969,8 +5058,10 @@ function renderRegionRamp() {
 
 function applyRegions() {
   document.body.classList.toggle('regions', regionsMode);
-  // the dot-size slider sizes the pies in regions mode
-  document.querySelector('#ctl-dotsize .cl').textContent = regionsMode ? 'pie size' : 'dot size';
+  // §17.10: Cap and Aggregation are the pies' alone, so they leave with them (the CSS)
+  document.body.classList.toggle('draw-dots', !regionsMode && !dotPies);
+  // §17.18: people per dot is the dots' alone (pies always read 1:1,000), size not regions'
+  document.body.classList.toggle('draw-pies', !regionsMode && dotPies);
   if (!map.getLayer('regions-fill')) return;
   const vis = regionsMode ? 'visible' : 'none';
   for (const l of ['regions-fill', 'regions-seam', 'regions-line'])
@@ -5004,8 +5095,9 @@ function applyRegions() {
 }
 
 /* The top-level religions, every one in the taxonomy rather than those present here, since
-   one tile can hold several countries. Hidden ones are left out of the fill and the pies
-   alike, so hiding a religion hands each area to its next largest, as the dots do. */
+   one tile can hold several countries. Hidden ones are left out of the fill, so hiding a
+   religion hands each area to its next largest; since §17.13 the pies keep them, in their grey
+   wedge, as the dot pies do. */
 function rootIds() {
   return NODES.filter(n => !n.id.includes('.')).map(n => n.id).filter(r => !isHidden(r));
 }
@@ -5080,7 +5172,8 @@ function regionCardAt(point) {
    palette index each), and a fragment shader works out which wedge a pixel is in. A pan or a
    zoom only changes the matrix. The first version here drew on a 2D canvas, projecting every
    pie and blitting a sprite per pie on every frame. Wedges go in the taxonomy's own order, so
-   a religion's wedge sits in the same place in every pie. */
+   a religion's wedge sits in the same place in every pie. Since §17 the layer (pieLayer, below)
+   is shared with the dot style's pies, and regionPieInstance hands it these. */
 /* Tuned on India at z4, the densest case: at 0.0018 and 0.8 the Gangetic plain merged in a
    cascade into 100M-person giants among crowds of small pies. */
 /* And again for the borderless, see-through pies, where every overlap shows as a blend: 0.55
@@ -5097,7 +5190,8 @@ let PIES = [], pieDirty = true;
    with it: a pie keeps to its area as the map zooms but does not swell to fill it. The pie-size
    slider is the dot-size slider's multiplier, relabelled in regions mode. The shader applies
    the same formula and clamp; this copy is for the merging. */
-function pieScale(zoom) { return Math.pow(2, zoom / 2) * dotScale; }
+// §17.18: always at 1x; the size slider is not offered in regions mode
+function pieScale(zoom) { return Math.pow(2, zoom / 2); }
 function pieR(pop, zoom) {
   return Math.min(PIE_MAX_R, Math.max(PIE_MIN_R, PIE_K * Math.sqrt(pop) * pieScale(zoom)));
 }
@@ -5111,7 +5205,9 @@ function rebuildPies() {
   if (regionsMode && !scope && map.getSource('regions')) {
     const src = map.getSource('regions');
     const z = Math.max(0, Math.min(src.maxzoom || 8, Math.floor(map.getZoom())));
-    const roots = rootIds();
+    /* §17.13: a hidden family stays in the pie as its grey wedge (`__hid`), so a pie keeps its
+       size; the fill under it still goes to the largest family shown (largestExpr). */
+    const roots = allRootIds(), shownRoot = new Set(rootIds());
     const seen = new Set(), items = [];
     for (const f of map.querySourceFeatures('regions',
          { sourceLayer: 'pies', filter: ['==', ['get', 'z'], z] })) {
@@ -5121,7 +5217,10 @@ function rebuildPies() {
       if (country && p.c !== country) continue;
       const k = {};
       let tot = 0;
-      for (const r of roots) if (p[r]) { k[r] = p[r]; tot += p[r]; }
+      for (const r of roots) if (p[r]) {
+        if (shownRoot.has(r)) k[r] = p[r]; else k.__hid = (k.__hid || 0) + p[r];
+        tot += p[r];
+      }
       if (!tot) continue;
       const [lng, lat] = f.geometry.coordinates;
       const pt = map.project([lng, lat]);
@@ -5169,53 +5268,235 @@ function rebuildPies() {
       return { x: mercXn(ll.lng), y: mercYn(ll.lat), r0: PIE_K * Math.sqrt(it.pop), k: it.k };
     }).sort((a, b) => a.r0 - b.r0);
   }
-  pieLayer.upload();
+  if (pieMode() === 'regions') {
+    const idx = {};
+    const all = allRootIds();
+    all.forEach((id, i) => { idx[id] = i; });
+    idx.__hid = all.length;                  // HIDDEN_GREY, after the roots (pieLayer.palette)
+    pieLayer.upload(PIES.map(c => regionPieInstance(c, idx)), 'regions');
+  } else if (pieLayer.mode === 'regions') pieLayer.upload([], null);
 }
 
+/* One region pie as the shared layer takes it (see pieLayer): wedges in the taxonomy's order of
+   the roots, the smallest folded at PIE_WEDGES into one in the largest of their colours. */
+function regionPieInstance(c, idx) {
+  // the hidden families' wedge (§17.13) is never folded and always last
+  const hid = c.k.__hid ? [{ n: '__hid', p: c.k.__hid }] : [];
+  let parts = Object.entries(c.k).filter(([n]) => n !== '__hid').map(([n, p]) => ({ n, p }));
+  if (parts.length > PIE_WEDGES - hid.length) {
+    // keep the largest, and draw the rest as one wedge in the largest of their colours:
+    // those are slivers under a pixel wide
+    const big = [...parts].sort((u, v) => v.p - u.p);
+    const K = PIE_WEDGES - hid.length;
+    const keep = big.slice(0, K - 1), rest = big.slice(K - 1);
+    keep.push({ n: rest[0].n, p: rest.reduce((s, q) => s + q.p, 0) });
+    parts = keep;
+  }
+  parts.sort((u, v) => (idx[u.n] ?? 1e9) - (idx[v.n] ?? 1e9));
+  return { x: c.x, y: c.y, s: c.r0, ring: -1,
+           ws: parts.concat(hid).map(q => ({ p: q.p, col: idx[q.n] ?? 0 })) };
+}
+
+/* ---- THE PIE LAYER, ONE FOR BOTH KINDS OF PIE (spec §17). Regions mode's pies (above) and the
+   dot style's pies (rebuildDotPies, below) are the same object to draw, so they share this
+   layer, its shader and its hit-free per-frame cost; `mode` says whose list it holds, and it
+   draws only while that is the kind on screen (pieMode).
+
+   An instance is {x, y, s, ring, ws}. x, y: the centre in mercator units. s > 0: a radius in
+   px before the zoom's scale (u_pxscale) and the clamp; s < 0: a radius of -s mercator units,
+   fixed to the ground, which is §17's box. ring: the palette index of a selection ring's
+   colour, or -1. ws: up to PIE_SLOTS wedges {p, col}, col an index into `colors`.
+
+   EACH WEDGE IS ONE FLOAT: its palette index times 4096 plus where it ends, as a whole number
+   of 4095ths of the turn. Both are exact in a float32 up to 2^24, so 24 wedges are six vec4s.
+   24 rather than languagedots' 9 because religiondots has no neutral colour to fold the rest
+   into: grey is the not-a-religion ramp (§6.3a), so a pie's tail folds by family instead and
+   the families need the room (dotPieWedges). */
+const PIE_SLOTS = 24, PIE_VEC4 = PIE_SLOTS / 4, PIE_STRIDE = 4 + PIE_SLOTS;
+
+/* Which pies are on screen: regions mode's with nothing selected, the dot style's in dots mode,
+   or none. */
+function pieMode() {
+  if (regionsMode) return scope ? null : 'regions';
+  return dotPies && !markFallback() ? 'dots' : null;
+}
+
+/* ---- SELECTION RINGS, languagedots' locator rings carried over (§17). With a religion
+   selected, a faint ring in its colour is drawn around each pie whose people would otherwise be
+   too little ink to see, so a small religion can be found from far out. THE TEST IS INK ON
+   SCREEN, in px², so it turns itself up as you zoom out and off as you zoom in: each frame the
+   pies first add their ink into a coarse screen grid (SEL_RING.bin px cells, on the GPU, into a
+   float texture), and a pie gets a ring only if the ink within one cell of it is under
+   SEL_RING.ink, and the selection's ink on the whole screen is under SEL_RING.total, so a
+   religion plainly on the map gets no rings anywhere. A ring's radius and opacity grow with
+   the pie's own ink on a log scale. Languagedots' constants as they stood on 2026-10-12, except
+   `total`, 50 px² there and 1,000 here: at 50 Bahá'í (237k people, 76 pies at world zoom, about
+   525 px² of ink, most of it in the United States) counted as plainly on the map and got no
+   ring anywhere, and its pies in Kenya and India were a pixel or two each. 1,000 px² is about
+   an 18 px disc; Judaism at world zoom (about 10,800 px²) still gets none. While
+   something is selected every drawn pie is the selection (§6.7 hides the rest), so a pie's
+   selected share is always the whole of it. Without a float render target
+   (EXT_color_buffer_float) it falls back to the per-pie test. */
+const SEL_RING = { ink: 2.5, total: 1000, bin: 12, gap: 3, min: 6, minLo: 2, width: 0.8, alpha: 0.45 };
+const SEL_RING_K = x => `clamp(log(max(${x}, 1e-6) * 1000.0) / log(1000.0), 0.0, 1.0)`;
+const PIE_INK = {
+  /* The shared offscreen grid, one texel per SEL_RING.bin px, float32 where the GPU can blend
+     it (EXT_float_blend), else half-float. The screen's total is read back and summed here. */
+  begin(gl) {
+    if (this.ok === undefined) {
+      this.ok = !!gl.getExtension('EXT_color_buffer_float');
+      this.f32 = this.ok && !!gl.getExtension('EXT_float_blend');
+      if (this.ok) this.fbo = gl.createFramebuffer();
+    }
+    if (!this.ok) return false;
+    const cv = map.getCanvas();
+    const w = Math.max(1, Math.ceil(cv.clientWidth / SEL_RING.bin));
+    const h = Math.max(1, Math.ceil(cv.clientHeight / SEL_RING.bin));
+    if (!this.tex || w !== this.w || h !== this.h) {
+      if (this.tex) gl.deleteTexture(this.tex);
+      this.w = w; this.h = h; this.buf = new Float32Array(w * h * 4);
+      this.tex = gl.createTexture();
+      gl.bindTexture(gl.TEXTURE_2D, this.tex);
+      gl.texImage2D(gl.TEXTURE_2D, 0, this.f32 ? gl.RGBA32F : gl.RGBA16F, w, h, 0, gl.RGBA,
+                    this.f32 ? gl.FLOAT : gl.HALF_FLOAT, null);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+      gl.bindFramebuffer(gl.FRAMEBUFFER, this.fbo);
+      gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, this.tex, 0);
+      if (gl.checkFramebufferStatus(gl.FRAMEBUFFER) !== gl.FRAMEBUFFER_COMPLETE) {
+        this.ok = false; gl.bindFramebuffer(gl.FRAMEBUFFER, null); return false;
+      }
+    }
+    this.fresh = false;
+    gl.activeTexture(gl.TEXTURE1);                  // never sample the grid while drawing into it
+    gl.bindTexture(gl.TEXTURE_2D, null);
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindFramebuffer(gl.FRAMEBUFFER, this.fbo);
+    gl.viewport(0, 0, w, h);
+    gl.disable(gl.DEPTH_TEST); gl.disable(gl.STENCIL_TEST); gl.disable(gl.SCISSOR_TEST);
+    gl.colorMask(true, true, true, true);
+    gl.clearColor(0, 0, 0, 0);
+    gl.clear(gl.COLOR_BUFFER_BIT);
+    gl.enable(gl.BLEND);
+    gl.blendFunc(gl.ONE, gl.ONE);
+    return true;
+  },
+  end(gl) {
+    gl.readPixels(0, 0, this.w, this.h, gl.RGBA, gl.FLOAT, this.buf);
+    let s = 0;
+    for (let i = 0; i < this.buf.length; i += 4) s += this.buf[i];
+    this.total = s;                                  // in units of SEL_RING.ink
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+    gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight);
+    this.fresh = true;
+  },
+  /* whether to draw rings at all this frame: not when the selection is plainly on screen */
+  wanted() { return !(this.ok && this.fresh) || this.total < SEL_RING.total / SEL_RING.ink; },
+  /* the ring uniforms, and the grid on texture unit 1 */
+  uniforms(gl, loc) {
+    const cv = map.getCanvas(), on = this.ok && this.fresh;
+    gl.activeTexture(gl.TEXTURE1);
+    gl.bindTexture(gl.TEXTURE_2D, on ? this.tex : null);
+    gl.uniform1i(loc.u_ink, 1);
+    gl.uniform2f(loc.u_inkSize, on ? this.w : 1, on ? this.h : 1);
+    gl.uniform1f(loc.u_hasInk, on ? 1 : 0);
+    gl.uniform1f(loc.u_rgap, SEL_RING.gap);
+    gl.uniform1f(loc.u_rmin, SEL_RING.min);
+    gl.uniform1f(loc.u_rminLo, SEL_RING.minLo);
+    gl.uniform1f(loc.u_rw, SEL_RING.width);
+    gl.uniform1f(loc.u_ralpha, SEL_RING.alpha);
+    gl.uniform2f(loc.u_px2clip, 2 / cv.clientWidth, 2 / cv.clientHeight);
+    gl.activeTexture(gl.TEXTURE0);
+  },
+};
+
 const pieLayer = {
-  id: 'region-pies', type: 'custom', renderingMode: '2d',
+  id: 'pies', type: 'custom', renderingMode: '2d',
+  mode: null, count: 0, colors: [], rings: false,
   onAdd(m, gl) {
     this.gl = gl;
     if (!(typeof WebGL2RenderingContext !== 'undefined' && gl instanceof WebGL2RenderingContext)) {
-      console.warn('region pies need WebGL2'); this.dead = true; return;
+      console.warn('pies need WebGL2'); this.dead = true; return;
     }
+    const W = [...Array(PIE_VEC4).keys()];
     const vs = `#version 300 es
       in vec2 a_corner;
-      in vec3 a_pie;                  // centre x, y in mercator units; radius px before scale
-      in vec4 a_cum0; in vec4 a_cum1; in vec4 a_col0; in vec4 a_col1;
+      in vec4 a_pie;                  // centre x, y in mercator units; size (see pieLayer); ring colour
+      ${W.map(i => `in vec4 a_w${i};`).join(' ')}
       uniform mat4 u_matrix;
-      uniform float u_pxscale;        // pieScale(zoom)
+      uniform float u_pxscale;        // px per unit of a positive size, at this zoom
       uniform float u_world;          // 512 * 2^zoom, px per mercator unit
-      uniform vec2 u_clamp;           // PIE_MIN_R, PIE_MAX_R
+      uniform vec2 u_clamp;           // the radius's floor and cap, px
+      uniform float u_mode;           // 0 pies, 1 their ink into the grid, 2 selection rings
+      uniform float u_tink;
+      uniform sampler2D u_pal;
+      uniform sampler2D u_ink; uniform vec2 u_inkSize;
+      uniform float u_hasInk, u_rgap, u_rmin, u_rminLo, u_rw;
+      uniform vec2 u_px2clip;
       out vec2 v_c; out float v_px;
-      flat out vec4 v_cum0; flat out vec4 v_cum1; flat out vec4 v_col0; flat out vec4 v_col1;
+      ${W.map(i => `flat out vec4 v_w${i};`).join(' ')}
+      out vec2 v_ex; flat out vec3 v_col; flat out float v_ink; flat out float v_R;
+      bool ringWanted(vec4 c0, float ink) {      // ink in units of SEL_RING.ink
+        if (u_hasInk < 0.5) return ink < 1.0;
+        ivec2 b = ivec2(floor((c0.xy / c0.w * 0.5 + 0.5) * u_inkSize)), hi = ivec2(u_inkSize) - 1;
+        float s = 0.0;
+        for (int dy = -1; dy <= 1; dy++) for (int dx = -1; dx <= 1; dx++)
+          s += texelFetch(u_ink, clamp(b + ivec2(dx, dy), ivec2(0), hi), 0).r;
+        return s < 1.0;
+      }
       void main() {
-        float px = clamp(a_pie.z * u_pxscale, u_clamp.x, u_clamp.y);
+        float px = a_pie.z < 0.0 ? -a_pie.z * u_world
+                                 : clamp(a_pie.z * u_pxscale, u_clamp.x, u_clamp.y);
+        if (u_mode > 0.5) {
+          if (a_pie.w < 0.0) { gl_Position = vec4(2.0, 2.0, 2.0, 1.0); return; }
+          vec4 c0 = u_matrix * vec4(a_pie.xy, 0.0, 1.0);
+          float ink0 = fract(a_pie.w) * 3.14159265 * px * px / u_tink;   // the visible share
+          v_ink = ink0;
+          if (u_mode < 1.5) { gl_Position = c0; gl_PointSize = 1.0; return; }
+          if (!ringWanted(c0, ink0)) { gl_Position = vec4(2.0, 2.0, 2.0, 1.0); return; }
+          v_col = texelFetch(u_pal, ivec2(int(floor(a_pie.w)), 0), 0).rgb;
+          v_R = max(px + u_rgap, mix(u_rminLo, u_rmin, ${SEL_RING_K('ink0')}));
+          v_ex = a_corner * (v_R + u_rw);
+          gl_Position = c0 + vec4(v_ex * u_px2clip * c0.w, 0.0, 0.0);
+          return;
+        }
         float r = (px + 1.0) / u_world;            // one px of margin for the antialiased edge
         v_c = a_corner * (px + 1.0) / max(px, 1e-6);
         v_px = px;
-        v_cum0 = a_cum0; v_cum1 = a_cum1; v_col0 = a_col0; v_col1 = a_col1;
+        ${W.map(i => `v_w${i} = a_w${i};`).join(' ')}
         gl_Position = u_matrix * vec4(a_pie.xy + a_corner * r, 0.0, 1.0);
       }`;
     const fs = `#version 300 es
       precision highp float;
       in vec2 v_c; in float v_px;
-      flat in vec4 v_cum0; flat in vec4 v_cum1; flat in vec4 v_col0; flat in vec4 v_col1;
-      uniform sampler2D u_pal; uniform float u_alpha;
+      ${W.map(i => `flat in vec4 v_w${i};`).join(' ')}
+      in vec2 v_ex; flat in vec3 v_col; flat in float v_ink; flat in float v_R;
+      uniform sampler2D u_pal; uniform float u_alpha, u_mode, u_ralpha, u_rw;
       out vec4 frag;
       void main() {
+        if (u_mode > 1.5) {                      // a ring of radius v_R px, fainter for fewer people
+          float a = u_ralpha * mix(0.32, 1.0, ${SEL_RING_K('v_ink')})
+                  * clamp(u_rw * 0.5 - abs(length(v_ex) - v_R) + 0.5, 0.0, 1.0);
+          if (a <= 0.0) discard;
+          frag = vec4(v_col * a, a); return;
+        }
+        if (u_mode > 0.5) { frag = vec4(v_ink, 0.0, 0.0, 0.0); return; }   // ink, added up
         float d = length(v_c);
         float a = clamp((1.0 - d) * v_px + 0.5, 0.0, 1.0);
         if (a <= 0.0) discard;
-        float f = fract(atan(v_c.x, -v_c.y) / 6.2831853 + 1.0);   // from north, clockwise
-        float idx = v_col1.w;
-        if (f < v_cum1.z) idx = v_col1.z;
-        if (f < v_cum1.y) idx = v_col1.y;
-        if (f < v_cum1.x) idx = v_col1.x;
-        if (f < v_cum0.w) idx = v_col0.w;
-        if (f < v_cum0.z) idx = v_col0.z;
-        if (f < v_cum0.y) idx = v_col0.y;
-        if (f < v_cum0.x) idx = v_col0.x;
+        // from north, clockwise, in 4095ths of the turn: the first wedge ending past it
+        float f = fract(atan(v_c.x, -v_c.y) / 6.2831853 + 1.0) * 4095.0;
+        vec4 w[${PIE_VEC4}] = vec4[${PIE_VEC4}](${W.map(i => `v_w${i}`).join(', ')});
+        // forward, stopping at the first: most pies have a few wedges and most pixels are in them
+        float idx = floor(w[${PIE_VEC4 - 1}].w / 4096.0);
+        bool found = false;
+        for (int i = 0; i < ${PIE_VEC4}; i++) {
+          for (int j = 0; j < 4; j++) {
+            float v = w[i][j];
+            if (f < mod(v, 4096.0)) { idx = floor(v / 4096.0); found = true; break; }
+          }
+          if (found) break;
+        }
         vec3 rgb = texelFetch(u_pal, ivec2(int(idx), 0), 0).rgb;
         float alpha = u_alpha * a;
         frag = vec4(rgb * alpha, alpha);
@@ -5230,7 +5511,9 @@ const pieLayer = {
     gl.linkProgram(p);
     if (!gl.getProgramParameter(p, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(p));
     this.loc = {};
-    for (const n of ['u_matrix', 'u_pxscale', 'u_world', 'u_clamp', 'u_pal', 'u_alpha'])
+    for (const n of ['u_matrix', 'u_pxscale', 'u_world', 'u_clamp', 'u_pal', 'u_alpha', 'u_mode',
+                     'u_tink', 'u_ink', 'u_inkSize', 'u_hasInk', 'u_rgap', 'u_rmin', 'u_rminLo',
+                     'u_rw', 'u_px2clip', 'u_ralpha'])
       this.loc[n] = gl.getUniformLocation(p, n);
     this.vao = gl.createVertexArray();
     gl.bindVertexArray(this.vao);
@@ -5242,92 +5525,998 @@ const pieLayer = {
     gl.vertexAttribPointer(ac, 2, gl.FLOAT, false, 0, 0);
     this.inst = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, this.inst);
-    const stride = 19 * 4;
-    [['a_pie', 3, 0], ['a_cum0', 4, 3], ['a_cum1', 4, 7], ['a_col0', 4, 11], ['a_col1', 4, 15]]
-      .forEach(([name, size, off]) => {
-        const l = gl.getAttribLocation(p, name);
-        gl.enableVertexAttribArray(l);
-        gl.vertexAttribPointer(l, size, gl.FLOAT, false, stride, off * 4);
-        gl.vertexAttribDivisor(l, 1);
-      });
+    const stride = PIE_STRIDE * 4;
+    [['a_pie', 0], ...W.map(i => ['a_w' + i, 4 + 4 * i])].forEach(([name, off]) => {
+      const l = gl.getAttribLocation(p, name);
+      gl.enableVertexAttribArray(l);
+      gl.vertexAttribPointer(l, 4, gl.FLOAT, false, stride, off * 4);
+      gl.vertexAttribDivisor(l, 1);
+    });
     gl.bindVertexArray(null);
     this.pal = gl.createTexture();
-    this.count = 0;
     this.palette();
-    this.upload();
+    this.upload(this.list || [], this.mode);
   },
-  /* each root's colour, by its index in allRootIds(); redone with the legend's colours */
+  /* The colours the wedge indices point at, for whichever kind of pie the layer holds; redone
+     whenever the legend's colours may have moved. A texel write, so cheap enough for a drag. */
   palette() {
     const gl = this.gl;
     if (!gl || this.dead || !this.pal) return;
-    const ids = allRootIds();
-    const px = new Uint8Array(Math.max(1, ids.length) * 4);
-    ids.forEach((id, i) => {
-      const hex = hslToHex(rootColor(id));
+    const hexes = this.mode === 'regions' ? allRootIds().map(id => hslToHex(rootColor(id))).concat([HIDDEN_GREY])
+                : this.mode === 'dots' ? dotPieColors() : ['#666666'];
+    this.colors = hexes;
+    const px = new Uint8Array(hexes.length * 4);
+    hexes.forEach((hex, i) => {
       px[i * 4] = parseInt(hex.slice(1, 3), 16); px[i * 4 + 1] = parseInt(hex.slice(3, 5), 16);
       px[i * 4 + 2] = parseInt(hex.slice(5, 7), 16); px[i * 4 + 3] = 255;
     });
     gl.bindTexture(gl.TEXTURE_2D, this.pal);
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, Math.max(1, ids.length), 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, px);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, hexes.length, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, px);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    if (typeof map !== 'undefined') map.triggerRepaint();
   },
-  upload() {
+  upload(list, mode) {
+    this.list = list; this.mode = mode;
     const gl = this.gl;
     if (!gl || this.dead || !this.inst) return;
-    const idx = {};
-    allRootIds().forEach((id, i) => { idx[id] = i; });
-    const a = new Float32Array(PIES.length * 19);
+    this.palette();
+    const a = new Float32Array(list.length * PIE_STRIDE);
     let o = 0;
-    for (const c of PIES) {
-      let parts = Object.entries(c.k).map(([n, p]) => ({ n, p }));
-      if (parts.length > PIE_WEDGES) {
-        // keep the largest, and draw the rest as one wedge in the largest of their colours:
-        // those are slivers under a pixel wide
-        const big = [...parts].sort((u, v) => v.p - u.p);
-        const keep = big.slice(0, PIE_WEDGES - 1), rest = big.slice(PIE_WEDGES - 1);
-        keep.push({ n: rest[0].n, p: rest.reduce((s, q) => s + q.p, 0) });
-        parts = keep;
-      }
-      parts.sort((u, v) => (idx[u.n] ?? 1e9) - (idx[v.n] ?? 1e9));
-      const tot = parts.reduce((s, q) => s + q.p, 0);
-      a[o] = c.x; a[o + 1] = c.y; a[o + 2] = c.r0;
+    this.rings = false;
+    for (const c of list) {
+      const ws = c.ws, n = Math.min(ws.length, PIE_SLOTS);
+      const tot = ws.reduce((s, q) => s + q.p, 0) || 1;
+      // the ring's colour index, plus the pie's visible share as the fraction: hidden people
+      // take no ink in the selection rings' grid (§17.13)
+      a[o] = c.x; a[o + 1] = c.y; a[o + 2] = c.s;
+      a[o + 3] = (c.ring ?? -1) >= 0 ? c.ring + Math.min(0.999, Math.max(0.001, c.share ?? 1)) : -1;
+      if (a[o + 3] >= 0) this.rings = true;
       let cum = 0;
-      for (let k = 0; k < PIE_WEDGES; k++) {
-        const q = parts[Math.min(k, parts.length - 1)];
-        if (k < parts.length) cum += q.p / tot;
-        a[o + 3 + k] = k < parts.length - 1 ? cum : 2.0;     // the last wedge runs to the end
-        a[o + 11 + k] = idx[q.n] ?? 0;
+      for (let k = 0; k < PIE_SLOTS; k++) {
+        const q = ws[Math.min(k, n - 1)];
+        let end = 4095;                        // the last wedge runs to the end of the turn
+        if (k < n - 1) { cum += q.p / tot; end = Math.min(4095, Math.round(cum * 4095)); }
+        a[o + 4 + k] = (q ? q.col : 0) * 4096 + end;
       }
-      o += 19;
+      o += PIE_STRIDE;
     }
     gl.bindBuffer(gl.ARRAY_BUFFER, this.inst);
     gl.bufferData(gl.ARRAY_BUFFER, a, gl.DYNAMIC_DRAW);
-    this.count = PIES.length;
+    this.count = list.length;
     map.triggerRepaint();
   },
-  render(gl, matrix) {
-    if (this.dead || !regionsMode || scope || !this.count) return;
+  /* The world copies to draw: a custom layer's render() runs once a frame, not once per copy the
+     way MapLibre's own layers do (§4.2d's Fiji), so a view across the antimeridian needs the
+     pies drawn again a world over. Only while the view is narrower than the world. */
+  worlds() {
+    const b = map.getBounds();
+    const x0 = mercXn(b.getWest());
+    let x1 = mercXn(b.getEast());
+    if (x1 < x0) x1 += 1;
+    if (x1 - x0 >= 1) return [0];
+    const out = [];
+    for (let k = Math.floor(x0); k <= Math.floor(x1); k++) out.push(k);
+    return out;
+  },
+  setup(gl, matrix) {
     const z = map.getZoom();
     gl.useProgram(this.prog);
     gl.bindVertexArray(this.vao);
-    gl.uniformMatrix4fv(this.loc.u_matrix, false, matrix);
-    gl.uniform1f(this.loc.u_pxscale, pieScale(z));
+    if (this.mode === 'regions') {
+      gl.uniform1f(this.loc.u_pxscale, pieScale(z));
+      gl.uniform2f(this.loc.u_clamp, PIE_MIN_R, PIE_MAX_R);
+    } else {
+      // the size and the cap are in each pie's own zoom-0 radius (rebuildDotPies)
+      gl.uniform1f(this.loc.u_pxscale, piePxScale(z));
+      gl.uniform2f(this.loc.u_clamp, 0, 1e9);
+    }
     gl.uniform1f(this.loc.u_world, 512 * Math.pow(2, z));
-    gl.uniform2f(this.loc.u_clamp, PIE_MIN_R, PIE_MAX_R);
     gl.uniform1f(this.loc.u_alpha, DOT_ALPHA);
+    gl.uniform1f(this.loc.u_tink, SEL_RING.ink);
     gl.activeTexture(gl.TEXTURE0);
     gl.bindTexture(gl.TEXTURE_2D, this.pal);
     gl.uniform1i(this.loc.u_pal, 0);
+  },
+  /* each world copy's matrix, then `draw` */
+  eachWorld(gl, matrix, draw) {
+    const m = Array.from(matrix);
+    for (const k of this.worlds()) {
+      const s = m.slice();
+      if (k) for (let i = 0; i < 4; i++) s[12 + i] = m[i] * k + m[12 + i];
+      gl.uniformMatrix4fv(this.loc.u_matrix, false, new Float32Array(s));
+      draw();
+    }
+  },
+  ringsWanted() { return this.rings && !!scope && this.mode === 'dots'; },
+  /* before the frame: the selection's ink into the ring grid (see SELECTION RINGS) */
+  prerender(gl, matrix) {
+    if (this.dead || !this.count || this.mode !== pieMode() || !this.ringsWanted()) return;
+    if (!PIE_INK.begin(gl)) return;
+    this.setup(gl, matrix);
+    gl.uniform1f(this.loc.u_mode, 1);
+    this.eachWorld(gl, matrix, () => gl.drawArraysInstanced(gl.POINTS, 0, 1, this.count));
+    gl.bindVertexArray(null);
+    PIE_INK.end(gl);
+  },
+  render(gl, matrix) {
+    const mode = pieMode();
+    if (this.dead || !this.count || !mode || this.mode !== mode) return;
+    this.setup(gl, matrix);
+    gl.uniform1f(this.loc.u_mode, 0);
     gl.enable(gl.BLEND);
     gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
     gl.disable(gl.DEPTH_TEST);
-    gl.drawArraysInstanced(gl.TRIANGLES, 0, 6, this.count);
+    gl.depthMask(false);
+    gl.disable(gl.CULL_FACE);
+    this.eachWorld(gl, matrix, () => gl.drawArraysInstanced(gl.TRIANGLES, 0, 6, this.count));
+    if (this.ringsWanted() && PIE_INK.wanted()) {
+      PIE_INK.uniforms(gl, this.loc);
+      gl.uniform1f(this.loc.u_mode, 2);
+      this.eachWorld(gl, matrix, () => gl.drawArraysInstanced(gl.TRIANGLES, 0, 6, this.count));
+    }
     gl.bindVertexArray(null);
   },
 };
+
+// ---------------------------------------------------------------- draw as: pies (§17)
+/* `draw as: pies`, which replaced §4.2b's merged marks on 2026-10-12 (Anita: "just replace it
+   with the pie chart mode from languagedots") and is the default since §17.10.
+
+   ONE PIE PER GRID CELL AND COUNTRY, BINNED FROM THE SCATTER'S OWN BUFFERS (§17.10). The first
+   build read the merged tile layer, whose cells are fixed at 32 a tile (tiles.py CELL_BITS 5);
+   languagedots' Aggregation needs 64, 128 and 256 a tile as well, which no tile holds. The
+   buffers hold every dot at its exact position, already loaded for the separate dots, so any
+   grid is a floor: L = tile zoom + PIE_CELL_BITS + detail, languagedots' own grid. Each rebuild
+   walks only the buckets in view. Countries are never summed into one pie (regions mode's rule).
+
+   WHAT A PIE HOLDS IS WHAT THE DOTS SHOW, by SCATTER's own rule, which is the authority
+   (§7a-ii): a dot is drawn as its node, or under the roll-up (§7a-i) as the level its country
+   counted; it is dropped where that node is hidden (§10.3) or out of scope (§6.7), where the
+   country measured nothing (§7a-iii) and where it is modelled under the roll-up. And the groups
+   too small for one dot are added at their real size (subdot.py, §17.11). Its wedges are the
+   LEGEND'S ROWS: every node drawn in one row's colour is one wedge, labelled as the row is
+   (dotPieRows), so the card and the legend name the same things and every wedge's colour is a
+   swatch in the legend.
+
+   HOW IT IS DRAWN AND SIZED IS LANGUAGEDOTS': no border, the dots' DOT_ALPHA, wedges in the
+   legend's order, drawn on the GPU (pieLayer) so a pan or a zoom only changes the matrix, rebuilt
+   only when the map comes to rest; and its sizing (§17.10), ink in proportion to people on the
+   ground: DOT_KM2 km² per 1,000 people times the Size slider, so a pie doubles in pixels per zoom
+   up to PIE_MAXZ, with the Cap slider's per-cell ceiling off by default. */
+const PIE_CELL_BITS = 6;           // languagedots' CELL_BITS: 64 cells a tile at detail 0
+const PIE_MAXZ = 12;               // languagedots' ARCHIVE_MAXZ: the grid stops splitting here
+const PIE_FOLD_AT = 9, PIE_TOP = 5;
+let DOT_PIES = [], dotPieDirty = true, dotPieTimer = 0, pieRulesChanged = false;
+let NODE_IDX = null;
+
+function nodeIdx() {
+  if (!NODE_IDX || NODE_IDX.n !== NODES.length) {
+    NODE_IDX = new Map(NODES.map((n, i) => [n.id, i]));
+    NODE_IDX.n = NODES.length;
+  }
+  return NODE_IDX;
+}
+
+/* No instancing at all (SCATTER.onAdd): the merged tile layer draws its own circles again, the
+   one place §4.2b's merged marks survive, because a MapLibre circle layer needs nothing special
+   and the pies need WebGL2. */
+function markFallback() { return !!SCATTER.unsupported; }
+
+/* ---- SIZE, CAP AND AGGREGATION, languagedots' three sliders with its defaults (§17.10).
+   Size is a multiplier on AREA, on SIZE_STOPS; 1x is DOT_KM2 km² of ink per 1,000 people. Cap is
+   a ceiling on one cell's whole pie, CAP_FRAC of the cell's width at 1x, as a multiplier on its
+   area, and off at the top stop (the default). Aggregation picks the grid: `detail` levels finer
+   than PIE_CELL_BITS, -1 to 2; the slider runs the other way (right is coarser). */
+const DOT_KM2 = 3.9;
+const CAP_FRAC = 0.65;
+const SIZE_STOPS = [0.2, 0.4, 0.6, 0.8, 1, 1.5, 2, 3, 4, 6, 8, 10];
+const CAP_STOPS = [0.5, 1, 1.5, 2, 3, 5, Infinity];
+const AGG_LABELS = ['very low', 'low', 'medium', 'high'];   // slider 0-3 = detail 2, 1, 0, -1
+let sizeScale = 1, capScale = Infinity, detail = 1;
+const capFrac = () => isFinite(capScale) ? CAP_FRAC * Math.sqrt(capScale) : 1e6;
+/* Every pie's radius 2 times languagedots' at the same Size: Anita, 2026-10-12, "about 1.6x
+   bigger" and then 2x, on the base before Size and Cap, so Size 1x draws 2x the radius languagedots' sizing
+   gave when it was first carried over (§17.10). A gain
+   on the radius rather than a new DOT_KM2, so DOT_KM2 still reads as languagedots' constant. */
+const PIE_GAIN = 2;                // 1.6 first, then 2, Anita's correction the same day (§17.12)
+/* the zoom-0 radius in px of 1,000 people's ink */
+const pieR0 = () => PIE_GAIN * Math.sqrt(DOT_KM2 * sizeScale * 1e6 / Math.PI) / (40075016.686 / 512);
+/* zoom-0 px to screen px: doubles per zoom, and holds past PIE_MAXZ, where the grid stops */
+const piePxScale = z => Math.pow(2, Math.min(z, PIE_MAXZ));
+/* The palette: first every node's colour on the map (`colorOf`), then every node's own colour in
+   the table of the moment, which is what §6.10's fold paints a folded child in and what a
+   family's folded tail is drawn in (dotPieWedges). */
+function dotPieColors() {
+  const table = scope ? NODE_COLOR : OVERVIEW_COLOR, out = [];
+  for (const n of NODES) out.push(hslToHex(colorOf[n.id] || '#666'));
+  for (const n of NODES) out.push(hslToHex(USER_COLOR[n.id] || table[n.id] || colorOf[n.id] || '#666'));
+  out.push(HIDDEN_GREY);             // 2N: the hidden wedge (§17.13)
+  return out;
+}
+
+/* THE LEGEND'S ROWS, per node: which row a node's dots are counted in. `paletteFor`'s walk with
+   ids instead of colours: a drawn node paints its subtree and a drawn child paints over its own
+   part, MERGE_OWN hands a branch's own dots to its child, and §6.10's folded children are the
+   "N small groups" row. A row is {key, col (palette index of its colour), ord (legend order),
+   fam (the family it folds into), sel (the node a double-click selects), label}. Cached
+   against `colorOf`, which recolour() replaces whenever any of this can move. */
+let _pieRows = null;
+function dotPieRows() {
+  if (_pieRows && _pieRows.colorOf === colorOf && _pieRows.N === NODES.length) return _pieRows;
+  const idx = nodeIdx();
+  const of = {};
+  for (const id of drawnSet()) for (const m of subtree(id)) of[m] = id;
+  for (const par in MERGE_OWN) if (of[par] && of[MERGE_OWN[par]]) of[par] = of[MERGE_OWN[par]];
+  for (const [par, set] of FOLDED)
+    for (const k of set) for (const m of subtree(k)) if (!of[m] || of[m] === par) of[m] = 'fold:' + par;
+  const ord = {};
+  let c = 0;
+  const walk = id => { ord[id] = c++; for (const k of KIDS[id] || []) walk(k); };
+  ROOTS.forEach(walk);
+  const famOf = id => {
+    if (!scope) return id.split('.')[0];
+    if (id === scope || !id.startsWith(scope + '.')) return scope;
+    return scope + '.' + id.slice(scope.length + 1).split('.')[0];
+  };
+  const rows = new Map(), byNode = [];
+  NODES.forEach((n, i) => {
+    const key = of[n.id] || n.id;
+    let r = rows.get(key);
+    if (!r) {
+      if (key.startsWith('fold:')) {
+        const par = key.slice(5), set = FOLDED.get(par);
+        r = { key, col: i, ord: Infinity, fam: famOf(par), sel: null, fold: true,
+              label: `${set ? set.size : ''} small groups in ${BY_ID[par] ? BY_ID[par].label : par}` };
+      } else {
+        const node = BY_ID[key];
+        r = { key, col: idx.has(key) ? idx.get(key) : i, ord: ord[key] ?? Infinity,
+              fam: famOf(key), sel: node ? key : null,
+              label: (node ? node.label : key) + (SPLIT.has(key) ? ', unspecified' : '') };
+      }
+      rows.set(key, r);
+    }
+    if (r.fold && ord[n.id] !== undefined) r.ord = Math.min(r.ord, ord[n.id]);
+    byNode.push(r);
+  });
+  _pieRows = { colorOf, N: NODES.length, byNode, ord };
+  return _pieRows;
+}
+
+/* A pie's wedges, from its parts [{n: node index, p: dots}]: one per legend row, in the legend's
+   order, at most PIE_SLOTS. Up to PIE_FOLD_AT rows each get a wedge. Past that, languagedots'
+   rule: the PIE_TOP largest rows, then the rest folded BY FAMILY (the root, or with a religion
+   selected the selection's child they sit under), each family's folded tail one wedge in the
+   family's own colour, which is §6.10's rule for a row too small to keep (its children "drawn in
+   the family's own colour"). A family with one row in the tail keeps that row.
+   NO GREY "OTHER" WEDGE, which is where this parts from languagedots: grey here is the
+   not-a-religion ramp, so a grey lump would read as "no religion". Families are few enough that
+   PIE_SLOTS holds them; in the extreme case that it cannot, the smallest families share one last
+   wedge in the colour of its largest row, which is a legend colour, and the card says it is several.
+   HIDDEN RELIGIONS (§17.13) are not a row: everything hidden in the pie is ONE wedge in
+   HIDDEN_GREY, last, at its true share, and it takes one of the slots.
+   Each wedge: {p, col, ord, row} for one row, or {p, col, ord, lump: 'fam'|'other', f, members},
+   or {p, col, ord, lump: 'hid', nodes}. */
+/* Which node indices are hidden, set at each rebuild (§10.3's set can change without a recolour). */
+let PIE_HID = new Uint8Array(0);
+const PIE_HID_ORD = 3e9, PIE_OTHER_ORD = 2e9;
+
+/* The same wedges as dotPieWedges, as only {p, col} for the GPU, and fast for the common pie of a
+   few rows: a rebuild calls this tens of thousands of times (35,239 pies over Germany at z5.3,
+   80 ms through dotPieWedges' general path). Past the fold it hands over to it. */
+function dotPieWedgesFast(parts) {
+  const R = dotPieRows().byNode, N = NODES.length;
+  if (parts.length === 1) {
+    const q = parts[0], r = R[q.n];
+    if (PIE_HID[q.n]) return [{ p: q.p, col: 2 * N }];
+    return r ? [{ p: q.p, col: r.col }] : [];
+  }
+  const rs = [], ps = [];
+  let hp = 0;
+  for (const q of parts) {
+    if (PIE_HID[q.n]) { hp += q.p; continue; }
+    const r = R[q.n];
+    if (!r) continue;
+    const k = rs.indexOf(r);
+    if (k < 0) { rs.push(r); ps.push(q.p); } else ps[k] += q.p;
+  }
+  if (rs.length > (hp ? PIE_FOLD_AT - 1 : PIE_FOLD_AT)) return dotPieWedges(parts);
+  const out = rs.map((r, k) => ({ p: ps[k], col: r.col, ord: r.ord }));
+  if (out.length > 1) out.sort((a, b) => a.ord - b.ord);
+  if (hp) out.push({ p: hp, col: 2 * N, ord: PIE_HID_ORD });
+  return out;
+}
+
+function dotPieWedges(parts) {
+  const R = dotPieRows(), N = NODES.length;
+  const by = new Map(), hid = [];
+  for (const q of parts) {
+    if (PIE_HID[q.n]) { hid.push(q); continue; }
+    const r = R.byNode[q.n];
+    if (!r) continue;
+    let w = by.get(r);
+    if (!w) by.set(r, w = { r, p: 0, ns: [] });
+    w.p += q.p; w.ns.push(q);
+  }
+  const sum = ws => ws.reduce((s, w) => s + w.p, 0);
+  const hidW = hid.length ? [{ p: sum(hid), col: 2 * N, ord: PIE_HID_ORD, lump: 'hid', nodes: hid }] : [];
+  const rows = [...by.values()].sort((a, b) => b.p - a.p);
+  const one = w => ({ p: w.p, col: w.r.col, ord: w.r.ord, row: w });
+  if (rows.length <= PIE_FOLD_AT - hidW.length)
+    return rows.map(one).sort((u, v) => u.ord - v.ord).concat(hidW);
+  const out = rows.slice(0, PIE_TOP).map(one);
+  const fams = new Map();
+  for (const w of rows.slice(PIE_TOP)) {
+    if (!fams.has(w.r.fam)) fams.set(w.r.fam, []);
+    fams.get(w.r.fam).push(w);
+  }
+  const groups = [...fams].map(([f, ws]) => ({ f, ws, p: sum(ws) })).sort((a, b) => b.p - a.p);
+  const slots = PIE_SLOTS - PIE_TOP - hidW.length;
+  const keep = groups.length <= slots ? groups : groups.slice(0, slots - 1);
+  const idx = nodeIdx();
+  for (const g of keep) {
+    if (g.ws.length === 1) { out.push(one(g.ws[0])); continue; }
+    out.push({ p: g.p, col: idx.has(g.f) ? N + idx.get(g.f) : g.ws[0].r.col,
+               ord: (R.ord[g.f] ?? 1e9) + 0.5, lump: 'fam', f: g.f, members: g.ws });
+  }
+  const rest = groups.slice(keep.length).flatMap(g => g.ws).sort((a, b) => b.p - a.p);
+  if (rest.length) out.push({ p: sum(rest), col: rest[0].r.col, ord: PIE_OTHER_ORD, lump: 'other', members: rest });
+  return out.sort((u, v) => u.ord - v.ord).concat(hidW);
+}
+
+/* §17.11's groups too small for one dot, for one country in the edition on screen:
+   [[node, lon, lat, people]], from counts.json's `subdot` (subdot.py). */
+function subdotRows(cc) {
+  const s = META[cc] && META[cc].subdot;
+  return (s && s[String(DOT_VALUE)]) || [];
+}
+/* The same as fractional dots, {node: dots}, summed over one country or every one: what the
+   legend adds in pies mode, so a row it draws has a row to read it off (§4.3's rule). */
+function subdotTally(cc) {
+  const out = {};
+  for (const c of cc ? [cc] : BUILT)
+    for (const [n, , , p] of subdotRows(c)) out[n] = (out[n] || 0) + p / DOT_VALUE;
+  return out;
+}
+
+/* Marks the pie list stale and rebuilds it shortly: after a change to what the dots show
+   (applyPaint), or the camera coming to rest. */
+function schedulePies(delay = 60) {
+  dotPieDirty = true;
+  if (pieMode() !== 'dots') { if (pieLayer.mode === 'dots') rebuildDotPies(); return; }
+  clearTimeout(dotPieTimer);
+  dotPieTimer = setTimeout(rebuildDotPies, delay);
+}
+
+/* The grid's working arrays, kept between rebuilds and grown as needed. Per cell: the head of
+   its parts list, and the sums for its mean position and its weight. Parts are a pool of
+   (node, dots, next) triples, a cell rarely holding more than a handful. */
+const PG = { n: 0, head: null, sx: null, sy: null, sw: null, pn: null, pk: null, pnext: null, cap: 0 };
+function pgCells(n) {
+  if (PG.n >= n) return;
+  PG.n = Math.max(n, PG.n * 2);
+  PG.head = new Int32Array(PG.n).fill(-1);
+  PG.sx = new Float64Array(PG.n); PG.sy = new Float64Array(PG.n); PG.sw = new Float64Array(PG.n);
+}
+function pgPart() {
+  if (PG.used < PG.cap) return PG.used++;
+  const cap = Math.max(1 << 16, PG.cap * 2);
+  const pn = new Int32Array(cap), pk = new Float64Array(cap), px = new Int32Array(cap);
+  if (PG.pn) { pn.set(PG.pn); pk.set(PG.pk); px.set(PG.pnext); }
+  PG.pn = pn; PG.pk = pk; PG.pnext = px; PG.cap = cap;
+  return PG.used++;
+}
+
+/* ONE BUFFER BINNED ONCE AT A FINE GRID, so a wide view does not walk every dot. Measured
+   2026-10-12: binning the world view dot by dot cost 250-460 ms a rebuild over 7.3 million dots,
+   and a bucket rarely sits inside one cell. So each buffer is binned once, at PIE_FINE (cells
+   about 10 km across at the equator), by its full `nid` (node and tier, so the scatter's rule
+   still applies entry by entry), keeping each fine cell's mean position. Every grid the pies use
+   at or above that level is a floor of it, and rebuildDotPies sums these entries instead. Finer
+   grids, which only come with a view of a few hundred km, go dot by dot through the buckets in
+   view. Built per bucket, on a small dense grid over the bucket's own bounding box, because the
+   buckets are spatially compact (buffers.py): a fine cell split between two buckets is just two
+   entries, which add up the same. */
+const PIE_FINE = 12;
+const FHW = { head: new Int32Array(0), sx: null, sy: null, sw: null,
+              pn: new Int32Array(1 << 13), pk: new Uint32Array(1 << 13), pnext: new Int32Array(1 << 13) };
+/* `Lf`: PIE_FINE, or PIE_COARSE for the widest views, where even the fine cells number a million
+   over the world; each level is built once from the dots and kept. */
+const PIE_COARSE = 9;
+function fineHist(d, Lf = PIE_FINE) {
+  d.fineHist = d.fineHist || {};
+  if (d.fineHist[Lf]) return d.fineHist[Lf];
+  const sh = 32 - Lf, X = d.x, Y = d.y, NI = d.nid;
+  const oCx = [], oCy = [], oMx = [], oMy = [], oStart = [0], oV = [], oC = [];
+  const W = FHW;
+  for (const bk of d.buckets) {
+    if (!bk[5]) continue;
+    const bx0 = bk[0] >>> sh, by0 = bk[1] >>> sh;
+    const nx = (bk[2] >>> sh) - bx0 + 1, ny = (bk[3] >>> sh) - by0 + 1, nc = nx * ny;
+    if (nc > (1 << 22)) {
+      // a bucket spread over a continent (or across the antimeridian): one entry a dot
+      for (let i = bk[4], e = bk[4] + bk[5]; i < e; i++) {
+        oCx.push(X[i] >>> sh); oCy.push(Y[i] >>> sh); oMx.push(X[i]); oMy.push(Y[i]);
+        oV.push(NI[i]); oC.push(1); oStart.push(oV.length);
+      }
+      continue;
+    }
+    if (nc > W.head.length) {
+      let n = 1024;
+      while (n < nc) n *= 2;
+      W.head = new Int32Array(n).fill(-1);
+      W.sx = new Float64Array(n); W.sy = new Float64Array(n); W.sw = new Float64Array(n);
+    }
+    const head = W.head, sx = W.sx, sy = W.sy, sw = W.sw, touched = [];
+    let used = 0;
+    for (let i = bk[4], e = bk[4] + bk[5]; i < e; i++) {
+      const cell = ((Y[i] >>> sh) - by0) * nx + ((X[i] >>> sh) - bx0);
+      const h = head[cell];
+      if (h === -1) { touched.push(cell); sx[cell] = 0; sy[cell] = 0; sw[cell] = 0; }
+      sx[cell] += X[i]; sy[cell] += Y[i]; sw[cell] += 1;
+      const v = NI[i];
+      let p = h;
+      while (p >= 0 && W.pn[p] !== v) p = W.pnext[p];
+      if (p < 0) {
+        if (used >= W.pn.length) {
+          const n = W.pn.length * 2;
+          const pn = new Int32Array(n), pk = new Uint32Array(n), px = new Int32Array(n);
+          pn.set(W.pn); pk.set(W.pk); px.set(W.pnext);
+          W.pn = pn; W.pk = pk; W.pnext = px;
+        }
+        p = used++;
+        W.pn[p] = v; W.pk[p] = 0; W.pnext[p] = h; head[cell] = p;
+      }
+      W.pk[p]++;
+    }
+    for (const cell of touched) {
+      oCx.push(bx0 + cell % nx); oCy.push(by0 + Math.floor(cell / nx));
+      oMx.push(sx[cell] / sw[cell]); oMy.push(sy[cell] / sw[cell]);
+      for (let p = head[cell]; p >= 0; p = W.pnext[p]) { oV.push(W.pn[p]); oC.push(W.pk[p]); }
+      oStart.push(oV.length);
+      head[cell] = -1;
+    }
+  }
+  return (d.fineHist[Lf] = { n: oCx.length, cx: Uint16Array.from(oCx), cy: Uint16Array.from(oCy),
+                         mx: Float64Array.from(oMx), my: Float64Array.from(oMy),
+                         start: Uint32Array.from(oStart), v: Uint16Array.from(oV),
+                         c: Uint32Array.from(oC) });
+}
+
+let PIE_STATS = null;              // the last rebuild's cost, for checking from the console
+function rebuildDotPies() {
+  clearTimeout(dotPieTimer); dotPieTimer = 0;
+  dotPieDirty = false;
+  // before the buffers' vocabulary has landed there is nothing to bin; their arrival repaints
+  if (pieMode() !== 'dots' || !SCATTER.palette) {
+    DOT_PIES = [];
+    if (pieLayer.mode === 'dots') pieLayer.upload([], null);
+    return;
+  }
+  const t0 = performance.now();
+  // §17's box holds the people of the country it was drawn over, so a new country lets it go
+  if (PIE_BOX && PIE_BOX.country !== country) { PIE_BOX = null; if (PIE_PIN && PIE_PIN.pie.merged) unpinPie(); }
+
+  /* THE GRID: languagedots' cells, CELL_BITS + detail a tile at the tile zoom, held at PIE_MAXZ. */
+  const z = map.getZoom(), gz = Math.max(0, Math.min(PIE_MAXZ, Math.floor(z)));
+  const L = gz + PIE_CELL_BITS + detail, N = Math.pow(2, L), sh = 32 - L;
+  /* The view in cells, a cell of margin, unwrapped across the antimeridian as viewBounds is. */
+  const bb = map.getBounds();
+  const xw = mercXn(bb.getWest());
+  let xe = mercXn(bb.getEast());
+  if (xe < xw) xe += 1;
+  const yn = mercYn(Math.min(85.05, bb.getNorth())), ys = mercYn(Math.max(-85.05, bb.getSouth()));
+  let cx0 = Math.floor(xw * N) - 1, nx = Math.floor(xe * N) + 2 - cx0;
+  if (nx >= N) { cx0 = 0; nx = N; }
+  const cy0 = Math.max(0, Math.floor(yn * N) - 1), cy1 = Math.min(N - 1, Math.floor(ys * N) + 1);
+  const ny = cy1 - cy0 + 1;
+  const cxm = ((cx0 % N) + N) % N;           // the first column, wrapped into the world
+  pgCells(nx * ny);
+  PG.used = 0;
+  const head = PG.head, sx = PG.sx, sy = PG.sy, sw = PG.sw;
+  // the view in uint32 units for the bucket test, one per world copy it spans
+  const cellU = U32 / N;
+  const vy0 = cy0 * cellU, vy1 = (cy1 + 1) * cellU;
+  const spans = [];
+  if (nx === N) spans.push([0, U32]);
+  else for (let k = Math.floor(cx0 / N); k <= Math.floor((cx0 + nx) / N); k++)
+    spans.push([(cx0 - k * N) * cellU, (cx0 + nx - k * N) * cellU]);
+
+  /* WHERE EACH NODE'S DOTS GO, by SCATTER.setPalette's rule exactly: drawn as itself, or under
+     the roll-up as its target, and only if that node is in scope. A HIDDEN node stays, and its
+     part goes into the pie's grey wedge (§17.13, PIE_HID). By the buffers' own node index, the
+     low 14 bits of `nid`. */
+  const idx = nodeIdx();
+  const roll = onlyMeasured ? rollUpMap() : null;
+  const inScope = scope ? new Set(subtree(scope)) : null;
+  const shown = id => !!id && (!inScope || inScope.has(id));
+  PIE_HID = new Uint8Array(NODES.length);
+  NODES.forEach((n, i) => { if (isHidden(n.id)) PIE_HID[i] = 1; });
+  const toOf = id => (shown(id) && idx.has(id)) ? idx.get(id) : -1;
+  const B = SCATTER.nodes.length;
+  const own = new Int32Array(B), up = new Int32Array(B);
+  for (let i = 0; i < B; i++) {
+    const id = SCATTER.nodes[i];
+    own[i] = id ? toOf(id) : -1;
+    const to = roll && id ? roll[id] : null;
+    up[i] = to ? toOf(to) : -1;
+  }
+  const ROLL = onlyMeasured ? 1 : 0;
+
+  let touched = [];
+  const add = (cell, to, X, Y, k) => {
+    let h = head[cell];
+    if (h === -1) { touched.push(cell); sx[cell] = 0; sy[cell] = 0; sw[cell] = 0; }
+    sx[cell] += X * k; sy[cell] += Y * k; sw[cell] += k;
+    let p = h;
+    while (p >= 0 && PG.pn[p] !== to) p = PG.pnext[p];
+    if (p < 0) {
+      p = pgPart();
+      PG.pn[p] = to; PG.pk[p] = 0; PG.pnext[p] = h < 0 ? -1 : h; head[cell] = p;
+    }
+    PG.pk[p] += k;
+  };
+  const emit = (cc) => {
+    for (const cell of touched) {
+      const parts = [];
+      for (let p = head[cell]; p >= 0; p = PG.pnext[p]) parts.push({ n: PG.pn[p], p: PG.pk[p] });
+      head[cell] = -1;
+      const w = sw[cell];
+      DOT_PIES.push({ x: sx[cell] / w / U32, y: sy[cell] / w / U32, w, cc, parts,
+                      s: Math.min(pieR0() * Math.sqrt(w * DOT_VALUE / 1000), capFrac() * 512 / N) });
+    }
+    touched = [];
+    PG.used = 0;
+  };
+
+  DOT_PIES = [];
+  let nDots = 0;
+  const muted = onlyMeasured ? SCATTER.rollMutes() : null;
+  const bufs = SCATTER.active();
+  const ccs = new Set(bufs.map(d => d.cc));
+  // a country drawn only by groups under one dot (Niue, Montserrat) has no buffer at all
+  for (const cc of (country ? [country] : BUILT))
+    if (!ccs.has(cc) && subdotRows(cc).length && !(muted && muted.has(cc))) ccs.add(cc);
+  const byCc = new Map(bufs.map(d => [d.cc, d]));
+  for (const cc of ccs) {
+    const d = byCc.get(cc);
+    if (d && L <= PIE_FINE) {
+      /* A grid at or above PIE_FINE: the buffer's fine cells (fineHist), each floored to this grid
+         and added at its own mean position. */
+      const Lf = L <= PIE_COARSE ? PIE_COARSE : PIE_FINE;
+      const H = fineHist(d, Lf), s2 = Lf - L;
+      for (let e = 0; e < H.n; e++) {
+        const cy = (H.cy[e] >> s2) - cy0;
+        if (cy < 0 || cy >= ny) continue;
+        let cx = (H.cx[e] >> s2) - cxm;
+        if (cx < 0) cx += N;
+        if (cx >= nx) continue;
+        const cell = cy * nx + cx;
+        for (let j = H.start[e], je = H.start[e + 1]; j < je; j++) {
+          const v = H.v[j], t = v >> 14;
+          if (ROLL && t === 2) continue;
+          const to = (ROLL && (t === 1 || t === 3)) ? up[v & 0x3fff] : own[v & 0x3fff];
+          if (to < 0) continue;
+          add(cell, to, H.mx[e], H.my[e], H.c[j]);
+          nDots += H.c[j];
+        }
+      }
+    } else if (d) {
+      // a finer grid comes with a small view: the dots of the buckets in it, one by one
+      const X = d.x, Y = d.y, NI = d.nid;
+      for (let b = 0; b < d.buckets.length; b++) {
+        const bk = d.buckets[b];
+        if (bk[3] < vy0 || bk[1] > vy1) continue;
+        if (!spans.some(([a, c]) => bk[2] >= a && bk[0] <= c)) continue;
+        for (let i = bk[4], e = bk[4] + bk[5]; i < e; i++) {
+          const v = NI[i], t = v >> 14;
+          if (ROLL && t === 2) continue;
+          const to = (ROLL && (t === 1 || t === 3)) ? up[v & 0x3fff] : own[v & 0x3fff];
+          if (to < 0) continue;
+          const cy = (Y[i] >>> sh) - cy0;
+          if (cy < 0 || cy >= ny) continue;
+          let cx = (X[i] >>> sh) - cxm;
+          if (cx < 0) cx += N;
+          if (cx >= nx) continue;
+          add(cy * nx + cx, to, X[i], Y[i], 1);
+          nDots++;
+        }
+      }
+    }
+    // §17.11: each group too small for one dot, at its ring's place, as the fraction of a dot it is
+    for (const [n, lon, lat, p] of subdotRows(cc)) {
+      const to = toOf(n);
+      if (to < 0) continue;
+      const X = Math.min(U32 - 1, Math.floor(mercXn(lon) * U32)), Y = Math.min(U32 - 1, Math.floor(mercYn(lat) * U32));
+      const cy = (Y >>> sh) - cy0;
+      if (cy < 0 || cy >= ny) continue;
+      let cx = (X >>> sh) - cxm;
+      if (cx < 0) cx += N;
+      if (cx >= nx) continue;
+      add(cy * nx + cx, to, X, Y, p / DOT_VALUE);
+    }
+    emit(cc);
+  }
+  const tBin = performance.now();
+  for (const c of DOT_PIES) c.h = (c.x * 7919.123 + c.y * 104729.37) % 1;   // a stable tie-break
+  if (PIE_BOX) applyPieBox();
+  // drawn in list order and hit-tested from the end: smallest first, so a bigger pie covers a
+  // smaller one, and the box's pie over everything
+  DOT_PIES.sort((a, b) => (!!a.merged - !!b.merged) || a.s - b.s || a.h - b.h);
+  pieLayer.upload(DOT_PIES.map(c => {
+    const ws = dotPieWedgesFast(c.parts);
+    // a selection ring takes the colour of the pie's largest wedge (languagedots)
+    // hiding wins over the selection (§17.13): a pie's hidden people are never what it is ringed
+    // for, and a pie that is all hidden gets no ring
+    let big = null, vis = 0, tot = 0;
+    for (const q of ws) {
+      tot += q.p;
+      if (q.ord === PIE_HID_ORD) continue;
+      vis += q.p;
+      if (!big || q.p > big.p) big = q;
+    }
+    return { x: c.x, y: c.y, s: c.s, ring: scope && big ? big.col : -1, share: tot ? vis / tot : 1, ws };
+  }), 'dots');
+  refreshPin();
+  pieRulesChanged = false;
+  PIE_STATS = { ms: +(performance.now() - t0).toFixed(1), bin: +(tBin - t0).toFixed(1),
+                pies: DOT_PIES.length, dots: nDots, grid: L, cells: nx * ny };
+}
+
+/* The pie under a screen point, compared in mercator units with the shader's own radius, searched
+   from the end of the list so the pie drawn on top answers. A finger gets §4.2d's reach
+   (pickReachPx): where no pie covers the point, the nearest centre within it. `hard` turns the
+   reach off. */
+function dotPieAt(point, hard) {
+  if (pieMode() !== 'dots' || pieLayer.mode !== 'dots' || !DOT_PIES.length) return null;
+  const ll = map.unproject(point);
+  const mx = mercXn(ll.lng), my = mercYn(ll.lat);
+  const z = map.getZoom(), world = 512 * Math.pow(2, z), pxs = piePxScale(z);
+  const reach = hard ? 0 : pickReachPx(0) / world;
+  let near = null, nearD2 = Infinity;
+  for (let i = DOT_PIES.length - 1; i >= 0; i--) {
+    const c = DOT_PIES[i];
+    const r = (c.s < 0 ? -c.s * world : c.s * pxs) / world;
+    let dx = c.x - mx;
+    dx -= Math.round(dx);
+    const dy = c.y - my, d2 = dx * dx + dy * dy;
+    if (d2 <= r * r) return c;
+    if (d2 <= reach * reach && d2 < nearD2) { near = c; nearD2 = d2; }
+  }
+  return near;
+}
+
+/* ---- THE BOX (languagedots' MERGE, Anita there 2026-10-07: "long press to start a drag box
+   where we can select a region and merge all the points in that region into one big pie"). Press
+   and hold on the map, drag, let go: every pie whose centre is inside is replaced by one pie of
+   all their people, centred on the box and filling it, so it stays the size of the ground it
+   covers as the map zooms. Redone at every rebuild from whatever is loaded, so it survives pans
+   and zooms. Let go by a click off it, Esc, a change of dot style or map style, or of country.
+   UNLIKE THE AUTOMATIC PIES IT MAY HOLD MORE THAN ONE COUNTRY, and the card names them: the reader
+   drew the box, so the sum is the one asked for, and it is a sum of drawn dots, each already the
+   category its own census counted. */
+let PIE_BOX = null;                // {x0, x1, y0, y1} in mercator units, and the country it was drawn in
+function applyPieBox() {
+  const b = PIE_BOX, keep = [], parts = new Map(), ccs = new Set();
+  const k = Math.floor(b.x0), x0 = b.x0 - k, x1 = b.x1 - k;
+  let w = 0;
+  for (const c of DOT_PIES) {
+    let cx = c.x;
+    if (cx < x0) cx += 1;
+    if (cx <= x1 && c.y >= b.y0 && c.y <= b.y1) {
+      for (const q of c.parts) parts.set(q.n, (parts.get(q.n) || 0) + q.p);
+      w += c.w; ccs.add(c.cc);
+    } else keep.push(c);
+  }
+  if (w) keep.push({ x: (x0 + x1) / 2, y: (b.y0 + b.y1) / 2, w, h: 0, merged: true,
+                     s: -Math.min(x1 - x0, b.y1 - b.y0) / 2, ccs: [...ccs],
+                     parts: [...parts].map(([n, p]) => ({ n, p })) });
+  DOT_PIES = keep;
+}
+function clearPieBox() {
+  if (!PIE_BOX) return;
+  PIE_BOX = null;
+  rebuildDotPies();
+}
+
+/* ---- THE PIE CARD. §10.6's rows (key, name, share, people) beside a larger copy of the pie in
+   the same wedges and colours, from north, clockwise, as the shader draws them. Shares are of
+   the pie, so they add up to 100%. A click keeps it (PIE_PIN); a kept card's folded rows open into
+   their members (the ten largest, then "N more"), and its pie splits the open wedge the same
+   way; a double-click on a row selects that religion, as on a dot.
+   §17.17: ANY ROW HOLDING PEOPLE COUNTED FINER THAN IT OPENS TOO (Anita, 2026-10-12, over North
+   Korea: "East Asian new religions 13%" should split into its subgroups). The pie's parts are the
+   nodes the dots carry, so a row whose parts include nodes below it opens into the next level
+   under it, each of those again where they hold finer ones, and the row's own dots as
+   "X, unspecified". A row whose people are all its own (most `unspecified` rows) does not open.
+   The map's pie stays one colour per row; in the card a subgroup takes a shade of the row's
+   colour (`under`), so the slice splits visibly and still reads as that row. Kept cards only: a
+   hover card does not take the pointer. */
+const PIE_TIP_TOP = 10;
+// the card's widest: room for a long name on one line, and never past a phone's edge
+const PIE_CARD_MAX = 'min(560px, calc(100vw - 16px))';
+let PIE_PIN = null;                    // {popup, pie, at, open: Set, all: Set}
+
+function pieCardHTML(c, pin) {
+  const ws = dotPieWedges(c.parts);
+  const tot = ws.reduce((s, q) => s + q.p, 0) || 1;
+  const hex = i => pieLayer.colors[i] || '#666666';
+  const idOf = x => NODES[x.n].id;
+  const labelOf = id => (BY_ID[id] || {}).label || id;
+  const line = (label, p, col, attrs, tw) => `<div class="cm-r"${attrs}>`
+    + `<span class="key" style="background:${col}"></span><span class="cm-l" title="${esc(label)}">${esc(label)}</span>`
+    + `<span class="cm-p">${pctText(p / tot)}</span><span class="cm-n">${fmtPop(Math.round(p * DOT_VALUE))}</span>`
+    + `<span class="tw">${tw || ''}</span></div>`;
+  const selAttr = id => id ? ` data-n="${esc(id)}" title="double-click to select"` : '';
+
+  /* AN ITEM is one line of the card: {key, label, p, col, sel, kids}, `kids` a function giving
+     its sub-items, or null where it cannot open. */
+  /* The next level under `root` of a set of parts: one item per child of `root` they reach, plus
+     `root`'s own people as "unspecified", plus any part outside `root` (MERGE_OWN's Catholic own
+     dots inside Latin Catholic) as itself. */
+  const under = (root, xs, rootCol) => {
+    const g = new Map();
+    for (const x of xs) {
+      const id = idOf(x);
+      const k = (id === root || !root || !id.startsWith(root + '.')) ? id
+              : root + '.' + id.slice(root.length + 1).split('.')[0];
+      let e = g.get(k);
+      if (!e) g.set(k, e = { id: k, p: 0, xs: [] });
+      e.p += x.p; e.xs.push(x);
+    }
+    /* SHADES OF THE ROW'S OWN COLOUR, not the subgroups' focus colours: those put Cheondogyo in
+       Christianity's yellow and Korean folk religion in Islam's green inside a violet row. The
+       row's own people keep its colour exactly; each subgroup, largest first, steps lighter and
+       darker around it, so the split slice reads as parts of the row. */
+    const es = [...g.values()].sort((a, b) => b.p - a.p);
+    const subs = es.filter(e => e.id !== root);
+    const [h0, s0, l0] = hexToHsl(rootCol);
+    const step = Math.min(12, 48 / Math.max(1, subs.length));
+    const shade = k => {
+      const off = (k % 2 ? -1 : 1) * Math.ceil((k + 1) / 2) * step;
+      const l = l0 + off > 82 || l0 + off < 22 ? l0 - off : l0 + off;
+      return hslHex(h0, s0, Math.max(18, Math.min(86, l)));
+    };
+    const items = es.map(e => {
+      const own = e.id === root;
+      const finer = e.xs.some(x => idOf(x) !== e.id);
+      const col = own ? rootCol : shade(subs.indexOf(e));
+      return { key: (own ? 'u:' : 'n:') + e.id, p: e.p, sel: e.id,
+               label: own ? labelOf(root) + ', unspecified' : labelOf(e.id),
+               col, kids: finer && !own ? () => under(e.id, e.xs, col) : null };
+    });
+    /* a level with one branch in it says nothing: North Korea's East Asian new religions are all
+       Korean new religions, which are all Cheondogyo, so one click goes straight to Cheondogyo */
+    return items.length === 1 && items[0].kids ? items[0].kids() : items;
+  };
+  // the legend's "N small groups" row, counted in THIS pie: one member is just that member
+  const loneW = w => w.r.fold && w.ns.length === 1 ? idOf(w.ns[0]) : null;
+  const rowItem = w => {
+    const lone = loneW(w), col = hex(w.r.col);
+    if (lone) return { key: 'r:' + w.r.key, label: labelOf(lone), p: w.p, col, sel: lone,
+                       kids: w.ns.some(x => idOf(x) !== lone) ? () => under(lone, w.ns, col) : null };
+    if (w.r.fold) {
+      const par = w.r.key.slice(5);
+      return { key: 'r:' + w.r.key, label: `${w.ns.length} small groups in ${labelOf(par)}`, p: w.p,
+               col, sel: null, kids: () => under(par, w.ns, col) };
+    }
+    const finer = w.ns.some(x => idOf(x) !== w.r.key);
+    return { key: 'r:' + w.r.key, label: w.r.label, p: w.p, col, sel: w.r.sel,
+             kids: finer ? () => under(w.r.key, w.ns, col) : null };
+  };
+  const wedgeItem = q => {
+    if (q.lump === 'hid') {
+      const n = q.nodes.length;
+      return { key: 'h', label: `${n} hidden religion${n === 1 ? '' : 's'}`, p: q.p, col: HIDDEN_GREY,
+               sel: null, kids: () => q.nodes.map(x => ({ key: 'n:' + idOf(x), label: labelOf(idOf(x)),
+                                                          p: x.p, col: HIDDEN_GREY, sel: idOf(x), kids: null })) };
+    }
+    if (q.lump) return { key: q.lump === 'fam' ? 'f:' + q.f : 'o',
+                         label: q.lump === 'fam' ? `${q.members.length} smaller groups in ${labelOf(q.f)}`
+                                                 : `${q.members.length} smaller groups`,
+                         p: q.p, col: hex(q.col), sel: null, kids: () => q.members.map(rowItem) };
+    return rowItem(q.row);
+  };
+  const isOpen = it => pin && it.kids && pin.open.has(it.key);
+  // an open item's sub-items, largest first: the ten largest, then "N more", which shows the rest
+  const shownOf = it => {
+    const ms = it.kids().sort((a, b) => b.p - a.p);
+    const all = pin.all.has(it.key) || ms.length <= PIE_TIP_TOP + 1;
+    return { ms, shown: all ? ms : ms.slice(0, PIE_TIP_TOP), all };
+  };
+  const render = it => {
+    const op = isOpen(it);
+    // a row that opens still selects on a double-click (its two clicks open and shut it again)
+    const attrs = (it.kids ? ` data-x="${esc(it.key)}"` : '') + selAttr(it.sel);
+    let h = line(it.label, it.p, it.col, attrs, it.kids ? (op ? '▾' : '▸') : '');
+    if (op) {
+      const { ms, shown, all } = shownOf(it);
+      h += '<div class="ex">' + shown.map(render).join('');
+      if (!all) {
+        const rest = it.p - shown.reduce((s, m) => s + m.p, 0);
+        h += `<div class="cm-r more" data-more="${esc(it.key)}"><span class="key"></span>`
+          + `<span class="cm-l">${ms.length - PIE_TIP_TOP} more</span>`
+          + `<span class="cm-p">${pctText(rest / tot)}</span><span class="cm-n"></span><span class="tw"></span></div>`;
+      }
+      h += '</div>';
+    }
+    return h;
+  };
+  const last = q => q.lump === 'hid' ? 3 : q.lump === 'other' ? 2 : q.lump ? 1 : 0;
+  const rows = [...ws].sort((a, b) => last(a) - last(b) || b.p - a.p).map(q => render(wedgeItem(q))).join('');
+  // the copy of the pie: an open item's slice splits into what its list shows, as deep as it is open
+  const slices = it => {
+    if (!isOpen(it)) return [{ p: it.p, hex: it.col }];
+    const { shown } = shownOf(it);
+    const out = shown.flatMap(slices);
+    const rest = it.p - shown.reduce((s, m) => s + m.p, 0);
+    if (rest > 1e-9) out.push({ p: rest, hex: it.col });
+    return out;
+  };
+  const svgWs = ws.flatMap(q => slices(wedgeItem(q)));
+  let a0 = 0, body = '';
+  for (const q of svgWs) {
+    const f = q.p / tot;
+    if (f >= 0.9999) { body += `<circle r="1" fill="${q.hex}"/>`; break; }
+    const a1 = a0 + f * 2 * Math.PI;
+    const pt = a => `${Math.sin(a).toFixed(4)} ${(-Math.cos(a)).toFixed(4)}`;
+    if (f > 0) body += `<path d="M0 0L${pt(a0)}A1 1 0 ${f > 0.5 ? 1 : 0} 1 ${pt(a1)}Z" fill="${q.hex}"/>`;
+    a0 = a1;
+  }
+  const svg = `<svg class="pz" viewBox="-1.02 -1.02 2.04 2.04" width="60" height="60" `
+    + `style="opacity:${DOT_ALPHA}">${body}</svg>`;
+  const names = (c.merged ? c.ccs : [c.cc]).map(cc => META[cc] ? META[cc].name : cc);
+  const people = fmtPop(Math.round(tot * DOT_VALUE)) + ' people' + (c.merged ? ' inside the box' : '');
+  return svg + `<div class="cm pc"><b>${esc(fmtList(names))}</b>${rows}`
+    + `<div class="cm-c">${people}</div></div>`;
+}
+
+function unpinPie() {
+  if (!PIE_PIN) return;
+  PIE_PIN.popup.remove();
+  PIE_PIN = null;
+}
+function renderPin() {
+  if (!PIE_PIN) return;
+  const ex = {};
+  const el = PIE_PIN.popup.getElement();
+  if (el) el.querySelectorAll('.ex').forEach((l, i) => { ex[i] = l.scrollTop; });
+  PIE_PIN.popup.setHTML(pieCardHTML(PIE_PIN.pie, PIE_PIN));
+  if (el) el.querySelectorAll('.ex').forEach((l, i) => { if (ex[i]) l.scrollTop = ex[i]; });
+}
+function pinPie(c, lngLat) {
+  if (PIE_PIN && PIE_PIN.pie === c) { PIE_PIN.at = lngLat; PIE_PIN.popup.setLngLat(lngLat); return; }
+  unpinPie();
+  const popup = new maplibregl.Popup({ closeButton: false, closeOnClick: false, className: 'pin',
+                                       maxWidth: PIE_CARD_MAX });
+  PIE_PIN = { popup, pie: c, at: lngLat, open: new Set(), all: new Set() };
+  popup.setLngLat(lngLat).setHTML(pieCardHTML(c, PIE_PIN)).addTo(map);
+  const el = popup.getElement();
+  // the card's own clicks, drags and wheel are not the map's
+  for (const t of ['mousedown', 'pointerdown', 'touchstart', 'wheel', 'click', 'dblclick'])
+    el.addEventListener(t, e => e.stopPropagation());
+  el.addEventListener('click', e => {
+    if (!PIE_PIN) return;
+    const x = e.target.closest('[data-x],[data-more]');
+    if (!x) return;
+    if (x.dataset.more) PIE_PIN.all.add(x.dataset.more);
+    else if (PIE_PIN.open.has(x.dataset.x)) { PIE_PIN.open.delete(x.dataset.x); PIE_PIN.all.delete(x.dataset.x); }
+    else PIE_PIN.open.add(x.dataset.x);
+    renderPin();
+  });
+  el.addEventListener('dblclick', e => {
+    const r = e.target.closest('[data-n]');
+    if (!r || !BY_ID[r.dataset.n]) return;
+    setScope(scope === r.dataset.n ? null : r.dataset.n);
+  });
+}
+/* After a rebuild. The box's pie is found again by being the box's; any other kept pie stays as
+   it was while only the camera moved, and is looked up again under the point it was kept at once
+   what the dots show has changed (its parts were counted under the old rules), or let go if
+   nothing is there now. */
+function refreshPin() {
+  if (!PIE_PIN) return;
+  if (PIE_PIN.pie.merged) {
+    const m = DOT_PIES.find(p => p.merged);
+    if (m) { PIE_PIN.pie = m; renderPin(); } else unpinPie();
+    return;
+  }
+  if (!pieRulesChanged) return;
+  const pt = map.project(PIE_PIN.at);
+  const hit = dotPieAt(pt, true) || dotPieAt(pt);
+  if (hit) { PIE_PIN.pie = hit; renderPin(); } else unpinPie();
+}
+
+/* Esc backs out of the box, then a kept card. True if it did something. */
+function pieEscape() {
+  if (PIE_BOX) { clearPieBox(); unpinPie(); return true; }
+  if (PIE_PIN) { unpinPie(); return true; }
+  return false;
+}
+
+/* The pies' events, wired once the map has loaded. `pop` is the hover card's popup. */
+let pieBoxSwallow = false;
+function wirePies(pop) {
+  // the pie list is rebuilt when the camera comes to rest; the buffers arriving repaint, which
+  // schedules one too (applyPaint)
+  map.on('moveend', () => schedulePies());
+  map.on('idle', () => { if (dotPieDirty && pieMode() === 'dots') rebuildDotPies(); });
+  /* A click on a pie keeps its card; a click anywhere else lets it go. With a box made, a click
+     off the box's pie undoes the box. */
+  map.on('click', e => {
+    if (pieMode() !== 'dots' || pieBoxSwallow) return;
+    const hit = dotPieAt(e.point);
+    if (PIE_BOX && !(hit && hit.merged)) { clearPieBox(); unpinPie(); return; }
+    if (!hit) { unpinPie(); return; }
+    pop.remove();
+    pinPie(hit, e.lngLat);
+  });
+
+  /* THE BOX GESTURE, languagedots' as it stood. A press held LONG_MS without moving more than
+     LONG_SLOP px starts a box (the map's drag-pan is off for the rest of the press, and a phone
+     buzzes once where it can); dragging sizes it; letting go merges the pies inside and keeps
+     the merged pie's card. A box under BOX_MIN px on a side merges nothing. Mouse, pen and touch
+     alike; a second finger (a pinch) cancels it. */
+  const LONG_MS = 450, LONG_SLOP = 6, BOX_MIN = 12;
+  const mapEl = document.getElementById('map'), boxEl = document.getElementById('mbox');
+  let press = null;
+  const local = e => { const r = mapEl.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; };
+  const drawBox = (x, y) => {
+    const r = mapEl.getBoundingClientRect();
+    Object.assign(boxEl.style, { left: r.left + Math.min(press.x0, x) + 'px',
+                                 top: r.top + Math.min(press.y0, y) + 'px',
+                                 width: Math.abs(x - press.x0) + 'px', height: Math.abs(y - press.y0) + 'px' });
+  };
+  const endPress = () => {
+    if (!press) return;
+    clearTimeout(press.timer);
+    if (press.on) { map.dragPan.enable(); boxEl.style.display = 'none'; }
+    press = null;
+  };
+  mapEl.addEventListener('pointerdown', e => {
+    if (press) { endPress(); return; }                    // a second pointer: a pinch, not a box
+    if (pieMode() !== 'dots' || !e.isPrimary || e.button !== 0) return;
+    if (e.target.closest && e.target.closest('.maplibregl-popup, .maplibregl-ctrl')) return;
+    const [x0, y0] = local(e);
+    press = { x0, y0, x: x0, y: y0, on: false, timer: setTimeout(() => {
+      if (!press) return;
+      press.on = true;
+      map.dragPan.disable();
+      unpinPie(); pop.remove();
+      drawBox(press.x, press.y);
+      boxEl.style.display = 'block';
+      if (navigator.vibrate) try { navigator.vibrate(15); } catch (err) { /* not allowed: fine */ }
+    }, LONG_MS) };
+  }, true);
+  window.addEventListener('pointermove', e => {
+    if (!press || !e.isPrimary) return;
+    const [x, y] = local(e);
+    press.x = x; press.y = y;
+    if (!press.on) { if (Math.hypot(x - press.x0, y - press.y0) > LONG_SLOP) endPress(); return; }
+    drawBox(x, y);
+  });
+  window.addEventListener('pointerup', e => {
+    if (!press || !e.isPrimary) return;
+    const was = press.on, { x0, y0, x, y } = press;
+    endPress();
+    if (!was) return;
+    // the click that may follow this release must not undo what it just made
+    pieBoxSwallow = true; setTimeout(() => { pieBoxSwallow = false; }, 0);
+    if (Math.abs(x - x0) < BOX_MIN || Math.abs(y - y0) < BOX_MIN) return;
+    const a = map.unproject([Math.min(x0, x), Math.min(y0, y)]);
+    const b = map.unproject([Math.max(x0, x), Math.max(y0, y)]);
+    PIE_BOX = { x0: mercXn(a.lng), x1: mercXn(b.lng), y0: mercYn(a.lat), y1: mercYn(b.lat), country };
+    rebuildDotPies();
+    const big = DOT_PIES.find(c => c.merged);
+    if (!big) { PIE_BOX = null; rebuildDotPies(); return; }   // no pie inside: nothing to merge
+    pinPie(big, map.unproject([(x0 + x) / 2, (y0 + y) / 2]));
+  });
+  window.addEventListener('pointercancel', endPress);
+  // a long press is not a request for the browser's own menu
+  mapEl.addEventListener('contextmenu', e => { if (pieMode() === 'dots') e.preventDefault(); });
+}
 
 /* A figure, or the range a subtraction or a hand row left, with its share when there is a
    population to take it of. */
@@ -5477,20 +6666,33 @@ function applyPaint() {
   applyNotDrawn();
   applyEstimates();
   applyRegions();
+  // no pies without WebGL2 or in the no-instancing fallback: draw as dots (renderTree hides `pies`)
+  if (dotPies && (pieLayer.dead || markFallback())) { dotPies = false; syncDotValue(); rebuild(true); recolour(); }
+  // §17: whatever changed may change what a pie holds, so the pie list is rebuilt shortly
+  pieRulesChanged = true;
+  schedulePies();
   if (!map.getLayer('dots')) return;
   const expr = colorExpr();
   const live = activeDotLayer();
   // regions mode draws no dot of either renderer and no ring
   if (map.getLayer('scatter'))
     map.setLayoutProperty('scatter', 'visibility', regionsMode ? 'none' : 'visible');
-  /* Visibility on ALL of them (a layout property, no per-feature work). The merged layers are
-     shown only when consolidation is ON: `separate` is now SCATTER's job, and the two must
-     never both draw or every dot would be painted twice, once as itself and once inside a
-     merged mark. */
+  /* Visibility on ALL of them (a layout property, no per-feature work). Since §17 the merged
+     layer draws only in the no-instancing fallback, where SCATTER cannot draw; the pies are binned
+     from SCATTER's buffers (§17.10). Never both: every dot would be painted twice. */
+  const fb = markFallback();
   for (const l of dotLayerIds())
-    map.setLayoutProperty(l, 'visibility', (merged && !regionsMode && l === live) ? 'visible' : 'none');
+    map.setLayoutProperty(l, 'visibility', (fb && !regionsMode && l === live) ? 'visible' : 'none');
   SCATTER.setPalette();                 // colour AND visibility for the unmerged dots
   for (const l of edDotIds()) {
+    if (!fb) {
+      // MapLibre skips a circle layer at opacity 0 with no stroke when drawing, and setFilter
+      // and setPaintProperty are no-ops when the value has not changed, so this costs nothing
+      map.setPaintProperty(l, 'circle-color', '#000');
+      map.setPaintProperty(l, 'circle-opacity', 0);
+      map.setFilter(l, null);
+      continue;
+    }
     map.setPaintProperty(l, 'circle-color', expr);
     /* Out of scope is REMOVED, not dimmed. §6 said "everything outside the selection drops
        to near-black", and at 0.18 it does — but there is one dot layer, so the dimmed dots
@@ -5511,26 +6713,8 @@ function applyPaint() {
     map.setPaintProperty(l, 'circle-opacity', DOT_ALPHA);
     map.setFilter(l, layerFilter(true));
   }
-  map.setPaintProperty(activeRingLayer(), 'circle-stroke-color', expr);
-
-  /* Rings off unless asked for — spec §4.3, amended. They out-ink the dots they are meant to
-     sit beside, which inverts the point of having two symbols, and see the note by `showRings`
-     for why the claim they make got weaker once dots started carrying their fractions.
-
-     Hiding has to be a FILTER, not opacity. A circle at opacity 0 is still hit-tested, so
-     invisible rings were answering hovers meant for visible ones — select Sikhism, mouse over
-     a Sikh ring, and get told "Wesleyan Church". Filtering removes them from the query. */
-  const liveRing = activeRingLayer();
-  for (const l of ringLayerIds()) {
-    if (showRings && !regionsMode && l === liveRing) {
-      map.setLayoutProperty(l, 'visibility', 'visible');
-      map.setFilter(l, layerFilter(true));
-      map.setPaintProperty(l, 'circle-stroke-opacity', 0.95);
-    } else {
-      map.setLayoutProperty(l, 'visibility', 'none');
-      map.setFilter(l, country ? ['==', ['get', 'c'], country] : null);
-    }
-  }
+  /* Presence rings (§4.3) were removed on 2026-10-12, Anita's call (§17): their layers are no
+     longer in the style. */
 }
 
 // ---------------------------------------------------------------- panel
@@ -6207,17 +7391,15 @@ function renderTree() {
     ? 'Take every religion off the map — then tick back just the ones you want to see'
     : 'Put every religion back on the map';
 
-  segSet('mode-seg', regionsMode ? 1 : 0);
-  segSet('dotval-seg', DOT_VALUE);
-  segSet('merge-seg', merged ? 1 : 0);
-
-  segSet('est-seg', showEstimates ? 1 : 0);
-  segSet('rings-seg', showRings ? 1 : 0);
-  const rings = document.getElementById('ctl-rings');
-  rings.title = 'One ring per religion that is present in this country but too small to reach '
-    + 'a single dot anywhere in it \u2014 under ' + DOT_VALUE.toLocaleString() + ' people in the '
-    + 'whole country. It is placed at the group\u2019s largest concentration and says only '
-    + '\u201chere\u201d, never how many.';
+  segSet('draw-seg', regionsMode ? 2 : dotPies ? 0 : 1);
+  segSet('dotval-seg', dotsDotValue);
+  // pies need WebGL2, and the no-instancing fallback draws its own circles, so in either case
+  // there are no pies to offer (applyPaint has already fallen back to dots)
+  const noPies = pieLayer.dead || markFallback();
+  document.querySelector('#draw-seg [data-v="0"]').style.display = noPies ? 'none' : '';
+  document.getElementById('dot-size-val').textContent = sizeScale + '×';
+  document.getElementById('pie-cap-val').textContent = isFinite(capScale) ? capScale + '×' : 'none';
+  document.getElementById('pie-agg-val').textContent = AGG_LABELS[2 - detail];
 
   /* Now just the one entry the hidden set starts with (§6.11) — but it keeps its own control
      and its own tooltip, because the reason for hiding this one is not a preference, and it
@@ -6244,11 +7426,13 @@ function renderTree() {
     + ' Hiding them is how you see what the source did report; "believing, no church" and '
     + '"other, by source" stay, because both of those DO report a religion.';
 
-  renderTierControl();
-
-  // greyed when there is nothing to put back, and it carries no tooltip: the word is the
-  // whole of it, and a paragraph explaining a one-word control reads like filler
-  document.getElementById('reset-seg').classList.toggle('off', !overrideCount());
+  /* THE ROW IS THERE ONLY WHEN A COLOUR HAS BEEN SET — Anita, 2026-10-12 (§17): it used to grey
+     out instead. It carries no tooltip: the word is the whole of it, and a paragraph explaining
+     a one-word control reads like filler. Colours only, as the label says: the hidden set is
+     put back by `show all` and the boxes, and HIDDEN_DEFAULT is empty, so the old reset's
+     second half had nothing of its own left to do. */
+  document.getElementById('ctl-reset').style.display =
+    Object.keys(USER_COLOR).length ? '' : 'none';
 
   // last, after every write that could change the panel's height
   el.scrollTop = keepScroll;
@@ -6291,43 +7475,9 @@ function segWire(id, get, set) {
   };
 }
 
-/* §7's control: its label, and the share of the drawn dots that are not measured.
-
-   SPLIT OUT OF renderTree SO THE BUFFERS CAN REFRESH IT. The first renderTree runs before a
-   single dot buffer has been parsed, so `tierShares` had nothing to count and the readout
-   came up blank — and stayed blank until something else happened to redraw the panel. The one
-   disclosure on this map that is supposed to be passive was the one you had to act to see.
-
-   The control is shown even at 0%, because it is the map's own statement about what it knows:
-   §14.4 asks for the measured/derived distinction to be kept visible, and a control that
-   appears only when it would change something teaches nobody that the distinction exists. */
-function renderTierControl() {
-  const tier = document.getElementById('ctl-tier');
-  if (!tier) return;
-  /* "not shown" and not "hidden" — Anita, 2026-09-07. Since §7a-i the control no longer
-     removes the dots, it removes the inferred DISTINCTION between them, redrawing each at
-     the level its country measured. "hidden" said the people were gone, which stopped being
-     true; "rolled up" was accurate and is jargon. What is not shown is the finer division. */
-  segSet('tier-seg', onlyMeasured ? 1 : 0);
-  /* A zero term is dropped rather than printed. "0% derived, 12% modelled" invites the reader
-     to work out which number is the interesting one; naming only the non-zero ones says it. And
-     an all-measured country gets a sentence rather than two zeroes, because "0%, 0%" reads as a
-     missing figure and "all counted" is the actual, and rather good, news.
-
-     The leading em dash went with the links: the readout used to trail the control on the same
-     line and needed something to hold it off the word. It now has a line of its own. */
-  /* Both readouts come out of `tierWords` — this one and the header's `counted` row (§7c).
-     Two places on screen reporting the same shares in different words is fine; two places
-     computing them is how they end up disagreeing after somebody fixes the rounding in one. */
-  const tw = tierWords(SCATTER.tierShares(country));
-  document.getElementById('tier-share').textContent = tw ? tw.terse : '';
-  tier.title = 'A derived dot is one nobody counted HERE: the number was measured somewhere '
-    + '— a coarser unit, an older census, a broader category — and carried to this '
-    + 'place by allocation or rescaling. A modelled dot is weaker still: nothing in that unit '
-    + 'was counted at all, and a national figure was spread over it. An assigned dot was counted '
-    + 'in its religion, and its branch was given from national estimates. Not shown leaves only '
-    + 'what a source actually reported.';
-}
+/* §7's legend control, `inferred dots: shown / not shown`, and its share readout were removed on
+   2026-10-12 (§17). The same shares, from the same `tierWords`, are the header's `data modelled`
+   row (§7c) for a country and the about panel's list for all of them. */
 
 /* SELECTING A NODE SHOWS ONE LEVEL BELOW IT, and `depth` resets to say so — Anita's call,
    2026-09-03. `depth` counts levels below the scope, so selecting Christianity while it sat
@@ -6749,7 +7899,6 @@ function scopeDrawsIn(cc) {
     return false;
   };
   if (any(t.dots)) return true;
-  if (showRings && any(raw.rings)) return true;
   return !Object.keys(raw.dots || {}).length;
 }
 
@@ -6989,8 +8138,14 @@ function setCountry(cc, opts = {}) {
    picker and still holds once picked, because the release test is `AUTO_FILL_OUT` and is
    untouched. That asymmetry is `contested`'s, quoted here because it is the same argument: *"IT
    GATES SELECTING, NOT KEEPING … it is harder to change the legend than to set it."* */
-const AUTO_FILL_IN = 0.85, AUTO_FILL_OUT = 0.6, AUTO_SPAN_MAX = 130,
-      AUTO_COVER_IN = 0.2,
+/* §17.15 — LANGUAGEDOTS' CHOOSING RULE, Anita 2026-10-12: Auto was "too aggressive". Its entry
+   numbers became languagedots' (which Anita had raised there twice for the same complaint): fill
+   0.85 -> 1.5, about half a zoom level past a country touching two edges of the view, and cover
+   0.2 -> 0.5, the country's box over half the view; and the land test (landShare,
+   AUTO_LAND_IN) gates every route that chooses. Release is untouched, so the gap between choosing
+   and letting go is wider. */
+const AUTO_FILL_IN = 1.5, AUTO_FILL_OUT = 0.6, AUTO_SPAN_MAX = 130,
+      AUTO_COVER_IN = 0.5,
       AUTO_OVER_IN = 0.5, AUTO_OVER_OUT = 0.25,
       AUTO_SHARE = 0.85, AUTO_MIN = 150, AUTO_BOX = 0.5;
 let lastLook = '';
@@ -7291,12 +8446,15 @@ function dotsOnScreen(cc) {
    the parts. The shapes are simplified to ~200 m and the question is which country the camera
    is over, so a metre either side of a boundary is not a distinction this has to make. Runs on
    `moveend` and `idle`, never per frame. */
-function countryAt(lng, lat) {
+/* `minDeg` (§17.15, languagedots'): skip a part under that many degrees across, so the camera is
+   never "over" an enclave too small to see. */
+function countryAt(lng, lat, minDeg = 0) {
   if (!SHAPES) return null;
   // getBounds and getCenter run past ±180 once you pan around the world; the shapes never do
   const x = ((lng + 180) % 360 + 360) % 360 - 180;
   for (const p of SHAPES) {
     if (x < p.w || x > p.e || lat < p.s || lat > p.n) continue;
+    if (minDeg && Math.max(p.e - p.w, p.n - p.s) < minDeg) continue;
     const r = p.ring;
     let inside = false;
     for (let i = 0, j = r.length - 1; i < r.length; j = i++) {
@@ -7308,6 +8466,45 @@ function countryAt(lng, lat) {
   }
   return null;
 }
+
+/* §17.15 — THE LAND TEST, languagedots' own (Anita there, 2026-10-07: "we should only auto select
+   if it's in the center of the screen and it's like maybe over 65% of the land area visible,
+   maybe weighted a bit to prioritize the center"). A LAND_GRID x LAND_GRID grid over the middle
+   of the view (centreBounds), even in Mercator, each sample weighted by a Gaussian of its distance
+   from the middle (LAND_SIGMA of the side). Choosing needs AUTO_LAND_IN of the weighted samples
+   that land on a country; keeping one does not ask it. Memoised per camera. */
+const AUTO_LAND_IN = 0.65, LAND_GRID = 15, LAND_SIGMA = 0.25;
+let landMemo = { key: null, sh: null };
+function landShares() {
+  const b = centreBounds(), key = [b.w, b.e, b.s, b.n].join();
+  if (landMemo.key === key) return landMemo.sh;
+  const s0 = mercY(b.s), n0 = mercY(b.n), N = LAND_GRID;
+  const cand = (SHAPES || []).filter(p => !(p.s > b.n || p.n < b.s));
+  const count = {};
+  let land = 0;
+  for (let iy = 0; iy < N; iy++) {
+    const v = (iy + 0.5) / N, lat = unmercY(n0 - (n0 - s0) * v);
+    for (let ix = 0; ix < N; ix++) {
+      const u = (ix + 0.5) / N;
+      const x = (((b.w + (b.e - b.w) * u) + 180) % 360 + 360) % 360 - 180;
+      const wgt = Math.exp(-((u - 0.5) ** 2 + (v - 0.5) ** 2) / (2 * LAND_SIGMA * LAND_SIGMA));
+      for (const p of cand) {
+        if (x < p.w || x > p.e || lat < p.s || lat > p.n) continue;
+        const r = p.ring;
+        let inside = false;
+        for (let i = 0, j = r.length - 1; i < r.length; j = i++) {
+          const xi = r[i][0], yi = r[i][1], xj = r[j][0], yj = r[j][1];
+          if ((yi > lat) !== (yj > lat) && x < (xj - xi) * (lat - yi) / (yj - yi) + xi)
+            inside = !inside;
+        }
+        if (inside) { count[p.cc] = (count[p.cc] || 0) + wgt; land += wgt; break; }
+      }
+    }
+  }
+  landMemo = { key, sh: { count, land } };
+  return landMemo.sh;
+}
+function landShare(cc) { const l = landShares(); return l.land ? (l.count[cc] || 0) / l.land : 0; }
 
 /* DOES THE SELECTED COUNTRY STILL HOLD THE MIDDLE OF THE SCREEN — added 2026-09-06, and it is
    the only thing standing between Auto and a legend that flips on a pixel.
@@ -7489,7 +8686,9 @@ function considerCamera() {
      Alaska, and Mauritius over Rodrigues are the same shape and were all silently wrong before
      this; France only made it worth 2.2 million people. */
   const sh = centreShares();
-  const at = countryAt(c.lng, c.lat);
+  // §17.15: a part under four pixels across is not what the camera is over (languagedots)
+  const cb = map.getBounds(), px = (cb.getEast() - cb.getWest()) / (map.getCanvas().clientWidth || 1);
+  const at = countryAt(c.lng, c.lat, 4 * px);
   if (at !== null) {
     if (at === country) {
       if (tooWide() || viewFill(at, bandBounds()) < AUTO_FILL_OUT)
@@ -7503,7 +8702,7 @@ function considerCamera() {
           || viewOverlap(country) < AUTO_OVER_OUT)
         setCountry(null, { fly: false });
     } else if (!tooWide() && autoMay(at) && framedIn(at)
-               && !contested(sh, at) && scopeDrawsIn(at)) {
+               && !contested(sh, at) && scopeDrawsIn(at) && landShare(at) >= AUTO_LAND_IN) {
       setCountry(at, { fly: false });     // straight across, with no all-countries frame between
     } else if (country !== null) {
       setCountry(null, { fly: false });   // over somewhere else, so this view is not about it
@@ -7612,7 +8811,8 @@ function considerCamera() {
   // the Philippines framed from the sea each hold every sample that lands on a built country.
   if (best && best !== country && META[best] && out[best] / total >= AUTO_SHARE
       && framedIn(best) && viewOverlap(best) >= AUTO_OVER_IN
-      && !contested(sh, best) && centreInHullOf(best, c) && scopeDrawsIn(best))
+      && !contested(sh, best) && centreInHullOf(best, c) && scopeDrawsIn(best)
+      && landShare(best) >= AUTO_LAND_IN)
     setCountry(best, { fly: false });
 }
 
@@ -7710,7 +8910,6 @@ function closeMenu() {
    transfers — the slider multiplies it rather than replacing it. */
 const MERGED_STOPS = [[0, 0.55], [4, 0.85], [6, 0.95], [8, 1.05], [10, 1.3], [12, 2.6], [14, 5]];
 const ATOMIC_STOPS = [[0, 0.5], [4, 0.8], [6, 1.0], [8, 1.4], [10, 2.2], [12, 4.4], [14, 8]];
-const RING_STOPS = [[3, 2.2], [6, 3], [8, 4], [10, 5.5], [12, 8], [14, 12]];
 const CAP = 8;
 
 /* A merged mark stands for `k` dots and its AREA is proportional to k, so radius goes as
@@ -7782,17 +8981,13 @@ function radiusFlatAt(stops, z, eg = 1) {
   }
 }
 function applySizes() {
-  document.getElementById('dot-size-val').textContent = dotScale.toFixed(1) + '\u00d7';
+  document.getElementById('dot-size-val').textContent = sizeScale + '\u00d7';
   if (!map.getLayer('dots')) return;
   for (const e of EDITIONS) {
     const g = edGain(e);
     map.setPaintProperty('dots' + e, 'circle-radius', radiusMerged(g));
-    map.setPaintProperty('rings' + e, 'circle-radius', radiusFlat(RING_STOPS, g));
-    // a ring drawn large with a hairline stroke reads as a smudge; thicken it sublinearly
-    map.setPaintProperty('rings' + e, 'circle-stroke-width',
-      Math.max(0.6, 1.1 * Math.sqrt(dotScale)));
   }
-  // the scatter reads its radius per frame from radiusFlatAt, so it only needs waking
+  // the scatter and §17's pies read their radius per frame on the CPU, so they only need waking
   map.triggerRepaint();
 }
 
@@ -7828,7 +9023,7 @@ attribute vec2 a_corner;
 attribute float a_xlo, a_xhi, a_ylo, a_yhi, a_ni;
 uniform mat4 u_matrix;
 uniform vec2 u_origin_hi, u_origin_lo, u_pxsize;
-uniform float u_radius, u_palette_n, u_only_measured;
+uniform float u_radius, u_palette_n, u_only_measured, u_pass;
 uniform sampler2D u_palette;
 varying vec2 v_corner;
 varying vec4 v_color;
@@ -7872,6 +9067,10 @@ void main() {
      collapsed outright because nothing counted it at any level.
      NO BACKTICKS IN HERE — this whole shader is a JS template literal, and one closes it. */
   float shown = (pal.a > 0.5 ? 1.0 : 0.0) * (1.0 - u_only_measured * isModelled);
+  /* 17.13: a hidden node is drawn in HIDDEN_GREY with alpha 254. With anything hidden the
+     layer draws twice, the grey first (u_pass 1) and the rest over it (u_pass 2). */
+  float hidd = pal.a < 0.998 ? 1.0 : 0.0;
+  shown *= u_pass < 0.5 ? 1.0 : (u_pass < 1.5 ? hidd : 1.0 - hidd);
   gl_Position = pos + vec4(a_corner * u_pxsize * shown * u_radius * pos.w,
                            0.0, 0.0);
   v_corner = a_corner;
@@ -7910,7 +9109,7 @@ precision highp float;
 attribute float a_xlo, a_xhi, a_ylo, a_yhi, a_ni;
 uniform mat4 u_matrix;
 uniform vec2 u_origin_hi, u_origin_lo;
-uniform float u_radius, u_palette_n, u_only_measured;
+uniform float u_radius, u_palette_n, u_only_measured, u_pass;
 uniform sampler2D u_palette;
 varying vec4 v_color;
 void main() {
@@ -7923,6 +9122,10 @@ void main() {
   vec4 pal = texture2D(u_palette, vec2((slot + 0.5) / (u_palette_n * 2.0), 0.5));
   v_color = pal;
   float shown = (pal.a > 0.5 ? 1.0 : 0.0) * (1.0 - u_only_measured * isModelled);
+  /* 17.13: a hidden node is drawn in HIDDEN_GREY with alpha 254. With anything hidden the
+     layer draws twice, the grey first (u_pass 1) and the rest over it (u_pass 2). */
+  float hidd = pal.a < 0.998 ? 1.0 : 0.0;
+  shown *= u_pass < 0.5 ? 1.0 : (u_pass < 1.5 ? hidd : 1.0 - hidd);
   vec4 pos = u_matrix * vec4(vec2(dx, dy) / 4294967296.0, 0.0, 1.0);
   gl_Position = shown > 0.5 ? pos : vec4(2.0, 2.0, 2.0, 1.0);
   gl_PointSize = 2.0 * u_radius;
@@ -7948,11 +9151,12 @@ void main() {
     this.ext = this.webgl2 ? null : gl.getExtension('ANGLE_instanced_arrays');
     /* No instancing at all is the one context this layer cannot draw in. Rather than throw
        once a frame forever, fall back to the merged tile layer — which needs nothing special
-       and is a real view of the same data (§4.2b), not an error state. */
+       and is a real view of the same data (§4.2b), not an error state. Since §17 this is the
+       only place the merged marks are still drawn (`markFallback`); the pies need WebGL2, which
+       a context without instancing does not have, and the dot style control hides itself. */
     if (!this.webgl2 && !this.ext) {
       console.warn('no instancing available — falling back to merged marks');
       this.unsupported = true;
-      merged = true;
       if (typeof applyPaint === 'function') applyPaint();
       return;
     }
@@ -7974,7 +9178,7 @@ void main() {
     for (const k of ['a_corner', 'a_xlo', 'a_xhi', 'a_ylo', 'a_yhi', 'a_ni'])
       this.loc[k] = gl.getAttribLocation(p, k);
     for (const k of ['u_matrix', 'u_origin_hi', 'u_origin_lo', 'u_pxsize', 'u_radius',
-                     'u_palette', 'u_palette_n', 'u_alpha', 'u_only_measured'])
+                     'u_palette', 'u_palette_n', 'u_alpha', 'u_only_measured', 'u_pass'])
       this.loc[k] = gl.getUniformLocation(p, k);
     /* §4.2f's program, on the quad program's attribute slots, so switching between the two from
        one frame to the next never leaves a slot pointing somewhere stale. A failure here costs
@@ -7991,7 +9195,7 @@ void main() {
       for (const k of ['a_xlo', 'a_xhi', 'a_ylo', 'a_yhi', 'a_ni'])
         this.ploc[k] = gl.getAttribLocation(pp, k);
       for (const k of ['u_matrix', 'u_origin_hi', 'u_origin_lo', 'u_radius', 'u_palette',
-                       'u_palette_n', 'u_alpha', 'u_only_measured'])
+                       'u_palette_n', 'u_alpha', 'u_only_measured', 'u_pass'])
         this.ploc[k] = gl.getUniformLocation(pp, k);
       this.pointMax = gl.getParameter(gl.ALIASED_POINT_SIZE_RANGE)[1];
     } else {
@@ -8057,14 +9261,15 @@ void main() {
   },
 
   render(gl, matrix) {
-    /* `merged` IS THIS LAYER'S SWITCH TOO, and until 2026-09-07 only half of it was wired.
+    /* `dotPies` (`merged` until §17) IS THIS LAYER'S SWITCH TOO, and until 2026-09-07 only
+       half of it was wired.
        applyPaint() hides the merged tile layers whenever consolidation is off and says why —
        "the two must never both draw or every dot would be painted twice, once as itself and
        once inside a merged mark" — but the mirror of that has to live HERE, because a custom
        layer has no paint properties for applyPaint to set. Without it, turning consolidation
        ON left every separate dot on screen underneath the marks that consolidate them, so the
        control looked like it did nothing but add a few big circles. */
-    if (merged) return;
+    if (dotPies) return;
     /* Regions mode draws no dot, and that is enforced here as well as by the layer's
        `visibility`: with only the latter, dots kept drawing over the regions in the
        all-countries view (France and a stray rectangle over the Baltic, 2026-10-04). */
@@ -8168,6 +9373,9 @@ void main() {
     const zoom = this.map.getZoom();
 
     let drawn = 0;
+    // 17.13: hidden dots are grey, and drawn first so the dots a reader is looking at sit on top
+    for (const pass of this.anyHidden ? [1, 2] : [0]) {
+    gl.uniform1f(L.u_pass, pass);
     for (const k of worlds) {
       if (k !== 0) {
         const shifted = m.slice();
@@ -8209,6 +9417,7 @@ void main() {
           drawn += count;
         }
       }
+    }
     }
     this.drawn = drawn;
   },
@@ -8434,7 +9643,7 @@ SCATTER.lodAllShown = function (d) {
     const tier = v >> 14;
     if (onlyMeasured && tier === 2) { ok = false; break; }
     const slot = (v & 0x3fff) + (onlyMeasured && ROLLS(tier) ? N : 0);
-    if (pal[slot * 4 + 3] < 128) { ok = false; break; }
+    if (pal[slot * 4 + 3] < 255) { ok = false; break; }   // hidden (grey, 254) as before
   }
   d.lodShownKey = key;
   d.lodShown = ok;
@@ -8775,9 +9984,8 @@ SCATTER.loadAll = async function () {
        away and re-make 260 rows for nothing in the default one. */
     if (onlyMeasured && typeof rebuild === 'function') rebuild(true);
     if (typeof recolour === 'function') { recolour(); applyPaint(); }
-    // the §7 share is counted off these buffers, so it can only be right once they are here
-    if (typeof renderTierControl === 'function') renderTierControl();
-    // and §7c's header row is the same figure — it comes up with an empty value and fills in
+    // §7c's header row is counted off these buffers, so it can only be right once they are
+    // here: it comes up with an empty value and fills in
     if (typeof renderProvenance === 'function') renderProvenance();
     if (onlyMeasured && typeof renderTree === 'function') renderTree();
     map.triggerRepaint();
@@ -8933,11 +10141,16 @@ SCATTER.setPalette = function () {
      the one a reader would actually have seen. */
   const roll = rollUpMap();
   const N = this.paletteN;
+  /* §17.13: A HIDDEN NODE STAYS ON THE MAP IN HIDDEN_GREY, alpha 254, which is how the shader
+     tells it apart to draw it underneath (u_pass) and how `pick` lets a coloured dot win. Out of
+     scope is still removed (§6.7), alpha 0. */
+  this.anyHidden = false;
   const rgbaOf = (id) => {
-    const hex = hslToHex(colorOf[id] || '#666');
+    const ins = !inScope || inScope.has(id), hid = isHidden(id);
+    if (ins && hid) this.anyHidden = true;
+    const hex = hslToHex(hid ? HIDDEN_GREY : (colorOf[id] || '#666'));
     return [parseInt(hex.slice(1, 3), 16), parseInt(hex.slice(3, 5), 16),
-            parseInt(hex.slice(5, 7), 16),
-            (!isHidden(id) && (!inScope || inScope.has(id))) ? 255 : 0];
+            parseInt(hex.slice(5, 7), 16), ins ? (hid ? 254 : 255) : 0];
   };
   for (let i = 0; i < N; i++) {
     const id = this.nodes[i];
@@ -9209,7 +10422,7 @@ SCATTER.pick = function (point) {
   const cx0 = Math.floor(mx / cell), cy0 = Math.floor(my / cell);
   // `best` is a dot whose disc COVERS the point, by §4.2c's last-drawn-wins rule. `near` is the
   // touch fallback: the closest centre inside the reach, used only when nothing covers.
-  let best = null, bestI = -1;
+  let best = null, bestI = -1, hBest = null, hBestI = -1;
   let near = null, nearI = -1, nearD2 = Infinity;
   for (const d of this.active()) {
     /* Skip a country the cursor is nowhere near BEFORE building its index. Without this, one
@@ -9254,11 +10467,15 @@ SCATTER.pick = function (point) {
         if (this.palette[slot * 4 + 3] < 128) continue;
         const ex = d.x[i] - mx, ey = d.y[i] - my;
         const d2 = ex * ex + ey * ey;
-        if (d2 <= hard2) { best = d; bestI = i; }
+        /* §17.13: a hidden dot is grey and still answers, but it is drawn underneath (u_pass), so
+           a coloured dot covering the same point wins whatever the order. */
+        const grey = this.palette[slot * 4 + 3] < 255;
+        if (d2 <= hard2) { if (grey) { hBest = d; hBestI = i; } else { best = d; bestI = i; } }
         else if (d2 <= soft2 && d2 < nearD2) { near = d; nearI = i; nearD2 = d2; }
       }
     }
   }
+  if (!best && hBest) { best = hBest; bestI = hBestI; }
   // nothing was actually under the finger, so answer with what it was nearest to
   if (!best && near) { best = near; bestI = nearI; }
   if (!best) return null;
@@ -9270,7 +10487,7 @@ SCATTER.pick = function (point) {
      the thing the card just named. */
   const v = best.nid[bestI], id = this.nodes[v & 0x3fff];
   const rolled = (onlyMeasured && ROLLS(v >> 14)) ? (rollUpMap()[id] || id) : id;
-  return { n: rolled, c: best.cc };
+  return { n: rolled, c: best.cc, hidden: isHidden(rolled) };
 };
 
 // ---------------------------------------------------------------- map
@@ -9532,15 +10749,18 @@ map.on('load', async () => {
   });
   map.addLayer(pieLayer);           // the pies, over the regions and their outlines
 
+  /* The merged marks: since §17 the pies' data (opacity 0) and the no-instancing fallback's
+     circles, never on screen otherwise. Starts hidden; applyPaint() decides. */
   map.addLayer({
     id: 'dots', type: 'circle', source: 'tiles', 'source-layer': 'dots',
+    layout: { visibility: 'none' },
     paint: {
-      'circle-color': '#666', 'circle-opacity': DOT_ALPHA, 'circle-stroke-width': 0,
+      'circle-color': '#000', 'circle-opacity': 0, 'circle-stroke-width': 0,
       'circle-radius': radiusMerged(),
     },
   });
   /* The same dots unmerged — the default view, and no longer a tile layer (§4.2d). It goes in
-     here, under the rings, so the paint order is unchanged from when it was `atomic`. */
+     here so the paint order is unchanged from when it was `atomic`. */
   map.addLayer(SCATTER);
   /* Registered before the load starts, so a country that fails during the initial fill is
      already covered by the time the reader pans anywhere. */
@@ -9549,41 +10769,22 @@ map.on('load', async () => {
   // Auto's own copy of the wash's polygons, so it can tell where the camera is (centreShares).
   // Neither is awaited: the map is usable before either arrives.
   loadShapes();
-  map.addLayer({
-    id: 'rings', type: 'circle', source: 'tiles', 'source-layer': 'rings',
-    paint: {
-      'circle-color': 'rgba(0,0,0,0)',
-      'circle-stroke-color': '#888',
-      'circle-stroke-width': 1.1,
-      'circle-opacity': 1,
-      'circle-radius': radiusFlat(RING_STOPS),
-    },
-  });
+  /* The `rings` and `rings10k` source layers are still in the archive and nothing draws them:
+     presence rings were removed on 2026-10-12 (§17). */
 
-  /* The 1:10,000 edition, same three layers again against the coarse source-layers. Added
-     only if the archive actually carries them, so an older pmtiles keeps working and the
-     control below hides itself. All start hidden; applyPaint() decides what is visible. */
+  /* The 1:10,000 edition's merged layer, against the coarse source-layer. Added only if the
+     archive actually carries it, so an older pmtiles keeps working and the control below hides
+     itself. Starts hidden; applyPaint() decides what is visible. */
   if (EDITIONS.includes('10k')) {
     map.addLayer({
       id: 'dots10k', type: 'circle', source: 'tiles', 'source-layer': 'dots10k',
       layout: { visibility: 'none' },
       paint: {
-        'circle-color': '#666', 'circle-opacity': DOT_ALPHA, 'circle-stroke-width': 0,
+        'circle-color': '#000', 'circle-opacity': 0, 'circle-stroke-width': 0,
         'circle-radius': radiusMerged(),
       },
     });
     // no atomic10k layer: SCATTER carries both editions and swaps between them itself
-    map.addLayer({
-      id: 'rings10k', type: 'circle', source: 'tiles', 'source-layer': 'rings10k',
-      layout: { visibility: 'none' },
-      paint: {
-        'circle-color': 'rgba(0,0,0,0)',
-        'circle-stroke-color': '#888',
-        'circle-stroke-width': 1.1,
-        'circle-opacity': 1,
-        'circle-radius': radiusFlat(RING_STOPS),
-      },
-    });
   }
 
   rebuild();
@@ -9622,7 +10823,9 @@ map.on('load', async () => {
      `colorOf` is the legend's own table, so the key beside the name and the swatch beside the
      legend row cannot come out different. */
   const hoverCard = (id, opts = {}) => {
-    const c = colorOf[id] || '#666';
+    // §17.13: a hidden religion's dot is grey on the map, so its key is too, and the card says why
+    const c = opts.hidden ? HIDDEN_GREY : (colorOf[id] || '#666');
+    if (opts.hidden) opts = Object.assign({}, opts, { tail: (opts.tail || '') + ' · hidden' });
     const key = opts.ring ? `<span class="key ring" style="border-color:${c}"></span>`
                           : `<span class="key" style="background:${c}"></span>`;
     const node = BY_ID[id];
@@ -9633,36 +10836,32 @@ map.on('load', async () => {
   /* The merged layers' half of SCATTER.pick's naming rule (§7a-i: the two renderings must not
      disagree about what the control means). `t` is 1 for derived, and colorExpr() has already
      painted a derived mark in its rolled ancestor's colour, so the card and the selection have
-     to follow it there. Rings carry no `t` and never roll. */
+     to follow it there. */
   const drawnAs = (p) => (onlyMeasured && ROLLS(p.t))
     ? (rollUpMap()[p.n] || p.n) : p.n;
 
-  for (const layer of [...dotLayerIds(), ...ringLayerIds()]) {
+  /* ONLY IN THE NO-INSTANCING FALLBACK since §17. In pies mode the merged layer is on the map
+     at opacity 0 as the pies' data, and a circle at opacity 0 still answers queries (§4.3's
+     "Sikh ring says Wesleyan Church"), so these would name marks nobody can see, and their
+     mouseleave would take the pie card down. */
+  for (const layer of dotLayerIds()) {
     map.on('dblclick', layer, e => {
+      if (!markFallback()) return;
       const id = drawnAs(e.features[0].properties);
       if (!BY_ID[id]) return;
       e.preventDefault();
       setScope(id);
     });
     map.on('mousemove', layer, e => {
+      if (!markFallback()) return;
       const p = e.features[0].properties;
-      // `startsWith`, not `=== 'rings'`: at 1:10,000 the ring layer is `rings10k`, and the
-      // equality test gave those the dot card — a `p.k` tail on a mark that carries no `k`
-      const ring = layer.startsWith('rings');
-      let tail = '';
-      if (ring) {
-        const whole = p.c && META[p.c] ? (META[p.c].name_in || META[p.c].name) : 'this country';
-        tail = ' · fewer than ' + DOT_VALUE.toLocaleString() + ' in all of ' + esc(whole)
-             + ', too few to draw';
-      } else if (p.k > 1) {
-        tail = ' · ~' + (p.k * DOT_VALUE).toLocaleString() + ' people here';
-      }
+      const tail = p.k > 1 ? ' · ~' + (p.k * DOT_VALUE).toLocaleString() + ' people here' : '';
       // in the all-countries view, whose data this is matters as much as what it says
-      const where = (!country && !ring && p.c && META[p.c])
+      const where = (!country && p.c && META[p.c])
         ? '<br><span class="sub">' + esc(META[p.c].name) + '</span>' : '';
-      pop.setLngLat(e.lngLat).setHTML(hoverCard(drawnAs(p), { ring, tail, where })).addTo(map);
+      pop.setLngLat(e.lngLat).setHTML(hoverCard(drawnAs(p), { tail, where })).addTo(map);
     });
-    map.on('mouseleave', layer, () => pop.remove());
+    map.on('mouseleave', layer, () => { if (markFallback()) pop.remove(); });
   }
 
   /* §10.6's country card waits for the pointer to rest. Both hover paths below hand a move that
@@ -9712,7 +10911,7 @@ map.on('load', async () => {
      one drawn that covers it (§4.2c) — where `e.features[0]` above answers with the first in
      tile order, which is a different dot wherever dots overlap. */
   const scatterHover = (e) => {
-    if (merged || regionsMode || !SCATTER.ready) return false;
+    if (dotPies || regionsMode || !SCATTER.ready) return false;
     const hit = SCATTER.pick(e.point);
     if (!hit) {
       /* No dot under the pointer, so the outlined country under it may answer (§15.11), and
@@ -9725,26 +10924,37 @@ map.on('load', async () => {
     dwellStop();
     const where = (!country && hit.c && META[hit.c])
       ? '<br><span class="sub">' + esc(META[hit.c].name) + '</span>' : '';
-    pop.setLngLat(e.lngLat).setHTML(hoverCard(hit.n, { where })).addTo(map);
+    pop.setMaxWidth('240px');
+    pop.setLngLat(e.lngLat).setHTML(hoverCard(hit.n, { where, hidden: hit.hidden })).addTo(map);
     return hit;
   };
   map.on('mousemove', scatterHover);
-  /* The merged renderer's half of §15's hover and §10.6's. Merged marks and rings answer through
-     their own delegated listeners above, so a country speaks only where none of them is under the
-     pointer. Over all ground rather than delegated to `estimate-hit`, because the country card is
-     armed anywhere, and `dwellArm` taking the popup down is what leaving an outline used to do. */
+  /* The other renderers' half of §15's hover and §10.6's: regions mode, §17's pies, and the
+     fallback's merged marks (which answer through their own delegated listeners above, so a
+     country speaks only where none is under the pointer). Over all ground rather than delegated
+     to `estimate-hit`, because the country card is armed anywhere, and `dwellArm` taking the
+     popup down is what leaving an outline used to do. */
   map.on('mousemove', e => {
-    if (!merged && !regionsMode && SCATTER.ready) return;   // separate: scatterHover has already asked
+    if (!dotPies && !regionsMode && SCATTER.ready) return;   // separate: scatterHover has already asked
+    /* A kept pie card (§17) holds the screen until it is let go, as languagedots' does. */
+    if (PIE_PIN) { map.getCanvas().style.cursor = dotPieAt(e.point) ? 'pointer' : ''; return; }
     /* Regions mode: the region under the pointer answers first, as a dot would. */
     const region = regionCardAt(e.point);
     if (region) { dwellStop(); pop.setLngLat(e.lngLat).setHTML(region).addTo(map); return; }
-    const marks = [activeDotLayer(), activeRingLayer()].filter(l => map.getLayer(l));
-    if (map.queryRenderedFeatures(e.point, { layers: marks }).length) { dwellStop(); return; }
+    /* §17: the pie under the pointer, and the pointer says a click will keep its card. */
+    const pie = dotPieAt(e.point);
+    if (pieMode() === 'dots') map.getCanvas().style.cursor = pie ? 'pointer' : '';
+    // the pie card is wider than the other cards this popup shows, and they keep their 240px
+    pop.setMaxWidth(pie ? PIE_CARD_MAX : '240px');
+    if (pie) { dwellStop(); pop.setLngLat(e.lngLat).setHTML(pieCardHTML(pie, null)).addTo(map); return; }
+    if (markFallback() && map.getLayer(activeDotLayer())
+        && map.queryRenderedFeatures(e.point, { layers: [activeDotLayer()] }).length) { dwellStop(); return; }
     const html = estimateCardAt(e.point);
     if (html) { dwellStop(); pop.setLngLat(e.lngLat).setHTML(html).addTo(map); } else dwellArm(e);
   });
+  wirePies(pop);
   map.on('dblclick', (e) => {
-    if (merged || !SCATTER.ready) return;
+    if (dotPies || regionsMode || !SCATTER.ready) return;
     const hit = SCATTER.pick(e.point);
     if (!hit || !BY_ID[hit.n]) return;
     e.preventDefault();                    // keeps the gesture off clickZoom, as above
@@ -9803,70 +11013,67 @@ document.getElementById('scope-clear').onclick = () => setScope(null);
    different answers cannot be served by an enter event. */
 document.getElementById('mixbar').onmousemove =
   e => aimMix(e.currentTarget, e.clientX);
-segWire('mode-seg', () => regionsMode ? 1 : 0, v => {
-  regionsMode = !!v;
-  applyPaint(); renderTree();
-});
-segWire('merge-seg', () => merged ? 1 : 0, v => {
-  merged = !!v;
-  applyPaint(); renderTree();
+/* §17.10: one row for what the map draws, pies (0), dots (1) or regions (2). A box and a kept card
+   belong to the pies and go with them. `rebuild(true)`, because §17.11's groups under one dot are
+   in the legend only while the pies draw them. */
+segWire('draw-seg', () => regionsMode ? 2 : dotPies ? 0 : 1, v => {
+  if (v === 0 && (pieLayer.dead || markFallback())) return;
+  regionsMode = v === 2;
+  if (v !== 2) dotPies = v === 0;
+  PIE_BOX = null; unpinPie();
+  map.getCanvas().style.cursor = '';
+  syncDotValue();                         // §17.18: 1:1,000 unless drawing dots
+  rebuild(); recolour(); applyPaint(); applySizes(); renderTree();
 });
 /* People per dot. `rebuild()` as well as the repaint, because the two editions do not hold the
    same NODES — at 1:10,000 two of India's seventeen stop drawing anything — so the legend has
    to be rebuilt from the other edition's tallies, not merely recoloured. */
-segWire('dotval-seg', () => DOT_VALUE, v => {
+segWire('dotval-seg', () => dotsDotValue, v => {
   /* `.off` takes the control out of play too, but not until counts.json has said whether the
      archive carries the coarse edition. Between page load and that answer the second chip is
      still on screen, so the guard stays at the click as well. */
   if (!EDITIONS.includes('10k')) return;
-  DOT_VALUE = v;
-  document.getElementById('about-dotval').textContent = DOT_VALUE.toLocaleString();
+  dotsDotValue = v;
+  syncDotValue();
   rebuild();
   recolour(); applyPaint(); applySizes(); renderTree();
 });
-segWire('rings-seg', () => showRings ? 1 : 0, v => {
-  showRings = !!v;
-  rebuild();                       // ring-only nodes enter and leave the legend with them
-  recolour(); applyPaint(); renderTree();
-});
-/* §15. The first time it is turned on it fetches the layer's two files; the outlines and the
-   caption line arrive when they land, from `loadEstimates`. */
-segWire('est-seg', () => showEstimates ? 1 : 0, v => {
-  showEstimates = !!v;
-  if (showEstimates) loadEstimates();
-  applyPaint(); renderTree();
-});
-/* Slider position -> multiplier, geometric so the ends are equally reachable and the midpoint
-   is exactly 1. Range is 0.33x to 3x: below that a dot stops being visible at all, above it
-   the country fills in solid and the map stops being a dot map. */
+/* `presence rings` and `national estimates` controls removed 2026-10-12 (§17). */
+/* §17.10, languagedots' three sliders on its own stops. Size is a multiplier on area: the pies
+   read it as their ink per person, the dots and regions mode's pies as its square root on their
+   radius. Cap and Aggregation are the pies' alone. Each schedules a pie rebuild, since a pie's
+   size and cap are worked out with it. */
 document.getElementById('dot-size').oninput = e => {
-  dotScale = Math.pow(2, ((+e.target.value - 50) / 50) * 1.6);
+  sizeScale = SIZE_STOPS[+e.target.value];
+  dotScale = Math.sqrt(sizeScale);
   applySizes();
-  pieDirty = true;                  // in regions mode the same slider sizes the pies
+  pieDirty = true;                  // regions mode's pies are re-merged at their new size
+  schedulePies();
   map.triggerRepaint();
+};
+document.getElementById('pie-cap').oninput = e => {
+  capScale = CAP_STOPS[+e.target.value];
+  document.getElementById('pie-cap-val').textContent = isFinite(capScale) ? capScale + '×' : 'none';
+  schedulePies();
+};
+document.getElementById('pie-agg').oninput = e => {
+  detail = 2 - +e.target.value;
+  document.getElementById('pie-agg-val').textContent = AGG_LABELS[+e.target.value];
+  schedulePies(0);
 };
 segWire('none-seg', () => NOT_A_RELIGION_IDS.some(id => USER_HIDDEN.has(id)) ? 0 : 1, v => {
   // §10.3: these are branches, so the control moves whole branches
   for (const id of NOT_A_RELIGION_IDS) setSubtreeVisible(id, !!v);
   saveOverrides(); applyPaint(); renderTree();
 });
-/* §7. `rebuild()` IS needed, and the comment that used to stand here said the opposite —
-   "this changes no node's presence in the legend, only how many dots stand behind rows that
-   are there either way". That was true of the control that only REMOVED dots. Since §7a-i it
-   moves them, and since §7a-i-1 it moves them onto nodes that may draw nothing at all in the
-   other state: Brazil's 47.4M evangelicals land on `christianity.evangelical`, which has no
-   dots of its own anywhere in Brazil. Without the rebuild the map would paint a colour with
-   no row to read it off, which §6 forbids.
-
-   `rebuild(true)` keeps the selection. A branch with no dots in the rolled state is still the
-   branch the reader chose, and losing it on the way in — with no way to get it back by
-   toggling out again — reads as the control breaking. */
-segWire('tier-seg', () => onlyMeasured ? 1 : 0, v => {
-  onlyMeasured = !!v;
-  rebuild(true); recolour(); applyPaint(); renderTree();
-  map.triggerRepaint();
-});
-document.getElementById('reset-btn').onclick = () => { if (overrideCount()) resetOverrides(); };
+/* §7's `inferred dots` control removed 2026-10-12 (§17); `onlyMeasured` is pinned off. */
+// colours only since §17; see the note where the row is shown
+document.getElementById('reset-btn').onclick = () => {
+  if (!Object.keys(USER_COLOR).length) return;
+  USER_COLOR = {};
+  saveOverrides();
+  recolour(); applyPaint(); renderTree();
+};
 document.getElementById('vis-all').onclick = () => {
   if (ROOTS.every(id => visStateOf(id) === 2)) for (const n of NODES) USER_HIDDEN.add(n.id);
   else USER_HIDDEN = new Set();
@@ -9919,6 +11126,7 @@ document.addEventListener('keydown', e => {
   if (pickNode) closePicker();
   else if (document.getElementById('cc-menu').classList.contains('open')) closeMenu();
   else if (about.classList.contains('show')) about.classList.remove('show');
+  else if (pieEscape()) { /* §17: the box, then a kept pie card */ }
   else if (scope) setScope(null);
 });
 document.getElementById('depth-plus').onclick = () => {
@@ -10029,6 +11237,207 @@ document.getElementById('info-btn').onclick = e => {
   e.stopPropagation();               // the closer above must not undo the toggle that opened it
   document.getElementById('about').classList.toggle('show');
 };
+
+/* ---- PLACE SEARCH (spec §16; Anita, 2026-10-12: "an address search ... not super prominent ...
+   type in a country or subdivision or address and go to that place"). Photon (photon.komoot.io),
+   which allows search as you type: 300 ms after the last key, from 3 characters, the request
+   before it cancelled, a "Searching" row while it is out, each answer kept for the session. The
+   request carries the query and nothing else: no referrer, no cookies, no key. Photon takes about
+   2 s, so the map's own countries and a local list of first-level divisions (processed/
+   place_index.json) answer at once and Photon's results join under them. A result with an extent
+   is fitted to it; one without is jumped to at a zoom that suits its type. No animation. The
+   same control as languagedots'. */
+(function placeSearch() {
+  const A = {
+    pad: () => panelPadding(map.getCanvas()),
+    countries: () => Object.entries(META).map(([k, m]) => ({ cc: k, name: m.name, view: m.view })),
+    countryName: k => META[k] && META[k].name,
+    viewOf: k => META[k] && META[k].view,
+    indexUrl: () => DATA_BASE + 'processed/place_index.json',
+    ready: () => Promise.resolve(),
+    // a country held by hand that does not contain the place would leave the map empty there
+    outside: (k, lng, lat) => !autoCountry && country !== null && (k || countryAt(lng, lat)) !== country,
+    toAuto: () => pickAuto(),
+  };
+  const GEO_URL = 'https://photon.komoot.io/api/';
+  const ZOOM = { country: 4, state: 6, county: 9, city: 10, district: 12, locality: 13, street: 14, house: 15 };
+  const NUMBER_FIRST = new Set(['US', 'CA', 'AU', 'GB', 'IE', 'NZ', 'ZA', 'IN', 'SG', 'PH']);
+  const $ = id => document.getElementById(id);
+  const btn = $('place-btn'), box = $('place-box'), inp = $('place-in'), res = $('place-res');
+  const fold = s => String(s).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/\s+/g, ' ').trim();
+  let local = [], photon = [], status = 'idle', hits = [], cur = 0, timer = null, ctl = null, want = false;
+  const cache = new Map();                 // folded query -> Photon's features, for the session
+  let IDX = null, IDXC = {}, idxP = null;  // the local places (see "Instant answers")
+
+  const closeBox = () => {
+    box.hidden = true; res.hidden = true;
+    clearTimeout(timer); timer = null;
+    if (ctl) ctl.abort();
+    ctl = null; want = false;
+    inp.blur();
+  };
+  const openBox = () => { box.hidden = false; inp.focus(); loadIndex(); if (hits.length || status === 'busy') render(); };
+  btn.onclick = () => { box.hidden ? openBox() : closeBox(); };
+
+  /* INSTANT ANSWERS. The map's own countries (names and framing boxes it already has) and
+     place_index.json, the world's first-level divisions as name, country and box (204 KB, made by
+     tools/make_place_index.py from Natural Earth; fetched the first time the box is opened). A
+     name that starts with the text, or has a word that does, from 2 characters, countries first
+     and then the larger divisions; the top 4. Photon's answers join them underneath. */
+  function loadIndex() {
+    if (idxP) return idxP;
+    idxP = A.ready().then(() => fetch(A.indexUrl())).then(r => r.ok ? r.json() : null).then(j => {
+      if (!j) return;
+      IDXC = j.c;
+      IDX = j.a.map(r => ({ name: r[0], f: fold(r[0]), cc: r[1], box: [r[2], r[3], r[4], r[5]],
+                            area: (r[4] - r[2]) * (r[5] - r[3]) }));
+      if (!box.hidden && inp.value.trim()) { local = localFind(inp.value); render(); }
+    }).catch(() => {});
+    return idxP;
+  }
+  const rankOf = (f, q) => f.startsWith(q) ? 0 : f.split(/[ \-'/]/).some(w => w.startsWith(q)) ? 1 : -1;
+  function localFind(text) {
+    const q = fold(text);
+    if (q.length < 2) return [];
+    const out = [], cname = new Set();
+    for (const c of A.countries()) {
+      const f = fold(c.name), r = rankOf(f, q);
+      if (!c.view) continue;
+      cname.add(c.cc + '|' + f);
+      if (r >= 0) out.push({ kind: 0, r, area: 1e9, name: c.name, ctx: '', cc: c.cc, box: c.view, key: 'c|' + c.cc });
+    }
+    for (const d of IDX || []) {
+      const r = rankOf(d.f, q);
+      if (r < 0 || cname.has(d.cc + '|' + d.f)) continue;
+      out.push({ kind: 1, r, area: d.area, name: d.name, ctx: A.countryName(d.cc) || IDXC[d.cc] || '',
+                 cc: d.cc, box: d.box, key: 's|' + d.f + '|' + d.cc });
+    }
+    return out.sort((a, b) => a.r - b.r || a.kind - b.kind || b.area - a.area).slice(0, 4);
+  }
+
+  // "Kathmandu" with "Bagmati Province, Nepal": the place's own name, then where it is
+  const title = p => {
+    if (p.name) return p.name;
+    const n = [p.street, p.housenumber].filter(Boolean);
+    if (NUMBER_FIRST.has(p.countrycode)) n.reverse();
+    return n.join(' ');
+  };
+  const context = (p, name) => {
+    const parts = [];
+    for (const v of [p.district, p.city, p.county, p.state, p.country])
+      if (v && v !== name && !parts.includes(v)) parts.push(v);
+    return parts.slice(-3).join(', ');
+  };
+  const photonItems = features => (features || []).filter(f => f.geometry).map(f => {
+    const p = f.properties || {}, name = title(p), cc = (p.countrycode || '').toLowerCase();
+    // a country or state the local list already answers is not listed twice
+    const key = p.type === 'country' ? 'c|' + cc : p.type === 'state' ? 's|' + fold(name) + '|' + cc : '';
+    return { name, ctx: context(p, name), f, key };
+  }).filter(i => i.name);
+
+  function render() {
+    const seen = new Set(), rows = [];
+    hits = [];
+    for (const it of [...local, ...photon]) {
+      const k = it.key || it.name + '|' + it.ctx;
+      if (seen.has(k) || seen.has(it.name + '|' + it.ctx)) continue;
+      seen.add(k); seen.add(it.name + '|' + it.ctx);
+      hits.push(it);
+      rows.push(`<div class="pr" data-i="${hits.length - 1}">${esc(it.name)}${it.ctx ? `<span class="pc">${esc(it.ctx)}</span>` : ''}</div>`);
+    }
+    if (cur >= hits.length) cur = 0;
+    if (status === 'wait' || status === 'busy') rows.push('<div class="none"><span class="spin"></span>Searching</div>');
+    else if (status === 'error') rows.push('<div class="none">Search is not available right now</div>');
+    else if (status === 'done' && !hits.length) rows.push('<div class="none">No place found</div>');
+    if (!rows.length) { res.hidden = true; return; }
+    res.innerHTML = rows.join('');
+    const on = res.querySelectorAll('.pr')[cur]; if (on) on.classList.add('on');
+    res.hidden = false;
+  }
+  function search(q) {
+    if (ctl) ctl.abort();
+    ctl = new AbortController();
+    const mine = ctl;
+    status = 'busy'; render();
+    fetch(`${GEO_URL}?q=${encodeURIComponent(q)}&limit=6&lang=en`,
+          { signal: mine.signal, referrerPolicy: 'no-referrer', credentials: 'omit' })
+      .then(r => r.ok ? r.json() : Promise.reject(new Error('status ' + r.status)))
+      .then(gj => {
+        if (ctl !== mine) return;
+        cache.set(fold(q), gj.features || []);
+        photon = photonItems(gj.features); status = 'done'; render();
+        if (want && hits.length) go(hits[cur]);
+        want = false;
+      })
+      .catch(err => { if (err.name !== 'AbortError' && ctl === mine) { status = 'error'; render(); } });
+  }
+  inp.oninput = () => {
+    clearTimeout(timer); timer = null; want = false;
+    if (ctl) ctl.abort();
+    ctl = null; photon = []; cur = 0;
+    const q = inp.value.trim();
+    local = localFind(q);
+    if (q.length < 3) status = 'idle';
+    else if (cache.has(fold(q))) { photon = photonItems(cache.get(fold(q))); status = 'done'; }
+    else { status = 'wait'; timer = setTimeout(() => { timer = null; search(q); }, 300); }
+    render();
+  };
+  inp.onfocus = () => { if (hits.length) render(); };
+  inp.onkeydown = e => {
+    if (e.key === 'Escape') { closeBox(); e.stopPropagation(); }
+    else if (e.key === 'Enter') {
+      e.preventDefault();
+      if (hits[cur]) go(hits[cur]);
+      else if (inp.value.trim().length >= 3) { clearTimeout(timer); timer = null; want = true; search(inp.value.trim()); }
+    } else if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+      e.preventDefault();
+      if (!hits.length) return;
+      cur = (cur + (e.key === 'ArrowDown' ? 1 : hits.length - 1)) % hits.length;
+      res.querySelectorAll('.pr').forEach((r, i) => r.classList.toggle('on', i === cur));
+    }
+  };
+  // mousedown, not click: the input would lose focus first
+  res.onmousedown = e => { const r = e.target.closest('.pr'); if (r) { e.preventDefault(); go(hits[+r.dataset.i]); } };
+  // a click or tap away puts it away
+  document.addEventListener('click', e => {
+    if (!box.hidden && !box.contains(e.target) && !btn.contains(e.target)) closeBox();
+  });
+
+  function go(it) {
+    closeBox();
+    inp.value = '';
+    local = []; photon = []; hits = []; status = 'idle';
+    const pad = A.pad();
+    let lng, lat, code = it.cc, release;
+    if (it.box) {
+      // a country or division from the local list: its own box
+      lng = (it.box[0] + it.box[2]) / 2; lat = (it.box[1] + it.box[3]) / 2;
+      release = A.outside(code, lng, lat);
+      const o = { padding: pad, animate: false };
+      if (it.kind !== 0) o.maxZoom = 12;
+      map.fitBounds([[it.box[0], it.box[1]], [it.box[2], it.box[3]]], o);
+    } else {
+      const p = it.f.properties || {}, ex = p.extent;
+      [lng, lat] = it.f.geometry.coordinates;
+      code = (p.countrycode || '').toLowerCase();
+      release = A.outside(null, lng, lat);
+      const cview = p.type === 'country' && A.viewOf(code);
+      if (cview) {
+        // our own framing box: Photon's extent for the United States or Russia crosses the date line
+        map.fitBounds([[cview[0], cview[1]], [cview[2], cview[3]]], { padding: pad, animate: false });
+      } else if (ex && ex.length === 4 && ex[0] < ex[2] && ex[3] < ex[1]
+                 && (ex[2] - ex[0] > 0.001 || ex[1] - ex[3] > 0.001) && ex[2] - ex[0] < 120) {
+        // Photon's extent is [west, north, east, south]
+        map.fitBounds([[ex[0], ex[3]], [ex[2], ex[1]]], { padding: pad, maxZoom: 16, animate: false });
+      } else {
+        map.jumpTo({ center: [lng, lat], zoom: ZOOM[p.type] || 13 });
+        // the point goes to the middle of the band the panels leave, not of the whole canvas
+        map.panBy([-(pad.left - pad.right) / 2, -(pad.top - pad.bottom) / 2], { animate: false });
+      }
+    }
+    if (release) A.toAuto();
+  }
+})();
 </script>
 </body>
 </html>

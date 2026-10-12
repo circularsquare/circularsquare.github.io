@@ -94,6 +94,22 @@ sitemap: false
     .row .pick { cursor: pointer; }
     .row .pick:hover { box-shadow: 0 0 0 2px #777; }
 
+    /* The visibility checkboxes, religiondots' spec §10.3 (see languagedots spec §4.6). A column on
+       the right, so the boxes hold one line down the panel whatever the depth. The hit area is a
+       square the height of the row; the negative margin takes its width out of the row's own right
+       padding, so the names lose nothing. The resting state (everything ticked) recedes, and the
+       unusual one (unticked, or half ticked) is at full strength, since the column is scanned for
+       what was turned off. The hover cue belongs to the box, not the row: the row selects. */
+    .row .cb { display: flex; align-items: center; justify-content: center; width: 19px;
+               align-self: stretch; flex: none; margin: -1px -10px -1px 0; }
+    .row .cb input { accent-color: #5b6873; width: 11px; height: 11px; margin: 0; cursor: pointer;
+                     opacity: .5; }
+    .row .cb input:not(:checked), .row .cb:hover input { opacity: 1; }
+    /* a row with nothing of it on the map dims; its box does not, it is the way back */
+    .row.hid .lb, .row.hid .ct { color: #5c5c5c; }
+    .row.hid .dot, .row.hid .bar { opacity: .35; }
+    #scope-bar a { color: #89b4fa; text-decoration: none; cursor: pointer; flex: none; }
+
     /* The swatch editor, religiondots' and ancestrydots' (Anita, 2026-10-07: "it should look
        the same as in those projects"). Fixed, since openPicker places it from viewport
        coordinates; the sat and lit tracks are repainted from the current hue on every move. */
@@ -162,6 +178,7 @@ sitemap: false
     #legend-note .sec-b { padding: 3px 0 2px; }
     .ctl { display: flex; align-items: center; gap: 8px; }
     .ctl + .ctl { margin-top: 5px; }
+    .ctl[hidden] { display: none; }
     .ctl .cl { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .segs { display: flex; flex: none; background: #16191c; border: 1px solid #3d4750;
             border-radius: 4px; overflow: hidden; }
@@ -186,6 +203,33 @@ sitemap: false
                 height: 31px; border-radius: 50%; border: none; background: #ddd; color: #111;
                 cursor: pointer; display: flex; align-items: center; justify-content: center; }
     #info-btn:hover { background: #fff; }
+    /* PLACE SEARCH (spec §4.7): the about button's twin, to its right, so it is one more of the
+       small round buttons and not a bar. Opens upward on the desktop (the buttons sit at the bottom)
+       and downward on the phone (they sit at the top). */
+    #geo-btn { position: absolute; bottom: 16px; left: 55px; z-index: 1002; width: 31px; height: 31px;
+               border-radius: 50%; border: none; background: #ddd; color: #111; cursor: pointer;
+               padding: 0; display: flex; align-items: center; justify-content: center; }
+    #geo-btn:hover { background: #fff; }
+    #geo { position: absolute; bottom: 56px; left: 55px; z-index: 1002; width: 300px; display: flex;
+           flex-direction: column-reverse; gap: 4px; }
+    #geo[hidden] { display: none; }
+    #geo-in { width: 100%; background: rgba(20,20,20,.94); color: #e2e8ee; font-size: 12px;
+              border: 1px solid #3d4750; border-radius: 6px; padding: 6px 8px; outline: none; }
+    #geo-in::placeholder { color: #6f7a84; }
+    #geo-in:focus { border-color: #7d9cb8; }
+    #geo-res { background: rgba(20,20,20,.97); border: 1px solid #3a3a3a; border-radius: 6px;
+               padding: 3px 0; font-size: 12px; max-height: calc(100vh - 140px); overflow-y: auto; }
+    #geo-res[hidden] { display: none; }
+    #geo-res .gr { padding: 4px 10px; cursor: pointer; white-space: nowrap; overflow: hidden;
+                   text-overflow: ellipsis; color: #ddd; }
+    #geo-res .gr.on, #geo-res .gr:hover { background: #2f3b47; }
+    #geo-res .gr .gc { color: #888; margin-left: 6px; }
+    #geo-res .none { padding: 4px 10px; color: #888; }
+    /* the one thing on the page that moves: a small ring beside "Searching" while Photon answers */
+    .spin { display: inline-block; width: 9px; height: 9px; margin-right: 7px; border-radius: 50%;
+            border: 1.5px solid #555; border-top-color: #aaa; vertical-align: -1px;
+            animation: place-spin .8s linear infinite; }
+    @keyframes place-spin { to { transform: rotate(360deg); } }
     #info-btn span { font-family: 'Times New Roman', Times, serif; font-style: italic;
                      font-size: 19px; font-weight: bold; margin-left: -1px; }
     /* Open on load, and put away by a click anywhere outside it (Anita, 2026-10-06). The scroll
@@ -272,6 +316,9 @@ sitemap: false
       #panel::-webkit-scrollbar { width: 6px; }
       #panel::-webkit-scrollbar-thumb { background: #555; border-radius: 3px; }
       #tree { overflow: visible; }
+      /* "hide all" is desktop only, as in religiondots: one stray tap would empty the map. "show
+         all" stays, being the way back from a map with nothing on it. */
+      #vis-all.hide-all { display: none; }
       /* one scroll, not one inside another: the Data block's quarter-screen cap is the desktop's */
       #meta { max-height: none; overflow: visible; }
       #panel-head { position: sticky; top: 0; z-index: 2; background: #151515; height: 42px;
@@ -308,6 +355,12 @@ sitemap: false
       /* the sheet fills the bottom, so the about button and panel move to the top */
       #info-btn { bottom: auto; top: 8px; left: 8px; width: 28px; height: 28px; }
       #info-btn span { font-size: 17px; }
+      #geo-btn { bottom: auto; top: 8px; left: 42px; width: 28px; height: 28px; }
+      #geo { bottom: auto; top: 44px; left: 8px; right: 8px; width: auto; flex-direction: column; }
+      /* 16px: iOS zooms the page into a focused field set smaller */
+      #geo-in { font-size: 16px; padding: 7px 9px; }
+      #geo-res { font-size: 14px; max-height: calc(60dvh - 100px); }
+      #geo-res .gr { padding: 8px 10px; }
       /* ends above the open sheet (60dvh down) rather than over its header, since both are open
          on load; religiondots' about card opacity, as it sits over the busiest part of the map */
       #info-panel { bottom: auto; top: 44px; left: 8px; right: 8px; max-width: none;
@@ -350,7 +403,7 @@ sitemap: false
 <div id="panel">
   <div id="panel-head"><span id="head-scope"><span id="head-scope-text"></span><span id="head-mixrow"><span id="head-mixtrack"></span><span id="head-mixtotal"></span></span></span><button id="min" title="Hide panel">–</button></div>
   <div id="scope-bar">
-    <span id="scope"></span>
+    <span id="scope"></span><a id="vis-all"></a>
     <div id="mixrow"><div id="mixbar"><div id="mixtrack"></div></div><span id="mixtotal"></span></div>
   </div>
   <div id="meta"></div>
@@ -369,10 +422,17 @@ sitemap: false
     <div class="ctl slide"><span class="cl">Size</span><input type="range" id="size" min="0" max="11" step="1" value="4"><span class="val" id="size-val">1×</span></div>
     <div class="ctl slide" title="How large one patch of map may draw, however many people it holds. Higher lets dense places spread into their neighbours; lower leaves gaps between them."><span class="cl">Cap</span><input type="range" id="cap" min="0" max="6" step="1" value="6"><span class="val" id="cap-val">none</span></div>
     <div class="ctl slide"><span class="cl">Aggregation</span><input type="range" id="agg" min="0" max="3" step="1" value="1"><span class="val" id="agg-val">low</span></div>
+    <div class="ctl" id="ctl-reset" hidden><span class="cl">Reset colours</span><span class="segs"><span class="seg" id="reset-btn">reset</span></span></div>
     </div>
   </div>
 </div>
 <button id="info-btn" title="About this map"><span>i</span></button>
+<!-- place search: a small button beside the about button, which opens one input and a short list -->
+<button id="geo-btn" title="Find a place" aria-label="Find a place"><svg viewBox="0 0 16 16" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="6.5" cy="6.5" r="4.6"/><path d="M10 10l4.2 4.2"/></svg></button>
+<div id="geo" hidden>
+  <input id="geo-in" type="search" placeholder="Find a place" autocomplete="off" spellcheck="false" aria-label="Find a place">
+  <div id="geo-res" hidden></div>
+</div>
 <div id="info-panel">
   <div id="info-panel-header">
     <span id="info-panel-title">About</span>
@@ -680,11 +740,78 @@ function displayOrder(sum, tally) {
   return out;
 }
 
-function buildPanel() {
+/* ---- HIDING LANGUAGES (spec §4.6; religiondots §10.3's checkboxes, ported). HIDDEN holds the
+   node ids whose OWN people are off the map: one entry per node, so a group's unnamed people
+   ("Other Indo-Aryan") can be put down without the group, and hiding a branch adds every id under
+   it. Hidden people STAY on the map in the dim grey (dots: DIM; pies: one wedge of DIM, the pie
+   keeping its size) and still answer a hover; the legend's counts, bars and shares do NOT rescale,
+   since hiding is a way of looking and the numbers are the scope's. */
+const HID_KEY = 'ld.hidden';
+let HIDDEN = new Set();
+const rootIds = () => Object.keys(NODES).filter(id => !NODES[parentOf(id)]);
+function fullSubtree(id, acc = []) {       // over the whole taxonomy, not only what this scope holds
+  if (!NODES[id]) return acc;
+  acc.push(id);
+  for (const k of KIDS[id] || []) fullSubtree(k, acc);
+  return acc;
+}
+function setSubtreeVisible(id, on) {
+  for (const k of fullSubtree(id)) { if (on) HIDDEN.delete(k); else HIDDEN.add(k); }
+}
+/* NOT REMEMBERED (Anita, 2026-10-12: "so people aren't confused why stuff is hidden"): every load
+   starts with everything shown. An older version stored the set under `ld.hidden`; it is removed
+   on load so no stale value lingers. Colours (`ld.colours`) are still remembered. */
+function forgetHidden() {
+  try { localStorage.removeItem(HID_KEY); } catch (e) { /* blocked storage: nothing to remove */ }
+}
+/* Each node's [shown, total] over the PRESENT subtree (the nodes with people in this scope), where
+   a node counts only if it has people of its own here. The tick is for what the reader can see;
+   the action (setSubtreeVisible) runs over the whole taxonomy, so switching country does not bring
+   back what a click took off. */
+function visCounts(sum, tally) {
+  const cnt = {};
+  const walk = id => {
+    let shown = 0, total = 0;
+    if (tally[id] > 0) { total = 1; if (!HIDDEN.has(id)) shown = 1; }
+    for (const k of KIDS[id] || []) if (sum[k]) { const r = walk(k); shown += r[0]; total += r[1]; }
+    return (cnt[id] = [shown, total]);
+  };
+  for (const id of rootIds()) if (sum[id]) walk(id);
+  return cnt;
+}
+const visState = ([s, t]) => t === 0 || s === t ? 2 : s === 0 ? 0 : 1;      // 2 all shown, 1 some, 0 none
+const sumCounts = cs => cs.reduce((a, c) => c ? [a[0] + c[0], a[1] + c[1]] : a, [0, 0]);
+const cbox = (st, title) => `<span class="cb"><input type="checkbox"${st === 2 ? ' checked' : ''}` +
+  `${st === 1 ? ' data-mixed="1"' : ''} title="${title}"></span>`;
+/* After any change to HIDDEN: let go of a pinned tooltip (its wedges just changed), repaint
+   the dots' palette and redo the pies from the cells already decoded. */
+function applyHidden() {
+  unfreeze();
+  dotLayer.palette();
+  if (drawAs === 'pies') { sortPies(); pieLayer.upload(); }
+  map.triggerRepaint();
+  buildPanel(true);
+}
+
+function buildPanel(keepScroll = false) {
   const tally = scopeTally();
   const sum = subtreeSums(tally);
   const total = Object.values(tally).reduce((a, b) => a + b, 0);
   const rows = displayOrder(sum, tally);
+  // the visibility boxes (see HIDING LANGUAGES). A tick is a click several times in a row, and
+  // the list is rebuilt for each, so the scroll is put back (country changes still start at the top)
+  const cnt = visCounts(sum, tally);
+  const idsOf = keys => keys.flatMap(k => k === OTHER_KEY ? otherRoots : [k]);
+  const addBox = (row, st, onTick) => {
+    row.insertAdjacentHTML('beforeend', cbox(st, 'Show or hide on the map'));
+    const cb = row.querySelector('.cb'), inp = cb.querySelector('input');
+    cb.onclick = e => e.stopPropagation();          // the row underneath selects; a miss must not
+    if (st === 1) inp.indeterminate = true;         // no attribute for it: set after the markup
+    inp.onchange = () => { onTick(inp.checked); applyHidden(); };
+    row.classList.toggle('hid', st === 0);
+  };
+  const panelEl = document.getElementById('panel');
+  const scroll = keepScroll ? [document.getElementById('tree').scrollTop, panelEl.scrollTop] : null;
 
   // scope line and composition bar: leaves and own-rows, in row order
   const where = cc === 'all' ? 'all countries' : COUNTS.countries[cc].name;
@@ -732,6 +859,8 @@ function buildPanel() {
         `<span class="ct"><span>${fmt(v)}</span>` +
         `<span class="bar"><i style="width:${(shareFill(s) * 100).toFixed(1)}%;background:#777"></i></span></span>`;
       row.onclick = () => { openFold.has(r.id) ? openFold.delete(r.id) : openFold.add(r.id); buildPanel(); };
+      addBox(row, visState(sumCounts(idsOf(r.fold).map(k => cnt[k]))),
+             on => idsOf(r.fold).forEach(k => setSubtreeVisible(k, on)));
       tree.appendChild(row);
       continue;
     }
@@ -749,6 +878,8 @@ function buildPanel() {
         `<span class="ct" title="${Math.round(r.v).toLocaleString()} people · ${pct(s)} of ${where}"><span>${fmt(r.v)}</span>` +
         `<span class="bar"><i style="width:${(shareFill(s) * 100).toFixed(1)}%;background:#777"></i></span></span>`;
       row.onclick = () => { open.has(r.id) ? open.delete(r.id) : open.add(r.id); buildPanel(); };
+      addBox(row, visState(sumCounts(otherRoots.map(k => cnt[k]))),
+             on => otherRoots.forEach(k => setSubtreeVisible(k, on)));
       tree.appendChild(row);
       continue;
     }
@@ -785,8 +916,21 @@ function buildPanel() {
     // a control inside a control: opening the editor must not also change the selection
     const sw = row.querySelector('.pick');
     sw.onclick = ev => { ev.stopPropagation(); openPicker(sw.dataset.swatch, sw); };
+    /* A group's own row ("Other Indo-Aryan") moves its own people alone; every other row moves
+       its node and everything under it. */
+    if (r.own) addBox(row, HIDDEN.has(r.id) ? 0 : 2, on => { if (on) HIDDEN.delete(r.id); else HIDDEN.add(r.id); });
+    else addBox(row, visState(cnt[r.id] || [0, 0]), on => setSubtreeVisible(r.id, on));
     tree.appendChild(row);
   }
+  // one link that flips, read off the tree: everything shown offers "hide all", else "show all"
+  const allShown = rootIds().every(id => !sum[id] || visState(cnt[id]) === 2);
+  const va = document.getElementById('vis-all');
+  va.textContent = allShown ? 'hide all' : 'show all';
+  va.classList.toggle('hide-all', allShown);
+  va.title = allShown ? 'Take every language off the map, then tick back the ones you want to see'
+                      : 'Put every language back on the map';
+  syncReset();
+  if (scroll) { document.getElementById('tree').scrollTop = scroll[0]; panelEl.scrollTop = scroll[1]; }
 }
 let MIX = { segs: [], total: 1 };
 
@@ -988,8 +1132,8 @@ function applyColours(rebuild = true) {
    paste-ready `id | label | L C h` lines, then taxonomy/build.py.
    A group's washed "language not named" colour follows its new colour, washed as build.py washes
    (L + 0.04, chroma x 0.35). Dragging repaints the palette textures once a frame; the legend is
-   rebuilt and the colour saved when the pointer comes up. There is no "hide": this map has no
-   hiding, only the selection. */
+   rebuilt and the colour saved when the pointer comes up. Hiding is the legend's checkboxes
+   (HIDING LANGUAGES), not this editor. */
 const UC_KEY = 'ld.colours';
 let USER_COLOR = {};                       // node id -> '#rrggbb', wins over languages.json
 const DEFAULT_COL = {};                    // node id -> [color, color_own] as languages.json has them
@@ -1001,6 +1145,18 @@ function loadUserColours() {
 }
 function saveUserColours() {
   try { localStorage.setItem(UC_KEY, JSON.stringify(USER_COLOR)); } catch (e) {}
+}
+// the settings' "Reset colours" row exists only while a colour has been changed
+function syncReset() {
+  document.getElementById('ctl-reset').hidden = !Object.keys(USER_COLOR).length;
+}
+function resetColours() {
+  const ids = Object.keys(USER_COLOR);
+  USER_COLOR = {};
+  ids.forEach(setNodeColour);
+  saveUserColours();
+  closePicker();
+  applyColours(); buildPanel();
 }
 function setNodeColour(id) {
   const n = NODES[id], d = DEFAULT_COL[id];
@@ -1093,7 +1249,7 @@ function cpApply() {
   const hex = cpRefresh();
   USER_COLOR[pickNode] = hex;
   setNodeColour(pickNode);
-  cpSyncActions();
+  cpSyncActions(); syncReset();
   // the rows' own swatches follow the slider at once; the map, once a frame
   document.querySelectorAll(`#tree .pick[data-swatch="${pickNode}"]`).forEach(d => { d.style.background = hex; });
   if (!cpFrame) cpFrame = requestAnimationFrame(() => { cpFrame = 0; applyColours(false); });
@@ -1160,6 +1316,7 @@ function wirePicker() {
     closePicker();
   };
   document.getElementById('sp-close').onclick = closePicker;
+  document.getElementById('reset-btn').onclick = resetColours;
   // a click away or Esc closes it; its own clicks do not count as away
   document.getElementById('swatch-pop').onclick = e => e.stopPropagation();
   document.addEventListener('click', () => { if (pickNode) closePicker(); });
@@ -1830,13 +1987,28 @@ function clearMerge() {
    holding most of it are on top; radius breaks ties, so cells with none of it keep the usual
    order beneath. */
 function sortPies() {
+  hidePass();
   if (!selected) { PIES.sort((a, b) => a.r0 - b.r0 || a.h - b.h); return; }
   for (const c of PIES) {
     let s = 0;
-    for (const q of c.parts) if (under(q.n, selected)) s += q.p;
+    for (const q of c.vparts) if (under(q.n, selected)) s += q.p;
     c.sel = s;
   }
   PIES.sort((a, b) => a.sel - b.sel || a.r0 - b.r0 || a.h - b.h);
+}
+
+/* WHAT THE LEGEND'S BOXES DO TO A PIE (spec §4.6). `parts` stays the cell's whole people and the
+   pie keeps its full size. `vparts` is what is left after the hidden languages and `hparts` the
+   hidden ones; pieWedges folds `hparts` into one dim grey wedge, so a city that is 99% hidden
+   languages is a 99% grey pie with a thin slice of what is shown. Run by sortPies, so every route
+   that redoes the list passes through it. */
+function hidePass() {
+  const none = HIDDEN.size === 0;
+  for (const c of PIES) {
+    if (none) { c.vparts = c.parts; c.hparts = []; continue; }
+    c.vparts = c.parts.filter(q => !HIDDEN.has(q.n));
+    c.hparts = c.parts.filter(q => HIDDEN.has(q.n));
+  }
 }
 
 /* A pie's wedges, at most PIE_K, in tree order: {p, col (pie palette index), ord}, plus `n` (the
@@ -1872,7 +2044,12 @@ function sortPies() {
 const OTHER = '#6a6a6a';
 let PIE_X = 0;                             // texels after the nodes: DIM, OTHER, selection
 const piePalExtra = () => PIE_X || (PIE_X = Object.keys(ORDER).length);
-function pieWedges(parts) {
+/* HIDDEN LANGUAGES (spec §4.6): `hid` is the cell's people in languages the legend has hidden. They
+   are not in `parts`; they come back as one wedge of the dim grey (the selection's own DIM), last
+   in the order, which takes one of the PIE_K slots (K below). Its share is its people's share of
+   the cell, as every wedge's is, so the pie keeps its size. */
+function pieWedges(parts, hid = []) {
+  const K = hid.length ? PIE_K - 1 : PIE_K;
   const col = n => ORDER[n] ?? 0, ord = n => ORDER[n] ?? 1e9;
   const one = q => ({ p: q.p, col: col(q.n), ord: ord(q.n), n: q.n });
   const sum = qs => qs.reduce((s, q) => s + q.p, 0);
@@ -1881,7 +2058,7 @@ function pieWedges(parts) {
   // a folded wedge keeps its members (`qs`, the cell's own parts) for the pinned tooltip's list
   const others = qs => ({ p: sum(qs), col: selected ? X : X + 1, ord: 2e9, k: qs.length, lump: 'other', qs });
   let out;
-  if (parts.length <= PIE_K) out = parts.map(one);
+  if (parts.length <= K) out = parts.map(one);
   else if (!selected) {
     const big = [...parts].sort(desc), tail = big.slice(PIE_TOP);
     const fold = keyOf => {
@@ -1893,7 +2070,7 @@ function pieWedges(parts) {
       }
       const groups = [...fams.entries()].filter(([f]) => f !== null).sort((u, v) => sum(v[1]) - sum(u[1]));
       let grey = fams.get(null) || [];
-      const slots = PIE_K - PIE_TOP;
+      const slots = K - PIE_TOP;
       const nf = groups.length + (grey.length ? 1 : 0) <= slots ? groups.length : slots - 1;
       const w = groups.slice(0, nf).map(([f, qs]) => qs.length === 1 ? one(qs[0])
         : { p: sum(qs), col: col(f), ord: ord(f), lump: 'fam', f,
@@ -1908,14 +2085,14 @@ function pieWedges(parts) {
   } else {
     const sel = parts.filter(q => under(q.n, selected)).sort(desc);
     const oth = parts.filter(q => !under(q.n, selected)).sort(desc);
-    if (sel.length + (oth.length ? 1 : 0) > PIE_K) {
-      const ks = PIE_K - (oth.length ? 2 : 1), kept = sel.slice(0, ks), rest = sel.slice(ks);
+    if (sel.length + (oth.length ? 1 : 0) > K) {
+      const ks = K - (oth.length ? 2 : 1), kept = sel.slice(0, ks), rest = sel.slice(ks);
       out = kept.map(one);
       out.push({ p: sum(rest), col: X + 2, ord: Math.max(...kept.map(q => ord(q.n))) + 0.5,
                  k: rest.length, lump: 'sel', qs: rest });
       if (oth.length) out.push(others(oth));
     } else {
-      const slots = PIE_K - sel.length;               // at least 1 left for the others
+      const slots = K - sel.length;                   // at least 1 left for the others
       out = sel.map(one);
       if (oth.length <= slots) out.push(...oth.map(one));
       else {
@@ -1924,6 +2101,7 @@ function pieWedges(parts) {
       }
     }
   }
+  if (hid.length) out.push({ p: sum(hid), col: X, ord: 3e9, k: hid.length, lump: 'hid', qs: hid });
   return out.sort((u, v) => u.ord - v.ord);
 }
 
@@ -2188,7 +2366,7 @@ const pieLayer = {
     const a = new Float32Array(PIES.length * PIE_STRIDE);
     let o = 0;
     for (const c of PIES) {
-      const parts = pieWedges(c.parts);
+      const parts = pieWedges(c.vparts, c.hparts);
       const tot = parts.reduce((s, q) => s + q.p, 0);
       a[o] = c.x; a[o + 1] = c.y; a[o + 2] = c.r0;
       let cum = 0;
@@ -2201,14 +2379,14 @@ const pieLayer = {
       }
       if (selected) {            // for the locator ring: the selection's share, in its largest member's colour
         let s = 0, big = null;
-        for (const q of c.parts) if (under(q.n, selected)) { s += q.p; if (!big || q.p > big.p) big = q; }
+        for (const q of c.vparts) if (under(q.n, selected)) { s += q.p; if (!big || q.p > big.p) big = q; }
         a[o + 19] = s / tot; a[o + 20] = big ? ORDER[big.n] ?? 0 : 0;
       }
       o += PIE_STRIDE;
     }
     gl.bindBuffer(gl.ARRAY_BUFFER, this.inst);
-    gl.bufferData(gl.ARRAY_BUFFER, a, gl.DYNAMIC_DRAW);
-    this.count = PIES.length;
+    gl.bufferData(gl.ARRAY_BUFFER, a.subarray(0, o), gl.DYNAMIC_DRAW);
+    this.count = o / PIE_STRIDE;
     map.triggerRepaint();
   },
   /* before the frame: the selection's ink into the ring grid (see LOCATOR RINGS) */
@@ -2578,8 +2756,10 @@ const dotLayer = {
     this.selFlag = new Uint8Array(Math.max(1, n));
     for (let i = 0; i < n; i++) {
       const id = i < IDS.length ? IDS[i] : null;
-      const hex = id ? litColour(id) : '#666666';
-      const on = id && selected && under(id, selected) ? 1 : 0;
+      // a language hidden in the legend stays on the map in the dim grey, and is never in the selection
+      const hid = id && HIDDEN.has(id);
+      const hex = hid ? DIM : id ? litColour(id) : '#666666';
+      const on = !hid && id && selected && under(id, selected) ? 1 : 0;
       px[i * 4] = parseInt(hex.slice(1, 3), 16); px[i * 4 + 1] = parseInt(hex.slice(3, 5), 16);
       px[i * 4 + 2] = parseInt(hex.slice(5, 7), 16); px[i * 4 + 3] = on ? 255 : 0;
       this.selFlag[i] = on;
@@ -2940,6 +3120,13 @@ Promise.all([
   // colours set in the swatch editor, before anything is painted
   loadUserColours();
   for (const id of Object.keys(USER_COLOR)) setNodeColour(id);
+  forgetHidden();                          // what an older version stored for the legend's boxes
+  document.getElementById('vis-all').onclick = () => {
+    // read off the label, which buildPanel keeps true to the tree
+    if (document.getElementById('vis-all').textContent === 'hide all') for (const id of Object.keys(NODES)) HIDDEN.add(id);
+    else HIDDEN = new Set();
+    applyHidden();
+  };
   wirePicker();
   wireSearch();
   COUNTS = counts;
@@ -3093,13 +3280,16 @@ Promise.all([
   };
   const pieTip = hit => {
     // the pie's own wedges, largest first and the folded ones last, so the shares add up to 100%
+    // Languages hidden in the legend are one grey wedge here as on the map ("3 hidden languages"),
+    // which opens into them like any folded row; the shares are of the cell, as ever.
     const tot = hit.parts.reduce((a, q) => a + q.p, 0);
-    const last = q => q.lump === 'other' ? 2 : q.lump ? 1 : 0;
-    const ws = pieWedges(hit.parts);
+    const last = q => q.lump === 'hid' ? 3 : q.lump === 'other' ? 2 : q.lump ? 1 : 0;
+    const ws = pieWedges(hit.vparts, hit.hparts);
     const rows = [...ws].sort((a, b) => last(a) - last(b) || b.p - a.p).map(q => {
       if (!q.lump) return langRow(q, tot);
-      const sw = q.lump === 'other' ? OTHER : q.lump === 'sel' ? selColour() : colourFor(q.f);
-      const name = q.lump === 'other' ? `${q.k} other languages`
+      const sw = q.lump === 'hid' ? DIM : q.lump === 'other' ? OTHER : q.lump === 'sel' ? selColour() : colourFor(q.f);
+      const name = q.lump === 'hid' ? `${q.k} hidden language${q.k === 1 ? '' : 's'}`
+                 : q.lump === 'other' ? `${q.k} other languages`
                  : q.lump === 'sel' ? groupCount(selected, q.k, false) : famLabel(q);
       const k = lumpKey(q), on = hit === tipHit && tipOpen.has(k);
       return `<div class="mx" data-x="${k}"><span class="mk" style="background:${sw}"></span>${name}` +
@@ -3114,7 +3304,7 @@ Promise.all([
       const ms = [...q.qs].sort((a, b) => b.p - a.p);
       const all = tipAll.has(lumpKey(q)) || ms.length <= TIP_TOP + 1;
       const shown = all ? ms : ms.slice(0, TIP_TOP);
-      const out = shown.map(m => ({ p: m.p, hex: colourFor(m.n) }));
+      const out = shown.map(m => ({ p: m.p, hex: q.lump === 'hid' ? DIM : colourFor(m.n) }));
       const rest = q.p - shown.reduce((a, m) => a + m.p, 0);
       if (!all && rest > 0) out.push({ p: rest, col: q.col });
       return out;
@@ -3320,6 +3510,210 @@ document.addEventListener('click', function closeInfoOutside(e) {
   info.classList.add('hidden');
   if (e.target.closest('#map')) { infoSwallow = true; setTimeout(() => { infoSwallow = false; }, 0); }
 }, true);
+
+/* ---- PLACE SEARCH (spec §4.7; Anita, 2026-10-12: "an address search ... not super prominent ...
+   type in a country or subdivision or address and go to that place"). Photon (photon.komoot.io),
+   which allows search as you type: 300 ms after the last key, from 3 characters, the request before
+   it cancelled, a "Searching" row while it is out, and each answer kept for the session. The
+   request carries the query and nothing else: no referrer, no cookies, no key. Photon takes about
+   2 s, so the map's own countries and a local list of first-level divisions answer at once and
+   Photon's results join under them. A result with an extent is fitted to it; one without is
+   jumped to at a zoom that suits its type. No animation anywhere: the map jumps, as it does for
+   every other state change. */
+(function placeSearch() {
+  const A = {
+    pad: () => viewPadding(),
+    countries: () => Object.entries(COUNTS.countries).map(([k, e]) => ({ cc: k, name: e.name, view: e.view || e.bbox })),
+    countryName: k => COUNTS.countries[k] && COUNTS.countries[k].name,
+    viewOf: k => COUNTS.countries[k] && viewOf(k),
+    indexUrl: () => DATA_BASE + 'place_index.json',
+    ready: () => dataBaseP,
+    // a country held by hand that does not contain the place would leave the map empty there
+    outside: (k, lng, lat) => !autoOn && cc !== 'all' && (k || countryAt(lng, lat)) !== cc,
+    toAuto: () => { autoOn = true; updatePick(); considerCamera(); },
+  };
+  const GEO_URL = 'https://photon.komoot.io/api/';
+  const ZOOM = { country: 4, state: 6, county: 9, city: 10, district: 12, locality: 13, street: 14, house: 15 };
+  const NUMBER_FIRST = new Set(['US', 'CA', 'AU', 'GB', 'IE', 'NZ', 'ZA', 'IN', 'SG', 'PH']);
+  const $ = id => document.getElementById(id);
+  const btn = $('geo-btn'), box = $('geo'), inp = $('geo-in'), res = $('geo-res');
+  const fold = s => String(s).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/\s+/g, ' ').trim();
+  let local = [], photon = [], status = 'idle', hits = [], cur = 0, timer = null, ctl = null, want = false;
+  const cache = new Map();                 // folded query -> Photon's features, for the session
+  let IDX = null, IDXC = {}, idxP = null;  // the local places (see "Instant answers")
+
+  const closeBox = () => {
+    box.hidden = true; res.hidden = true;
+    clearTimeout(timer); timer = null;
+    if (ctl) ctl.abort();
+    ctl = null; want = false;
+    inp.blur();
+  };
+  const openBox = () => { box.hidden = false; inp.focus(); loadIndex(); if (hits.length || status === 'busy') render(); };
+  btn.onclick = () => { box.hidden ? openBox() : closeBox(); };
+
+  /* INSTANT ANSWERS. The map's own countries (names and framing boxes it already has) and
+     place_index.json, the world's first-level divisions as name, country and box (204 KB, made by
+     tools/make_place_index.py from Natural Earth; fetched the first time the box is opened). A
+     name that starts with the text, or has a word that does, from 2 characters, countries first
+     and then the larger divisions; the top 4. Photon's answers join them underneath. */
+  function loadIndex() {
+    if (idxP) return idxP;
+    idxP = A.ready().then(() => fetch(A.indexUrl())).then(r => r.ok ? r.json() : null).then(j => {
+      if (!j) return;
+      IDXC = j.c;
+      IDX = j.a.map(r => ({ name: r[0], f: fold(r[0]), cc: r[1], box: [r[2], r[3], r[4], r[5]],
+                            area: (r[4] - r[2]) * (r[5] - r[3]) }));
+      if (!box.hidden && inp.value.trim()) { local = localFind(inp.value); render(); }
+    }).catch(() => {});
+    return idxP;
+  }
+  const rankOf = (f, q) => f.startsWith(q) ? 0 : f.split(/[ \-'/]/).some(w => w.startsWith(q)) ? 1 : -1;
+  function localFind(text) {
+    const q = fold(text);
+    if (q.length < 2) return [];
+    const out = [], cname = new Set();
+    for (const c of A.countries()) {
+      const f = fold(c.name), r = rankOf(f, q);
+      if (!c.view) continue;
+      cname.add(c.cc + '|' + f);
+      if (r >= 0) out.push({ kind: 0, r, area: 1e9, name: c.name, ctx: '', cc: c.cc, box: c.view, key: 'c|' + c.cc });
+    }
+    for (const d of IDX || []) {
+      const r = rankOf(d.f, q);
+      if (r < 0 || cname.has(d.cc + '|' + d.f)) continue;
+      out.push({ kind: 1, r, area: d.area, name: d.name, ctx: A.countryName(d.cc) || IDXC[d.cc] || '',
+                 cc: d.cc, box: d.box, key: 's|' + d.f + '|' + d.cc });
+    }
+    return out.sort((a, b) => a.r - b.r || a.kind - b.kind || b.area - a.area).slice(0, 4);
+  }
+
+  // "Kathmandu" with "Bagmati Province, Nepal": the place's own name, then where it is
+  const title = p => {
+    if (p.name) return p.name;
+    const n = [p.street, p.housenumber].filter(Boolean);
+    if (NUMBER_FIRST.has(p.countrycode)) n.reverse();
+    return n.join(' ');
+  };
+  const context = (p, name) => {
+    const parts = [];
+    for (const v of [p.district, p.city, p.county, p.state, p.country])
+      if (v && v !== name && !parts.includes(v)) parts.push(v);
+    return parts.slice(-3).join(', ');
+  };
+  const photonItems = features => (features || []).filter(f => f.geometry).map(f => {
+    const p = f.properties || {}, name = title(p), cc = (p.countrycode || '').toLowerCase();
+    // a country or state the local list already answers is not listed twice
+    const key = p.type === 'country' ? 'c|' + cc : p.type === 'state' ? 's|' + fold(name) + '|' + cc : '';
+    return { name, ctx: context(p, name), f, key };
+  }).filter(i => i.name);
+
+  function render() {
+    const seen = new Set(), rows = [];
+    hits = [];
+    for (const it of [...local, ...photon]) {
+      const k = it.key || it.name + '|' + it.ctx;
+      if (seen.has(k) || seen.has(it.name + '|' + it.ctx)) continue;
+      seen.add(k); seen.add(it.name + '|' + it.ctx);
+      hits.push(it);
+      rows.push(`<div class="gr" data-i="${hits.length - 1}">${esc(it.name)}${it.ctx ? `<span class="gc">${esc(it.ctx)}</span>` : ''}</div>`);
+    }
+    if (cur >= hits.length) cur = 0;
+    if (status === 'wait' || status === 'busy') rows.push('<div class="none"><span class="spin"></span>Searching</div>');
+    else if (status === 'error') rows.push('<div class="none">Search is not available right now</div>');
+    else if (status === 'done' && !hits.length) rows.push('<div class="none">No place found</div>');
+    if (!rows.length) { res.hidden = true; return; }
+    res.innerHTML = rows.join('');
+    const on = res.querySelectorAll('.gr')[cur]; if (on) on.classList.add('on');
+    res.hidden = false;
+  }
+  function search(q) {
+    if (ctl) ctl.abort();
+    ctl = new AbortController();
+    const mine = ctl;
+    status = 'busy'; render();
+    fetch(`${GEO_URL}?q=${encodeURIComponent(q)}&limit=6&lang=en`,
+          { signal: mine.signal, referrerPolicy: 'no-referrer', credentials: 'omit' })
+      .then(r => r.ok ? r.json() : Promise.reject(new Error('status ' + r.status)))
+      .then(gj => {
+        if (ctl !== mine) return;
+        cache.set(fold(q), gj.features || []);
+        photon = photonItems(gj.features); status = 'done'; render();
+        if (want && hits.length) go(hits[cur]);
+        want = false;
+      })
+      .catch(err => { if (err.name !== 'AbortError' && ctl === mine) { status = 'error'; render(); } });
+  }
+  inp.oninput = () => {
+    clearTimeout(timer); timer = null; want = false;
+    if (ctl) ctl.abort();
+    ctl = null; photon = []; cur = 0;
+    const q = inp.value.trim();
+    local = localFind(q);
+    if (q.length < 3) status = 'idle';
+    else if (cache.has(fold(q))) { photon = photonItems(cache.get(fold(q))); status = 'done'; }
+    else { status = 'wait'; timer = setTimeout(() => { timer = null; search(q); }, 300); }
+    render();
+  };
+  inp.onfocus = () => { if (hits.length) render(); };
+  inp.onkeydown = e => {
+    if (e.key === 'Escape') { closeBox(); e.stopPropagation(); }
+    else if (e.key === 'Enter') {
+      e.preventDefault();
+      if (hits[cur]) go(hits[cur]);
+      else if (inp.value.trim().length >= 3) { clearTimeout(timer); timer = null; want = true; search(inp.value.trim()); }
+    } else if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+      e.preventDefault();
+      if (!hits.length) return;
+      cur = (cur + (e.key === 'ArrowDown' ? 1 : hits.length - 1)) % hits.length;
+      res.querySelectorAll('.gr').forEach((r, i) => r.classList.toggle('on', i === cur));
+    }
+  };
+  // mousedown, not click: the input would lose focus first
+  res.onmousedown = e => { const r = e.target.closest('.gr'); if (r) { e.preventDefault(); go(hits[+r.dataset.i]); } };
+  /* a click or tap away puts it away; on the map that click does nothing else, as for the about panel */
+  document.addEventListener('click', e => {
+    if (box.hidden || box.contains(e.target) || btn.contains(e.target)) return;
+    if (downAt && Math.hypot(e.clientX - downAt.x, e.clientY - downAt.y) > 5) return;
+    closeBox();
+    if (e.target.closest('#map')) { infoSwallow = true; setTimeout(() => { infoSwallow = false; }, 0); }
+  }, true);
+
+  function go(it) {
+    closeBox();
+    inp.value = '';
+    local = []; photon = []; hits = []; status = 'idle';
+    const pad = A.pad();
+    let lng, lat, code = it.cc, release;
+    if (it.box) {
+      // a country or division from the local list: its own box
+      lng = (it.box[0] + it.box[2]) / 2; lat = (it.box[1] + it.box[3]) / 2;
+      release = A.outside(code, lng, lat);
+      const o = { padding: pad, animate: false };
+      if (it.kind !== 0) o.maxZoom = 12;
+      map.fitBounds([[it.box[0], it.box[1]], [it.box[2], it.box[3]]], o);
+    } else {
+      const p = it.f.properties || {}, ex = p.extent;
+      [lng, lat] = it.f.geometry.coordinates;
+      code = (p.countrycode || '').toLowerCase();
+      release = A.outside(null, lng, lat);
+      const cview = p.type === 'country' && A.viewOf(code);
+      if (cview) {
+        // our own framing box: Photon's extent for the United States or Russia crosses the date line
+        map.fitBounds([[cview[0], cview[1]], [cview[2], cview[3]]], { padding: pad, animate: false });
+      } else if (ex && ex.length === 4 && ex[0] < ex[2] && ex[3] < ex[1]
+                 && (ex[2] - ex[0] > 0.001 || ex[1] - ex[3] > 0.001) && ex[2] - ex[0] < 120) {
+        // Photon's extent is [west, north, east, south]
+        map.fitBounds([[ex[0], ex[3]], [ex[2], ex[1]]], { padding: pad, maxZoom: 16, animate: false });
+      } else {
+        map.jumpTo({ center: [lng, lat], zoom: ZOOM[p.type] || 13 });
+        // the point goes to the middle of the band the panels leave, not of the whole canvas
+        map.panBy([-(pad.left - pad.right) / 2, -(pad.top - pad.bottom) / 2], { animate: false });
+      }
+    }
+    if (release) A.toAuto();
+  }
+})();
 
 document.getElementById('min').onclick = e => {
   e.stopPropagation();                     // or the header's own tap below toggles it back
