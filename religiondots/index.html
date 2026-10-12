@@ -8,6 +8,17 @@ sitemap: false
   {%- include analytics.html -%}
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Religion Dot Map</title>
+  <meta name="description" content="Religion around the world from national censuses and surveys.">
+  <meta property="og:title" content="Religion Dot Map">
+  <meta property="og:description" content="Religion around the world from national censuses and surveys.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://anita.garden/religiondots/">
+  <!-- Absolute, not relative: several crawlers (Facebook's among them) will not resolve a
+       relative og:image against the page URL and just drop the card. -->
+  <meta property="og:image" content="https://anita.garden/religiondots/preview.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:image" content="https://anita.garden/religiondots/preview.png">
+  <link rel="icon" type="image/png" href="icon.png">
   <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;700&display=swap" />
   <style>
