@@ -1303,26 +1303,21 @@ function setupTrainLayer() {
     const outlineWidthExpr = zoomScaledExpr('outline_width');
     const baseWidthExpr    = zoomScaledExpr('base_width');
 
-    // Each handoff ramp comes in several levels of detail; the filter shows
-    // the one cut for the current zoom (see TAPER_LODS).
-    const lodFilter = staticLodFilter();
     map.addSource('static-highlight', { type: 'geojson', data: emptyGeoJSON });
     map.addLayer({
         id: 'static-highlight-layer',
         type: 'line',
         source: 'static-highlight',
-        filter: lodFilter,
         layout: {
             visibility: 'none',
-            // round caps on opaque colours, like static-segments-layer below
             'line-cap': 'round',
             'line-join': 'round',
         },
         paint: {
-            // white at 0.55 over the basemap, pre-mixed (see STATIC_ALPHA)
-            'line-color': mixOverBasemap('#ffffff', 0.55),
+            'line-color': '#ffffff',
             'line-width': outlineWidthExpr,
             'line-offset': offsetExpr,
+            'line-opacity': 0.55,
         },
     });
 
@@ -1331,17 +1326,8 @@ function setupTrainLayer() {
         id: 'static-segments-layer',
         type: 'line',
         source: 'static-segments',
-        filter: lodFilter,
         layout: {
             visibility: 'none',
-            // A stripe is drawn as a chain of pieces: one per shared-track run,
-            // plus the stepped handoff ramps at each end (see
-            // renderStaticSegments). Round caps let each piece overlap the
-            // next, which closes the seam between them, the notch on the
-            // outside of a bend and the step between ramp pieces. That only
-            // works because the pieces are opaque: at partial opacity every
-            // overlap would show as a brighter lump. The colours are pre-mixed
-            // to look as they did at 0.85 opacity (see STATIC_ALPHA).
             'line-cap': 'round',
             'line-join': 'round',
             'line-sort-key': ['get', 'priority'],
@@ -1350,6 +1336,7 @@ function setupTrainLayer() {
             'line-color': ['get', 'color'],
             'line-width': widthExpr,
             'line-offset': offsetExpr,
+            'line-opacity': 0.85,
         },
     });
 
@@ -1359,17 +1346,16 @@ function setupTrainLayer() {
         id: 'static-highlight-overlay-layer',
         type: 'line',
         source: 'static-highlight',
-        filter: lodFilter,
         layout: {
             visibility: 'none',
             'line-cap': 'round',
             'line-join': 'round',
         },
         paint: {
-            // white at 0.22 over the route's own colour, pre-mixed per feature
-            'line-color': ['get', 'overlay_color'],
+            'line-color': '#ffffff',
             'line-width': baseWidthExpr,
             'line-offset': offsetExpr,
+            'line-opacity': 0.22,
         },
     });
 
@@ -2013,7 +1999,6 @@ async function loadStaticData() {
     staticData = s;
     foldExpressIntoBase(staticData);
     buildParentIndex();
-    buildTrackGraph();
     return s;
 }
 
@@ -2209,300 +2194,7 @@ function buildParentIndex() {
     }
 }
 
-// --- shared-track graph -------------------------------------------------
-// Fanning used to be grouped by (from_stop, to_stop), so two routes were only
-// drawn side by side where they shared a station pair. A stretch of track that
-// two routes physically share but enter from different stations therefore
-// collapsed onto one centreline: E and F stayed parallel to 5 Av/53 St and then
-// piled up for the last block before the switch, and B/D/F/M overlapped for the
-// whole approach to 47-50 St before spreading out again south of it.
-//
-// GTFS shapes reuse identical vertices wherever trains share track, so the real
-// sharing can be recovered from the geometry. Build a graph whose nodes are
-// polyline vertices and whose edges are consecutive vertex pairs, tag each edge
-// with the routes that traverse it, then chain edges carrying the same route set
-// into "runs". A run is one piece of physical track used by one fixed set of
-// routes — it is the thing that gets fanned, so a fan now continues through a
-// station and only re-splits at the vertex where the trains actually part.
-//
-// Runs are cut at station vertices as well, because each route's stripe width
-// changes there; that keeps one width per route per run.
-//
-// Splitting on the real sharing is only half the job: where a run ends its
-// route set changes, so the fan re-centres and every stripe jumps sideways. At
-// a station the jump is small (only the widths changed) but at a switch it is
-// most of the bundle's width, which reads as a broken line rather than a
-// junction. renderStaticSegments therefore ramps each stripe from its
-// neighbour's offset to its own across the first and last stretch of a run —
-// see TAPER_* below.
-let trackRuns = [];               // [{coords, cum, ends, members: [{route, featKeys}] in draw order}]
-const nodeRuns = new Map();       // node key -> [run index] — who meets whom at a junction
-
-// Track that two routes physically share but that GTFS draws as two separate
-// alignments a few metres apart. The graph keys on identical vertices, so it
-// cannot see that sharing and centres each pair on its own line; the two then
-// overlap, because a four-stripe bundle is far wider than the gap between the
-// alignments. Welding the second onto the first inside a box makes the sharing
-// visible and the fan treats them as one corridor.
-//
-// The Manhattan Bridge is the case that matters: B/D run from Grand St and N/Q
-// from Canal St, they share no station at either end, and the two pairs cross
-// the river about 20 m apart, B/D on the east side. Each pair crosses the river
-// as ONE long edge, so the box has to reach that edge's Manhattan end
-// (40.7149) or the span itself is never welded and only the Brooklyn approach
-// is. The B/D leave the weld with a 20 m jog east onto their own track there.
-//
-// `order` is the stripe order across the welded corridor, west to east (left
-// to right going north, which is how the corridor is oriented). The default
-// order by route name would put B/D on the west, and they would then have to
-// cross the N/Q to reach their own track at the Manhattan end.
-const TRACK_WELDS = [
-    { name: 'Manhattan Bridge', donor: 'N|Q01|R30',
-      recipients: ['B|D22|R30', 'D|D22|R30'],
-      bbox: [-73.9950, 40.6900, -73.9800, 40.71495],
-      order: ['N', 'Q', 'B', 'D'] },
-];
-
-function applyWelds(featCoords) {
-    for (const w of TRACK_WELDS) {
-        const donor = featCoords.get(w.donor);
-        if (!donor) continue;
-        const [x0, y0, x1, y1] = w.bbox;
-        const inside = (c) => c[0] > x0 && c[0] < x1 && c[1] > y0 && c[1] < y1;
-        const vd = donor.filter(inside);
-        if (vd.length < 2) continue;
-        for (const key of w.recipients) {
-            const co = featCoords.get(key);
-            if (!co) continue;
-            const idx = co.map((c, i) => inside(c) ? i : -1).filter(i => i >= 0);
-            if (idx.length < 2) continue;
-            const i0 = idx[0], i1 = idx[idx.length - 1];
-            const head = co[i0];
-            const near = (v) => Math.abs(head[0] - v[0]) + Math.abs(head[1] - v[1]);
-            const piece = near(vd[0]) <= near(vd[vd.length - 1]) ? vd : [...vd].reverse();
-            featCoords.set(key, co.slice(0, i0).concat(piece, co.slice(i1 + 1)));
-        }
-    }
-}
-
-function buildTrackGraph() {
-    trackRuns = [];
-    nodeRuns.clear();
-    if (!staticData) return;
-
-    // one geometry per (route, sorted stop pair) — same collapse renderStaticSegments does
-    const featCoords = new Map();
-    for (const seg of staticData.segments) {
-        const a = seg.from < seg.to ? seg.from : seg.to;
-        const b = seg.from < seg.to ? seg.to : seg.from;
-        const key = `${seg.route}|${a}|${b}`;
-        if (!featCoords.has(key)) featCoords.set(key, seg.coords);
-    }
-    applyWelds(featCoords);
-
-    const nodeKey = (c) => c[0].toFixed(5) + ',' + c[1].toFixed(5);
-    const nodeCoord = new Map();     // nk -> [lon, lat]
-    const nodeEdges = new Map();     // nk -> [edgeKey]
-    const edges = new Map();         // edgeKey -> {a, b, feats: Set<featKey>}
-    const breakNodes = new Set();    // station vertices — a run never crosses one
-    const featNodes = new Map();     // featKey -> [nk]
-
-    for (const [key, coords] of featCoords) {
-        const pts = [];
-        for (const c of coords) {
-            const nk = nodeKey(c);
-            if (pts.length && pts[pts.length - 1] === nk) continue;   // stats.json repeats the first vertex
-            pts.push(nk);
-            if (!nodeCoord.has(nk)) nodeCoord.set(nk, c);
-        }
-        if (pts.length < 2) continue;
-        featNodes.set(key, pts);
-        breakNodes.add(pts[0]);
-        breakNodes.add(pts[pts.length - 1]);
-        for (let i = 0; i < pts.length - 1; i++) {
-            const a = pts[i], b = pts[i + 1];
-            const ek = a < b ? a + '>' + b : b + '>' + a;
-            let e = edges.get(ek);
-            if (!e) {
-                e = { a, b, feats: new Set() };
-                edges.set(ek, e);
-                for (const n of [a, b]) {
-                    if (!nodeEdges.has(n)) nodeEdges.set(n, []);
-                    nodeEdges.get(n).push(ek);
-                }
-            }
-            e.feats.add(key);
-        }
-    }
-
-    // an edge's signature is the set of routes on it; two edges chain into the
-    // same run only if their signatures match exactly
-    const sigOf = new Map();
-    for (const [ek, e] of edges) {
-        const rs = new Set();
-        for (const fk of e.feats) rs.add(fk.slice(0, fk.indexOf('|')));
-        sigOf.set(ek, [...rs].sort().join('/'));
-    }
-
-    const otherEnd = (ek, n) => (edges.get(ek).a === n ? edges.get(ek).b : edges.get(ek).a);
-    const nextEdge = (node, ek, visited) => {
-        if (breakNodes.has(node)) return null;
-        const inc = nodeEdges.get(node);
-        if (inc.length !== 2) return null;              // a switch: stop the run here
-        const nxt = inc[0] === ek ? inc[1] : inc[1] === ek ? inc[0] : null;
-        if (!nxt || visited.has(nxt)) return null;
-        if (sigOf.get(nxt) !== sigOf.get(ek)) return null;
-        return nxt;
-    };
-
-    const visited = new Set();
-    const chains = [];
-    for (const ek0 of edges.keys()) {
-        if (visited.has(ek0)) continue;
-        visited.add(ek0);
-        const chain = [ek0];
-        let node = edges.get(ek0).b;
-        for (;;) {
-            const nxt = nextEdge(node, chain[chain.length - 1], visited);
-            if (!nxt) break;
-            visited.add(nxt); chain.push(nxt); node = otherEnd(nxt, node);
-        }
-        node = edges.get(ek0).a;
-        for (;;) {
-            const nxt = nextEdge(node, chain[0], visited);
-            if (!nxt) break;
-            visited.add(nxt); chain.unshift(nxt); node = otherEnd(nxt, node);
-        }
-        chains.push(chain);
-    }
-
-    for (const chain of chains) {
-        // walk the chain into an ordered node list
-        let a = edges.get(chain[0]).a, b = edges.get(chain[0]).b;
-        if (chain.length > 1) {
-            const e1 = edges.get(chain[1]);
-            if (a === e1.a || a === e1.b) { const t = a; a = b; b = t; }
-        }
-        const nodes = [a, b];
-        for (let i = 1; i < chain.length; i++) nodes.push(otherEnd(chain[i], nodes[nodes.length - 1]));
-
-        // group the run's features by route (a route can cover a run through
-        // more than one stop pair where an express overlaps its own local hop)
-        const byRoute = new Map();
-        for (const fk of edges.get(chain[0]).feats) {
-            const r = fk.slice(0, fk.indexOf('|'));
-            if (!byRoute.has(r)) byRoute.set(r, []);
-            byRoute.get(r).push(fk);
-        }
-        const members = [...byRoute.entries()].map(([route, featKeys]) => ({ route, featKeys }));
-        members.sort((m, n) => {
-            const ka = routeSortKey(m.route), kb = routeSortKey(n.route);
-            return ka < kb ? -1 : ka > kb ? 1 : 0;
-        });
-
-        // Orientation. An offset is measured to the right of the run's
-        // coordinate direction, so which physical side a route sits on depends
-        // on which way the run is stored. stats.json stores every sub-segment in
-        // its route's pattern direction 0, and a route's sub-segments chain
-        // head to tail, so each member knows which way IT runs along this
-        // piece of track. The run follows the majority of its members (ties go
-        // to the lowest-sorted), and each member keeps a sign saying whether it
-        // runs with the run (+1) or against it (-1). Offsets are compared
-        // between runs in the route's own frame (offset * sign), never raw,
-        // so two runs stored nose to nose cannot swap a route across the
-        // corridor. Only 11 of ~550 runs mix directions (the M on the J/Z,
-        // the G beside the A/C at Hoyt, the E beside the B/D at 7 Av);
-        // everywhere else every sign is +1.
-        //
-        // (This replaces a tangent-based pass that re-oriented runs after the
-        // fact. Its constraints could contradict each other, and the walk
-        // that solved them silently dropped one, which put the N/R/W bundle
-        // on opposite sides of the track either side of 5 Av/59 St.)
-        //
-        // A member's direction is a vote over every step any of its
-        // sub-segments takes along the run, not just the first: a few GTFS
-        // sub-segments double back over a spur (the N's Prince St-Canal St hop
-        // runs down the bridge platform track and back up), and their two
-        // passes cancel instead of deciding the answer.
-        const runStep = new Map();
-        for (let i = 0; i < nodes.length - 1; i++) {
-            runStep.set(nodes[i] + '>' + nodes[i + 1], 1);
-            runStep.set(nodes[i + 1] + '>' + nodes[i], -1);
-        }
-        const dirs = members.map(m => {
-            let v = 0;
-            for (const fk of m.featKeys) {
-                const pts = featNodes.get(fk) || [];
-                for (let i = 0; i < pts.length - 1; i++) {
-                    v += runStep.get(pts[i] + '>' + pts[i + 1]) || 0;
-                }
-            }
-            return Math.sign(v);
-        });
-        const vote = dirs.reduce((s, d) => s + d, 0);
-        const firstKnown = dirs.find(d => d !== 0) || 1;
-        const flip = vote < 0 || (vote === 0 && firstKnown < 0);
-        if (flip) nodes.reverse();
-        members.forEach((m, k) => { m.sign = dirs[k] ? dirs[k] * (flip ? -1 : 1) : 1; });
-
-        const coords = nodes.map(n => nodeCoord.get(n));
-
-        // a weld's own stripe order (see TRACK_WELDS), west to east
-        for (const w of TRACK_WELDS) {
-            if (!w.order || members.length !== w.order.length) continue;
-            if (!members.every(m => w.order.includes(m.route))) continue;
-            const [x0, y0, x1, y1] = w.bbox;
-            if (!coords.some(c => c[0] > x0 && c[0] < x1 && c[1] > y0 && c[1] < y1)) continue;
-            const north = coords[coords.length - 1][1] >= coords[0][1];
-            const rank = (r) => w.order.indexOf(r) * (north ? 1 : -1);
-            members.sort((m, n) => rank(m.route) - rank(n.route));
-        }
-        const ends = [nodes[0], nodes[nodes.length - 1]];
-        const idx = trackRuns.length;
-        for (const n of ends) {
-            if (!nodeRuns.has(n)) nodeRuns.set(n, []);
-            nodeRuns.get(n).push(idx);
-        }
-        trackRuns.push({ coords, ends, members });
-    }
-
-    for (const run of trackRuns) run.cum = arcLengths(run.coords);
-}
-
-// Cumulative along-line distance in metres, flat-earth (fine over a few hundred
-// metres at NYC latitude) — used to cut a taper off the end of a run.
-const M_PER_DEG = 111320;
-function arcLengths(coords) {
-    const cum = [0];
-    for (let i = 1; i < coords.length; i++) {
-        const dx = (coords[i][0] - coords[i - 1][0]) * Math.cos(coords[i][1] * Math.PI / 180);
-        const dy = coords[i][1] - coords[i - 1][1];
-        cum.push(cum[i - 1] + Math.hypot(dx, dy) * M_PER_DEG);
-    }
-    return cum;
-}
-
-// The piece of `coords` between two along-line distances, endpoints interpolated.
-function sliceRun(coords, cum, from, to) {
-    const total = cum[cum.length - 1];
-    from = Math.max(0, Math.min(total, from));
-    to = Math.max(from, Math.min(total, to));
-    const at = (d) => {
-        let i = 1;
-        while (i < cum.length - 1 && cum[i] < d) i++;
-        const span = cum[i] - cum[i - 1];
-        const t = span > 0 ? (d - cum[i - 1]) / span : 0;
-        return [coords[i - 1][0] + t * (coords[i][0] - coords[i - 1][0]),
-                coords[i - 1][1] + t * (coords[i][1] - coords[i - 1][1])];
-    };
-    const out = [at(from)];
-    for (let i = 0; i < cum.length; i++) if (cum[i] > from && cum[i] < to) out.push(coords[i]);
-    out.push(at(to));
-    return out;
-}
-
-// rendered segment features keyed by `route|from|to`; a stop pair can now span
-// several runs, so each key holds the list of pieces drawn for it
+// rendered segment features keyed by `route|from|to` so highlight can find geometry+offset
 const renderedSegmentFeatures = new Map();
 
 function clearHighlight() {
@@ -2549,19 +2241,17 @@ function renderHighlight() {
     // outline (wider, under) and an overlay (same width, on top)
     const features = [];
     for (const subKey of subKeys) {
-        for (const f of (renderedSegmentFeatures.get(subKey) || [])) {
-            features.push({
-                type: 'Feature',
-                geometry: f.geometry,
-                properties: {
-                    base_width: f.properties.width,
-                    outline_width: f.properties.width + 3.5,
-                    offset: f.properties.offset,
-                    lod: f.properties.lod,
-                    overlay_color: staticOverlayColor(f.properties.color),
-                },
-            });
-        }
+        const f = renderedSegmentFeatures.get(subKey);
+        if (!f) continue;
+        features.push({
+            type: 'Feature',
+            geometry: f.geometry,
+            properties: {
+                base_width: f.properties.width,
+                outline_width: f.properties.width + 3.5,
+                offset: f.properties.offset,
+            },
+        });
     }
     map.getSource('static-highlight').setData({ type: 'FeatureCollection', features });
 }
@@ -2601,156 +2291,6 @@ function segmentValue(seg, hourIdx, metric) {
 
 // gap (in pixels) between adjacent routes that share a track segment
 const SEGMENT_GAP = 1.0;
-
-// The static layers are drawn opaque (see static-segments-layer) in the colour
-// a stripe used to have at 0.85 opacity over the dark basemap's background.
-// Labels and streets no longer show faintly through a stripe, and where two
-// routes cross the upper one hides the lower instead of tinting it.
-const STATIC_ALPHA = 0.85;
-const STATIC_BASEMAP_RGB = [12, 12, 12];   // the openfreemap dark style's background
-function mixHex(hex, under, a) {
-    const c = [1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16));
-    return '#' + c.map((v, k) => Math.round(a * v + (1 - a) * under[k])
-        .toString(16).padStart(2, '0')).join('');
-}
-function mixOverBasemap(hex, a) { return mixHex(hex, STATIC_BASEMAP_RGB, a); }
-const staticColorCache = new Map();
-function staticRouteColor(route) {
-    let c = staticColorCache.get(route);
-    if (!c) {
-        c = mixOverBasemap(ROUTE_COLORS[route] || '#888888', STATIC_ALPHA);
-        staticColorCache.set(route, c);
-    }
-    return c;
-}
-function staticOverlayColor(segColor) {
-    const under = [1, 3, 5].map(i => parseInt(segColor.slice(i, i + 2), 16));
-    return mixHex('#ffffff', under, 0.22);
-}
-
-// Handing a stripe off between runs (see buildTrackGraph). `line-offset` is one
-// number per feature, so the ramp is cut into short pieces with stepped offsets;
-// round line caps make each piece overlap its neighbour, so a few steps read as
-// a continuous splay rather than a staircase. Lengths are in metres on the
-// ground, which is the one quantity here that does not scale with zoom — a
-// junction splayed over ~a block and a half looks right across the zooms where
-// the splay is big enough to see at all.
-const TAPER_M_PER_PX = 12;    // ramp length per pixel of offset change
-const TAPER_MIN_M    = 25;
-const TAPER_MAX_M    = 150;
-const TAPER_MIN_STEP = 0.05;  // offset change (px) below which a run just butts up
-
-// Bundle-centre solve (see step 4 of renderStaticSegments). CENTRE_REG is how
-// hard a bundle is pulled back onto its own track: lower lets a route hold one
-// offset over more of its length, at the cost of the bundle sitting off-centre.
-const CENTRE_REG = 0.06;
-const CENTRE_SWEEPS = 400;
-const CENTRE_OMEGA = 1.7;
-
-function solveBundleCentres(runOffsets) {
-    // Flatten to typed arrays first: the sweep is a few hundred thousand
-    // iterations and Map lookups inside it cost more than the arithmetic.
-    const n = trackRuns.length;
-    const to = [], delta = [], weight = [];
-    const head = new Int32Array(n + 1);
-    let wmax = 1e-9;
-    for (const ro of runOffsets) for (const p of ro.byRoute.values()) {
-        if (p.entry.width > wmax) wmax = p.entry.width;
-    }
-    const pending = Array.from({ length: n }, () => []);
-    for (const idxs of nodeRuns.values()) {
-        const uniq = [...new Set(idxs)];
-        for (let a = 0; a < uniq.length; a++) {
-            for (let b = a + 1; b < uniq.length; b++) {
-                const i = uniq[a], j = uniq[b];
-                // equal in the route's own frame (see the member signs in
-                // buildTrackGraph): si*(ci + oi) = sj*(cj + oj), so
-                // ci = si*sj*cj + si*sj*oj - oi
-                for (const [route, pi] of runOffsets[i].byRoute) {
-                    const pj = runOffsets[j].byRoute.get(route);
-                    if (!pj) continue;
-                    const sg = pi.member.sign * pj.member.sign;
-                    pending[i].push([j, sg, sg * pj.offset - pi.offset, pi.entry.width / wmax]);
-                    pending[j].push([i, sg, sg * pi.offset - pj.offset, pj.entry.width / wmax]);
-                }
-            }
-        }
-    }
-    const sgn = [];
-    for (let i = 0; i < n; i++) {
-        head[i + 1] = head[i] + pending[i].length;
-        for (const [j, sg, d, w] of pending[i]) { to.push(j); sgn.push(sg); delta.push(d); weight.push(w); }
-    }
-    const T = Int32Array.from(to), S = Float64Array.from(sgn);
-    const D = Float64Array.from(delta), W = Float64Array.from(weight);
-
-    const c = new Float64Array(n);
-    for (let s = 0; s < CENTRE_SWEEPS; s++) {
-        for (let i = 0; i < n; i++) {
-            const lo = head[i], hi = head[i + 1];
-            if (lo === hi) continue;
-            let num = 0, den = CENTRE_REG;
-            for (let k = lo; k < hi; k++) {
-                num += W[k] * (S[k] * c[T[k]] + D[k]);
-                den += W[k];
-            }
-            c[i] += CENTRE_OMEGA * (num / den - c[i]);
-        }
-    }
-    for (let i = 0; i < n; i++) {
-        if (!c[i]) continue;
-        for (const p of runOffsets[i].byRoute.values()) p.offset += c[i];
-    }
-}
-
-// A ramp is cut into pieces whose offsets differ by `stepPx` (base-zoom px).
-// Each piece's round cap stands out by that step, so it has to stay under
-// about a pixel on screen. Offsets grow by sqrt(2) per zoom level, up to 16x
-// at zoom 19, and smoothstep is 1.5x steeper than linear in the middle.
-//
-// High zoom needs pieces a metre or two long, but the GeoJSON tiler drops any
-// line shorter than ~0.4 px at the tile's zoom: 1.4 m at zoom 14, eleven
-// metres at zoom 11. Dropped pieces left whole ramps missing as gaps (and with
-// the tiler told to keep everything, a piece only a few tile units long lost
-// its direction to rounding, and its offset threw a round cap off the line as
-// a blob). So every ramp is cut once per level of detail, each with pieces
-// long enough to survive at the lowest zoom it is shown at, and
-// staticLodFilter() shows one level per zoom. Pieces that are not ramps are
-// lod -1 and always shown.
-const TAPER_MAX_STEPS = 64;
-const TAPER_LODS = [
-    { lod: 0, fromZoom: 0,  minPieceM: 14,  stepPx: 0.3 },
-    { lod: 1, fromZoom: 12, minPieceM: 6.5, stepPx: 0.2 },
-    { lod: 2, fromZoom: 14, minPieceM: 1.6, stepPx: 0.06 },
-];
-function staticLodFilter() {
-    const any = ['any', ['==', ['get', 'lod'], -1]];
-    TAPER_LODS.forEach((l, i) => {
-        const next = TAPER_LODS[i + 1];
-        const cond = ['all', ['==', ['get', 'lod'], l.lod], ['>=', ['zoom'], l.fromZoom]];
-        if (next) cond.push(['<', ['zoom'], next.fromZoom]);
-        any.push(cond);
-    });
-    return any;
-}
-
-function rampOffset(run, emit, from, to, offFrom, offTo) {
-    const span = to - from;
-    if (span <= 0) return;
-    for (const { lod, minPieceM, stepPx } of TAPER_LODS) {
-        const wanted = Math.ceil(1.5 * Math.abs(offTo - offFrom) / stepPx);
-        const steps = Math.max(1, Math.min(TAPER_MAX_STEPS, wanted, Math.floor(span / minPieceM)));
-        // Cuts can land anywhere, bends included: round caps fill the outside
-        // of the turn. (Pulling the cuts off the vertices, as butt caps needed,
-        // bunched a ramp on a long straight edge into a few big steps.)
-        for (let k = 0; k < steps; k++) {
-            const a = from + span * (k / steps), b = from + span * ((k + 1) / steps);
-            const t = (k + 0.5) / steps;
-            const ease = t * t * (3 - 2 * t);      // smoothstep: flat at both ends
-            emit(sliceRun(run.coords, run.cum, a, b), offFrom + (offTo - offFrom) * ease, lod);
-        }
-    }
-}
 
 // Polyline orientation is now handled at build time in subdivide_segments —
 // each sub-segment's coords are stored in pattern direction-0 order, which by
@@ -2795,119 +2335,51 @@ function renderStaticSegments() {
         e.width = (1 + norm * 14) * 0.55 * staticDotScale;
     }
 
-    // step 3: fan each shared-track run (see buildTrackGraph), assigning
-    // perpendicular offsets sized by line thickness so wider lines get
-    // correspondingly more separation. every stripe on a run shares that run's
-    // polyline, so the offset direction is consistent across routes. members are
-    // pre-sorted by route name (with the overrides above): the lowest-sorted
-    // route ends up at the most-negative offset for the whole of the route's
-    // bend, no matter which way the line is heading.
-    // Where each route sits ACROSS its run, relative to the bundle's own centre.
-    const runOffsets = trackRuns.map(run => {
-        const parts = [];
-        for (const m of run.members) {
-            let best = null;
-            for (const fk of m.featKeys) {
-                const e = combined.get(fk);
-                if (e && e.width > 0 && (!best || e.width > best.width)) best = e;
-            }
-            if (best) parts.push({ member: m, entry: best });
-        }
-        const byRoute = new Map();
-        const totalW = parts.reduce((s, p) => s + p.entry.width, 0) + SEGMENT_GAP * (parts.length - 1);
-        let cum = -totalW / 2;
-        for (const p of parts) {
-            byRoute.set(p.member.route, { offset: cum + p.entry.width / 2, member: p.member, entry: p.entry });
-            cum += p.entry.width + SEGMENT_GAP;
-        }
-        return { byRoute, count: parts.length };
-    });
-
-    // step 4: slide each bundle sideways so a route keeps the SAME offset from
-    // run to run wherever it can.
-    //
-    // Centring every bundle on its own track is what makes lines wander. The A
-    // and C pick up the E at 50 St and hand it over at 42 St; centre each run
-    // separately and the pair swings out and back again, two big shifts that
-    // mostly cancel — which reads as the line wobbling, and reads worse still
-    // when both land inside one curve. But look at what actually changes:
-    // routes are stacked in a fixed order, so a route joining or leaving at the
-    // END of that order shifts everyone else by one constant. Give each run a
-    // free centre and that constant is absorbed, and the A/C run dead straight
-    // through while the E peels off.
-    //
-    // One unknown per run, its bundle centre. Each route shared by two runs
-    // meeting at a node wants their offsets equal, weighted by stripe width
-    // since a fat trunk moving is far more visible than a branch moving. A weak
-    // spring back to zero stops a bundle drifting off its own track over a long
-    // line, and is also what makes the system solvable at all. Successive
-    // over-relaxation, a couple of milliseconds at this size.
-    solveBundleCentres(runOffsets);
-
-    // Where a run ends, hand each stripe off to its continuation instead of
-    // letting it jump: every run at the node ramps to the same value, the mean
-    // of what they each want, so the pieces always join. After the solve most of
-    // these differ by fractions of a pixel and no ramp is drawn at all.
-    // Averaged in the route's own frame and handed back in this run's.
-    function handoffOffset(runIdx, endIdx, route) {
-        const node = trackRuns[runIdx].ends[endIdx];
-        const peers = [];
-        for (const j of new Set(nodeRuns.get(node) || [])) {
-            const p = runOffsets[j].byRoute.get(route);
-            if (p) peers.push(p.offset * p.member.sign);
-        }
-        if (peers.length < 2) return null;                       // terminus
-        const own = runOffsets[runIdx].byRoute.get(route).member.sign;
-        return own * peers.reduce((s, o) => s + o, 0) / peers.length;
+    // step 3: group by stop-pair (= shared trunk), assign perpendicular offsets
+    // sized by line thickness so that wider lines get correspondingly more
+    // separation. all features in a group share one canonical polyline so the
+    // offset direction is consistent across routes.
+    const groups = new Map();
+    for (const e of combined.values()) {
+        if (e.width === 0) continue;
+        const k = `${e.from}|${e.to}`;
+        if (!groups.has(k)) groups.set(k, []);
+        groups.get(k).push(e);
     }
 
     const features = [];
     renderedSegmentFeatures.clear();
-    for (let i = 0; i < trackRuns.length; i++) {
-        const run = trackRuns[i];
-        const ro = runOffsets[i];
-        if (!ro.count) continue;
-        const runLen = run.cum[run.cum.length - 1];
+    for (const grp of groups.values()) {
+        // sort routes by route name (with overrides above): combined with the
+        // direction-0 polyline orientation done at build time, the lowest-sorted
+        // route ends up at the most-negative offset = "right of polyline forward"
+        // for the route's whole bend, no matter which way the line is heading.
+        grp.sort((a, b) => {
+            const ka = routeSortKey(a.route);
+            const kb = routeSortKey(b.route);
+            return ka < kb ? -1 : ka > kb ? 1 : 0;
+        });
+        const canonCoords = grp[0].coords;   // already direction-0 normalized at build time
 
-        for (const [route, info] of ro.byRoute) {
-            const props = {
-                color: staticRouteColor(route),
-                width: info.entry.width,
-                priority: LINE_PRIORITY[route] ?? 0,
-                from: info.entry.from,
-                to: info.entry.to,
+        const totalW = grp.reduce((s, g) => s + g.width, 0) + SEGMENT_GAP * (grp.length - 1);
+        let cum = -totalW / 2;
+        for (const e of grp) {
+            const offset = cum + e.width / 2;
+            cum += e.width + SEGMENT_GAP;
+            const feat = {
+                type: 'Feature',
+                geometry: { type: 'LineString', coordinates: canonCoords },
+                properties: {
+                    color: ROUTE_COLORS[e.route] || '#888',
+                    width: e.width,
+                    offset,
+                    priority: LINE_PRIORITY[e.route] ?? 0,
+                    from: e.from,
+                    to: e.to,
+                },
             };
-            const emit = (coords, offset, lod = -1) => {
-                if (coords.length < 2) return;
-                const feat = {
-                    type: 'Feature',
-                    geometry: { type: 'LineString', coordinates: coords },
-                    properties: { ...props, offset, lod },
-                };
-                features.push(feat);
-                for (const fk of info.member.featKeys) {
-                    let arr = renderedSegmentFeatures.get(fk);
-                    if (!arr) renderedSegmentFeatures.set(fk, arr = []);
-                    arr.push(feat);
-                }
-            };
-
-            const ends = [handoffOffset(i, 0, route), handoffOffset(i, 1, route)];
-            const len = ends.map(t => (t === null || Math.abs(t - info.offset) < TAPER_MIN_STEP)
-                ? 0
-                : Math.min(TAPER_MAX_M, Math.max(TAPER_MIN_M, Math.abs(t - info.offset) * TAPER_M_PER_PX),
-                           runLen * 0.45));
-            if (len[0] + len[1] > runLen * 0.92) {
-                const k = runLen * 0.92 / (len[0] + len[1]);
-                len[0] *= k; len[1] *= k;
-            }
-            const mid0 = len[0], mid1 = runLen - len[1];
-
-            if (len[0] > 0) rampOffset(run, emit, 0, mid0, ends[0], info.offset);
-            if (mid1 - mid0 > 0.5) {
-                emit(sliceRun(run.coords, run.cum, mid0, mid1), info.offset);
-            }
-            if (len[1] > 0) rampOffset(run, emit, mid1, runLen, info.offset, ends[1]);
+            features.push(feat);
+            renderedSegmentFeatures.set(`${e.route}|${e.from}|${e.to}`, feat);
         }
     }
     map.getSource('static-segments').setData({ type: 'FeatureCollection', features });
@@ -3763,13 +3235,14 @@ function renderLineDrill() {
 
 map.on('mouseenter', 'static-segments-layer', () => map.getCanvas().style.cursor = 'pointer');
 map.on('mouseleave', 'static-segments-layer', () => map.getCanvas().style.cursor = '');
+map.on('mouseenter', 'static-stations-layer', () => map.getCanvas().style.cursor = 'pointer');
+map.on('mouseleave', 'static-stations-layer', () => map.getCanvas().style.cursor = '');
+
 map.on('click', 'static-segments-layer', (e) => {
     clickedStatic = true;
     const p = e.features[0].properties;
     openSegmentDrill(p.from, p.to);
 });
-map.on('mouseenter', 'static-stations-layer', () => map.getCanvas().style.cursor = 'pointer');
-map.on('mouseleave', 'static-stations-layer', () => map.getCanvas().style.cursor = '');
 map.on('click', 'static-stations-layer', (e) => {
     clickedStatic = true;
     const p = e.features[0].properties;
