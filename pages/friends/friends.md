@@ -49,7 +49,6 @@ here are more friends and/or internet neighbors:
 - [tunapee](https://tunapee.online/)
 - [ve3zsh](https://ve3zsh.ca/index.html)
 - [zacsmir](https://zacsmir.github.io/)
-- [sepdiem](https://sepdiem.neocities.org/)
 - [manjusha](https://manjusha.space/)
 - [girl.surgery](https://girl.surgery/)
 
