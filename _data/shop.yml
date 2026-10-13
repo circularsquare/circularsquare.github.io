@@ -46,6 +46,7 @@
   price: 48
   thumb: /assets/thumbs/na1m.jpg
   page: /na1m/
+  zoomable: true   # page is a zoomable view of the image itself
   download: /assets/na1m.png
   buy: https://buy.stripe.com/28EcN7goR21R0F1feTfAc03
 
@@ -55,6 +56,7 @@
   price: 52
   thumb: /assets/thumbs/euro1m.jpg
   page: /euro1m/
+  zoomable: true
   download: /assets/euro1m.png
   buy: https://buy.stripe.com/7sY4gB0pT9uj4Vhd6LfAc04
 
@@ -64,5 +66,6 @@
   price: 43
   thumb: /assets/thumbs/maps/sa1m.jpg
   page: /sa1m/
+  zoomable: true
   download: /assets/maps/sa1m.png
   buy: https://buy.stripe.com/bJe8wR7Sl5e3afB3wbfAc05

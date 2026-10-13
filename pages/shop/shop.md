@@ -12,8 +12,9 @@ the store is not currently open but will be on november 5th for shipping only wi
 <div class="shop-grid">
 {%- for p in site.data.shop %}
   <div class="shop-item box">
-    <a href="{{ p.page }}"><img src="{{ p.thumb }}" alt="{{ p.title }}" loading="lazy"></a>
-    <div class="shop-title"><a href="{{ p.page }}">{{ p.title }}</a></div>
+    {%- if p.zoomable %}{% assign view = p.page %}{% else %}{% assign view = p.download %}{% endif %}
+    <a href="{{ view }}"><img src="{{ p.thumb }}" alt="{{ p.title }}" loading="lazy"></a>
+    <div class="shop-title"><a href="{{ view }}">{{ p.title }}</a></div>
     <div>{{ p.size }}, ${{ p.price }}</div>
     {%- if p.note %}<div class="shop-note">{{ p.note }}</div>{% endif %}
     <div class="shop-links">
@@ -24,6 +25,7 @@ the store is not currently open but will be on november 5th for shipping only wi
       {%- endif %}
       · <a href="{{ p.download }}">free file</a>
       {%- if p.download_alt %} (<a href="{{ p.download_alt }}">english</a>){% endif %}
+      {%- unless p.zoomable %} · <a href="{{ p.page }}">interactive map</a>{% endunless %}
     </div>
   </div>
 {%- endfor %}
