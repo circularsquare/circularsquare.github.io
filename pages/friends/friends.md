@@ -46,6 +46,7 @@ here is some of my friends websites. i hope more of my friends make websites so 
 here are more friends and/or internet neighbors:
 
 - [sammysworld](https://sammysworld.org/)
+- [tunapee](https://tunapee.online/)
 - [ve3zsh](https://ve3zsh.ca/index.html)
 - [zacsmir](https://zacsmir.github.io/)
 - [sepdiem](https://sepdiem.neocities.org/)

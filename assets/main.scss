@@ -354,3 +354,32 @@ table {border-spacing: 30px;}
   display: block;
   border: 0;
 }
+
+/* Map shop, fed by _data/shop.yml */
+.shop-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 12px;
+  margin: 15px 0;
+}
+.shop-item img {
+  display: block;
+  width: 100%;
+  height: 180px;
+  object-fit: contain;
+  margin-bottom: 6px;
+}
+.shop-title { font-weight: bold; }
+.shop-note { color: var(--mgreen); }
+.shop-links { margin-top: 4px; }
+#shop-interest {
+  max-width: 520px;
+  label { display: block; margin: 6px 0; }
+  select, input[type=email] { display: block; font: inherit; margin-top: 2px; max-width: 100%; }
+  input[type=email] { width: 300px; }
+  fieldset { border: 0; padding: 0; margin: 8px 0; }
+  legend { padding: 0; }
+  .interest-map { margin: 2px 0; }
+  button { font: inherit; }
+  #interest-status { margin-left: 8px; }
+}

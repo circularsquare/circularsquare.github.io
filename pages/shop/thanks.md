@@ -1,0 +1,14 @@
+---
+layout: page
+title: thank you
+permalink: /shop/thanks/
+sitemap: false
+---
+
+your order went through. stripe is emailing you a receipt.
+
+i'll place the print order with lumaprints shortly and email you the tracking number once it ships. most prints arrive within two weeks.
+
+if anything is wrong with your order, email [{{ site.email }}](mailto:{{ site.email }}).
+
+[back to the shop](/shop/)

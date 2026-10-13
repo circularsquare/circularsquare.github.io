@@ -1,0 +1,64 @@
+# Map shop products, read by pages/shop/shop.md.
+#
+# Everything here is public. `buy` is a Stripe Payment Link URL, which is public
+# by design; leave it empty and the page shows "not available yet" instead of a
+# buy link. Sizes and prices are drafts until checked against Lumaprints.
+#
+# Print files are NOT the `download` files: they live outside this repo, sized
+# exactly to `size` (see ~/projects/shop/spec.md).
+
+- slug: japanrail
+  title: japan rail
+  size: 32 x 17.5 in
+  price: 40       # estimate
+  thumb: /assets/thumbs/posters/japanrail_ja.jpg
+  page: /japanrail
+  download: /assets/posters/japanrail_ja.png
+  download_alt: /assets/posters/japanrail.png
+  note: choose japanese or english at checkout
+  buy: ""
+
+- slug: nycriders
+  title: nyc riders
+  size: 20 x 30 in
+  price: 40       # estimate
+  thumb: /assets/thumbs/posters/nycriders.jpg
+  page: /nycriders
+  download: /assets/posters/nycriders.png
+  buy: ""
+
+- slug: ancestrydots
+  title: ancestry dots
+  size: 34 x 23 in
+  price: 45       # estimate
+  thumb: /assets/thumbs/posters/ancestrydots.jpg
+  page: /ancestrydotsna
+  download: /assets/posters/ancestrydots.png
+  buy: ""
+
+- slug: na1m
+  title: north america in regions of 1 million people
+  size: 30 x 30 in
+  price: 45       # estimate
+  thumb: /assets/thumbs/na1m.jpg
+  page: /na1m/
+  download: /assets/na1m.png
+  buy: ""
+
+- slug: euro1m
+  title: europe in regions of 1 million people
+  size: 36 x 30 in
+  price: 50       # estimate
+  thumb: /assets/thumbs/euro1m.jpg
+  page: /euro1m/
+  download: /assets/euro1m.png
+  buy: ""
+
+- slug: sa1m
+  title: south america in regions of 1 million people
+  size: 22 x 33 in
+  price: 42       # estimate
+  thumb: /assets/thumbs/maps/sa1m.jpg
+  page: /sa1m/
+  download: /assets/maps/sa1m.png
+  buy: ""
