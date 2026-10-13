@@ -4,7 +4,10 @@ title: shop
 permalink: /shop/
 ---
 
-these are prints of my maps, made to order by lumaprints on semi-gloss fine art paper and shipped within the us. the full size files are free to download as well, if you'd rather print one yourself. buying a print helps me keep making maps.
+these are prints of my maps! made to order by lumaprints on semi-gloss fine art paper. the full size files are free to download as well, if you'd rather print one yourself. 
+
+
+the store is not currently open but will be on november 5th for shipping only within the USA. prints are $40-50, with 8$ off each additional map after the first one.
 
 <div class="shop-grid">
 {%- for p in site.data.shop %}
@@ -28,25 +31,26 @@ these are prints of my maps, made to order by lumaprints on semi-gloss fine art 
 
 ### shipping and returns
 
-- prints ship to us addresses only. each one is made after you order and usually arrives within two weeks.
-- if a print arrives damaged or misprinted, email me a photo within 30 days and i'll send a replacement.
-- i can't take returns otherwise, since every print is made for that order.
-- questions go to [{{ site.email }}](mailto:{{ site.email }}).
+- prices include shipping.
+- extra maps added at checkout are $8 off each, since they ship in the same tube.
+- shipping to US usually arrives in less than two weeks.
+- if a print arrives damaged or misprinted and you email me a photo within 30 days, i can send a replacement.
+- you can send questions to [{{ site.email }}](mailto:{{ site.email }}).
 
 ### outside the us?
 
 <div id="shop-interest" class="box">
-  <p>i only ship within the us for now. tell me where you are, and if enough people in one country ask, i'll look into printing there.</p>
+  <p>if you'd like to order print maps and are not in the US, please let me know here!</p>
   <form id="interest-form">
     <label>country <select id="interest-country" required><option value="">pick one</option></select></label>
-    <label>email (optional, if you'd like to hear when it opens) <input id="interest-email" type="email" maxlength="200"></label>
+    <label>email (optional) <input id="interest-email" type="email" maxlength="200"></label>
     <fieldset>
       <legend>maps you'd want (optional)</legend>
       {%- for p in site.data.shop %}
       <label class="interest-map"><input type="checkbox" value="{{ p.slug }}"> {{ p.title }}</label>
       {%- endfor %}
     </fieldset>
-    <button type="submit">send</button>
+    <button type="submit">interested</button>
     <span id="interest-status" role="status"></span>
   </form>
   <p id="interest-done" hidden>thanks, noted.</p>
