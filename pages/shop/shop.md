@@ -7,7 +7,7 @@ permalink: /shop/
 these are prints of my maps! made to order by lumaprints on semi-gloss fine art paper. the full size files are free to download as well, if you'd rather print one yourself. 
 
 
-the store is not currently open but will be on november 5th for shipping only within the USA. prints are $40-50, with 8$ off each additional map after the first one.
+the store is not currently open but will be on november 5th for shipping only within the USA. prints are $40-50, with 10$ off each additional map after the first one.
 
 <div class="shop-grid">
 {%- for p in site.data.shop %}
@@ -34,7 +34,7 @@ the store is not currently open but will be on november 5th for shipping only wi
 ### shipping and returns
 
 - prices include shipping.
-- extra maps added at checkout are $8 off each, since they ship in the same tube.
+- extra maps added at checkout are $10 off each, since they ship in the same tube.
 - shipping to US usually arrives in less than two weeks.
 - if a print arrives damaged or misprinted and you email me a photo within 30 days, i can send a replacement.
 - you can send questions to [{{ site.email }}](mailto:{{ site.email }}).

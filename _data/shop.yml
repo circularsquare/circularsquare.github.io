@@ -6,7 +6,7 @@
 #
 # The `buy` links are the LIVE Stripe Payment Links. They are switched off
 # until launch (2026-11-05) and show "Prints open for orders on November 5."
-# Each link also offers the other five maps as $8-off add-ons.
+# Each link also offers the other five maps as $10-off add-ons.
 #
 # Print files are NOT the `download` files: they live outside this repo, sized
 # exactly to `size` (see ~/projects/shop/spec.md).
