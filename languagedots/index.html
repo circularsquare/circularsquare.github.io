@@ -580,6 +580,13 @@ function setDotSize() {
 let NODES = {}, KIDS = {}, ORDER = {}, COUNTS = null;
 let cc = 'all', mode = 'language', selected = null;
 const open = new Set();
+// groups shut by hand: a country change keeps the legend as it was and opens the new country's
+// big groups (AUTO_OPEN) except these (Anita, 2026-10-13). A page load starts afresh.
+const shut = new Set();
+function toggleOpen(id) {
+  if (open.has(id)) { open.delete(id); shut.add(id); } else { open.add(id); shut.delete(id); }
+  buildPanel();
+}
 
 /* AUTO COUNTRY. While the picker is on Auto, the camera chooses between all countries and one
    country; see considerCamera. Picking anything else by hand (a country, or All countries) turns
@@ -797,6 +804,13 @@ const cbox = (st, title) => `<span class="cb"><input type="checkbox"${st === 2 ?
 /* After any change to HIDDEN: let go of a pinned tooltip (its wedges just changed), repaint
    the dots' palette and redo the pies from the cells already decoded. */
 function applyHidden() {
+  // a selection whose people are all hidden, while something else is shown, is easy to forget
+  // and leaves the map oddly coloured: let go of it (Anita, 2026-10-13)
+  if (selected && fullSubtree(selected).every(k => HIDDEN.has(k)) &&
+      Object.keys(NODES).some(k => !HIDDEN.has(k))) {
+    selected = null;
+    applyColours(false);
+  }
   unfreeze();
   dotLayer.palette();
   if (drawAs === 'pies') { sortPies(); pieLayer.upload(); }
@@ -888,7 +902,7 @@ function buildPanel(keepScroll = false) {
         `<span class="lb">Other languages</span>` +
         `<span class="ct" title="${Math.round(r.v).toLocaleString()} people · ${pct(s)} of ${where}"><span>${fmt(r.v)}</span>` +
         `<span class="bar"><i style="width:${(shareFill(s) * 100).toFixed(1)}%;background:#777"></i></span></span>`;
-      row.onclick = () => { open.has(r.id) ? open.delete(r.id) : open.add(r.id); buildPanel(); };
+      row.onclick = () => toggleOpen(r.id);
       addBox(row, visState(sumCounts(otherRoots.map(k => cnt[k]))),
              on => otherRoots.forEach(k => setSubtreeVisible(k, on)));
       tree.appendChild(row);
@@ -920,8 +934,7 @@ function buildPanel(keepScroll = false) {
       `<span class="bar"><i style="width:${(shareFill(s) * 100).toFixed(1)}%;background:${col}"></i></span></span>`;
     if (r.grp) row.querySelector('.tw').onclick = ev => {
       ev.stopPropagation();
-      open.has(r.id) ? open.delete(r.id) : open.add(r.id);
-      buildPanel();
+      toggleOpen(r.id);
     };
     if (!r.own) row.onclick = () => select(selected === r.id ? null : r.id);
     // a control inside a control: opening the editor must not also change the selection
@@ -1364,11 +1377,13 @@ function setCountry(c, fly = true, auto = false) {
   // open (Anita, 2026-10-06; before, only top-level groups). The world view keeps only
   // Indo-European open: the same rule there opened 954 legend rows against 108.
   // A group's people include its children's, so a group that passes has parents that pass too.
-  open.clear(); open.add('indoeuropean');
+  // Nothing is closed on a change: groups already open stay open, and a group shut by hand
+  // (`shut`) is not reopened (Anita, 2026-10-13).
   if (c !== 'all') {
     const sum = subtreeSums(scopeTally());
     const total = Object.keys(sum).filter(id => !parentOf(id)).reduce((a, id) => a + sum[id], 0);
-    for (const id of Object.keys(sum)) if (KIDS[id] && sum[id] > AUTO_OPEN * total) open.add(id);
+    for (const id of Object.keys(sum))
+      if (KIDS[id] && sum[id] > AUTO_OPEN * total && !shut.has(id)) open.add(id);
   }
   for (let p = selected && parentOf(selected); p; p = parentOf(p)) open.add(p);
   buildMeta(); buildPanel(); applyColours(); applyNotDrawn();
