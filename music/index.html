@@ -1,0 +1,538 @@
+---
+sitemap: false
+---
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  {%- include analytics.html -%}
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Music Map</title>
+  <meta name="description" content="Every artist in my Spotify liked songs, grouped by genre.">
+  <meta property="og:title" content="Music Map">
+  <meta property="og:description" content="Every artist in my Spotify liked songs, grouped by genre.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://anita.garden/music/">
+  <link rel="icon" type="image/png" href="/favicon.png">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700&display=swap" />
+  <style>
+    /* Panel and row metrics follow languagedots, so the map pages look like one family. */
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Nunito', sans-serif; }
+    html, body { height: 100%; }
+    body { background: #111; color: #eee; overflow: hidden; }
+    #map { position: absolute; inset: 0; width: 100%; height: 100%; touch-action: none; cursor: grab; }
+    #map.drag { cursor: grabbing; }
+    #map.hover { cursor: pointer; }
+
+    #panel {
+      position: absolute; top: 8px; right: 8px; z-index: 10;
+      background: rgba(20,20,20,0.76); border-radius: 8px;
+      font-size: 12px; color: #eee; width: 260px;
+      max-height: calc(100vh - 16px); max-height: calc(100dvh - 16px);
+      display: flex; flex-direction: column;
+    }
+    #panel-head { display: flex; align-items: center; gap: 6px; padding: 8px 10px 6px;
+                  border-bottom: 1px solid #2a2a2a; font-weight: 700; }
+    #panel-head a { color: #eee; text-decoration: none; }
+    #panel-head button { margin-left: auto; background: none; border: 1px solid #555; color: #ccc; width: 22px;
+      height: 22px; border-radius: 4px; cursor: pointer; font-size: 12px; line-height: 1; }
+    #panel-head button:hover { background: #333; color: #fff; }
+    #panel.min > :not(#panel-head) { display: none; }
+
+    #about { padding: 6px 10px; color: #999; line-height: 1.45; border-bottom: 1px solid #2a2a2a; }
+    #about a { color: #89b4fa; text-decoration: none; }
+
+    #search-wrap { padding: 6px 10px; border-bottom: 1px solid #2a2a2a; position: relative; }
+    #search { width: 100%; background: #1c1c1c; border: 1px solid #3a3a3a; border-radius: 4px;
+              color: #eee; font-size: 12px; padding: 4px 6px; outline: none; }
+    #search:focus { border-color: #5b6873; }
+    #results { margin-top: 4px; }
+    #results:empty { display: none; }
+
+    #clusters { overflow-y: auto; padding: 4px 0 8px; min-height: 0; flex: 1 1 auto; }
+    #clusters::-webkit-scrollbar, #card::-webkit-scrollbar { width: 6px; }
+    #clusters::-webkit-scrollbar-thumb, #card::-webkit-scrollbar-thumb { background: #555; border-radius: 3px; }
+    .row { display: flex; align-items: center; gap: 6px; padding: 1px 10px;
+           cursor: pointer; line-height: 1.45; }
+    .row:hover { background: #262626; }
+    .row.sel { background: #2f3b47; }
+    .row .dot { width: 9px; height: 9px; border-radius: 50%; flex: none; }
+    .row .lb { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .row .ct { flex: none; color: #888; font-variant-numeric: tabular-nums; font-size: 11px; }
+    #results .row { padding: 1px 0; }
+
+    #card {
+      position: absolute; left: 8px; bottom: 8px; z-index: 10; width: 280px;
+      max-height: 55vh; max-height: 55dvh; overflow-y: auto;
+      background: rgba(20,20,20,0.86); border-radius: 8px; padding: 8px 10px;
+      font-size: 12px; line-height: 1.45;
+    }
+    #card[hidden] { display: none; }
+    #card-head { display: flex; align-items: flex-start; gap: 6px; }
+    #card-name { font-weight: 700; color: #fff; flex: 1; }
+    #card-close { background: none; border: none; color: #888; font-size: 16px; cursor: pointer; line-height: 1; }
+    #card-close:hover { color: #fff; }
+    #card .sub { color: #999; }
+    #card .sub .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 4px; }
+    #card ol { margin: 5px 0 5px 18px; color: #ccc; }
+    #card a { color: #89b4fa; text-decoration: none; }
+
+    #tip {
+      position: fixed; z-index: 20; pointer-events: none; max-width: 240px;
+      background: rgba(20,20,20,0.92); border-radius: 6px; padding: 5px 8px;
+      font-size: 12px; line-height: 1.4; color: #ccc;
+    }
+    #tip[hidden] { display: none; }
+    #tip b { color: #fff; }
+
+    @media (max-width: 600px) {
+      #panel { left: 8px; width: auto; max-height: 60vh; max-height: 60dvh; background: rgba(20,20,20,0.94); }
+      #card { right: 8px; width: auto; max-height: 40vh; max-height: 40dvh; }
+    }
+  </style>
+</head>
+<body>
+<canvas id="map"></canvas>
+
+<div id="panel">
+  <div id="panel-head"><a href="/projects/">Music map</a><button id="min" title="Hide panel">–</button></div>
+  <div id="about"></div>
+  <div id="search-wrap">
+    <input id="search" type="search" placeholder="Find an artist" autocomplete="off" />
+    <div id="results"></div>
+  </div>
+  <div id="clusters"></div>
+</div>
+
+<div id="card" hidden>
+  <div id="card-head"><span id="card-name"></span><button id="card-close" title="Close">&#10005;</button></div>
+  <div class="sub" id="card-sub"></div>
+  <div class="sub" id="card-tags"></div>
+  <ol id="card-songs"></ol>
+  <a id="card-link" target="_blank" rel="noopener">Open in Spotify</a>
+</div>
+
+<div id="tip" hidden></div>
+
+<script>
+const canvas = document.getElementById('map');
+const ctx = canvas.getContext('2d');
+const tip = document.getElementById('tip');
+
+let data, artists, clusters, byCluster;
+let W = 0, H = 0, dpr = 1;
+// screen = world * k + (tx, ty); world coordinates are the 0-1 layout from cluster_genres.py
+let view = { k: 1, tx: 0, ty: 0 }, fitK = 1;
+let hovered = null, selected = null, focusCluster = null, hoverCluster = null;
+let dirty = true;
+
+/* One hue per cluster, 15 degrees apart around the wheel, handed out so that clusters near
+   each other on the map get hues far apart. Biggest clusters choose first. */
+function assignColors(cs) {
+  const n = cs.length;
+  const free = [...Array(n).keys()].map(i => i * 360 / n);
+  const done = [];
+  for (const c of [...cs].sort((a, b) => b.songs - a.songs)) {
+    let best = 0, bestScore = -1;
+    free.forEach((h, i) => {
+      let score = 1e9;
+      for (const o of done) {
+        const dh = Math.min(Math.abs(h - o.h), 360 - Math.abs(h - o.h));
+        const dist = Math.hypot(c.x - o.x, c.y - o.y);
+        score = Math.min(score, dh * (0.05 + dist));
+      }
+      if (score > bestScore) { bestScore = score; best = i; }
+    });
+    const h = free.splice(best, 1)[0];
+    done.push({ h, x: c.x, y: c.y });
+    // blues and purples read darker on black, so they get a lighter step
+    const light = h > 200 && h < 290 ? 70 : 62;
+    c.color = `hsl(${(h + 10).toFixed(0)}, 62%, ${light}%)`;
+  }
+}
+
+const fmt = n => n.toLocaleString('en-US');
+
+function radius(a) {
+  return (1.4 + 1.25 * Math.sqrt(a.songs)) * Math.pow(view.k / fitK, 0.45);
+}
+
+function fitView() {
+  const pad = Math.min(W, H) < 600 ? 24 : 60;
+  // leave room for the panel on wide screens
+  const right = W > 900 ? 270 : 0;
+  fitK = Math.min(W - right - 2 * pad, H - 2 * pad);
+  return { k: fitK, tx: (W - right - fitK) / 2, ty: (H - fitK) / 2 };
+}
+function fit() { view = fitView(); }
+
+function resize() {
+  dpr = window.devicePixelRatio || 1;
+  const first = W === 0;
+  const oldFit = fitK, oldView = { ...view };
+  W = window.innerWidth; H = window.innerHeight;
+  canvas.width = W * dpr; canvas.height = H * dpr;
+  if (first) fit();
+  else {
+    fit();
+    // keep the zoom the viewer chose, relative to the new fit
+    const z = oldView.k / oldFit;
+    const cx = (W / 2 - oldView.tx) / oldView.k, cy = (H / 2 - oldView.ty) / oldView.k;
+    view.k = fitK * z; view.tx = W / 2 - cx * view.k; view.ty = H / 2 - cy * view.k;
+  }
+  dirty = true;
+}
+
+const sx = x => x * view.k + view.tx;
+const sy = y => y * view.k + view.ty;
+
+function dimmed(a) {
+  const c = hoverCluster ?? focusCluster;
+  return c !== null && a.cluster !== c;
+}
+
+function draw() {
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.fillStyle = '#111';
+  ctx.fillRect(0, 0, W, H);
+  const zoom = view.k / fitK;
+
+  for (const a of artists) {
+    const x = sx(a.x), y = sy(a.y), r = radius(a);
+    if (x < -r || y < -r || x > W + r || y > H + r) continue;
+    ctx.globalAlpha = dimmed(a) ? 0.1 : 0.8;
+    ctx.fillStyle = a.color;
+    ctx.beginPath();
+    ctx.arc(x, y, r, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+
+  for (const a of [selected, hovered]) {
+    if (!a) continue;
+    ctx.strokeStyle = '#fff';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.arc(sx(a.x), sy(a.y), radius(a) + 2.5, 0, Math.PI * 2);
+    ctx.stroke();
+  }
+
+  // Labels: cluster names fade out as artist names take over.
+  const placed = [];
+  const fits = (x, y, w, h) => {
+    for (const p of placed) if (x < p.x + p.w && x + w > p.x && y < p.y + p.h && y + h > p.y) return false;
+    placed.push({ x, y, w, h });
+    return true;
+  };
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.lineJoin = 'round';
+
+  const clusterAlpha = Math.max(0, Math.min(1, 1 - (zoom - 2.5) / 1.5));
+  if (clusterAlpha > 0) {
+    ctx.font = '700 13px Nunito, sans-serif';
+    for (const c of clusters) {
+      const x = sx(c.x), y = sy(c.y);
+      const w = ctx.measureText(c.name).width + 8;
+      if (!fits(x - w / 2, y - 9, w, 18)) continue;
+      const dim = (hoverCluster ?? focusCluster) !== null && (hoverCluster ?? focusCluster) !== c.id;
+      ctx.globalAlpha = clusterAlpha * (dim ? 0.35 : 1);
+      ctx.strokeStyle = 'rgba(17,17,17,0.85)';
+      ctx.lineWidth = 4;
+      ctx.strokeText(c.name, x, y);
+      ctx.fillStyle = '#fff';
+      ctx.fillText(c.name, x, y);
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  // Bigger artists get names first; the bar drops as the viewer zooms in.
+  ctx.font = '400 11px Nunito, sans-serif';
+  const bar = 40 / (zoom * zoom);
+  for (const a of artists.bySize) {
+    if (a.songs < bar && a !== selected && a !== hovered) continue;
+    if (dimmed(a)) continue;
+    const x = sx(a.x), y = sy(a.y) - radius(a) - 7;
+    if (x < 0 || y < 0 || x > W || y > H) continue;
+    const w = ctx.measureText(a.name).width + 4;
+    if (!fits(x - w / 2, y - 7, w, 14)) continue;
+    ctx.strokeStyle = 'rgba(17,17,17,0.85)';
+    ctx.lineWidth = 3;
+    ctx.strokeText(a.name, x, y);
+    ctx.fillStyle = '#ddd';
+    ctx.fillText(a.name, x, y);
+  }
+}
+
+function frame() {
+  if (anim) stepAnim();
+  if (dirty) { draw(); dirty = false; }
+  requestAnimationFrame(frame);
+}
+
+/* ---- camera moves ---- */
+let anim = null;
+function clearHover() {
+  hovered = null;
+  tip.hidden = true;
+  canvas.classList.remove('hover');
+}
+function flyTo(target, ms = 450) {
+  anim = { from: { ...view }, to: target, t0: performance.now(), ms };
+  clearHover();
+}
+function stepAnim() {
+  const t = Math.min(1, (performance.now() - anim.t0) / anim.ms);
+  const e = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+  // interpolate the zoom in log space so it feels even
+  const k = Math.exp(Math.log(anim.from.k) * (1 - e) + Math.log(anim.to.k) * e);
+  const cx0 = (W / 2 - anim.from.tx) / anim.from.k, cy0 = (H / 2 - anim.from.ty) / anim.from.k;
+  const cx1 = (W / 2 - anim.to.tx) / anim.to.k, cy1 = (H / 2 - anim.to.ty) / anim.to.k;
+  const cx = cx0 + (cx1 - cx0) * e, cy = cy0 + (cy1 - cy0) * e;
+  view = { k, tx: W / 2 - cx * k, ty: H / 2 - cy * k };
+  dirty = true;
+  if (t >= 1) anim = null;
+}
+function viewAround(cx, cy, k) {
+  return { k, tx: W / 2 - cx * k, ty: H / 2 - cy * k };
+}
+function zoomToCluster(id) {
+  const m = byCluster[id];
+  let x0 = 1, y0 = 1, x1 = 0, y1 = 0;
+  for (const a of m) { x0 = Math.min(x0, a.x); y0 = Math.min(y0, a.y); x1 = Math.max(x1, a.x); y1 = Math.max(y1, a.y); }
+  const k = Math.min(fitK * 6, 0.7 * Math.min(W / (x1 - x0 + 0.02), H / (y1 - y0 + 0.02)));
+  flyTo(viewAround((x0 + x1) / 2, (y0 + y1) / 2, k));
+}
+function zoomAt(px, py, factor) {
+  const k = Math.max(fitK * 0.5, Math.min(fitK * 40, view.k * factor));
+  const f = k / view.k;
+  view = { k, tx: px - (px - view.tx) * f, ty: py - (py - view.ty) * f };
+  anim = null;
+  clearHover();
+  dirty = true;
+}
+
+/* ---- picking ---- */
+function pick(px, py) {
+  let best = null, bestD = Infinity;
+  for (const a of artists) {
+    if (dimmed(a)) continue;
+    const dx = sx(a.x) - px, dy = sy(a.y) - py;
+    const r = Math.max(radius(a), 4) + 3;
+    const d = dx * dx + dy * dy;
+    if (d < r * r && d < bestD) { best = a; bestD = d; }
+  }
+  return best;
+}
+
+// `also` is the second cluster an artist was pulled toward (cluster_genres.py)
+function clusterText(a) {
+  return a.also == null ? clusters[a.cluster].name : `${clusters[a.cluster].name} / ${clusters[a.also].name}`;
+}
+
+function showTip(a, px, py) {
+  if (!a) { tip.hidden = true; return; }
+  tip.innerHTML = '';
+  const b = document.createElement('b');
+  b.textContent = a.name;
+  tip.append(b, document.createElement('br'),
+    `${a.songs} liked song${a.songs === 1 ? '' : 's'} · ${clusterText(a)}`);
+  if (a.tags.length) tip.append(document.createElement('br'), a.tags.join(', '));
+  tip.hidden = false;
+  const r = tip.getBoundingClientRect();
+  let x = px + 14, y = py + 14;
+  if (x + r.width > W - 4) x = px - r.width - 14;
+  if (y + r.height > H - 4) y = py - r.height - 14;
+  tip.style.left = x + 'px';
+  tip.style.top = y + 'px';
+}
+
+function select(a, fly) {
+  selected = a;
+  dirty = true;
+  const card = document.getElementById('card');
+  if (!a) { card.hidden = true; return; }
+  document.getElementById('card-name').textContent = a.name;
+  const sub = document.getElementById('card-sub');
+  sub.innerHTML = '';
+  const dot = document.createElement('span');
+  dot.className = 'dot';
+  dot.style.background = a.color;
+  sub.append(dot, `${clusterText(a)} · ${a.songs} liked song${a.songs === 1 ? '' : 's'}`);
+  document.getElementById('card-tags').textContent = a.tags.length ? a.tags.join(', ') : 'No Last.fm tags';
+  const ol = document.getElementById('card-songs');
+  ol.innerHTML = '';
+  for (const t of a.titles) {
+    const li = document.createElement('li');
+    li.textContent = t;
+    ol.append(li);
+  }
+  document.getElementById('card-link').href = `https://open.spotify.com/artist/${a.id}`;
+  card.hidden = false;
+  card.scrollTop = 0;
+  if (fly) flyTo(viewAround(a.x, a.y, Math.max(view.k, fitK * 5)));
+}
+
+document.getElementById('card-close').onclick = () => select(null);
+
+/* ---- pointer input: drag to pan, wheel or pinch to zoom, tap to pick ---- */
+const pointers = new Map();
+let downAt = null, pinch = null;
+
+canvas.addEventListener('pointerdown', e => {
+  canvas.setPointerCapture(e.pointerId);
+  pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+  if (pointers.size === 1) downAt = { x: e.clientX, y: e.clientY, moved: false };
+  if (pointers.size === 2) {
+    const [p, q] = [...pointers.values()];
+    pinch = { d: Math.hypot(p.x - q.x, p.y - q.y) };
+    downAt = null;
+  }
+  anim = null;
+});
+
+canvas.addEventListener('pointermove', e => {
+  const prev = pointers.get(e.pointerId);
+  if (!prev) {
+    // plain hover with a mouse
+    const a = pick(e.clientX, e.clientY);
+    if (a !== hovered) { hovered = a; dirty = true; }
+    canvas.classList.toggle('hover', !!a);
+    showTip(a, e.clientX, e.clientY);
+    return;
+  }
+  const cur = { x: e.clientX, y: e.clientY };
+  if (pointers.size === 2 && pinch) {
+    pointers.set(e.pointerId, cur);
+    const [p, q] = [...pointers.values()];
+    const d = Math.hypot(p.x - q.x, p.y - q.y);
+    zoomAt((p.x + q.x) / 2, (p.y + q.y) / 2, d / pinch.d);
+    pinch.d = d;
+    return;
+  }
+  if (pointers.size === 1) {
+    view.tx += cur.x - prev.x;
+    view.ty += cur.y - prev.y;
+    pointers.set(e.pointerId, cur);
+    if (downAt && Math.hypot(cur.x - downAt.x, cur.y - downAt.y) > 5) {
+      downAt.moved = true;
+      canvas.classList.add('drag');
+      tip.hidden = true;
+    }
+    dirty = true;
+  }
+});
+
+function endPointer(e) {
+  if (!pointers.has(e.pointerId)) return;
+  pointers.delete(e.pointerId);
+  if (pointers.size < 2) pinch = null;
+  canvas.classList.remove('drag');
+  if (pointers.size === 0 && downAt && !downAt.moved) {
+    const a = pick(e.clientX, e.clientY);
+    select(a, false);
+    if (!a && focusCluster !== null) setFocus(null);
+  }
+  if (pointers.size === 0) downAt = null;
+}
+canvas.addEventListener('pointerup', endPointer);
+canvas.addEventListener('pointercancel', endPointer);
+canvas.addEventListener('pointerleave', () => {
+  if (hovered) { hovered = null; dirty = true; }
+  tip.hidden = true;
+});
+canvas.addEventListener('wheel', e => {
+  e.preventDefault();
+  zoomAt(e.clientX, e.clientY, Math.exp(-e.deltaY * (e.deltaMode ? 0.05 : 0.0015)));
+}, { passive: false });
+
+/* ---- panel ---- */
+function setFocus(id) {
+  focusCluster = id;
+  for (const row of document.querySelectorAll('#clusters .row'))
+    row.classList.toggle('sel', +row.dataset.id === id);
+  dirty = true;
+}
+
+function buildPanel() {
+  const about = document.getElementById('about');
+  about.textContent = 'These are the songs I have liked on Spotify! Genres are from ';
+  const lf = document.createElement('a');
+  lf.href = 'https://www.last.fm/';
+  lf.textContent = 'Last.fm';
+  about.append(lf, ' tags.');
+
+  const list = document.getElementById('clusters');
+  for (const c of [...clusters].sort((a, b) => b.songs - a.songs)) {
+    const row = document.createElement('div');
+    row.className = 'row';
+    row.dataset.id = c.id;
+    row.title = c.tags.join(', ');
+    row.innerHTML = '<span class="dot"></span><span class="lb"></span><span class="ct"></span>';
+    row.children[0].style.background = c.color;
+    row.children[1].textContent = c.name;
+    row.children[2].textContent = fmt(c.songs);
+    // mouse only: on touch the enter fires on tap and the leave never comes
+    row.onpointerenter = e => { if (e.pointerType === 'mouse') { hoverCluster = c.id; dirty = true; } };
+    row.onpointerleave = () => { hoverCluster = null; dirty = true; };
+    row.onclick = () => {
+      if (focusCluster === c.id) { setFocus(null); flyTo(fitView()); return; }
+      setFocus(c.id);
+      if (selected && selected.cluster !== c.id) select(null);
+      zoomToCluster(c.id);
+    };
+    list.append(row);
+  }
+
+  const search = document.getElementById('search');
+  const results = document.getElementById('results');
+  search.addEventListener('input', () => {
+    results.innerHTML = '';
+    const q = search.value.trim().toLowerCase();
+    if (!q) return;
+    const hits = artists.bySize.filter(a => a.name.toLowerCase().includes(q)).slice(0, 8);
+    for (const a of hits) {
+      const row = document.createElement('div');
+      row.className = 'row';
+      row.innerHTML = '<span class="dot"></span><span class="lb"></span><span class="ct"></span>';
+      row.children[0].style.background = a.color;
+      row.children[1].textContent = a.name;
+      row.children[2].textContent = a.songs;
+      row.onclick = () => {
+        if (focusCluster !== null && focusCluster !== a.cluster) setFocus(null);
+        select(a, true);
+        if (window.innerWidth <= 600) document.getElementById('panel').classList.add('min');
+      };
+      results.append(row);
+    }
+  });
+
+  document.getElementById('min').onclick = () => {
+    const p = document.getElementById('panel');
+    p.classList.toggle('min');
+    document.getElementById('min').textContent = p.classList.contains('min') ? '+' : '–';
+  };
+  if (window.innerWidth <= 600) document.getElementById('min').click();
+}
+
+window.addEventListener('resize', resize);
+
+fetch('genre_map.json').then(r => r.json()).then(d => {
+  data = d;
+  clusters = [];
+  for (const c of d.clusters) clusters[c.id] = { ...c };
+  assignColors(clusters);
+  artists = d.artists.map(a => ({ ...a, color: clusters[a.cluster].color }));
+  // draw big dots first so small ones stay visible on top
+  artists.sort((a, b) => b.songs - a.songs);
+  artists.bySize = artists;
+  byCluster = {};
+  for (const a of artists) (byCluster[a.cluster] ||= []).push(a);
+  resize();
+  buildPanel();
+  requestAnimationFrame(frame);
+  document.fonts.ready.then(() => { dirty = true; });
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,141 @@
+<!-- Link graph of the whole site. Data comes from assets/site_graph.json,
+     which scripts/build_site_graph.py writes from the built _site/. -->
+<style>
+  #site-graph { position: relative; margin: 15px 0; border: 1px solid var(--teal); background: var(--twhite); }
+  #site-graph svg { display: block; width: 100%; height: auto; }
+  #site-graph .edge { stroke: var(--text); stroke-opacity: 0.12; stroke-width: 0.7; }
+  #site-graph .edge.out { stroke: var(--dgreen); stroke-opacity: 0.9; stroke-width: 1.4; }
+  #site-graph .edge.in { stroke: #c2802f; stroke-opacity: 0.9; stroke-width: 1.4; }
+  #site-graph .edge.faded { stroke-opacity: 0.03; }
+  #site-graph .node { cursor: pointer; stroke: var(--white); stroke-width: 1; }
+  #site-graph .node.faded { opacity: 0.15; }
+  #site-graph .node.focus { stroke: var(--black); stroke-width: 1.5; }
+  #site-graph .label { font-family: Georgia; font-size: 10px; fill: var(--text); pointer-events: none;
+                       paint-order: stroke; stroke: var(--lgreen); stroke-width: 3px; stroke-linejoin: round; }
+  #site-graph .label.hidden { display: none; }
+  #site-graph .label.focus { font-weight: bold; }
+  /* Unlabelled switch in the corner: hollow sizes dots by link count, filled by page views. */
+  #site-graph-size { position: absolute; left: 6px; bottom: 6px; width: 10px; height: 10px; padding: 0;
+                     border: 1px solid var(--teal); border-radius: 50%; background: var(--white); cursor: pointer; }
+  #site-graph-size[aria-pressed="true"] { background: var(--teal); }
+</style>
+
+<div id="site-graph"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
+<script>
+(function() {
+  var W = 900, H = 640;
+  var COLORS = {
+    home: '#204939', projects: '#7a9221', thoughts: '#501000', friends: '#c45c7a',
+    places: '#3f7fa8', anita: '#d08a2e', shonei: '#8a5bb0', photos: '#5aa38c',
+    lists: '#b8a032', anemos: '#9c6b4a', shop: '#d35a3a', other: '#9a9a8a'
+  };
+  // Labels longer than this are cut short so hover labels crowd each other less.
+  var LABEL_CHARS = 26;
+
+  fetch('/assets/site_graph.json').then(function(r) { return r.json(); }).then(draw);
+
+  function draw(data) {
+    var nodes = data.nodes, links = data.links;
+    var byId = {};
+    nodes.forEach(function(n) { n.out = []; n.in = []; byId[n.id] = n; });
+    links.forEach(function(l) { byId[l.source].out.push(l.target); byId[l.target].in.push(l.source); });
+    nodes.forEach(function(n) { n.degree = n.out.length + n.in.length; });
+    maxViews = d3.max(nodes, function(n) { return n.views || 0; }) || 0;
+
+    // Run the layout to rest up front so the picture doesn't wobble in.
+    var sim = d3.forceSimulation(nodes)
+      .force('link', d3.forceLink(links).id(function(d) { return d.id; }).distance(40).strength(0.3))
+      .force('charge', d3.forceManyBody().strength(-90))
+      // Room for the bigger of the two sizes, so the toggle never makes dots overlap.
+      .force('collide', d3.forceCollide().radius(function(d) { return Math.max(linkRadius(d), viewRadius(d)) + 3; }))
+      // Unlinked pages get pulled in harder, or they drift off and shrink the fit.
+      .force('x', d3.forceX(W / 2).strength(function(d) { return d.degree ? 0.06 : 0.4; }))
+      .force('y', d3.forceY(H / 2).strength(function(d) { return d.degree ? 0.09 : 0.5; }))
+      .stop();
+    sim.tick(400);
+    // Fit whatever came out into the box.
+    var pad = 30;
+    var xs = d3.extent(nodes, function(d) { return d.x; }), ys = d3.extent(nodes, function(d) { return d.y; });
+    var k = Math.min((W - 2 * pad) / (xs[1] - xs[0]), (H - 2 * pad) / (ys[1] - ys[0]));
+    nodes.forEach(function(d) {
+      d.x = pad + (d.x - xs[0]) * k + ((W - 2 * pad) - (xs[1] - xs[0]) * k) / 2;
+      d.y = pad + (d.y - ys[0]) * k + ((H - 2 * pad) - (ys[1] - ys[0]) * k) / 2;
+    });
+
+    var svg = d3.select('#site-graph').append('svg').attr('viewBox', [0, 0, W, H]);
+    var edge = svg.append('g').selectAll('line').data(links).join('line')
+      .attr('class', 'edge')
+      .attr('x1', function(d) { return d.source.x; }).attr('y1', function(d) { return d.source.y; })
+      .attr('x2', function(d) { return d.target.x; }).attr('y2', function(d) { return d.target.y; });
+    var node = svg.append('g').selectAll('circle').data(nodes).join('circle')
+      .attr('class', 'node')
+      .attr('r', radius)
+      .attr('cx', function(d) { return d.x; }).attr('cy', function(d) { return d.y; })
+      .attr('fill', function(d) { return COLORS[d.group] || COLORS.other; });
+    node.append('title').text(function(d) { return d.title + '  ' + d.id; });
+    var label = svg.append('g').selectAll('text').data(nodes).join('text')
+      .attr('class', labelClass)
+      .attr('x', function(d) { return d.x + radius(d) + 3; }).attr('y', function(d) { return d.y + 3; })
+      .text(function(d) {
+        return d.title.length > LABEL_CHARS ? d.title.slice(0, LABEL_CHARS - 1).trim() + '…' : d.title;
+      });
+
+    var focused = null;
+    function focus(d) {
+      focused = d;
+      if (!d) {
+        node.classed('faded', false).classed('focus', false);
+        edge.classed('out', false).classed('in', false).classed('faded', false);
+        label.attr('class', labelClass);
+        return;
+      }
+      var near = new Set([d.id].concat(d.out, d.in));
+      node.classed('faded', function(n) { return !near.has(n.id); })
+          .classed('focus', function(n) { return n === d; });
+      edge.classed('out', function(l) { return l.source === d; })
+          .classed('in', function(l) { return l.target === d && l.source !== d; })
+          .classed('faded', function(l) { return l.source !== d && l.target !== d; });
+      label.attr('class', function(n) { return n === d ? 'label focus' : near.has(n.id) ? 'label' : 'label hidden'; });
+      // Draw the hovered page's edges and labels on top.
+      edge.filter(function(l) { return l.source === d || l.target === d; }).raise();
+      label.filter(function(n) { return near.has(n.id); }).raise();
+    }
+
+    // Mouse: hover highlights, click opens. Touch: the first tap highlights,
+    // a second tap on the same dot opens it.
+    var lastPointer = 'mouse';
+    node.on('pointerdown', function(e) { lastPointer = e.pointerType; })
+        .on('pointerenter', function(e, d) { if (e.pointerType === 'mouse') focus(d); })
+        .on('pointerleave', function(e) { if (e.pointerType === 'mouse') focus(null); })
+        .on('click', function(e, d) {
+          if (lastPointer !== 'mouse' && focused !== d) { focus(d); return; }
+          window.location.href = d.id;
+        });
+    svg.on('click', function(e) { if (e.target.tagName === 'svg') focus(null); });
+
+    // No view counts in the data means nothing to switch to, so no button.
+    if (!maxViews) return;
+    var toggle = d3.select('#site-graph').append('button')
+      .attr('id', 'site-graph-size').attr('type', 'button')
+      .attr('aria-label', 'size by page views').attr('aria-pressed', 'false')
+      .on('click', function() {
+        byViews = !byViews;
+        toggle.attr('aria-pressed', byViews ? 'true' : 'false');
+        node.transition().duration(400).attr('r', radius);
+        label.transition().duration(400).attr('x', function(d) { return d.x + radius(d) + 3; });
+      });
+  }
+
+  // Dots are sized by link count, or by page views once the corner button is
+  // pressed. Views run from 1 to thousands, so they go on a log scale; a linear
+  // one would leave all but the map pages as specks.
+  var maxViews = 0, byViews = false;
+  function linkRadius(d) { return 2.5 + Math.sqrt(d.degree) * 1.3; }
+  function viewRadius(d) { return maxViews ? 2 + Math.log1p(d.views || 0) / Math.log1p(maxViews) * 12 : 0; }
+  function radius(d) { return byViews ? viewRadius(d) : linkRadius(d); }
+  // Only each section's index page (/thoughts/, /friends/, ...) is labelled at rest.
+  function labelClass(d) { return d.id === '/' || d.id === '/' + d.group + '/' ? 'label' : 'label hidden'; }
+})();
+</script>

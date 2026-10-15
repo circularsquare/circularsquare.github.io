@@ -65,6 +65,16 @@ exclude:
   - vendor/gems/
   - vendor/ruby/
   - pendingnotes.md
+  # Inputs to scripts/cluster_genres.py; the page only needs genre_map.json.
+  - music/liked_songs.json
+  - music/artist_tags.json
+  - music/cluster_names.json
+  # Working files that aren't part of the site.
+  - todo.txt
+  - serve.sh
+  - README.md
+  - package-lock.json
+  - scripts/
 
 # exclude:
 #   - .sass-cache/
