@@ -28,7 +28,8 @@ SITE = os.path.join(REPO, "_site")
 OUT = os.path.join(REPO, "assets", "site_graph.json")
 VIEWS_CSV = os.path.join(REPO, "scripts", "page_views.csv")
 HOSTS = {"", "anita.garden", "www.anita.garden", "circularsquare.github.io"}
-SKIP_URLS = {"/404.html"}
+# /agents/ is the AI-agent guestbook, deliberately kept out of anything humans browse.
+SKIP_URLS = {"/404.html", "/agents/"}
 
 
 class PageParser(HTMLParser):
