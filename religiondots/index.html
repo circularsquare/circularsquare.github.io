@@ -692,6 +692,8 @@ sitemap: false
       font-variant-numeric: tabular-nums;
     }
     .maplibregl-popup-content .cm-c { color: #999; margin-top: 1px; }
+    /* the pie card's place line: row-sized and grey, not a heading (Anita 2026-10-16) */
+    .maplibregl-popup-content .cm-w { color: #999; margin-bottom: 2px; }
     /* §17's pie card: a larger copy of the pie beside §10.6's rows. A clicked pie's card stays
        (`.pin`), takes the pointer, and its folded rows open into their members. */
     .maplibregl-popup-content .pz { flex: none; display: block; margin-top: 2px; }
@@ -709,13 +711,24 @@ sitemap: false
     .maplibregl-popup.pin .more:hover { background: #333; }
     /* A NAME SITS ON ONE LINE (Anita, 2026-10-12, over the United States: "Christianity,
        unspecified" and "Stone-Campbell Restorationist" broke one word to a line in a 240px card).
-       The card grows instead (PIE_CARD_MAX), and only a name past ~300px, or a narrow phone, is
+       The card grows instead (PIE_CARD_MAX), and only a name past the cap, or a narrow phone, is
        cut with an ellipsis, the full name on hover. The share and people columns keep their
-       fixed widths, so they still line up. */
+       fixed widths, so they still line up.
+       THE CAP IS 190px, 2026-10-16: "Seventh Day Baptist General Conference, USA and Ca..." and
+       "Friends General Conference and Friends United Meeti..." were still too long at 300px.
+       A name inside an open row sits 15px further in, so its cap is 15px less and the share
+       column keeps one right edge. */
     .maplibregl-popup-content .pc .cm-l {
       white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-      max-width: min(300px, calc(100vw - 230px));
+      max-width: min(190px, calc(100vw - 230px));
     }
+    .maplibregl-popup-content .pc .ex .cm-l { max-width: min(175px, calc(100vw - 245px)); }
+    /* in a kept card the name is the link to the legend (revealInLegend); the rest of its row
+       opens and shuts it */
+    .maplibregl-popup.pin .cm-r[data-n] .cm-l { cursor: pointer; }
+    .maplibregl-popup.pin .cm-r[data-n] .cm-l:hover { text-decoration: underline; }
+    /* the legend row a pie's name led to (revealInLegend); no transition, it is taken off by a timer */
+    #tree .row.flash, #tree .row.flash:hover { background: #4f6173; }
     .maplibregl-popup-content .ex { padding-left: 15px; max-height: 40vh; overflow-y: auto; overflow-x: hidden;
       scrollbar-width: thin; scrollbar-color: #555 transparent; }
     .maplibregl-popup-content .more { color: #999; }
@@ -5785,7 +5798,8 @@ function dotPieRows() {
         const node = BY_ID[key];
         r = { key, col: idx.has(key) ? idx.get(key) : i, ord: ord[key] ?? Infinity,
               fam: famOf(key), sel: node ? key : null,
-              label: (node ? node.label : key) + (SPLIT.has(key) ? ', unspecified' : '') };
+              // a split branch's own dots read as the branch's name (Anita, 2026-10-16: no "unspecified")
+              label: node ? node.label : key };
       }
       rows.set(key, r);
     }
@@ -6232,10 +6246,96 @@ function clearPieBox() {
   rebuildDotPies();
 }
 
+/* ---- WHERE A PIE CARD IS, languagedots' code (its "WHERE A TOOLTIP IS": Anita there, 2026-10-08,
+   the city "so that its easy to get a sense of where we are", with "near" dropped when the city is
+   very near, "very" depending on its size). The basemap's own place points (OpenMapTiles `place`:
+   class city/town/village and a rank, 1 the most important) in the tiles loaded now, gathered when
+   the map comes to rest. Each place gets an "in" radius from its class and rank (placeR, km); the
+   place chosen is the one nearest relative to its radius, so a big city 20 km off beats a village
+   3 km off. Within its radius the line names it; out to PLACE_NEAR radii it says "near"; beyond
+   that, the first-level division the point falls in (languagedots' admin1_shapes.geojson, fetched
+   from its folder the first time a card has no place, and until it lands the country alone). */
+const PLACE_NEAR = 6;
+let PLACES = [];
+function placeR(cls, rank) {
+  if (cls === 'village') return 1;
+  if (cls === 'town') return 2.5;
+  return rank <= 1 ? 30 : rank <= 2 ? 25 : rank <= 3 ? 20 : rank <= 4 ? 15 : rank <= 5 ? 12
+       : rank <= 6 ? 9 : rank <= 8 ? 7 : rank <= 10 ? 5 : 4;
+}
+const englishName = p => (p.name_en && p.name_en.length >= 3 ? p.name_en : p['name:latin'] || p.name);
+function gatherPlaces() {
+  if (!map.getSource('openmaptiles')) return;
+  const seen = new Set(), out = [];
+  for (const f of map.querySourceFeatures('openmaptiles', { sourceLayer: 'place' })) {
+    const p = f.properties, cls = p.class;
+    if (cls !== 'city' && cls !== 'town' && cls !== 'village') continue;
+    const [lng, lat] = f.geometry.coordinates, name = englishName(p);
+    const k = name + '|' + lng.toFixed(3) + '|' + lat.toFixed(3);
+    if (!name || seen.has(k)) continue;
+    seen.add(k);
+    out.push({ lng, lat, name, r: placeR(cls, p.rank) });
+  }
+  PLACES = out;
+}
+const LD_R2 = 'https://pub-ae551368cea941f39101e13c84d60bde.r2.dev/languagedots/';
+let ADMIN1 = null, admin1P = null;
+function loadAdmin1() {
+  if (admin1P) return;
+  // next door on the maps server; the published site has no languagedots folder with data in it
+  const url = (DATA_BASE === 'data/' ? '../languagedots/' : LD_R2) + 'admin1_shapes.geojson';
+  admin1P = fetch(url).then(r => r.ok ? r.json() : null)
+    .then(gj => {
+      if (!gj) return;
+      const out = [];
+      for (const f of gj.features) {
+        const polys = f.geometry.type === 'Polygon' ? [f.geometry.coordinates] : f.geometry.coordinates;
+        for (const poly of polys) {
+          const ring = poly[0];
+          let w = 180, e = -180, s = 90, n = -90;
+          for (const p of ring) { if (p[0] < w) w = p[0]; if (p[0] > e) e = p[0]; if (p[1] < s) s = p[1]; if (p[1] > n) n = p[1]; }
+          out.push({ name: f.properties.n, ring, w, e, s, n });
+        }
+      }
+      ADMIN1 = out;
+      renderPin();                       // a kept card that had no place yet now has one
+    }).catch(() => {});
+}
+function inRing(r, x, lat) {
+  let inside = false;
+  for (let i = 0, j = r.length - 1; i < r.length; j = i++) {
+    const xi = r[i][0], yi = r[i][1], xj = r[j][0], yj = r[j][1];
+    if ((yi > lat) !== (yj > lat) && x < (xj - xi) * (lat - yi) / (yj - yi) + xi) inside = !inside;
+  }
+  return inside;
+}
+const wrapLng = lng => ((lng + 180) % 360 + 360) % 360 - 180;
+function admin1At(lng, lat) {
+  if (!ADMIN1) { loadAdmin1(); return ''; }
+  const x = wrapLng(lng);
+  for (const p of ADMIN1)
+    if (x >= p.w && x <= p.e && lat >= p.s && lat <= p.n && inRing(p.ring, x, lat)) return p.name;
+  return '';
+}
+const mercLat = y => Math.atan(Math.sinh(Math.PI * (1 - 2 * y))) * 180 / Math.PI;
+// "Newark, United States", "near Newark, United States", "Xinjiang, China", or the country alone
+function placeLine(lng, lat, country) {
+  const kx = 111.32 * Math.cos(lat * Math.PI / 180), ky = 110.57;
+  let best = null, bestQ = Infinity;
+  for (const p of PLACES) {
+    const dx = (p.lng - lng) * kx, dy = (p.lat - lat) * ky;
+    const q = Math.sqrt(dx * dx + dy * dy) / p.r;
+    if (q < bestQ) { bestQ = q; best = p; }
+  }
+  let where = !best || bestQ > PLACE_NEAR ? '' : (bestQ <= 1 ? '' : 'near ') + best.name;
+  if (!where) { where = admin1At(lng, lat); if (where === country) where = ''; }
+  return [where, country].filter(Boolean).join(', ');
+}
+
 /* ---- THE PIE CARD. §10.6's rows (key, name, share, people) beside a larger copy of the pie in
    the same wedges and colours, from north, clockwise, as the shader draws them. Shares are of
    the pie, so they add up to 100%. A click keeps it (PIE_PIN); a kept card's folded rows open into
-   their members (the ten largest, then "N more"), and its pie splits the open wedge the same
+   their members (the PIE_TIP_TOP largest, then "N more"), and its pie splits the open wedge the same
    way; a double-click on a row selects that religion, as on a dot.
    §17.17: ANY ROW HOLDING PEOPLE COUNTED FINER THAN IT OPENS TOO (Anita, 2026-10-12, over North
    Korea: "East Asian new religions 13%" should split into its subgroups). The pie's parts are the
@@ -6245,7 +6345,7 @@ function clearPieBox() {
    The map's pie stays one colour per row; in the card a subgroup takes a shade of the row's
    colour (`under`), so the slice splits visibly and still reads as that row. Kept cards only: a
    hover card does not take the pointer. */
-const PIE_TIP_TOP = 10;
+const PIE_TIP_TOP = 8;             // rows a card (and each open list in it) shows before "N more"; 10 until 2026-10-16
 // the card's widest: room for a long name on one line, and never past a phone's edge
 const PIE_CARD_MAX = 'min(560px, calc(100vw - 16px))';
 let PIE_PIN = null;                    // {popup, pie, at, open: Set, all: Set}
@@ -6295,7 +6395,7 @@ function pieCardHTML(c, pin) {
       const finer = e.xs.some(x => idOf(x) !== e.id);
       const col = own ? rootCol : shade(subs.indexOf(e));
       return { key: (own ? 'u:' : 'n:') + e.id, p: e.p, sel: e.id,
-               label: own ? labelOf(root) + ', unspecified' : labelOf(e.id),
+               label: labelOf(own ? root : e.id),
                col, kids: finer && !own ? () => under(e.id, e.xs, col) : null };
     });
     /* a level with one branch in it says nothing: North Korea's East Asian new religions are all
@@ -6331,7 +6431,7 @@ function pieCardHTML(c, pin) {
     return rowItem(q.row);
   };
   const isOpen = it => pin && it.kids && pin.open.has(it.key);
-  // an open item's sub-items, largest first: the ten largest, then "N more", which shows the rest
+  // an open item's sub-items, largest first: the PIE_TIP_TOP largest, then "N more", which shows the rest
   const shownOf = it => {
     const ms = it.kids().sort((a, b) => b.p - a.p);
     const all = pin.all.has(it.key) || ms.length <= PIE_TIP_TOP + 1;
@@ -6347,16 +6447,29 @@ function pieCardHTML(c, pin) {
       h += '<div class="ex">' + shown.map(render).join('');
       if (!all) {
         const rest = it.p - shown.reduce((s, m) => s + m.p, 0);
-        h += `<div class="cm-r more" data-more="${esc(it.key)}"><span class="key"></span>`
-          + `<span class="cm-l">${ms.length - PIE_TIP_TOP} more</span>`
-          + `<span class="cm-p">${pctText(rest / tot)}</span><span class="cm-n"></span><span class="tw"></span></div>`;
+        h += moreRow(ms.length - PIE_TIP_TOP, rest, it.key);
       }
       h += '</div>';
     }
     return h;
   };
+  /* "N more": the share and the people of what is left out, as languagedots' "N more" row says its share */
+  function moreRow(n, p, key) {
+    return `<div class="cm-r more"${pin ? ` data-more="${esc(key)}"` : ''}><span class="key"></span>`
+      + `<span class="cm-l">${n} more</span>`
+      + `<span class="cm-p">${pctText(p / tot)}</span><span class="cm-n">${fmtPop(Math.round(p * DOT_VALUE))}</span>`
+      + `<span class="tw"></span></div>`;
+  }
   const last = q => q.lump === 'hid' ? 3 : q.lump === 'other' ? 2 : q.lump ? 1 : 0;
-  const rows = [...ws].sort((a, b) => last(a) - last(b) || b.p - a.p).map(q => render(wedgeItem(q))).join('');
+  /* AT MOST PIE_TIP_TOP ROWS, the largest first (the folded ones after the named ones), and the
+     rest are one "N more" row with their summed share and people; a kept card opens it into all of
+     them. One row left over is shown as itself, as the open lists do (shownOf). The pie copy
+     beside the rows is not touched: it keeps every wedge in its own colour. */
+  const tops = [...ws].sort((a, b) => last(a) - last(b) || b.p - a.p).map(wedgeItem);
+  const topAll = tops.length <= PIE_TIP_TOP + 1 || (pin && pin.all.has('top'));
+  const topShown = topAll ? tops : tops.slice(0, PIE_TIP_TOP);
+  let rows = topShown.map(render).join('');
+  if (!topAll) rows += moreRow(tops.length - PIE_TIP_TOP, tops.slice(PIE_TIP_TOP).reduce((s, m) => s + m.p, 0), 'top');
   // the copy of the pie: an open item's slice splits into what its list shows, as deep as it is open
   const slices = it => {
     if (!isOpen(it)) return [{ p: it.p, hex: it.col }];
@@ -6379,8 +6492,11 @@ function pieCardHTML(c, pin) {
   const svg = `<svg class="pz" viewBox="-1.02 -1.02 2.04 2.04" width="60" height="60" `
     + `style="opacity:${DOT_ALPHA}">${body}</svg>`;
   const names = (c.merged ? c.ccs : [c.cc]).map(cc => META[cc] ? META[cc].name : cc);
+  /* where the pie is, in languagedots' words ("near Newark, United States"); a box spans too much
+     for one place, so it keeps the list of its countries */
+  const where = c.merged ? '' : placeLine(c.x * 360 - 180, mercLat(c.y), names[0]);
   const people = fmtPop(Math.round(tot * DOT_VALUE)) + ' people' + (c.merged ? ' inside the box' : '');
-  return svg + `<div class="cm pc"><b>${esc(fmtList(names))}</b>${rows}`
+  return svg + `<div class="cm pc"><div class="cm-w">${esc(where || fmtList(names))}</div>${rows}`
     + `<div class="cm-c">${people}</div></div>`;
 }
 
@@ -6397,11 +6513,78 @@ function renderPin() {
   PIE_PIN.popup.setHTML(pieCardHTML(PIE_PIN.pie, PIE_PIN));
   if (el) el.querySelectorAll('.ex').forEach((l, i) => { if (ex[i]) l.scrollTop = ex[i]; });
 }
+/* A religion in a kept pie card, found in the legend (languagedots' `reveal`, Anita there
+   2026-10-05: hovering a pie names a language, but not where it sits in the tree). Puts the sheet
+   up on the phone, opens every branch and bucket above the row, scrolls it to the middle and
+   marks it for a few seconds; nothing is selected. A node the legend draws no row for (finer than
+   the cut it is showing) leads to the nearest ancestor that has one. The open branches are the
+   page's DOM and so last until the legend next redraws. */
+let flashTimer = 0;
+function revealInLegend(id) {
+  const panel = document.getElementById('panel');
+  if (panel.classList.contains('shut')) document.getElementById('panel-head').click();
+  const tree = document.getElementById('tree');
+  let at = id, row = null;
+  while (at && !(row = tree.querySelector(`.row[data-id="${at}"]`))) at = parentOf(at);
+  if (!row) return;
+  const tws = [...tree.querySelectorAll('[data-tw]')];
+  for (let k = row.closest('.kids'); k; k = k.parentElement.closest('.kids')) {
+    k.classList.add('open');
+    const key = k.dataset.kids, hit = tws.find(t => t.dataset.tw === key);
+    const t = hit && (hit.classList.contains('tw') ? hit : hit.querySelector('.tw'));
+    if (t) t.textContent = '▾';
+    if (key.startsWith('grp:')) OPEN_GROUPS.add(key.slice(4));    // §10.7: remembered across rebuilds
+  }
+  tree.querySelectorAll('.row.flash').forEach(r => r.classList.remove('flash'));
+  row.scrollIntoView({ block: 'center' });
+  row.classList.add('flash');
+  clearTimeout(flashTimer);
+  flashTimer = setTimeout(() => row.classList.remove('flash'), 3000);
+}
+/* A CARD THAT IS NOT SHARP (2026-10-16: expanding "N more" on a kept card made the whole card and
+   its text blurry). MapLibre 4.7 places a popup with `translate(-50%, -100%) translate(Xpx, Ypx)`:
+   the offset is rounded to whole pixels, but the percentages are of the card's own size, and a
+   card is as wide and as tall as its text happens to be (351.75 x 237.4375), so half of an odd or
+   fractional size lands the whole layer on a fraction of a pixel and the browser resamples it.
+   So the card's size is made a whole, EVEN number of pixels (half of it is whole, and so is a
+   side anchor's 50%), rounded up, or down where a max-width or max-height holds it. The size is
+   set on the content element, and cleared whenever the content is replaced (MapLibre keeps the
+   element and empties it), so each new content is measured once and a pan, which only moves the
+   card, does no layout. It wraps this popup's own `_update` and so has to run before addTo,
+   which hands that function to the map's events. */
+function crispPopup(popup) {
+  const orig = popup._update, setDOM = popup.setDOMContent.bind(popup);
+  popup.setDOMContent = node => {
+    if (popup._content) popup._content.style.width = popup._content.style.height = popup._content.style.maxHeight = '';
+    return setDOM(node);
+  };
+  const even = (v, up) => 2 * (up ? Math.ceil(v / 2 - 1e-6) : Math.floor(v / 2 + 1e-6));
+  const px = s => parseFloat(s) || 0;
+  popup._update = e => {
+    orig(e);
+    const c = popup._content, box = popup._container;
+    if (!c || !box || c.style.width) return;
+    const cs = getComputedStyle(c), bs = getComputedStyle(box), r = c.getBoundingClientRect();
+    const b = cs.boxSizing === 'border-box';
+    const exW = b ? 0 : px(cs.paddingLeft) + px(cs.paddingRight) + px(cs.borderLeftWidth) + px(cs.borderRightWidth);
+    const exH = b ? 0 : px(cs.paddingTop) + px(cs.paddingBottom) + px(cs.borderTopWidth) + px(cs.borderBottomWidth);
+    const br = box.getBoundingClientRect();
+    const maxW = bs.maxWidth.endsWith('px') ? px(bs.maxWidth) - (br.width - r.width) : Infinity;
+    const maxH = cs.maxHeight.endsWith('px') ? px(cs.maxHeight) : Infinity;
+    const w = r.width >= maxW - 0.01 ? even(maxW, false) : even(r.width, true);
+    const h = r.height >= maxH - 0.01 ? even(maxH, false) : even(r.height, true);
+    c.style.width = (w - exW) + 'px';
+    c.style.height = (h - exH) + 'px';
+    if (isFinite(maxH)) c.style.maxHeight = (even(maxH, false) - exH) + 'px';
+    orig(e);                             // the anchor is chosen from the size
+  };
+  return popup;
+}
 function pinPie(c, lngLat) {
   if (PIE_PIN && PIE_PIN.pie === c) { PIE_PIN.at = lngLat; PIE_PIN.popup.setLngLat(lngLat); return; }
   unpinPie();
-  const popup = new maplibregl.Popup({ closeButton: false, closeOnClick: false, className: 'pin',
-                                       maxWidth: PIE_CARD_MAX });
+  const popup = crispPopup(new maplibregl.Popup({ closeButton: false, closeOnClick: false, className: 'pin',
+                                                   maxWidth: PIE_CARD_MAX }));
   PIE_PIN = { popup, pie: c, at: lngLat, open: new Set(), all: new Set() };
   popup.setLngLat(lngLat).setHTML(pieCardHTML(c, PIE_PIN)).addTo(map);
   const el = popup.getElement();
@@ -6410,6 +6593,9 @@ function pinPie(c, lngLat) {
     el.addEventListener(t, e => e.stopPropagation());
   el.addEventListener('click', e => {
     if (!PIE_PIN) return;
+    // a religion's name leads to its legend row; the rest of its row (arrow, share, people) opens and shuts it
+    const nm = e.target.closest('.cm-l'), nr = nm && nm.closest('[data-n]');
+    if (nr && BY_ID[nr.dataset.n]) { revealInLegend(nr.dataset.n); return; }
     const x = e.target.closest('[data-x],[data-more]');
     if (!x) return;
     if (x.dataset.more) PIE_PIN.all.add(x.dataset.more);
@@ -6637,8 +6823,7 @@ function countryCardAt(lngLat) {
     return usable(c)
       ? `<span class="key" style="background:${c}"></span>` : '<span class="key"></span>';
   };
-  const labelOf = (r) => !r.own ? BY_ID[r.id].label
-    : r.id === scope ? 'unspecified' : BY_ID[r.id].label + ', unspecified';
+  const labelOf = (r) => BY_ID[r.id].label;     // an own row reads as the branch's name, no "unspecified"
   // the people as well as the share, Anita 2026-09-14: *"hover over iraq see shia 45% and 21m"*
   const line = (r, of, cls) => `<div class="cm-r${cls}">${keyOf(r)}`
     + `<span class="cm-l">${esc(labelOf(r))}</span><span class="cm-p">${pctText(r.n / of)}</span>`
@@ -7135,7 +7320,7 @@ function renderTree() {
           + '<span class="tw"></span>'
           + `<span class="hit pick" data-swatch="${id}" title="set this colour, or hide it">`
           + `<span class="dot" style="background:${colorOf[id]}"></span></span>`
-          + '<span class="lb">unspecified</span>'
+          + `<span class="lb">${esc(n.label)}</span>`   // the branch's own name, quiet and italic (.row.res)
           /* THIS ROW'S BOX IS THE ONE PLACE A NODE MOVES WITHOUT ITS SUBTREE, and it is the
              row §10.3 was written for: these are the branch's OWN dots, the sources that named
              the branch and no body below it. Across the archive they are 46% of the marks, so
@@ -10613,7 +10798,10 @@ map.on('load', async () => {
   if ((tallies.dot_values || []).includes(10000)) EDITIONS = ['', '10k'];
 
   NODES = tree.nodes;
-  for (const n of NODES) BY_ID[n.id] = n;
+  /* DISPLAY TEXT ONLY: "Protestant, unspecified" and "Evangelical, unspecified" read as "Protestant"
+     and "Evangelical" (Anita, 2026-10-16: the word is clutter). The ids, the data and the taxonomy
+     file are untouched. */
+  for (const n of NODES) { BY_ID[n.id] = n; n.label = n.label.replace(/, unspecified$/, ''); }
   /* branches.py LINEAGE, flattened to "where does this node sit in its parent's descent
      order". A parent with no entry keeps size order. */
   for (const parent in (tree.lineage || {})) {
@@ -10825,7 +11013,7 @@ map.on('load', async () => {
      actually hits, so over empty map nothing fires and the double-click still zooms; and the
      event object is the shared one, so `preventDefault` reaches `clickZoom` and takes the
      gesture off the zoom whenever it IS a dot. */
-  const pop = new maplibregl.Popup({ closeButton: false, closeOnClick: false });
+  const pop = crispPopup(new maplibregl.Popup({ closeButton: false, closeOnClick: false }));
 
   /* WHAT THE CARD SAYS IS BUILT IN ONE PLACE, because there are two hover paths into it — this
      one for the merged marks and the rings, and SCATTER's below for the unmerged dots — and a
@@ -10964,6 +11152,7 @@ map.on('load', async () => {
     if (html) { dwellStop(); pop.setLngLat(e.lngLat).setHTML(html).addTo(map); } else dwellArm(e);
   });
   wirePies(pop);
+  map.on('idle', gatherPlaces);          // the pie card's place names (placeLine)
   map.on('dblclick', (e) => {
     if (dotPies || regionsMode || !SCATTER.ready) return;
     const hit = SCATTER.pick(e.point);

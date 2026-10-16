@@ -138,6 +138,16 @@
       }
     },
     {
+      "id": "christianity.oriental.marthoma",
+      "label": "Malankara Mar Thoma Church",
+      "kind": "branch",
+      "note": "The Mar Thoma Syrian Church of Kerala: a St Thomas church reformed in the nineteenth century, Oriental in liturgy and in communion with the Anglicans, so it sits between `oriental` and `anglican` by any reading; ASARB files it here and so does this tree. PROMOTED FROM AN ASARB LEAF TO A BRANCH on 2026-10-16 with Kerala (in2011's `Mar Thoma (KMS 2008-2014)`, about 304,000), the reason Eritrea's was. Two sources: ASARB F28 and in2011. The label is unchanged.",
+      "sources": {
+        "usrc2020": "F28"
+      },
+      "review": "Malankara Mar Thoma -> oriental. Reformed Oriental, in communion with the Anglicans; sits between oriental and anglican by any reading."
+    },
+    {
       "id": "christianity.churchofeast",
       "label": "Church of the East",
       "kind": "branch",
@@ -245,7 +255,7 @@
       "id": "christianity.united",
       "label": "United and uniting churches",
       "kind": "branch",
-      "note": "Churches formed by union across the Protestant families, where the result is not a branch of any one of them — the Uniting Church in Australia (673,383, its third largest Christian body), the United Church of Canada, the Church of South India. Filing the Uniting Church under Methodist because Methodism was its largest strand would lose the Presbyterians and Congregationalists who are equally in it. Added 2026-09-03 with Australia. Its LINEAGE group is Reformation since 2026-09-14, because every union on the map is built on Reformed churches; that is descent only, and the node stays a direct child of `christianity`."
+      "note": "Churches formed by union across the Protestant families, where the result is not a branch of any one of them — the Uniting Church in Australia (673,383, its third largest Christian body), the United Church of Canada, the Church of South India. Filing the Uniting Church under Methodist because Methodism was its largest strand would lose the Presbyterians and Congregationalists who are equally in it. Added 2026-09-03 with Australia. Its LINEAGE group is Reformation since 2026-09-14, because every union on the map is built on Reformed churches; that is descent only, and the node stays a direct child of `christianity`. Germany's Union Landeskirchen joined it 2026-10-16 (Rheinland, Westfalen, Hessen und Nassau, Baden and five more, about 8.9M; taxonomy/de2022.py): Lutheran and Reformed congregations joined from 1817 on, each keeping its own confession, as the PKN's do."
     },
     {
       "id": "christianity.methodist",
@@ -4209,15 +4219,6 @@
       "sources": {
         "usrc2020": "334"
       }
-    },
-    {
-      "id": "christianity.oriental.marthoma",
-      "label": "Malankara Mar Thoma Church",
-      "kind": "leaf",
-      "sources": {
-        "usrc2020": "F28"
-      },
-      "review": "Malankara Mar Thoma -> oriental. Reformed Oriental, in communion with the Anglicans; sits between oriental and anglican by any reading."
     },
     {
       "id": "christianity.orthodox.canonical.albanian",
