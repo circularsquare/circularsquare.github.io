@@ -176,6 +176,24 @@ sitemap: false
   #q:focus { outline: none; border-color: var(--focus); }
   #results { margin-top: 6px; }
   #loadnote { display: none; margin-top: 6px; font-size: 11.5px; color: var(--g7a); }
+  /* "Loading rides…" in the middle of the map while the ridden lines are on their way
+     (rideLoadNote). Inside #map, so it stays centred on the map when the phone sheet is up. */
+  #rideload {
+    display: none; position: absolute; top: 50%; left: 50%; z-index: 2;
+    transform: translate(-50%, -50%); pointer-events: none;
+    align-items: center; gap: 8px; padding: 7px 12px;
+    background: var(--glass); border: 1px solid var(--g26);
+    font-family: 'Nunito', sans-serif; font-size: 12.5px; color: var(--gcc);
+  }
+  /* Once the first load is over or the reader has started using the page, it sits under the
+     title box instead (Anita, 2026-10-19); rideLoadNote sets `top` from the box. */
+  #rideload.corner { left: 14px; transform: none; }
+  #rideload i {
+    width: 12px; height: 12px; border-radius: 50%;
+    border: 2px solid var(--g55); border-top-color: var(--gff);
+    animation: rideload-spin 0.8s linear infinite;
+  }
+  @keyframes rideload-spin { to { transform: rotate(360deg); } }
   .hit { padding: 5px 7px; cursor: pointer; border-left: 2px solid transparent; }
   .hit:hover { background: var(--g16); border-left-color: #4a9eff; }
   .hit .t { color: var(--ge8); }
@@ -429,6 +447,7 @@ sitemap: false
 </head>
 <body>
 <div id="map"></div>
+<div id="rideload" role="status"><i></i>Loading rides…</div>
 
 <div id="title">
   <h1>noritetsu</h1>
@@ -917,6 +936,8 @@ const map = new maplibregl.Map({
   pitchWithRotate: false, touchPitch: false,
   attributionControl: { compact: true },
 });
+// Into the map's own box once the map is made (MapLibre wants the container empty at start).
+map.getContainer().appendChild(document.getElementById('rideload'));
 (function selectionWorker() {
   const D = map.style && map.style.dispatcher && Object.getPrototypeOf(map.style.dispatcher);
   const G = maplibregl.GeoJSONSource && maplibregl.GeoJSONSource.prototype;
@@ -1213,6 +1234,7 @@ function setMode(m) {
   MODE = m;
   try { localStorage.setItem(MODE_KEY, m); } catch (e) { /* for this page only */ }
   modeButtons();
+  rideLoadNote();
   if (!mapReady) return;
   /* EVERYTHING THE MODE DECIDES, AT ONCE (Anita, 2026-10-09: switching "doesn't correct whats
      dimmed and whats not until you actually click a line"). The track's colour expression
@@ -1326,6 +1348,8 @@ const CLOSED_READY = dataFetch('data/closed.json')
 function startRegions() {
   if (START && REGIONS[START]) goRegion(START);
   for (const cc of new Set(RIDES.flatMap(rideRegions))) loadRegion(cc);
+  RIDES_STARTED = true;
+  rideLoadNote();
   /* The headline's country, remembered with the camera, even when it is not in the middle.
      Its total needs no loading where regions.json has it; zoomed in, the camera loads it. */
   if (FOCUS && REGIONS[FOCUS]) { if (!hasTotal(FOCUS)) loadRegion(FOCUS); }
@@ -1634,6 +1658,7 @@ function noteLoading() {
     : busy.length ? `the lines of ${busy.join(', ')}` : ''].filter(Boolean);
   el.textContent = what.length ? `Loading ${what.join(' and ')}…` : '';
   el.style.display = what.length ? 'block' : 'none';
+  rideLoadNote();
 }
 
 /* WHAT A COUNTRY'S ARRIVAL REDRAWS, once for a burst (2026-10-08): the station bubbles (every
@@ -1646,14 +1671,19 @@ const ARRIVE_MS = 80;
 let ARRIVED = null;
 function dataArrived() {
   if (ARRIVED) return;
+  /* The ridden overlay first, on its own task (2026-10-19): with its geometry on hand its
+     setData leaves before the station bubbles' (every loaded station, the big one) reach the
+     worker they share, and before the panel's unionTotals holds up the main thread. */
   ARRIVED = setTimeout(() => {
     ARRIVED = null;
-    paintStations();
     paintRidden();
-    paintClosed();
-    paintSelection();
-    render();
-    warmIndexes();
+    setTimeout(() => {
+      paintStations();
+      paintClosed();
+      paintSelection();
+      render();
+      warmIndexes();
+    }, 0);
   }, ARRIVE_MS);
 }
 /* The indexes a selected line's junction walks read (nodeSecs, junctionsIn, sectionsNear) and
@@ -1976,6 +2006,30 @@ function loadLineRegions(id) {
   return Promise.all(ccs.filter(cc => !LOADED.has(cc)).map(loadRegion));
 }
 
+/* RIDDEN LINES' GEOMETRY ASKED FOR WITH THEIR COUNTRIES (2026-10-19). The ridden overlay
+   needs every ridden line's file, and geomFor can only name the files once the country's
+   lines.json is in (a line over a border or folded into another has more than one), so they
+   used to wait for it: 0.8 s on R2 behind the country data. Each ride's own file, under its
+   own country and line id, is that line's file in all but those few cases, so it is asked
+   for at once, beside the country data, and geomFor takes the answer when it gets there. A
+   guess that names no file it later wants is one unread request (a 404 for a renamed line).
+   Taken once: a Response is read once, and a later ask (after a failure) goes out afresh. */
+const GEOM_EARLY = new Map();     // data path -> promise of its Response, not yet taken
+function prefetchRidden(rides = RIDES) {
+  for (const r of rides) {
+    const cc = rideRegion(r);
+    if (!r.line || LOADED.has(cc)) continue;   // the country is in: geomFor asks at once anyway
+    const p = `data/${cc}/geom/${r.line}.json`;
+    if (!GEOM_EARLY.has(p)) GEOM_EARLY.set(p, dataFetch(p));
+  }
+}
+function geomFetch(p) {
+  const early = GEOM_EARLY.get(p);
+  if (!early) return dataFetch(p);
+  GEOM_EARLY.delete(p);
+  return early;
+}
+
 /* The promise is what is cached, so two paints asking for the same line while it is still
    in flight share one fetch rather than racing two. A line over a border is one file per
    country it runs through, merged; joining another country's piece drops the cached one. */
@@ -1985,7 +2039,7 @@ function geomFor(lineId) {
     // nothing drawn on the map until a reload.
     const line = LINE_BY_ID.get(lineId);
     let failed = false;
-    const one = (part, file) => dataFetch(`data/${part.region}/geom/${file}.json`)
+    const one = (part, file) => geomFetch(`data/${part.region}/geom/${file}.json`)
       .then(r => {
         if (r.status === 404) noteStale();
         if (!r.ok) throw new Error(r.status);
@@ -3689,6 +3743,11 @@ let RIDDEN_GEN = 0;         // the same guard as paintSelection's, for the same 
 
 async function paintRidden() {
   if (!mapReady || !map.getSource('ridden')) return;
+  RIDDEN_PAINTING++;
+  rideLoadNote();
+  try { await paintRiddenNow(); } finally { RIDDEN_PAINTING--; rideLoadNote(); }
+}
+async function paintRiddenNow() {
   const gen = ++RIDDEN_GEN;
   const wanted = new Map();      // line id -> section gid -> the parts of it ridden
   for (const ride of here()) {
@@ -3702,11 +3761,17 @@ async function paintRidden() {
       m.get(gid).push([lo, hi]);
     }
   }
+  /* EVERY LINE'S GEOMETRY ASKED FOR AT ONCE (2026-10-19). Awaited one line after another, a
+     record of 166 ridden lines was 166 round trips in a row: 22 s on R2 (~130 ms each) before
+     anything was drawn. All in flight together over one HTTP/2 connection, it is about one. */
+  const ids = [...wanted.keys()];
+  const got = await Promise.all(ids.map(geomFor));
+  if (gen !== RIDDEN_GEN) return;
+  const geoms = new Map(ids.map((id, i) => [id, got[i]]));
   const features = [];
   for (const [lineId, gids] of wanted) {
     const line = LINE_BY_ID.get(lineId);
-    const g = await geomFor(lineId);
-    if (gen !== RIDDEN_GEN) return;
+    const g = geoms.get(lineId);
     const colour = lineColour(line);
     for (const [a, b, km, gid] of line.sections) {
       if (!gids.has(gid)) continue;
@@ -3720,6 +3785,61 @@ async function paintRidden() {
     }
   }
   map.getSource('ridden').setData({ type: 'FeatureCollection', features });
+  riddenSent();
+}
+
+/* "LOADING RIDES…" IN THE MIDDLE OF THE MAP (2026-10-19, after Anita's import took over 20 s
+   to show anything). Up in the tracker while any ride's country is still loading, a
+   paintRidden is working, or the overlay it sent is not yet drawn; down in the frame that
+   draws it. From the start (before the map is up), and again after an import or a sign-in
+   brings rides whose countries are not in yet. A country that fails to load stops counting
+   (loadRegion drops it from LOADING), and a setData never answered (a style swap under it)
+   stops counting after RIDDEN_WATCHDOG_MS, so it cannot stay up for good. */
+let RIDDEN_PAINTING = 0;        // paintRidden calls in progress
+let RIDDEN_DRAWING = null;      // the watchdog of a ridden setData not yet drawn, else null
+let RIDES_STARTED = false;      // startRegions has asked for the rides' countries
+const RIDDEN_WATCHDOG_MS = 5000;
+function riddenSent() {
+  clearTimeout(RIDDEN_DRAWING);
+  RIDDEN_DRAWING = setTimeout(riddenDrawn, RIDDEN_WATCHDOG_MS);
+  rideLoadNote();
+}
+function riddenDrawn() {
+  clearTimeout(RIDDEN_DRAWING);
+  RIDDEN_DRAWING = null;
+  rideLoadNote();
+}
+map.on('sourcedata', e => {
+  if (!RIDDEN_DRAWING || e.sourceId !== 'ridden' || e.sourceDataType === 'metadata'
+      || !map.isSourceLoaded('ridden')) return;
+  // The tiles are in; the next frame draws them. Not if a newer setData has gone out since.
+  const t = RIDDEN_DRAWING;
+  map.once('render', () => { if (RIDDEN_DRAWING === t) riddenDrawn(); });
+});
+function ridesPending() {
+  if (MODE !== 'ridden' || !RIDES.length) return false;
+  // ARRIVED: a country is in and its redraw (dataArrived) is still to come.
+  if (!mapReady || !RIDES_STARTED || RIDDEN_PAINTING || RIDDEN_DRAWING || ARRIVED) return true;
+  return RIDES.some(r => rideRegions(r).some(cc => !LOADED.has(cc) && LOADING.has(cc)));
+}
+let RIDELOAD_CORNER = false;    // the first load is done, or the reader has started using the page
+for (const ev of ['pointerdown', 'wheel', 'keydown'])
+  addEventListener(ev, () => { RIDELOAD_CORNER = true; }, { capture: true, once: true });
+function rideLoadNote() {
+  const el = document.getElementById('rideload');
+  if (!el) return;
+  const show = ridesPending();
+  if (show && RIDELOAD_CORNER) {
+    const title = document.getElementById('title').getBoundingClientRect();
+    const box = el.parentElement.getBoundingClientRect();
+    el.classList.add('corner');
+    el.style.top = `${Math.max(14, title.bottom + 8 - box.top)}px`;
+  } else if (!RIDELOAD_CORNER) {
+    el.classList.remove('corner');
+    el.style.top = '';
+  }
+  el.style.display = show ? 'flex' : 'none';
+  if (!show && mapReady && RIDES_STARTED) RIDELOAD_CORNER = true;
 }
 
 /* Every not-running section of every loaded country, for the base map. A few lines a
@@ -7793,7 +7913,11 @@ function importRides(input) {
         ride.region = r.region || parsed.region || 'jp';
         // A file exported before a rebuild names stations and lines by their old ids.
         if (LOADED.has(ride.region)) migrateRide(ride);
-        else loadRegion(ride.region);   // its lines are needed to draw and count it
+        else prefetchRidden([ride]);
+        /* Its lines are needed to draw and count it: its own country's, and for a line over a
+           border the others it runs through, as at the start (startRegions). Only its own was
+           asked for, so the Eurostar's pieces past the Channel were missing until a reload. */
+        for (const cc of rideRegions(ride)) if (!LOADED.has(cc)) loadRegion(cc);
         delete ride._gids;
         fresh.push(ride);
       }
@@ -8219,6 +8343,8 @@ document.getElementById('q').addEventListener('input', runSearch);
 })();
 
 loadRides();
+prefetchRidden();
+rideLoadNote();
 bootUi();
 render();
 // Countries load from startRegions once the map is up, and then as the camera moves.

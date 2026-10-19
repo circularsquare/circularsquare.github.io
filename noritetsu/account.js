@@ -186,6 +186,8 @@
     ORDERS = { ...(D.orders || {}) };
     UNDO.length = 0;                       // an undo from before would put back the old list
     EDITING = null;
+    // The ridden lines' geometry, beside their countries' data (index.html prefetchRidden).
+    if (typeof prefetchRidden === 'function') prefetchRidden();
     for (const r of RIDES) {
       const ccs = rideRegions(r);
       if (ccs.every(cc => LOADED.has(cc))) migrateRide(r);
@@ -834,11 +836,16 @@
         m.get(gid).push([lo, hi]);
       }
     }
+    // Every line's geometry asked for at once, as paintRidden does: one after another, a long
+    // record waited a round trip per line.
+    const ids = [...wanted.keys()];
+    const got = await Promise.all(ids.map(geomFor));
+    if (gen !== CMP_GEN) return null;
     const features = [];
-    for (const [lineId, gids] of wanted) {
+    for (const [i, lineId] of ids.entries()) {
+      const gids = wanted.get(lineId);
       const line = LINE_BY_ID.get(lineId);
-      const g = await geomFor(lineId);
-      if (gen !== CMP_GEN) return null;
+      const g = got[i];
       for (const [a, b, km, gid] of line.sections) {
         if (!gids.has(gid)) continue;
         const pts = g[`${a}|${b}`];
