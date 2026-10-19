@@ -1105,7 +1105,7 @@ function run(mode) {
       a.remove();
       setTimeout(() => URL.revokeObjectURL(a.href), 60000);
     }
-    say(`${res.w} by ${res.h} px` + (mode === 'download' ? ', saved.' : mode === 'copy' ? ', copied.' : '.'));
+    say(mode === 'download' ? 'Saved.' : mode === 'copy' ? 'Copied.' : `${res.w} by ${res.h} px`);
   }).catch(e => {
     console.error(e);
     say(e && e.message ? e.message : 'The image could not be made.');
@@ -1122,8 +1122,7 @@ function run(mode) {
 let VIEW_STATE = null;
 function showPreview(out, url) {
   out.innerHTML = `<div id="pd-view"><button class="act" id="pd-fit">fit</button>`
-    + `<img alt="Your rides" draggable="false" /></div>`
-    + `<div class="muted" id="pd-hint">Scroll or pinch to zoom, drag to move, double click to see it whole.</div>`;
+    + `<img alt="Your rides" draggable="false" /></div>`;
   const view = out.querySelector('#pd-view'), img = view.querySelector('img');
   const v = VIEW_STATE = { s: 1, x: 0, y: 0, fit: 1, iw: 0, ih: 0 };
   const box = () => view.getBoundingClientRect();

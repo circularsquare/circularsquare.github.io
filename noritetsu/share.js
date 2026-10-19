@@ -75,10 +75,8 @@
       box.id = 'sharebox';
       document.body.appendChild(box);
     }
-    box.innerHTML = `<p>${copied ? 'Link copied.' : 'Copy this link.'} Anyone with it can see `
-      + `your rides and percentages, but not change them. Notes are left out.</p>`
+    box.innerHTML = `<p>${copied ? 'Link copied.' : 'Copy this link.'}</p>`
       + `<textarea readonly rows="4"></textarea>`
-      + `<p class="muted">${(url.length / 1024).toFixed(1)} KB, ${RIDES.length} rides.</p>`
       + `<div class="btnrow"><button class="act" onclick="document.getElementById('sharebox').remove()">close</button></div>`;
     const ta = box.querySelector('textarea');
     ta.value = url;
@@ -121,12 +119,13 @@
   STARS = [];
   const bar = document.createElement('div');
   bar.id = 'viewbar';
-  bar.innerHTML = `Someone's shared rides, to look at. <a href="${location.pathname}">Open your own map</a>`;
+  bar.innerHTML = `Shared rides. <a href="${location.pathname}">Open your own map</a>`;
   const head = document.getElementById('panel-head');
   head.parentNode.insertBefore(bar, head.nextSibling);
   render();
 
-  (async () => {
+  // Resolves once the shared rides are in RIDES (account.js waits on it to compare).
+  window.SHARE_READY = (async () => {
     try {
       const bytes = await through(new DecompressionStream('deflate-raw'), fromB64(m[1]));
       const d = JSON.parse(new TextDecoder().decode(bytes));
@@ -134,8 +133,8 @@
       STARS = Array.isArray(d.s) ? d.s : [];
       ORDERS = d.o && typeof d.o === 'object' ? d.o : {};
     } catch (e) {
-      bar.textContent = 'This share link could not be read. It may have been cut short when it was copied.';
-      return;
+      bar.textContent = 'This share link could not be read.';
+      return false;
     }
     await REGIONS_READY;
     const ccs = [...new Set(RIDES.flatMap(rideRegions))].filter(cc => REGIONS[cc]);
@@ -152,5 +151,6 @@
     if (mapReady) go(); else map.once('load', go);
     HOME_TAB = 'country';
     afterChange();
+    return true;
   })();
 })();

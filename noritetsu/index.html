@@ -132,6 +132,33 @@ sitemap: false
   }
   #lang:focus { outline: none; border-color: var(--focus); }
 
+  /* ---- About: open on arrival, any click outside closes it (nycriders' panel) ---- */
+  #info-btn {
+    position: absolute; bottom: 16px; left: 14px; z-index: 4;
+    width: 30px; height: 30px; border-radius: 50%; cursor: pointer;
+    background: var(--glass); border: 1px solid var(--g33); color: var(--gcc);
+    font: italic bold 18px 'Times New Roman', Times, serif;
+    display: flex; align-items: center; justify-content: center;
+  }
+  #info-btn:hover { border-color: var(--g66); color: var(--gff); }
+  #info-panel {
+    position: absolute; bottom: 58px; left: 14px; z-index: 4;
+    width: 360px; max-width: calc(100% - 28px); max-height: calc(100% - 200px);
+    overflow-y: auto; box-sizing: border-box;
+    background: var(--glass-strong); border: 1px solid var(--g26);
+    padding: 10px 13px 11px; font-size: 12.5px; line-height: 1.5; color: var(--gcc);
+  }
+  #info-panel.hidden { display: none; }
+  #info-head { display: flex; justify-content: space-between; align-items: center;
+               margin-bottom: 4px; color: var(--g8a); }
+  #info-close { background: none; border: none; color: var(--g8a); font-size: 16px;
+                cursor: pointer; padding: 0; line-height: 1; }
+  #info-close:hover { color: var(--gff); }
+  #info-panel p { margin: 0 0 8px; }
+  #info-panel p:last-child { margin-bottom: 0; }
+  #info-panel a { color: var(--gdd); }
+  #info-panel a:hover { color: var(--gff); }
+
   /* ---- the tracker panel ---- */
   #panel {
     position: absolute; top: 0; right: 0; bottom: 0; width: 340px; z-index: 3;
@@ -397,7 +424,7 @@ sitemap: false
 <div id="map"></div>
 
 <div id="title">
-  <h1>noritetsu <span class="wip">In progress</span></h1>
+  <h1>noritetsu</h1>
   <div id="modes">
     <button data-mode="ridden" class="on" onclick="setMode('ridden')">Travel tracker</button>
     <button data-mode="browse" onclick="setMode('browse')">View all lines</button>
@@ -405,6 +432,29 @@ sitemap: false
             onclick="setTheme(THEME_NAME === 'dark' ? 'light' : 'dark')">Light</button>
   </div>
   <button id="panel-open" onclick="openPanel(true)">Rides</button>
+</div>
+
+<button id="info-btn" title="About this map">i</button>
+<div id="info-panel" class="hidden">
+  <div id="info-head"><span>About</span>
+    <button id="info-close" title="Close">&#10005;</button></div>
+  <p>Track which trains you've ridden on!</p>
+  <p>To record a ride, click a line, then in the line diagram pick your start and end points,
+    then click "Add ride". You can also record a ride by selecting a station and selecting
+    "trace a journey".</p>
+  <p>If you don't have an account, rides are saved only in this browser. If you do, they are
+    also saved online and can be opened from your other devices, and you can share your map
+    with friends. Shared maps leave out ride dates and notes.</p>
+  <p>Line data comes from each country's rail register and OpenStreetMap.</p>
+  <p>Rail data &copy; <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a>
+    contributors and national rail registers. Basemap from
+    <a href="https://openfreemap.org" target="_blank">OpenFreeMap</a>, drawn with
+    <a href="https://maplibre.org" target="_blank">MapLibre GL</a>. Inspired by
+    <a href="https://www.noritsubushi.org" target="_blank">noritsubushi</a> and
+    <a href="https://viaduct.world" target="_blank">viaduct.world</a>.
+    <a href="privacy.html" target="_blank">Privacy</a> &middot;
+    <a href="terms.html" target="_blank">Terms</a></p>
+  <p>Made by <a href="https://anita.garden/projects" target="_blank">anita</a>!</p>
 </div>
 
 <select id="lang" onchange="setLang(this.value)" title="Names">
@@ -420,9 +470,8 @@ sitemap: false
     <div id="results"></div>
     <div id="loadnote"></div>
   </div>
-  <div id="stale">The line data has been rebuilt since this page loaded, so some lines will
-    not draw. <a href="" onclick="location.reload(); return false">Reload</a> to pick it up;
-    your rides are kept.</div>
+  <div id="stale">The line data has changed.
+    <a href="" onclick="location.reload(); return false">Reload</a></div>
   <div id="undobar"><span id="undolabel"></span>
     <button class="act" onclick="undo()" title="Ctrl+Z">undo</button></div>
   <div id="panel-body"><div class="muted" style="margin-top:14px">Loading…</div></div>
@@ -4283,14 +4332,12 @@ function renderHome(el) {
   const mine = here();
 
   if (!mine.length) {
-    h += `<p class="muted" style="margin-top:14px">Nothing recorded yet. Click a station on `
-      + `the map, or search a line above, then pick where you got on and off.</p>`;
+    h += `<p class="muted" style="margin-top:14px">Click a line to start recording a trip!</p>`;
   }
   const lost = lostRides();
   if (lost) {
     h += `<p class="muted" style="margin-top:10px">${lost} ride`
-      + `${lost === 1 ? '' : 's'} could not be matched to the current data and `
-      + `count towards nothing. They are still in your export.</p>`;
+      + `${lost === 1 ? '' : 's'} not found in the current data.</p>`;
   }
 
   /* ONE LIST AT A TIME. All four under each other made the panel a long scroll where the
@@ -4303,8 +4350,13 @@ function renderHome(el) {
     if (HOME_TAB === 'op' && HOME_OP && ![...OPEN].some(k => k.endsWith(`|op:${HOME_OP}`))) HOME_OP = null;
     HOME_TAB = 'country';
   }
-  const tabs = [['country', 'Countries'], ...(browse ? [] : [['op', 'Operators'], ['line', 'Lines']]),
-                ['rides', `Trips (${trips().length})`]];
+  const extra = EXTRA_TABS.filter(t => t.shown());
+  if (!['country', 'op', 'line', 'rides'].includes(HOME_TAB) && !extra.some(t => t.key === HOME_TAB))
+    HOME_TAB = 'rides';
+  const tabs = [...extra.filter(t => t.first).map(t => [t.key, t.label()]),
+                ['country', 'Countries'], ...(browse ? [] : [['op', 'Operators'], ['line', 'Lines']]),
+                ['rides', `Trips (${trips().length})`],
+                ...extra.filter(t => !t.first).map(t => [t.key, t.label()])];
   h += `<div class="tabs">` + tabs.map(([k, label]) =>
     `<button class="${HOME_TAB === k ? 'on' : ''}" onclick="setHomeTab('${k}')">${label}</button>`
   ).join('') + `</div>`;
@@ -4362,8 +4414,6 @@ function renderHome(el) {
   } else if (HOME_TAB === 'line') {
     const s = S();
     if (!s.perLine.length) h += `<p class="muted">No line started yet.</p>`;
-    else h += `<p class="muted" style="margin:0 0 4px">${s.perLine.length} touched, `
-      + `${s.finished} finished.</p>`;
     h += sortButton('line');
     const byId = new Map(s.perLine.map(p => [p.line.id, p]));
     const dflt = [...s.perLine].sort(lineListOrder).map(p => p.line.id);
@@ -4371,13 +4421,18 @@ function renderHome(el) {
       const p = byId.get(id);
       h += lineRow(p.line, p.km, { bring: true, drag: 'lines' });
     }
-  } else {
+  } else if (HOME_TAB === 'rides') {
     h += renderRides();
+  } else {
+    h += extra.find(t => t.key === HOME_TAB).html();
   }
   el.innerHTML = h;
 }
 
 let HOME_TAB = 'rides';
+/* Tabs other scripts add to the home view (account.js: Compare, Leaderboards), each
+   {key, label(), shown(), html(), first}: `first` puts it before Countries. */
+const EXTRA_TABS = [];
 function setHomeTab(k) { HOME_TAB = k; EDITING = null; HOME_OP = null; render(); paintSelection(); }
 
 // The operator whose lines are drawn: its own view's, or an open row's on the home lists.
@@ -4667,8 +4722,7 @@ function opTreeRows(o, s, level, key, list) {
   for (const r of rows.slice(0, TREE_MAX_LINES))
     h += lineRow(r.line, r.km, { bring: true, level: level + 1, drag: key });
   if (rows.length > TREE_MAX_LINES) {
-    h += `<p class="muted lv${level + 1}">and ${rows.length - TREE_MAX_LINES} more. `
-      + `Search a line by name for the rest.</p>`;
+    h += `<p class="muted lv${level + 1}">and ${rows.length - TREE_MAX_LINES} more</p>`;
   }
   return h;
 }
@@ -4857,10 +4911,6 @@ function renderRides() {
   // At the top, so they are not below hundreds of trips (Anita, 2026-10-07).
   let h = `<div class="btnrow" style="margin:0 0 6px">`
     + `<button class="act" onclick="startTrace()">trace a journey</button>`
-    + `<button class="act" onclick="exportRides()">Export</button>`
-    + `<button class="act" onclick="document.getElementById('importfile').click()">Import</button>`
-    + `<input type="file" id="importfile" accept="application/json" style="display:none" `
-    + `onchange="importRides(this)" />`
     + `<button class="act" onclick="openPoster()">Poster</button>`
     + `<button class="act" onclick="shareLink()">Share link</button></div>`;
   const list = trips().reverse();
@@ -4924,14 +4974,13 @@ function renderRides() {
     h += `</div>`;
   }
   if (list.length > 200) {
-    h += `<p class="muted">and ${list.length - 200} older. All of them are in the export.</p>`;
+    h += `<p class="muted">and ${list.length - 200} older</p>`;
   }
   if (elsewhere) {
-    h += `<p class="muted">${elsewhere} more ride${elsewhere === 1 ? '' : 's'} in other `
-      + `countries, under Countries.</p>`;
+    h += `<p class="muted">and ${elsewhere} in other countries</p>`;
   }
-  h += `<p class="muted" style="margin-top:10px">Rides are kept in this browser only. `
-    + `Export to move them somewhere safe.</p>`;
+  // A sync problem, when there is one (account.js).
+  if (typeof accountFooter === 'function') h += accountFooter();
   return h;
 }
 
@@ -4954,8 +5003,7 @@ function deleteRide(id) {
   if (!r) return;
   const chain = throughChain(id);
   if (chain.length > 1) {
-    if (!confirm(`Delete this ride? It goes through a junction, so its ${chain.length} legs `
-                 + `go together:\n\n${chain.map(rideLabel).join('\n')}`)) return;
+    if (!confirm(`Delete these ${chain.length} legs?\n\n${chain.map(rideLabel).join('\n')}`)) return;
     const ids = new Set(chain.map(x => x.id));
     remember(`Removed ${stName(chain[0].from)} → ${stName(chain[chain.length - 1].to)}`);
     RIDES = RIDES.filter(x => !ids.has(x.id));
@@ -5092,7 +5140,7 @@ function renderStation(el) {
     + (stAlt(VIEW.id) ? `<small>${esc(stAlt(VIEW.id))}</small>` : '') + `</div>`
     + ridersLine(VIEW.id)
     + `<h2 class="sec">Lines here (${lines.length})</h2>`;
-  if (!lines.length) h += `<p class="muted">No line in the model calls here.</p>`;
+  if (!lines.length) h += `<p class="muted">No lines stop here.</p>`;
   const frac = creditRanges();
   for (const l of lines) h += lineRow(l, lineKm(l, frac), { operator: true, from: VIEW.id });
   el.innerHTML = h;
@@ -5184,8 +5232,7 @@ function traceAdd(id) {
   // junctions, or while that is still being worked out (the leg says so).
   const jr = last && !traceReachable().has(id) ? junctionRoute(last, id) : null;
   if (jr && !jr.route && !jr.pending) {
-    VIEW.note = `No line from ${stName(last)} goes to ${stName(id)}. Click the station `
-      + `where you changed trains first.`;
+    VIEW.note = `No line from ${stName(last)} goes to ${stName(id)}.`;
     render();
     return;
   }
@@ -5362,11 +5409,8 @@ function renderTrace(el) {
   const bad = legs.filter(l => !l.line).length;
   let h = `<div class="btnrow"><button class="act" onclick="goHome()">← cancel</button></div>`
     + `<h2 class="sec">Trace a journey</h2>`
-    + `<p class="muted">Click the stations on the map in the order you passed them, or search `
-    + `them above. Each leg needs one line calling at both ends, or lines meeting at junctions `
-    + `between them, so click at least every station where you changed trains. The faint `
-    + `rings are the stations on a line from the last stop; click the last stop again to `
-    + `take it back.</p>`;
+    + `<p class="muted">Click the stations in the order you passed them, including every `
+    + `change of train.</p>`;
 
   /* The journey as a small strip diagram: a white dot per stop, and between two stops the
      leg's line in its own colour down the rail. A leg with a choice of line looks the same
@@ -5380,9 +5424,9 @@ function renderTrace(el) {
     h += `<div class="tleg${leg.line ? '' : ' bad'}" style="--c:${c}"><div class="rail"></div>`
       + `<div class="what">`;
     if (!leg.line && leg.pending) {
-      h += `Looking for a way through the junctions…`;
+      h += `Finding a route…`;
     } else if (!leg.line) {
-      h += `No one line calls at both. Take this stop back and click where you changed.`;
+      h += `No line calls at both.`;
     } else {
       // Through junctions: the lines it goes over, in order.
       const name = `<span class="nm">${esc(leg.parts
@@ -5400,16 +5444,12 @@ function renderTrace(el) {
     h += `</div></div>` + stopRow(leg.b);
   }
   h += `</div>`;
-  if (!stops.length) h += `<p class="muted">No stations yet.</p>`;
   if (VIEW.note) h += `<p class="tnote">${esc(VIEW.note)}</p>`;
 
   const km = legs.reduce((s, l) => s + (l.p ? l.p.km : 0), 0);
   h += `<div id="addbar">`;
   if (legs.length) {
-    const n = bad ? 0 : traceRides(legs, '').length;
-    h += `<div class="o" style="margin-bottom:6px">${legs.length} leg`
-      + `${legs.length === 1 ? '' : 's'} · ${km.toFixed(1)} km`
-      + `${bad ? ` · ${bad} without a line` : ` · ${n} ride${n === 1 ? '' : 's'}`}</div>`;
+    h += `<div class="o" style="margin-bottom:6px">${km.toFixed(1)} km</div>`;
   }
   h += `<div class="btnrow"><input type="date" id="ridedate" value="${esc(LAST_DATE)}" />`
     + (legs.length && !bad
@@ -5523,15 +5563,14 @@ function renderOp(el) {
   const tracker = MODE === 'ridden';
   if (tracker) {
     h += `<div class="rrow" style="border:none">${ringHtml(pct / 100, opColour(o.key))}`
-      + `<div class="tx"><div class="o">${done.toFixed(1)} km ridden · `
-      + `${finished} of ${rows.length} finished</div></div>${starButton(`op:${o.key}`)}</div>`;
+      + `<div class="tx"><div class="o">${done.toFixed(1)} of ${Math.round(o.km).toLocaleString()} km ridden`
+      + `</div></div>${starButton(`op:${o.key}`)}</div>`;
   }
   /* Marks every line not yet finished as ridden in full, one whole-line ride each, so it is
      one undo to take back and each line can still be removed on its own afterwards. */
   if (left && tracker) {
     h += `<div class="btnrow"><input type="date" id="opdate" value="${esc(LAST_DATE)}" />`
-      + `<button class="act" onclick="rideOperator(${i})">rode every line `
-      + `(${left} to add)</button></div>`;
+      + `<button class="act" onclick="rideOperator(${i})">rode every line</button></div>`;
   }
   h += `<h2 class="sec">Lines</h2>`;
   for (const r of rows) h += lineRow(r.line, r.km, { bring: true });
@@ -6174,8 +6213,7 @@ function tripsOverHtml(line, runGids) {
     const title = trip.rides.length === 1 ? rideLabel(first)
       : `${stName(first.from)} → ${stName(last.to)}, ${trip.rides.length} legs`;
     const shared = legs.every(([r]) => !mine.has(r.line));
-    const tail = [`${km.toFixed(1)} km here${shared ? ', ridden on another line over this track' : ''}`,
-                  first.date, first.note].filter(Boolean).map(esc);
+    const tail = [`${km.toFixed(1)} km${first.date ? `, ${first.date}` : ''}`].map(esc);
     h += `<div class="ride over"><i class="edge" style="background:${lineColour(line)}"></i>`
       + `<div><b>${esc(title)}</b></div><div class="o muted">${tail.join(' · ')}</div>`;
     // A trip of several legs lists the ones that credit this, each removable on its own.
@@ -6266,11 +6304,6 @@ function renderLine(el) {
       + (n ? ` · <a href="" onclick="document.getElementById('tripsover')`
         + `.scrollIntoView(); return false">${n} trip${n === 1 ? '' : 's'}</a>` : '')
       + `</div></div>${starButton(`line:${line.id}`)}</div>`;
-  }
-  if (line.km_closed) {
-    h += `<p class="muted" style="margin-top:8px">The dashed part has no trains: closed, `
-      + `suspended or replaced by a bus. It does not count towards the line, and a ride `
-      + `from before can still be entered on it.</p>`;
   }
 
   // A station is reached when any section of this line beside it has been ridden.
@@ -6444,15 +6477,13 @@ function renderLine(el) {
   if (run) {
     h += `<div id="addbar">`;
     if (!run.p && PICK.past) {
-      h += `<p class="muted">The trains past the junction are mapped from `
-        + `${esc(stName(PICK.past.board))}: pick it, or a stop before it.</p>`;
+      h += `<p class="muted">Pick ${esc(stName(PICK.past.board))} or a stop before it.</p>`;
     } else if (!run.p && PICK.through && (thru.pending || (PICK.through.from && PICK.through.to
                && PICK.through.from.j === PICK.through.to.j))) {
       h += `<p class="muted">${thru.pending ? 'Looking past the junction…'
-        : 'Those two are past the same junction: pick a stop of this line, or one past its '
-          + 'other end.'}</p>`;
+        : 'Pick a stop on this line.'}</p>`;
     } else if (!run.p) {
-      h += `<p class="muted">No run of sections joins those two on this line.</p>`;
+      h += `<p class="muted">This line does not join those two.</p>`;
     } else {
       h += `<div class="o" style="margin-bottom:6px">${esc(stName(PICK.from))} → `
         + `${esc(stName(PICK.to))} · ${run.p.km.toFixed(1)} km</div>`;
@@ -6466,8 +6497,8 @@ function renderLine(el) {
          close into one. The short way is the default because it is nearly always meant. */
       if (run.alt && !run.drawn && !run.ways.length) {
         h += `<label><input type="checkbox" ${run.around ? 'checked' : ''} `
-          + `onchange="setAround(this.checked)" />went the other way round, `
-          + `${run.alt.km.toFixed(1)} km rather than ${run.short.km.toFixed(1)}</label>`;
+          + `onchange="setAround(this.checked)" />the other way round, `
+          + `${run.alt.km.toFixed(1)} km</label>`;
       } else if (run.drawn || run.ways.length) {
         /* The drawn way and the shortest differ (drawnGraph): named by the stops one calls at
            and the other does not, or by the track where both call at the same ones. */
@@ -8163,6 +8194,19 @@ const jsArg = s => esc(JSON.stringify(String(s ?? '')));
 
 document.getElementById('q').addEventListener('input', runSearch);
 
+/* ABOUT starts open on every visit and any click outside it closes it, as in nycriders
+   (Anita, 2026-10-19). The click still goes on to whatever it landed on. Phones start with it
+   shut, since it would cover most of the map. */
+(function () {
+  const panel = document.getElementById('info-panel'), btn = document.getElementById('info-btn');
+  btn.addEventListener('click', () => panel.classList.toggle('hidden'));
+  document.getElementById('info-close').addEventListener('click', () => panel.classList.add('hidden'));
+  document.addEventListener('pointerdown', e => {
+    if (!panel.contains(e.target) && !btn.contains(e.target)) panel.classList.add('hidden');
+  }, true);
+  if (window.innerWidth > 600) panel.classList.remove('hidden');
+})();
+
 loadRides();
 bootUi();
 render();
@@ -8178,5 +8222,6 @@ REGIONS_READY.then(() => {
 </script>
 <script src="poster.js"></script>
 <script src="share.js"></script>
+<script src="account.js"></script>
 </body>
 </html>
