@@ -850,7 +850,7 @@ const trainPositions = new Map(); // ti -> [lon, lat, riders] precise coords + r
 const isLocalhost = location.hostname === 'localhost' || location.hostname === '127.0.0.1' || location.protocol === 'file:';
 const TRAINS_URL = isLocalhost
     ? 'trains.json'
-    : 'https://pub-ae551368cea941f39101e13c84d60bde.r2.dev/londonriders/trains.json';
+    : 'https://data.anita.garden/londonriders/trains.json';
 
 map.on('load', () => {
     fetchWithProgress(TRAINS_URL)

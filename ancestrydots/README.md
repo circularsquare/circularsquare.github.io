@@ -18,14 +18,14 @@ When you regenerate `dots_all_1per100.pmtiles`:
 
 1. **Upload to R2**: Go to [Cloudflare dashboard](https://dash.cloudflare.com) > R2 Object Storage > `anita-maps` bucket > upload the new file (it will overwrite the old one)
 2. **Update legend.json**: If the legend data changed, replace `data/processed/legend.json` in this repo and commit
-3. **That's it** — the R2 URL stays the same: `https://pub-ae551368cea941f39101e13c84d60bde.r2.dev/dots_all_1per100.pmtiles`
+3. **That's it** — the R2 URL stays the same: `https://data.anita.garden/dots_all_1per100.pmtiles`
 
 Note: The `.pmtiles` file is in `.gitignore` so it won't get committed to the repo.
 
 ## R2 bucket details
 
 - **Bucket name**: `anita-maps`
-- **Public URL**: `https://pub-ae551368cea941f39101e13c84d60bde.r2.dev`
+- **Public URL**: `https://data.anita.garden`
 - **CORS allowed origins**: `http://localhost:3000`, `https://circularsquare.github.io`, `https://anita.garden`
 - **CORS allowed methods**: GET, HEAD
 - **CORS allowed headers**: Range

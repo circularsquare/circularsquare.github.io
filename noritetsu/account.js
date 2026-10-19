@@ -256,6 +256,7 @@
     const r = await api('PUT', 'rides', { baseRev, data, ...(stats ? { stats } : {}) });
     SYNC.rev = r.rev;
     saveSync();
+    BOARDS.at = 0;                         // the boards may have moved with these numbers
     SHOWN_ERR = '';
     setStatus('saved');
   }
@@ -511,6 +512,21 @@
                                       callback: r => signIn('signin', { provider: 'google', credential: r.credential }) });
       GIS_INIT = true;
     }
+    /* NOT SHOWN UNTIL IT IS GOOGLE'S OWN BUTTON (Anita, 2026-10-19: it drew in a plain
+       style, then changed). renderButton puts a plain stand-in first and its styled iframe
+       over it when that has loaded; the space is kept (min-height) and the box shows it
+       only then, in one frame. A stand-in left after 4 s is shown rather than nothing. */
+    el.style.visibility = 'hidden';
+    const show = () => { el.style.visibility = ''; mo.disconnect(); };
+    const mo = new MutationObserver(() => {
+      const f = el.querySelector('iframe');
+      if (f && !f.dataset.nt) {
+        f.dataset.nt = '1';
+        f.addEventListener('load', () => requestAnimationFrame(() => requestAnimationFrame(show)));
+      }
+    });
+    mo.observe(el, { childList: true, subtree: true });
+    setTimeout(show, 4000);
     google.accounts.id.renderButton(el, { type: 'standard', size: 'medium', text: 'signin_with',
                                           theme: THEME_NAME === 'dark' ? 'filled_black' : 'outline' });
   }
@@ -760,7 +776,7 @@
         h += `<div class="btnrow"><button class="act" onclick="NT.open()">sign in to be listed</button></div>`;
       } else if (b.on) {
         h += `<div class="btnrow"><button class="act" onclick="NT.optOut()">leave the leaderboards</button></div>`;
-      } else {
+      } else if (RIDES.length) {               // nothing to list before a first ride
         h += `<div class="row"><input class="fld" id="nt-board-name" maxlength="24" placeholder="name to show" `
           + `value="${esc(b.name || '')}" onkeydown="if(event.key==='Enter')NT.optIn()" />`
           + `<button class="act" onclick="NT.optIn()">join</button></div>`;
@@ -1046,8 +1062,10 @@
     #acctbox .aclose { background: none; border: none; color: var(--g8a); font-size: 16px;
       cursor: pointer; padding: 0; line-height: 1; }
     #acctbox .aclose:hover { color: var(--gff); }
-    #acctbtn { display: inline-flex; align-items: center; justify-content: center;
-               padding: 0; box-sizing: border-box; width: var(--modes-h, 24px); }
+    #modes #acctbtn { display: inline-flex; align-items: center; justify-content: center;
+                      padding: 0 4px; }
+    /* As tall as the text buttons beside it (the row stretches it); 14 px icon + 2 x 4 px +
+       the border makes it as wide as it is tall. */
     #modes button { white-space: nowrap; }
     @media (min-width: 721px) { #title { max-width: none; } }
     #acctbox .sec { border-top: 1px solid var(--g1e); margin-top: 10px; padding-top: 10px; }
@@ -1084,6 +1102,8 @@
   drawIcon();
   (async () => {
     try { CFG = await api('GET', 'config', undefined, { auth: false }); } catch (e) { CFG = null; }
+    // Google's script ahead of the first open, so its button is there sooner.
+    if (!signedIn() && CFG && CFG.googleClientId) loadGis().catch(() => { });
     if (signedIn()) {
       try { storeSession(await api('POST', 'refresh')); }
       catch (e) { /* 401 has signed out; offline keeps the token for next time */ }

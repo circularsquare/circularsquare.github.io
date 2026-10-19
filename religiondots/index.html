@@ -45,7 +45,10 @@
     /* No transition: the fill is driven by arriving bytes, which is already smooth, and an
        eased width would lag behind the number beside it. */
     #loading-bar-fill { width: 0; height: 100%; background: #ccc; }
-    #loading-sub { font-size: 11px; color: #777; margin-top: 6px; }
+    #loading-sub { font-size: 11px; color: #777; margin-top: 6px; max-width: 260px; }
+    #loading.failed #loading-bar { display: none; }
+    #loading.failed { text-shadow: 0 1px 3px #000, 0 0 8px #000; }
+    #loading.failed #loading-sub { color: #aaa; font-size: 12px; }
 
     #left { position: absolute; top: 10px; left: 12px; z-index: 1000; width: 258px; }
     #title { color: #eee; font-size: 15px; font-weight: 700; text-shadow: 0 1px 3px #000; }
@@ -1223,7 +1226,7 @@ maplibregl.addProtocol('pmtiles', new pmtiles.Protocol().tile);
    has to be the manifest and not an apology for its absence.
 
    The cost on the published site is one small 404 before anything else loads. */
-const DATA_R2 = 'https://pub-ae551368cea941f39101e13c84d60bde.r2.dev/religiondots/data/';
+const DATA_R2 = 'https://data.anita.garden/religiondots/data/';
 let DATA_BASE = 'data/';
 
 async function resolveDataBase() {
@@ -6277,7 +6280,7 @@ function gatherPlaces() {
   }
   PLACES = out;
 }
-const LD_R2 = 'https://pub-ae551368cea941f39101e13c84d60bde.r2.dev/languagedots/';
+const LD_R2 = 'https://data.anita.garden/languagedots/';
 let ADMIN1 = null, admin1P = null;
 function loadAdmin1() {
   if (admin1P) return;
@@ -10017,13 +10020,39 @@ function doneLoading() {
    `Content-Encoding: gzip`, so a stream reader yields inflated bytes and `received` lands on
    exactly `10 * dots`. Counting the wire instead would make the bar stop at about two thirds
    published and at 100% locally, which is the shape of a bug rather than a measurement. */
-const LOAD = { total: 0, got: 0, files: 0, done: 0 };
+const LOAD = { total: 0, got: 0, files: 0, done: 0, failed: false };
+
+/* A FAILED LOAD SAYS SO, rather than sitting on "loading…" for ever (2026-10-19: a Mac reader's
+   page stalled before the manifest, most likely because r2.dev was blocked on their network or
+   by a filter list, and nothing on screen said anything had gone wrong). Names the host the data
+   comes from, because a blocked host is the usual cause and the one the reader can act on.
+   A no-op once the overlay is gone: a late failure behind a map that has its dots is not news. */
+function blockedHint() {
+  let host = DATA_BASE;
+  try { host = new URL(DATA_BASE, location.href).host; } catch (e) { /* keep the raw string */ }
+  return 'An ad blocker or network filter may be blocking ' + host + '.';
+}
+function loadFailed(err) {
+  if (err) console.error('load failed:', err);
+  const el = document.getElementById('loading');
+  if (!el) return;
+  LOAD.failed = true;
+  el.classList.add('failed');
+  document.getElementById('loading-text').textContent = "Couldn't load the map data.";
+  document.getElementById('loading-sub').textContent = blockedHint();
+}
+/* A blocked request can also hang rather than fail. Soft: the first real progress replaces it. */
+setTimeout(() => {
+  if (LOAD.total || LOAD.failed || !document.getElementById('loading')) return;
+  document.getElementById('loading-text').textContent = 'Still waiting for the map data.';
+  document.getElementById('loading-sub').textContent = blockedHint();
+}, 30000);
 
 function loadProgress() {
   const bar = document.getElementById('loading-bar-fill');
   const txt = document.getElementById('loading-text');
   const sub = document.getElementById('loading-sub');
-  if (!bar) return;
+  if (!bar || LOAD.failed) return;
   const frac = LOAD.total ? Math.min(1, LOAD.got / LOAD.total) : 0;
   bar.style.width = (frac * 100).toFixed(1) + '%';
   if (txt) txt.textContent = 'loading… ' + Math.round(frac * 100) + '%';
@@ -10122,7 +10151,7 @@ SCATTER.loadAll = async function () {
   const man = await fetch(DATA_BASE + 'buffers/manifest.json').then(r => r.json()).catch(() => null);
   if (!man) {
     console.warn('no data/buffers/manifest.json — run buffers.py');
-    doneLoading();
+    loadFailed();
     return;
   }
   this.nodes = man.nodes;
@@ -10265,6 +10294,7 @@ SCATTER.loadAll = async function () {
     if (failures.length === fineList.length) {
       // Nothing at all arrived, which is the case the coarse fallback was written for.
       console.warn('scatter: every fine buffer failed, falling back to the coarse edition');
+      if (!eds['10k']) { loadFailed(); return; }
     } else {
       settle();
     }
@@ -10763,7 +10793,10 @@ function guardEnglishName(id) {
   map.setLayoutProperty(id, 'text-field', fix(f));
 }
 
-map.on('load', async () => {
+/* Any throw in here, a failed counts.json fetch included, used to vanish into an unhandled
+   rejection and leave "loading…" up for ever; `loadFailed` puts it on screen. */
+map.on('load', () => { onMapLoad().catch(loadFailed); });
+async function onMapLoad() {
   for (const l of map.getStyle().layers) if (l.type === 'symbol') guardEnglishName(l.id);
   loadOverrides();          // before the first paint, or a saved colour flashes as the default
   /* FIRST, and awaited: every other fetch below builds its URL out of DATA_BASE, and so does
@@ -10963,7 +10996,7 @@ map.on('load', async () => {
   /* Registered before the load starts, so a country that fails during the initial fill is
      already covered by the time the reader pans anywhere. */
   SCATTER.watchMissing();
-  SCATTER.loadAll();
+  SCATTER.loadAll().catch(loadFailed);
   // Auto's own copy of the wash's polygons, so it can tell where the camera is (centreShares).
   // Neither is awaited: the map is usable before either arrives.
   loadShapes();
@@ -11168,7 +11201,7 @@ map.on('load', async () => {
      the new tiles are in, which is the first moment the question is answerable. */
   map.on('moveend', considerCamera);
   map.on('idle', considerCamera);
-});
+}
 
 // ---------------------------------------------------------------- controls
 document.getElementById('cc-button').onclick = e => {

@@ -385,6 +385,13 @@ sitemap: false
   .tnote { color: var(--warn); font-size: 12px; line-height: 1.45; margin: 6px 0; }
 
   .maplibregl-ctrl-attrib { font-size: 10px; }
+  /* The scale bar in the page's own colours and font (Anita, 2026-10-19: it looked out of
+     place): the panel's glass, a thin bracket in the border grey, the muted text. */
+  .maplibregl-ctrl.maplibregl-ctrl-scale {
+    background: var(--glass); color: var(--g9a); font-family: 'Nunito', sans-serif;
+    font-size: 11px; line-height: 1.5; padding: 0 6px; border: 1px solid var(--g66);
+    border-top: none; box-sizing: border-box;
+  }
 
   .maplibregl-popup { pointer-events: none; }
   .maplibregl-popup-content {
@@ -1269,7 +1276,7 @@ const OSM_ATTR = '<a href="https://www.openstreetmap.org/copyright">© OpenStree
    local answer is the index itself, so the maps tree pays nothing; the published page pays
    one small 404. regions.json must therefore never be copied into the website repo.
    Every data URL goes through dataUrl (pmtiles, logos) or dataFetch (everything fetched). */
-const DATA_R2 = 'https://pub-ae551368cea941f39101e13c84d60bde.r2.dev/noritetsu/';
+const DATA_R2 = 'https://data.anita.garden/noritetsu/';
 let DATA_ROOT = '';
 const dataUrl = p => DATA_ROOT + p;
 const BASE_READY = (async () => {
@@ -4911,6 +4918,10 @@ function renderRides() {
   // At the top, so they are not below hundreds of trips (Anita, 2026-10-07).
   let h = `<div class="btnrow" style="margin:0 0 6px">`
     + `<button class="act" onclick="startTrace()">trace a journey</button>`
+    + `<button class="act" onclick="exportRides()">Export</button>`
+    + `<button class="act" onclick="document.getElementById('importfile').click()">Import</button>`
+    + `<input type="file" id="importfile" accept="application/json" style="display:none" `
+    + `onchange="importRides(this)" />`
     + `<button class="act" onclick="openPoster()">Poster</button>`
     + `<button class="act" onclick="shareLink()">Share link</button></div>`;
   const list = trips().reverse();
