@@ -71,6 +71,7 @@ exclude:
   - music/cluster_names.json
   # Working files that aren't part of the site.
   - todo.txt
+  - seo-checklist.md
   - serve.sh
   - README.md
   - package-lock.json
