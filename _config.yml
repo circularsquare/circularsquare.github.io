@@ -35,6 +35,14 @@ plugins:
   # _data/feed_entries.yml, which scripts/build_feed_data.py derives from git.
   - jekyll-sitemap
 
+# Kept out of sitemap.xml. Done here because fulanstory.md is an empty file, so
+# it has no front matter to put sitemap: false in.
+defaults:
+  - scope:
+      path: "pages/nix/fulanstory.md"
+    values:
+      sitemap: false
+
 header_pages:
   - pages/home.md
   - pages/projects/projects.md
@@ -72,6 +80,7 @@ exclude:
   # Working files that aren't part of the site.
   - todo.txt
   - seo-checklist.md
+  - seo-drafts.md
   - serve.sh
   - README.md
   - package-lock.json

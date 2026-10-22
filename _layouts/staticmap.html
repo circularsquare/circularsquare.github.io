@@ -10,7 +10,7 @@
     <main class="page-content staticmap-main" aria-label="Content">
       <div class="staticmap-viewport" id="staticmap-viewport">
         <div class="staticmap-scene" id="staticmap-scene">
-          <img class="staticmap-image" src="{{ page.image }}" alt="{{ page.title | escape }}">
+          <img class="staticmap-image" src="{{ page.image.full | default: page.image }}" alt="{{ page.title | escape }}">
         </div>
       </div>
     </main>

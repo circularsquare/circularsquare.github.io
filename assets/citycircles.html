@@ -7,15 +7,19 @@ permalink: /circles/
 <head>
 <meta charset="UTF-8">
 {%- include analytics.html -%}
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
 <title>Proximity City Quiz</title>
 <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.css"/>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{--bg:#e3ffe0;--surface:#ffffff;--surface2:#e8f1e0;--border:#aacc9f;--border2:#648f5d;--text:#3a411e;--muted:#7f9363;--radius:2px;--fs-lg:16px;--fs-md:13px;--fs-sm:11px}
 html,body{height:100%;background:var(--bg);color:var(--text);font-family:Georgia,serif;font-size:var(--fs-md);overflow:hidden}
-#app{display:grid;grid-template-columns:clamp(232px,25vw,290px) 1fr;height:100vh}
-#sidebar{background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
+/* dvh, not vh: on phones 100vh is the height with the browser toolbars hidden,
+   so the bottom of the sidebar (finish, new game) sat underneath them. */
+#app{display:grid;grid-template-columns:clamp(232px,25vw,290px) 1fr;height:100vh;height:100dvh}
+/* Scrolls rather than clips, so a short window (a phone on its side) can still
+   reach the buttons at the bottom. */
+#sidebar{background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow-x:hidden;overflow-y:auto}
 #header{padding:18px 18px 14px;border-top:4px solid var(--border2);border-bottom:1px solid var(--border)}
 #header h1{font-size:20px}
 #mode-section{padding:12px 18px 6px}
@@ -31,8 +35,12 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:Georgia
 .city-tip{pointer-events:none}
 .city-tip .maplibregl-popup-content{font-family:Georgia,serif;font-size:var(--fs-sm);background:#ffffff;border:1px solid var(--border2);color:var(--text);border-radius:2px;padding:3px 8px;box-shadow:0 1px 4px rgba(0,0,0,.1);white-space:nowrap}
 .city-tip .maplibregl-popup-tip{display:none}
-#input-section{padding:12px 18px;border-bottom:1px solid var(--border)}
-#city-input{width:100%;background:var(--surface);border:1px solid var(--border);color:var(--text);font-family:Georgia,serif;font-size:var(--fs-md);padding:8px 11px;border-radius:var(--radius);outline:none;transition:border-color .15s;margin-bottom:7px}
+#input-section{padding:12px 18px;border-bottom:1px solid var(--border);display:flex;gap:6px}
+#city-input{flex:1;min-width:0;background:var(--surface);border:1px solid var(--border);color:var(--text);font-family:Georgia,serif;font-size:var(--fs-md);padding:8px 11px;border-radius:var(--radius);outline:none;transition:border-color .15s}
+/* Square: as wide as the text box is tall. */
+#guess-btn{flex:0 0 auto;align-self:stretch;aspect-ratio:1;padding:0;display:flex;align-items:center;justify-content:center}
+/* Phones only: a one-line summary that stands in for the settings once a game has started. */
+#settings-summary{display:none}
 #city-input::placeholder{color:var(--muted)}
 #city-input:focus{border-color:var(--border2)}
 #city-input.shake{animation:shake .3s ease;border-color:#c0392b}
@@ -41,8 +49,11 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:Georgia
 .stat{background:var(--surface2);border-radius:var(--radius);padding:9px 8px 7px;text-align:center}
 .stat-val{font-size:var(--fs-lg);color:var(--text);line-height:1;margin-bottom:3px}
 .stat-label{font-size:var(--fs-sm);color:var(--muted)}
-#found-section{flex:1;overflow:hidden;display:flex;flex-direction:column}
-#found-header{padding:10px 18px 7px;font-size:var(--fs-sm);color:var(--muted);border-bottom:1px solid var(--border)}
+#found-section{flex:1;min-height:120px;overflow:hidden;display:flex;flex-direction:column}
+/* A button so it can open the list on mobile; on desktop it looks and acts like
+   a plain label. */
+#found-header{padding:10px 18px 7px;font-family:Georgia,serif;font-size:var(--fs-sm);color:var(--muted);border:none;border-bottom:1px solid var(--border);background:none;text-align:left;cursor:default}
+#found-header .chev{display:none}
 #found-list{flex:1;overflow-y:auto;padding:5px 18px;scrollbar-width:thin;scrollbar-color:var(--border) transparent}
 .found-item{display:flex;align-items:baseline;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--border);animation:fadein .2s ease}
 @keyframes fadein{from{opacity:0;transform:translateY(-3px)}to{opacity:1;transform:translateY(0)}}
@@ -50,11 +61,16 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:Georgia
 .found-item.done .found-city{color:var(--muted);text-decoration:line-through}
 .found-pop{color:var(--muted);font-size:var(--fs-sm)}
 #actions{padding:10px 18px;border-top:1px solid var(--border);display:flex;gap:7px}
-.btn{flex:1;padding:7px;border:1px solid var(--border);background:transparent;color:var(--muted);font-family:Georgia,serif;font-size:var(--fs-sm);cursor:pointer;border-radius:var(--radius);transition:all .15s}
+.btn{flex:1;padding:7px 4px;white-space:nowrap;border:1px solid var(--border);background:transparent;color:var(--muted);font-family:Georgia,serif;font-size:var(--fs-sm);cursor:pointer;border-radius:var(--radius);transition:all .15s}
 .btn:hover{color:var(--text);border-color:var(--border2)}
 .btn.primary{border-color:var(--text);color:var(--text)}
 .btn.primary:hover{background:var(--text);color:var(--surface)}
-#map{width:100%;height:100vh}
+.btn:disabled{opacity:.4;cursor:default;pointer-events:none}
+#about-row{padding:8px 18px;border-top:1px solid var(--border);text-align:center}
+#about-row a,.about-m{font-family:Georgia,serif;font-size:var(--fs-sm);color:var(--muted);text-decoration:underline}
+#found-drop{flex:1;min-height:0;display:flex;flex-direction:column}
+.about-m{display:none}
+#map{width:100%;height:100%;min-height:0}
 #legend{position:absolute;bottom:28px;right:10px;z-index:500;background:rgba(245,250,240,.93);border:1px solid var(--border);border-radius:2px;padding:8px 11px;font-family:Georgia,serif;font-size:var(--fs-sm);color:var(--muted)}
 #legend .lr{display:flex;align-items:center;gap:7px;margin-bottom:3px}
 #legend .lr:last-child{margin-bottom:0}
@@ -83,6 +99,53 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:Georgia
 .lb-table tbody tr:last-child td{border-bottom:none}
 .lb-you td{background:var(--surface2)}
 .lb-empty{font-size:var(--fs-sm);color:var(--muted);padding:10px 0;text-align:center}
+.win-lb-head{font-size:var(--fs-sm);color:var(--text)}
+#win-lb-label{font-size:var(--fs-sm);color:var(--muted);margin-bottom:8px}
+/* The leaderboard opened mid-game: just the board, nothing about the game. */
+#win-overlay.lb-only #win-found,#win-overlay.lb-only #win-sub,#win-overlay.lb-only #win-desc,
+#win-overlay.lb-only #win-play-again,#win-overlay.lb-only #win-submit-row,#win-overlay.lb-only #win-submit-status{display:none}
+#win-overlay.lb-only #win-lb-section{margin-top:0;border-top:none;padding-top:0}
+
+/* ── Phones: controls in a bar across the top, map below ──
+   The text box sits in that top bar rather than along the bottom, so the
+   on-screen keyboard (which comes up from the bottom) can never cover it.
+   iOS zooms the page into any input under 16px on focus; maximum-scale=1 in
+   the viewport tag stops that, and the map handles its own pinch zoom anyway. */
+@media (max-width:640px){
+  #app{grid-template-columns:1fr;grid-template-rows:auto 1fr}
+  #sidebar{display:grid;grid-template-columns:auto minmax(0,1fr);grid-template-areas:"head actions" "mode config" "sum sum" "input input" "found stats";
+    border-right:none;border-bottom:1px solid var(--border);overflow:visible;position:relative;z-index:600}
+  #header{grid-area:head;padding:10px 0 8px 16px;border-top-width:3px;border-bottom:none}
+  #header h1{font-size:15px;white-space:nowrap}
+  #actions{grid-area:actions;padding:7px 16px 6px 8px;border-top:3px solid var(--border2);justify-content:flex-end;flex-wrap:wrap;gap:5px}
+  #actions .btn{flex:0 0 auto;padding:5px 7px}
+  #mode-section{grid-area:mode;padding:2px 0 8px 16px}
+  #mode-section .slabel{display:none}
+  .mode-tab{padding:5px 8px;white-space:nowrap}
+  #config-section{grid-area:config;flex-direction:row;flex-wrap:wrap;justify-content:flex-end;align-items:center;gap:6px 10px;padding:2px 16px 8px 8px;border-bottom:none}
+  .config-row{gap:5px}
+  .config-row .long{display:none}
+  #sidebar.playing:not(.settings-open) #mode-section,#sidebar.playing:not(.settings-open) #config-section{display:none}
+  #sidebar.playing #settings-summary{display:block;grid-area:sum;padding:0 16px 8px;background:none;border:none;text-align:left;font-family:Georgia,serif;font-size:var(--fs-sm);color:var(--muted);cursor:pointer}
+  #input-section{grid-area:input;padding:0 16px 8px;border-bottom:none}
+  #city-input{font-size:14px;padding:7px 10px}
+  #found-section{grid-area:found;min-height:0;overflow:visible;display:block}
+  #found-header{cursor:pointer;padding:7px 0 7px 16px;border-bottom:none;border-top:1px solid var(--border);color:var(--text);width:100%}
+  #found-header .chev{display:inline}
+  #stats{grid-area:stats;display:flex;justify-content:flex-end;align-items:center;gap:12px;padding:0 16px;border-bottom:none;border-top:1px solid var(--border)}
+  .stat{display:flex;align-items:baseline;gap:4px;background:none;padding:0}
+  .stat-val{font-size:var(--fs-md);margin-bottom:0}
+  .stat-label .long{display:none}
+  /* The country list drops down over the map, so opening it never resizes the map. */
+  #found-drop{display:none;position:absolute;top:100%;left:0;right:0;max-height:25dvh;background:var(--surface);border-bottom:1px solid var(--border);box-shadow:0 4px 12px rgba(0,0,0,.1);padding:5px 16px 10px}
+  #sidebar.countries-open #found-drop{display:flex}
+  #found-list{padding:0;margin-bottom:8px}
+  #found-list:empty{display:none}
+  .about-m{display:block}
+  #about-row{display:none}
+  #legend{display:none}
+  #win-overlay{top:8px;left:8px;right:8px;width:auto;max-height:calc(100dvh - 16px);overflow-y:auto}
+}
 </style>
 </head>
 <body>
@@ -100,7 +163,7 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:Georgia
     </div>
     <div id="config-section">
       <div class="config-row" id="radius-row">
-        <label>radius per guess</label>
+        <label>radius<span class="long"> per guess</span></label>
         <select id="radius-select" onchange="onRadiusChange()">
           <option value="100">100 km</option>
           <option value="200">200 km</option>
@@ -109,7 +172,7 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:Georgia
         </select>
       </div>
       <div class="config-row" id="nearest-row" style="display:none">
-        <label>cities per guess</label>
+        <label>cities<span class="long"> per guess</span></label>
         <select id="nearest-select" onchange="onNearestChange()">
           <option value="20" selected>20 cities</option>
           <option value="50">50 cities</option>
@@ -118,7 +181,7 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:Georgia
         </select>
       </div>
       <div class="config-row">
-        <label>min population</label>
+        <label>min pop<span class="long">ulation</span></label>
         <select id="pop-select" onchange="onPopChange()">
           <option value="10000">10k+</option>
           <option value="50000" selected>50k+</option>
@@ -126,23 +189,30 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:Georgia
         </select>
       </div>
       </div>
+    <button id="settings-summary" onclick="toggleSettings()"></button>
     <div id="input-section">
-      <input type="text" id="city-input" placeholder="type a city name, press enter…" autocomplete="off" spellcheck="false"/>
+      <input type="text" id="city-input" placeholder="type a city…" autocomplete="off" spellcheck="false" enterkeyhint="go"/>
+      <!-- mousedown is cancelled so tapping it doesn't take focus from the text box and drop the phone keyboard -->
+      <button class="btn primary" id="guess-btn" title="submit" aria-label="submit" onmousedown="event.preventDefault()" onclick="submitGuess()"><svg viewBox="0 0 16 16" width="15" height="15" aria-hidden="true"><path d="M2.5 8h10.5M9 4l4 4-4 4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
     </div>
     <div id="stats">
       <div class="stat"><div class="stat-val" id="stat-cities">0/—</div><div class="stat-label">cities</div></div>
-      <div class="stat"><div class="stat-val" id="stat-pop">—</div><div class="stat-label">population</div></div>
+      <div class="stat"><div class="stat-val" id="stat-pop">—</div><div class="stat-label">pop<span class="long">ulation</span></div></div>
     </div>
     <div id="found-section">
-      <div id="found-header">countries</div>
-      <div id="found-list"></div>
+      <button id="found-header" onclick="toggleCountries()">countries<span class="chev" id="found-chev"> ▸</span></button>
+      <div id="found-drop">
+        <div id="found-list"></div>
+        <a class="about-m" href="/projects/citycircles">about this quiz</a>
+      </div>
     </div>
     <div id="actions">
-      <button class="btn primary" id="finish-btn" onclick="giveUp()">finish</button>
+      <button class="btn primary" id="finish-btn" onclick="giveUp()" disabled>finish</button>
       <button class="btn primary" onclick="newGame()">new game</button>
+      <button class="btn primary" id="lb-btn" onclick="showLeaderboard()">leaderboard</button>
     </div>
-    <div style="padding:8px 18px;border-top:1px solid var(--border);text-align:center">
-      <a href="/projects/citycircles" style="font-family:Georgia,serif;font-size:11px;color:var(--muted);text-decoration:underline">about</a>
+    <div id="about-row">
+      <a href="/projects/citycircles">about</a>
     </div>
   </div>
   <div id="map"></div>
@@ -162,14 +232,15 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:Georgia
     <div class="win-num" id="win-found">0</div>
     <div class="win-sub" id="win-sub">cities revealed</div>
     <div class="win-desc" id="win-desc"></div>
-    <button class="btn primary" style="width:100%" onclick="newGame()">play again</button>
+    <button class="btn primary" id="win-play-again" style="width:100%" onclick="newGame()">play again</button>
     <div id="win-lb-section">
       <div id="win-submit-row">
         <input type="text" id="win-name-input" placeholder="your name" maxlength="24" autocomplete="off" spellcheck="false"/>
         <button id="win-submit-btn" class="btn primary" onclick="winSubmitScore()">submit score</button>
       </div>
       <div id="win-submit-status"></div>
-      <div style="font-size:var(--fs-sm);color:var(--muted);margin-bottom:8px">leaderboard</div>
+      <div class="win-lb-head">leaderboard</div>
+      <div id="win-lb-label"></div>
       <div id="win-lb-entries"></div>
     </div>
   </div>
@@ -832,6 +903,13 @@ function buildMap(style){
     map.on('mousemove','city-dots',onDotHover);
     map.on('mouseleave','city-dots',clearDotHover);
 
+    // The compact credits start open and only fold away on the first drag. On a
+    // phone the open box covers a strip of the map, so start it folded there;
+    // the (i) button still opens it.
+    if(matchMedia('(max-width:640px)').matches){
+      document.querySelector('.maplibregl-ctrl-attrib')?.classList.remove('maplibregl-compact-show');
+    }
+
     mapReady=true;
     syncGuessCircles();
     syncCityDots();
@@ -998,6 +1076,8 @@ function upStats(){
   document.getElementById('stat-cities').textContent=revealedSet.size+'/'+totalCities();
   let pop=0; for(const i of revealedSet) pop+=CITIES[i].pop;
   document.getElementById('stat-pop').textContent=revealedSet.size?formatPopLarge(pop):'—';
+  // Nothing to finish before the first guess, and nothing left after a finish.
+  document.getElementById('finish-btn').disabled=gameFinished||guessCount===0;
 }
 
 function revealCity(idx){
@@ -1162,6 +1242,7 @@ function onGuess(raw){
   syncCityDots();
   updateCountryList();
   upStats();
+  saveState();
   if(revealedSet.size>=totalCities()) setTimeout(showWin,500);
   return true;
 }
@@ -1183,13 +1264,19 @@ function newGame(){
   const inp=document.getElementById('city-input');
   inp.value='';
   inp.disabled=false;
-  inp.placeholder='type a city name, press enter\u2026';
+  inp.placeholder='type a city\u2026';
+  document.getElementById('guess-btn').disabled=false;
   upStats();
+  saveState();
   if(mapReady) map.easeTo({center:[10,20],zoom:2});
 }
 
 function giveUp(){
+  if(gameFinished) return;
   gameFinished=true;
+  upStats();
+  saveState();
+  document.getElementById('guess-btn').disabled=true;
   for(const {i} of filteredIndices()){
     if(!revealedSet.has(i)) finishedSet.add(i);
   }
@@ -1210,12 +1297,27 @@ function showWin(){
 // ── Config ──
 function setMode(m){
   mode=m;
-  document.querySelectorAll('.mode-tab').forEach(t=>t.classList.toggle('active',t.dataset.mode===m));
-  document.getElementById('radius-row').style.display=m==='radius'?'flex':'none';
-  document.getElementById('nearest-row').style.display=m==='nearest'?'flex':'none';
+  syncModeUI();
   newGame();
 }
+function syncModeUI(){
+  document.querySelectorAll('.mode-tab').forEach(t=>t.classList.toggle('active',t.dataset.mode===mode));
+  document.getElementById('radius-row').style.display=mode==='radius'?'flex':'none';
+  document.getElementById('nearest-row').style.display=mode==='nearest'?'flex':'none';
+}
+// Phones only (the CSS ignores these classes on desktop): once a game starts
+// the locked settings fold into a one-line summary that can be tapped open.
+function toggleSettings(){
+  document.getElementById('sidebar').classList.toggle('settings-open');
+  syncSettingsSummary();
+}
+function syncSettingsSummary(){
+  const open=document.getElementById('sidebar').classList.contains('settings-open');
+  document.getElementById('settings-summary').textContent=lbLabel()+(open?' ▾':' ▸');
+}
 function lockControls(){
+  document.getElementById('sidebar').classList.add('playing');
+  syncSettingsSummary();
   document.getElementById('radius-select').disabled=true;
   document.getElementById('nearest-select').disabled=true;
   document.getElementById('pop-select').disabled=true;
@@ -1223,6 +1325,7 @@ function lockControls(){
   document.getElementById('mode-tabs-wrap').style.opacity='0.45';
 }
 function unlockControls(){
+  document.getElementById('sidebar').classList.remove('playing','settings-open');
   document.getElementById('radius-select').disabled=false;
   document.getElementById('nearest-select').disabled=false;
   document.getElementById('pop-select').disabled=false;
@@ -1232,10 +1335,12 @@ function unlockControls(){
 function onRadiusChange(){
   if(guessCount>0)return;
   radKm=+document.getElementById('radius-select').value;
+  saveState();
 }
 function onNearestChange(){
   if(guessCount>0)return;
   nearN=+document.getElementById('nearest-select').value;
+  saveState();
 }
 function onPopChange(){
   minPop=+document.getElementById('pop-select').value;
@@ -1245,17 +1350,84 @@ function onPopChange(){
 
 // ── Input ──
 document.getElementById('city-input').addEventListener('keydown',e=>{
-  if(e.key!=='Enter')return;
-  const v=e.target.value.trim();
-  if(!v)return;
+  if(e.key==='Enter') submitGuess();
+});
+
+// Enter in the text box, or the → button beside it.
+function submitGuess(){
+  const inp=document.getElementById('city-input');
+  if(inp.disabled) return;
+  const v=inp.value.trim();
+  if(!v){inp.focus();return;}
   if(onGuess(v)){
-    e.target.value='';
+    inp.value='';
   } else {
-    const inp=e.target;
     inp.classList.add('shake');
     inp.addEventListener('animationend',()=>inp.classList.remove('shake'),{once:true});
   }
+  // Keep the keyboard up on phones for the next guess.
+  if(!inp.disabled) inp.focus();
+}
+
+// Clicking anywhere outside the finish/leaderboard box closes it. A click that
+// ends a map drag doesn't count, so panning the map with the box open is fine.
+let downAt=null;
+document.addEventListener('pointerdown',e=>{downAt=[e.clientX,e.clientY];},true);
+document.addEventListener('click',e=>{
+  const ov=document.getElementById('win-overlay');
+  if(!ov.classList.contains('show')) return;
+  if(document.getElementById('win-box').contains(e.target)||e.target.closest('#lb-btn')) return;
+  if(downAt&&Math.hypot(e.clientX-downAt[0],e.clientY-downAt[1])>5) return;
+  ov.classList.remove('show');
 });
+
+// ── Saved progress ──
+// The game in progress and the settings are kept in this browser, so leaving
+// for the about page (or closing the tab) doesn't lose a run. Only the guess
+// origins are stored; replaying them in order rebuilds everything else. A
+// finished game is not kept, so coming back after a finish starts fresh.
+const SAVE_KEY='citycircles-save';
+
+function saveState(){
+  try{
+    localStorage.setItem(SAVE_KEY,JSON.stringify({
+      n:CITIES.length, mode, radKm, nearN, minPop,
+      guesses:gameFinished?[]:[...guessedSet],
+      guessCount:gameFinished?0:guessCount,
+    }));
+  }catch(e){}
+}
+
+// Sets a dropdown to a saved value, but only one it actually offers.
+function restoreSelect(id,val){
+  const sel=document.getElementById(id);
+  if([...sel.options].some(o=>+o.value===val)) sel.value=String(val);
+  return +sel.value;
+}
+
+function restoreState(){
+  let s=null;
+  try{s=JSON.parse(localStorage.getItem(SAVE_KEY));}catch(e){}
+  // A different city count means the data file changed and the saved indices
+  // no longer point at the same cities.
+  if(!s||s.n!==CITIES.length){newGame();return;}
+  mode=s.mode==='nearest'?'nearest':'radius';
+  radKm=restoreSelect('radius-select',s.radKm);
+  nearN=restoreSelect('nearest-select',s.nearN);
+  minPop=restoreSelect('pop-select',s.minPop);
+  _filteredCache=null;
+  syncModeUI();
+  newGame();
+  const guesses=(s.guesses||[]).filter(i=>Number.isInteger(i)&&i>=0&&i<CITIES.length);
+  if(!guesses.length) return;
+  for(const i of guesses) processGuessOrigin(i);
+  guessCount=Math.max(1,s.guessCount|0);
+  lockControls();
+  syncCityDots();
+  updateCountryList();
+  upStats();
+  saveState();
+}
 
 document.addEventListener('keydown',e=>{
   const inp=document.getElementById('city-input');
@@ -1269,7 +1441,7 @@ document.addEventListener('keydown',e=>{
 // to resize every marker by hand; the dot layer's radius expression covers zoom
 // and the source is viewport-independent, so panning costs nothing to maintain.
 startMap();
-loadCities();newGame();
+loadCities();restoreState();
 
 // ── Leaderboard ──
 // Backed by shonei-server (circles.go). This replaced a jsonbin.io bin whose
@@ -1373,15 +1545,39 @@ function showFinishOverlay(won){
   document.getElementById('win-found').textContent=`${revealedSet.size}/${total}`;
   document.getElementById('win-sub').textContent='cities found';
   document.getElementById('win-desc').textContent=`${guessCount} guess${guessCount!==1?'es':''}`;
+  document.getElementById('win-overlay').classList.remove('lb-only');
   document.getElementById('win-overlay').classList.add('show');
   document.getElementById('win-submit-status').textContent='';
   document.getElementById('win-submit-btn').disabled=false;
   // keep name from previous submission
+  lbLoadInto();
+}
+
+function lbLoadInto(){
+  document.getElementById('win-lb-label').textContent=lbLabel();
   const entries=document.getElementById('win-lb-entries');
   entries.innerHTML='<div class="lb-empty">loading…</div>';
   (async()=>{
     entries.innerHTML=lbRenderTable(await lbFetch(),null);
   })();
+}
+
+// The leaderboard button. Mid-game it shows only the board, and doesn't count
+// as a finish: checking the board used to mean pressing finish, which logged an
+// empty game every time. After a finish it reopens the full finish box, so a
+// player who closed it can still submit their name.
+function showLeaderboard(){
+  const ov=document.getElementById('win-overlay');
+  ov.classList.toggle('lb-only',!gameFinished);
+  ov.classList.add('show');
+  lbLoadInto();
+}
+
+// Mobile only: the country list is a drop-down under the top bar. On desktop
+// the class has no effect and the list is always shown.
+function toggleCountries(){
+  const open=document.getElementById('sidebar').classList.toggle('countries-open');
+  document.getElementById('found-chev').textContent=open?' ▾':' ▸';
 }
 </script>
 </body>
