@@ -54,3 +54,24 @@ if enough trancin gathers at a vertex, it can break off, carrying rocks into the
 over the past 40 years  the rate of emission has grown stronger, especially in high regions of trapzon and lakta. engineers have constructed communication channels along trancin streams, sending high surface area letters along the ridges. because of this, modern cities have sprung up at these high points, such as al alta and corcyros. engineers have also constructed tranciducts to divert flow in certain beneficial directions.
 
 over time, the mountains have gotten much higher. speed of transit is prized.
+
+
+---
+[2026-10-22 21:00]
+some ideas for thoughts
+
+being seen
+it is very important to me to be seen. to be seen is why i make this website. this is somewhat embarassing to say but to be seen is also a big part of why i love my friends.
+art is a form of beautification. maps and other beautiful projects are a form of self expression, of makeup. 
+to use of ai for self expression sounds somewhat contradictory. but to use ai as makeup feels more reasonable. who knows ...
+
+language
+
+i cannot speak unless i am certain i am speaking perfectly. i want to be understood... if i am misunderstood i want it to not be my fault.
+
+this trait has made me unable to learn to speak other languages. but i love to listen to people speak, and read about languages. i have even made a language map. it makes me sad that i cant speak
+
+
+concentration (inverse river thing)
+
+work, and identity
