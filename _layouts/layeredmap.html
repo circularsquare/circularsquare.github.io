@@ -24,8 +24,8 @@
       // in one shader so they can be switched on and off. Pan/zoom, cover fit, the sharp-bilinear
       // filter and the loose clamp are the same as staticmap.html. Each layer is fetched the first
       // time it is switched on. A map bigger than the GPU's texture limit is drawn in tiles.
-      // Without WebGL2, or if the map can't be put on the GPU, the flattened page.image is shown
-      // instead and the controls stay hidden.
+      // On touch devices, without WebGL2, or if the map can't be put on the GPU, the flattened
+      // page.image is shown instead and the controls stay hidden.
       (function() {
         var LAYERS_DIR = {{ page.layers | jsonify }};
         var FLAT_IMAGE = {{ page.image | jsonify }};
@@ -572,6 +572,13 @@ void main(){
           fitCover();
           render();
         });
+
+        // Layers are a desktop feature: phones and tablets (touch as the main input) get the
+        // flat image. Anita's phone never showed the switches, even with tiling.
+        if (window.matchMedia('(hover: none) and (pointer: coarse)').matches) {
+          showFallbackImg();
+          return;
+        }
 
         fetch(LAYERS_DIR + 'layers.json?v={{ site.time | date: "%s" }}').then(function(r) {
           if (!r.ok) throw new Error(r.status);
