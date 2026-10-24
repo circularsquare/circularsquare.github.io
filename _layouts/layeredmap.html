@@ -23,8 +23,9 @@
       // A pixel-art map made of separately exported layers (see maps/asia1m/weblayers.py), blended
       // in one shader so they can be switched on and off. Pan/zoom, cover fit, the sharp-bilinear
       // filter and the loose clamp are the same as staticmap.html. Each layer is fetched the first
-      // time it is switched on. Without WebGL2, or if the map is bigger than the GPU's texture
-      // limit, the flattened page.image is shown instead and the controls stay hidden.
+      // time it is switched on. A map bigger than the GPU's texture limit is drawn in tiles.
+      // Without WebGL2, or if the map can't be put on the GPU, the flattened page.image is shown
+      // instead and the controls stay hidden.
       (function() {
         var LAYERS_DIR = {{ page.layers | jsonify }};
         var FLAT_IMAGE = {{ page.image | jsonify }};
@@ -134,6 +135,8 @@ void main(){ vUv = aUv; gl_Position = vec4(aPos, 0.0, 1.0); }`;
         // The plain map is its own image rather than a whitening mask over the colored one:
         // zoomed out, mipmaps average borders with the fills beside them, and whitening that
         // average leaves the borders tinted toward their neighbours.
+        // vUv is in full-map texels. Each draw covers one tile, and every rect is that layer's
+        // piece of the tile, so the same shader serves one tile or several.
         var FRAG_SRC = `#version 300 es
 precision highp float;
 uniform sampler2D uBase;
@@ -142,7 +145,7 @@ uniform sampler2D uLine1;
 uniform sampler2D uLine2;
 uniform sampler2D uLine3;
 uniform sampler2D uLabels;
-uniform vec2 uTexSize;
+uniform vec4 uBaseRect;
 uniform float uRegion;
 uniform int uKind[5];       // 0 off, 1 mask, 2 premultiplied rgba; [4] is the labels
 uniform vec4 uRect[5];
@@ -167,7 +170,7 @@ vec3 layer(vec3 c, sampler2D s, int i, vec2 t, vec2 dx, vec2 dy){
 }
 
 void main(){
-  vec2 texel = vUv * uTexSize;
+  vec2 texel = vUv;
   vec2 dx = dFdx(texel);
   vec2 dy = dFdy(texel);
   vec2 dudv = abs(dx) + abs(dy);
@@ -177,7 +180,8 @@ void main(){
   vec2 ramp = excess / max(0.5 - uRegion, 1e-5);
   vec2 f = 0.5 + sign(cd) * 0.5 * ramp;
   vec2 t = mix(tf + f, texel, step(1.0, dudv));
-  vec3 c = textureGrad(uBase, t / uTexSize, dx / uTexSize, dy / uTexSize).rgb;
+  vec2 bs = uBaseRect.zw;
+  vec3 c = textureGrad(uBase, (t - uBaseRect.xy) / bs, dx / bs, dy / bs).rgb;
   c = layer(c, uLine0, 0, t, dx, dy);
   c = layer(c, uLine1, 1, t, dx, dy);
   c = layer(c, uLine2, 2, t, dx, dy);
@@ -212,10 +216,9 @@ void main(){
             return false;
           }
           gl.useProgram(prog);
-          ['uTexSize', 'uRegion', 'uKind', 'uRect', 'uColor', 'uColor2', 'uOpacity'].forEach(function(n) {
+          ['uBaseRect', 'uRegion', 'uKind', 'uRect', 'uColor', 'uColor2', 'uOpacity'].forEach(function(n) {
             U[n] = gl.getUniformLocation(prog, n);
           });
-          gl.uniform2f(U.uTexSize, natW, natH);
           gl.uniform1f(U.uRegion, 0.5 - 0.5 / PIXEL_SCALE);
           ['uBase', 'uLine0', 'uLine1', 'uLine2', 'uLine3', 'uLabels'].forEach(function(n, unit) {
             gl.uniform1i(gl.getUniformLocation(prog, n), unit);
@@ -249,17 +252,25 @@ void main(){
           if (entry.kind === 'rgba') return { internal: gl.RGBA8, format: gl.RGBA, premultiply: true };
           return { internal: gl.RGBA8, format: gl.RGBA };   // base
         }
-        function upload(im, fmt) {
+        // Uploads the piece of im at (sx, sy, w, h) as one mipmapped texture, or returns null.
+        function upload(im, fmt, sx, sy, w, h) {
           var tex = gl.createTexture();
           gl.bindTexture(gl.TEXTURE_2D, tex);
           gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, !!fmt.premultiply);
           gl.pixelStorei(gl.UNPACK_COLORSPACE_CONVERSION_WEBGL, fmt.data ? gl.NONE : gl.BROWSER_DEFAULT_WEBGL);
-          // No UNPACK_FLIP_Y: texture row 0 = image top, matching v=0 at the quad's top edge.
+          gl.pixelStorei(gl.UNPACK_ROW_LENGTH, im.naturalWidth);
+          gl.pixelStorei(gl.UNPACK_SKIP_PIXELS, sx);
+          gl.pixelStorei(gl.UNPACK_SKIP_ROWS, sy);
+          // No UNPACK_FLIP_Y: texture row 0 = image top, matching the quad's top edge.
           while (gl.getError() !== gl.NO_ERROR) {}
-          gl.texImage2D(gl.TEXTURE_2D, 0, fmt.internal, fmt.format, gl.UNSIGNED_BYTE, im);
-          // A truncated PNG can still fire load, then fail here; an empty texture would sample
-          // as opaque black over the whole layer, so leave the layer out instead.
-          if (gl.getError() !== gl.NO_ERROR) {
+          gl.texImage2D(gl.TEXTURE_2D, 0, fmt.internal, w, h, 0, fmt.format, gl.UNSIGNED_BYTE, im);
+          var err = gl.getError();
+          gl.pixelStorei(gl.UNPACK_ROW_LENGTH, 0);
+          gl.pixelStorei(gl.UNPACK_SKIP_PIXELS, 0);
+          gl.pixelStorei(gl.UNPACK_SKIP_ROWS, 0);
+          // A truncated PNG can still fire load, then fail here (as can a GPU out of memory);
+          // an empty texture would sample as opaque black, so leave the piece out instead.
+          if (err !== gl.NO_ERROR) {
             gl.deleteTexture(tex);
             return null;
           }
@@ -271,23 +282,67 @@ void main(){
           return tex;
         }
 
-        // Fetch and upload a layer file once; render when it arrives. The decoded image is
-        // dropped after upload, so only the GPU copy stays in memory.
+        // ===== Tiles =====
+        // A map wider or taller than the GPU's texture limit (8192 on many phones) is drawn as
+        // a grid of tiles, one draw call each. Every layer is cut along the same grid; each
+        // piece overlaps its neighbours by TILE_PAD so filtering and mipmaps near a seam still
+        // see the pixels across it. One tile when the map fits, as on most desktops.
+        // ?maxtex=4096 in the URL forces a smaller limit, to test the tiled path on a desktop.
+        var TILE_PAD = 64, MAX_TILES = 4;
+        var tiles = [];   // { x0, y0, x1, y1 } in map texels, the part each draw call covers
+        function planTiles(maxTex) {
+          var forced = parseInt((location.search.match(/[?&]maxtex=(\d+)/) || [])[1], 10);
+          if (forced) maxTex = Math.min(maxTex, forced);
+          function cuts(n) {
+            var k = n <= maxTex ? 1 : Math.ceil(n / (maxTex - 2 * TILE_PAD)), out = [];
+            for (var i = 0; i <= k; i++) out.push(Math.round(i * n / k));
+            return out;
+          }
+          var xs = cuts(natW), ys = cuts(natH);
+          tiles = [];
+          for (var j = 0; j + 1 < ys.length; j++) {
+            for (var i = 0; i + 1 < xs.length; i++) tiles.push({ x0: xs[i], y0: ys[j], x1: xs[i + 1], y1: ys[j + 1] });
+          }
+          return tiles.length <= MAX_TILES;
+        }
+        // The part of a layer (its crop rect, or the whole map) that tile k's textures hold.
+        function pieceRect(entry, k) {
+          var T = tiles[k];
+          var lx = entry.w ? entry.x : 0, ly = entry.w ? entry.y : 0;
+          var lw = entry.w || natW, lh = entry.w ? entry.h : natH;
+          var x0 = Math.max(lx, T.x0 - TILE_PAD), y0 = Math.max(ly, T.y0 - TILE_PAD);
+          var x1 = Math.min(lx + lw, T.x1 + TILE_PAD), y1 = Math.min(ly + lh, T.y1 + TILE_PAD);
+          if (x1 <= x0 || y1 <= y0) return null;
+          return { x: x0, y: y0, w: x1 - x0, h: y1 - y0, sx: x0 - lx, sy: y0 - ly };
+        }
+
+        // Fetch a layer file once and upload one texture per tile; render when it arrives.
+        // The decoded image is dropped after upload, so only the GPU copies stay in memory.
+        // Returns the store entry once it is on the GPU, else null.
         function ensure(entry) {
           var s = store[entry.src];
-          if (s) return s.tex;
-          s = store[entry.src] = { tex: null, loading: true };
+          if (s) return s.loading ? null : s;
+          s = store[entry.src] = { pieces: [], loading: true, failed: false };
           var im = new Image();
           im.onload = function() {
             if (store[entry.src] !== s || !glReady) return;   // dropped, or context lost meanwhile
-            s.tex = upload(im, formatFor(entry));
-            if (!s.tex) console.warn('[layeredmap] could not upload', entry.src);
+            var fmt = formatFor(entry);
+            tiles.forEach(function(T, k) {
+              var r = pieceRect(entry, k), tex = null;
+              if (r) {
+                tex = upload(im, fmt, r.sx, r.sy, r.w, r.h);
+                if (!tex) s.failed = true;
+              }
+              s.pieces.push(tex ? { tex: tex, rect: r } : null);
+            });
+            if (s.failed) console.warn('[layeredmap] could not upload', entry.src);
             s.loading = false;
             update();
           };
           im.onerror = function() {
             console.warn('[layeredmap] could not load', entry.src);
             s.loading = false;
+            s.failed = true;
             update();
           };
           im.src = layerUrl(entry.src);
@@ -296,8 +351,16 @@ void main(){
         function drop(entry) {
           var s = store[entry.src];
           if (!s) return;
-          if (s.tex && gl) gl.deleteTexture(s.tex);
+          if (gl) s.pieces.forEach(function(p) { if (p) gl.deleteTexture(p.tex); });
           delete store[entry.src];
+        }
+
+        // When the map itself can't be put on the GPU, show the flat image and no controls.
+        function giveUp() {
+          glReady = false;
+          if (glCanvas) glCanvas.style.visibility = 'hidden';
+          controls.hidden = true;
+          showFallbackImg();
         }
 
         function hexRgb(h) {
@@ -309,7 +372,9 @@ void main(){
         function update() {
           if (!glReady) return;
           var wantBase = want.colors || !meta.plain ? meta.base : meta.plain;
-          if (ensure(wantBase)) {
+          var b = ensure(wantBase);
+          if (b && b.failed) { giveUp(); return; }
+          if (b) {
             if (shownBase && shownBase !== wantBase) drop(shownBase);
             shownBase = wantBase;
           }
@@ -336,7 +401,7 @@ void main(){
 
         function render() {
           if (!glReady || !fit.vw) return;
-          var baseTex = shownBase && store[shownBase.src] && store[shownBase.src].tex;
+          var baseStore = shownBase && store[shownBase.src];
           var dpr = Math.min(window.devicePixelRatio || 1, 2);
           var cw = Math.max(1, Math.round(fit.vw * dpr));
           var ch = Math.max(1, Math.round(fit.vh * dpr));
@@ -348,45 +413,60 @@ void main(){
           }
           gl.viewport(0, 0, cw, ch);
           gl.clear(gl.COLOR_BUFFER_BIT);
-          if (!baseTex) return;
+          if (!baseStore || baseStore.loading) return;
 
-          var kind = [0, 0, 0, 0, 0], rect = [], col = [], col2 = [], op = [0, 0, 0, 0, 1];
-          for (var i = 0; i < 5; i++) { rect.push(0, 0, natW, natH); col.push(0, 0, 0); col2.push(0, 0, 0); }
-          function slot(i, L, tex) {
-            bind(1 + i, tex);
-            if (!tex) return;
-            kind[i] = L.kind === 'mask' ? 1 : 2;
-            if (L.w) { rect[i * 4] = L.x; rect[i * 4 + 1] = L.y; rect[i * 4 + 2] = L.w; rect[i * 4 + 3] = L.h; }
+          // Per-layer settings that don't change between tiles.
+          var col = [], col2 = [], op = [0, 0, 0, 0, 1];
+          for (var i = 0; i < 5; i++) { col.push(0, 0, 0); col2.push(0, 0, 0); }
+          var slots = [];   // [i] = { L, s } for each slot drawn this frame
+          function setSlot(i, L, s) {
+            if (!s || s.loading) return;
+            slots[i] = { L: L, s: s };
             var c = hexRgb(L.color || '#000000'), c2 = hexRgb(L.color2 || L.color || '#000000');
             col[i * 3] = c[0]; col[i * 3 + 1] = c[1]; col[i * 3 + 2] = c[2];
             col2[i * 3] = c2[0]; col2[i * 3 + 1] = c2[1]; col2[i * 3 + 2] = c2[2];
             if (L.opacity != null) op[i] = L.opacity;
           }
-          bind(0, baseTex);
-          meta.lines.forEach(function(L, i) {
-            var s = store[L.src];
-            slot(i, L, want.lines[L.id] && s && s.tex);
-          });
-          for (var j = meta.lines.length; j < MAX_LINES; j++) bind(1 + j, null);
-          var labTex = want.labels && shownLabels && store[shownLabels.src] && store[shownLabels.src].tex;
-          slot(4, Object.assign({ kind: 'rgba' }, shownLabels || {}), labTex);
-          gl.uniform1iv(U.uKind, kind);
-          gl.uniform4fv(U.uRect, rect);
+          meta.lines.forEach(function(L, i) { if (want.lines[L.id]) setSlot(i, L, store[L.src]); });
+          if (want.labels && shownLabels) setSlot(4, Object.assign({ kind: 'rgba' }, shownLabels), store[shownLabels.src]);
           gl.uniform3fv(U.uColor, col);
           gl.uniform3fv(U.uColor2, col2);
           gl.uniform1fv(U.uOpacity, op);
-
-          var r = imgScreenRect();
-          var x0 = (r.left / fit.vw) * 2 - 1, x1 = ((r.left + r.width) / fit.vw) * 2 - 1;
-          var y0 = 1 - (r.top / fit.vh) * 2, y1 = 1 - ((r.top + r.height) / fit.vh) * 2;
-          var verts = new Float32Array([
-            x0, y0, 0, 0,   x1, y0, 1, 0,   x0, y1, 0, 1,
-            x0, y1, 0, 1,   x1, y0, 1, 0,   x1, y1, 1, 1
-          ]);
           gl.bindVertexArray(vao);
           gl.bindBuffer(gl.ARRAY_BUFFER, quadBuf);
-          gl.bufferData(gl.ARRAY_BUFFER, verts, gl.DYNAMIC_DRAW);
-          gl.drawArrays(gl.TRIANGLES, 0, 6);
+
+          var r = imgScreenRect();
+          tiles.forEach(function(T, k) {
+            var bp = baseStore.pieces[k];
+            if (!bp) return;
+            bind(0, bp.tex);
+            gl.uniform4f(U.uBaseRect, bp.rect.x, bp.rect.y, bp.rect.w, bp.rect.h);
+            var kind = [0, 0, 0, 0, 0], rect = [];
+            for (var i = 0; i < 5; i++) {
+              var p = slots[i] && slots[i].s.pieces[k];
+              bind(1 + i, p && p.tex);
+              if (p) {
+                kind[i] = slots[i].L.kind === 'mask' ? 1 : 2;
+                rect.push(p.rect.x, p.rect.y, p.rect.w, p.rect.h);
+              } else {
+                rect.push(0, 0, 1, 1);
+              }
+            }
+            gl.uniform1iv(U.uKind, kind);
+            gl.uniform4fv(U.uRect, rect);
+
+            // This tile's quad on screen, with uv in map texels.
+            var sx0 = r.left + r.width * T.x0 / natW, sx1 = r.left + r.width * T.x1 / natW;
+            var sy0 = r.top + r.height * T.y0 / natH, sy1 = r.top + r.height * T.y1 / natH;
+            var x0 = (sx0 / fit.vw) * 2 - 1, x1 = (sx1 / fit.vw) * 2 - 1;
+            var y0 = 1 - (sy0 / fit.vh) * 2, y1 = 1 - (sy1 / fit.vh) * 2;
+            var verts = new Float32Array([
+              x0, y0, T.x0, T.y0,   x1, y0, T.x1, T.y0,   x0, y1, T.x0, T.y1,
+              x0, y1, T.x0, T.y1,   x1, y0, T.x1, T.y0,   x1, y1, T.x1, T.y1
+            ]);
+            gl.bufferData(gl.ARRAY_BUFFER, verts, gl.DYNAMIC_DRAW);
+            gl.drawArrays(gl.TRIANGLES, 0, 6);
+          });
         }
 
         function setupRenderer() {
@@ -399,7 +479,7 @@ void main(){
 
           gl = glCanvas.getContext('webgl2', { antialias: false, premultipliedAlpha: false });
           var maxTex = gl ? gl.getParameter(gl.MAX_TEXTURE_SIZE) : 0;
-          if (!gl || natW > maxTex || natH > maxTex || meta.lines.length > MAX_LINES || !buildGLResources()) {
+          if (!gl || !planTiles(maxTex) || meta.lines.length > MAX_LINES || !buildGLResources()) {
             viewport.removeChild(glCanvas); gl = null;
             return false;
           }
