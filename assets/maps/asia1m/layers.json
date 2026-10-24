@@ -1,0 +1,58 @@
+{
+ "width": 9500,
+ "height": 8000,
+ "version": "20261024133118",
+ "base": {
+  "src": "base.png"
+ },
+ "plain": {
+  "src": "plain.png"
+ },
+ "lines": [
+  {
+   "id": "adm2",
+   "src": "adm2.png",
+   "kind": "mask",
+   "color": "#afe364",
+   "color2": "#4a8c3f",
+   "opacity": 0.2901960784313726
+  },
+  {
+   "id": "adm1",
+   "src": "adm1.png",
+   "kind": "mask",
+   "color": "#f15656",
+   "opacity": 0.2
+  },
+  {
+   "id": "adm2",
+   "src": "insetadm.png",
+   "kind": "rgba",
+   "x": 5877,
+   "y": 2094,
+   "w": 3476,
+   "h": 5630,
+   "opacity": 0.32941176470588235
+  }
+ ],
+ "labels": [
+  {
+   "id": "eng",
+   "name": "english",
+   "src": "labels_eng.png",
+   "x": 3810,
+   "y": 406,
+   "w": 5565,
+   "h": 7559
+  },
+  {
+   "id": "local",
+   "name": "local",
+   "src": "labels_local.png",
+   "x": 3799,
+   "y": 442,
+   "w": 5576,
+   "h": 7523
+  }
+ ]
+}

@@ -1,8 +1,9 @@
 ---
-layout: staticmap
+layout: layeredmap
 title: asia in regions of 1 million people (local language labels)
 description: Asia divided into regions of 1 million people
 image: /assets/maps/asia1mloc.png
+layers: /assets/maps/asia1m/
+labels: local
 permalink: /asia1mloc/
-pixelart: true
 ---

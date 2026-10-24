@@ -267,6 +267,44 @@ table {border-spacing: 30px;}
   -webkit-user-select: none;
 }
 
+// layer switches on layeredmap pages (_layouts/layeredmap.html)
+.layeredmap-main {
+  position: relative;
+}
+
+.layeredmap-controls {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 10;
+  padding: 4px 8px;
+  background-color: var(--white);
+  border: 1px solid var(--black);
+  line-height: 1.6;
+  user-select: none;
+
+  label {
+    display: block;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  input {
+    margin: 0 4px 0 0;
+    vertical-align: -2px;
+  }
+  .loading {
+    opacity: .5;
+  }
+}
+
+.layeredmap-controls[hidden] {
+  display: none;
+}
+
+.layeredmap-gap {
+  height: 5px;
+}
+
 .map-pin {
   position: absolute;
   width: 4px;
