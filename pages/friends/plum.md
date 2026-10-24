@@ -14,7 +14,7 @@ sometimes i visit plum's place. it faces west and is on the 5th floor, so in the
 
 he went to school in southern fuun, and i visited there once. it was very snowy, and the food they had was very good. 
 
-we also visited corcoros and nachria together. we walked along a silent path to a lighthouse, illuminated only by the orange full moon. while skinny dipping under the lighthouse i saw the big dipper for the first time, and i felt good in the universe.
+we also visited [corcalos](/places/corcalos/) and [nachria](/places/nachria/) together. we walked along a silent path to a lighthouse, illuminated only by the orange full moon. while skinny dipping under the lighthouse i saw the big dipper for the first time, and i felt good in the universe.
 
 
 

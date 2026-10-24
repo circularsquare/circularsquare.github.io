@@ -13,7 +13,7 @@ downtown stratus is a place of rapid change. when i was a child, it existed prim
 
 people from all over have always come here for food. i particularly like one place that has hot pot, with as many mushrooms and vegetables as you want. i overeat often here.
 
-i used to go to afterschool here, where a teenager taught me the word "discombobulated" and i came up with the list of [elements](/thoughts/elements/).
+i used to go to afterschool here, where a teenager taught me the word "discombobulated" and i came up with the list of [elements](/lists/elements/).
 
 #### south stratus
 i lived here for a long time, in a home across the street from my school. i met [plum](/friends/plum/) at this school. there are cherry and plum and magnolia trees planted near my home. a block away, there is a big computer store that [birch](/friends/birch/) and [dandelion](/friends/dandelion/) like.

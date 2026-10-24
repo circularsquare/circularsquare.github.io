@@ -16,6 +16,8 @@ this is a map of my site! you can see the dead pages that i ought to clean up.
 
 {% include site-graph.html %}
 
+many of the [projects](/projects/) on this site were made with [claude](/thoughts/ai/). the more basic earlier maps were not.
+
 the animation of the bunny chasing the cursor is originally from Terraria © Re-Logic, i found it on pinterest via google image search and could not find the creator of this specific animation.
 
 feel free to share or link to this website! 

@@ -14,7 +14,6 @@ assorted word vomit
 - [momentum](momentum/)
 - [internal world](internalworld/)
 - [simulations](fidelity/)
-- [coding](coding/)
 - [normalness](normalness/)
 - [fairness](fairness/)
 - [mantras](mantras/)
@@ -28,4 +27,7 @@ assorted word vomit
 - [winter](winter/)
 - [chapters](chapters/)
 - [pain](pain/)
-
+- [ai](ai/)
+- [being seen](beingseen/)
+- [language](language/)
+- [achievement](achievement/)

@@ -4,11 +4,11 @@ title: dandelion
 permalink: /friends/dandelion/
 ---
 
-dandelion is a genus of asterids that produce medium-small yellow flowers and bitter-ish salad greens. they are native to northern shonei but can be found throughout melissa. my dad used to pick the leaves from the park and bring them home to cook with.
+dandelion is a genus of asterids that produce medium-small yellow flowers and bitter-ish salad greens. they are native to northern [shonei](/places/shonei/) but can be found throughout [melissa](/places/melissa/). my dad used to pick the leaves from the park and bring them home to cook with.
 
 as a kid the most happy and meaningful interaction i had with flowers was watching dandelion seeds fly away. being with dandelion is like that. while flowering, he's a yellow spot in the grass that brings warmth through your eye, and after turning into seeds, you provide just a bit of air and he spreads that warmth through the air. he's kind of like [freesia](/friends/freesia/) in this way, where everything i say or show to him just feels good.
 
-during high school me and dandelion and plum hung out fairly frequently.
+during high school me and dandelion and [plum](/friends/plum/) hung out fairly frequently.
 
 twice, we've climbed bridges over the [lindje](/places/lindje/).
 

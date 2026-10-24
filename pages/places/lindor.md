@@ -4,7 +4,7 @@ title: lindor
 permalink: /places/lindor/
 ---
 
-is a busy city on the [lindje](/places/lindje/), in [melissa](/places/melissa/). it has a long history, with close ties to corcoros and ports further abroad. it is the most cosmopolitan city in melissa, and all sorts of people can be seen on its streets.
+is a busy city on the [lindje](/places/lindje/), in [melissa](/places/melissa/). it has a long history, with close ties to [corcalos](/places/corcalos/) and ports further abroad. it is the most cosmopolitan city in melissa, and all sorts of people can be seen on its streets.
 
 #### the valley
 i moved here in june 2022 with [pine](/friends/pine/), and lived here for a year. it's quite noisy.

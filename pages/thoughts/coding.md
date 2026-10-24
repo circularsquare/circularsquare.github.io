@@ -4,7 +4,7 @@ title: coding
 permalink: /thoughts/coding/
 ---
 
-coding is an art. 
+coding is an art. now that [humans](/thoughts/ai/) are no longer so competitive in art, these thoughts are maybe not so relevant, but in any case:
 
 i am not good at doing art.
  - i get distracted without a clear goal
@@ -21,6 +21,3 @@ and that would be good. although maybe nothing i make will ever feel good. and t
 
 i must.
 
-## ai
-
-i use cursor now. it's really good. [plum](/friends/plum/) actually told me that he hit a point where using ai code assistants actually decreased his productivity. i wonder if i've hit that point already. haha i can't think for myself lol 

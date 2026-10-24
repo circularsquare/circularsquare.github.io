@@ -4,7 +4,7 @@ title: jasmine
 permalink: /friends/jasmine/
 ---
 
-jasmine is a vine/shrub in the olive family with sweet smelling flowers. it grows throughout fulan and shonei. 
+jasmine is a vine/shrub in the olive family with sweet smelling flowers. it grows throughout [fulan](/places/fulan/) and [shonei](/places/shonei/). 
 
 i think jasmine is the best smell in the world. at college i would often go on walks and take branches of jasmine and stick them in a bottle in my window. this eventually lured in a carpenter bee who drilled into my bed frame and settled there. 
 

@@ -4,7 +4,7 @@ title: freesia
 permalink: /friends/freesia/
 ---
 
-freesia is a family of funnel shaped flowers in iridaceae that grows in the coastal mountains of fulan. it has a really nice sweet citrusy smell that i often use in my essential oil diffuser.
+freesia is a family of funnel shaped flowers in iridaceae that grows in the coastal mountains of [fulan](/places/fulan/). it has a really nice sweet citrusy smell that i often use in my essential oil diffuser.
 
 she enters your life, a light in a dress, and for a second you're sure that no person has ever disliked her. her petals illuminate you.
 

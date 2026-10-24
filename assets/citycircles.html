@@ -35,7 +35,12 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:Georgia
 .city-tip{pointer-events:none}
 .city-tip .maplibregl-popup-content{font-family:Georgia,serif;font-size:var(--fs-sm);background:#ffffff;border:1px solid var(--border2);color:var(--text);border-radius:2px;padding:3px 8px;box-shadow:0 1px 4px rgba(0,0,0,.1);white-space:nowrap}
 .city-tip .maplibregl-popup-tip{display:none}
-#input-section{padding:12px 18px;border-bottom:1px solid var(--border);display:flex;gap:6px}
+#chain-check{accent-color:var(--text);width:14px;height:14px;margin:0 2px;cursor:pointer}
+#chain-check:disabled{cursor:default}
+#input-section{padding:12px 18px;border-bottom:1px solid var(--border);display:flex;gap:6px;position:relative}
+/* Brief note under the text box when a guess is a real city but not allowed. */
+#guess-msg{position:absolute;left:18px;top:calc(100% - 7px);z-index:5;background:var(--text);color:var(--surface);font-size:var(--fs-sm);padding:3px 8px;border-radius:var(--radius);pointer-events:none;opacity:0;transition:opacity .2s}
+#guess-msg.show{opacity:1}
 #city-input{flex:1;min-width:0;background:var(--surface);border:1px solid var(--border);color:var(--text);font-family:Georgia,serif;font-size:var(--fs-md);padding:8px 11px;border-radius:var(--radius);outline:none;transition:border-color .15s}
 /* Square: as wide as the text box is tall. */
 #guess-btn{flex:0 0 auto;align-self:stretch;aspect-ratio:1;padding:0;display:flex;align-items:center;justify-content:center}
@@ -128,6 +133,7 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:Georgia
   #sidebar.playing:not(.settings-open) #mode-section,#sidebar.playing:not(.settings-open) #config-section{display:none}
   #sidebar.playing #settings-summary{display:block;grid-area:sum;padding:0 16px 8px;background:none;border:none;text-align:left;font-family:Georgia,serif;font-size:var(--fs-sm);color:var(--muted);cursor:pointer}
   #input-section{grid-area:input;padding:0 16px 8px;border-bottom:none}
+  #guess-msg{left:16px}
   #city-input{font-size:14px;padding:7px 10px}
   #found-section{grid-area:found;min-height:0;overflow:visible;display:block}
   #found-header{cursor:pointer;padding:7px 0 7px 16px;border-bottom:none;border-top:1px solid var(--border);color:var(--text);width:100%}
@@ -188,12 +194,17 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:Georgia
           <option value="100000">100k+</option>
         </select>
       </div>
+      <div class="config-row" title="after your first guess, every city you type has to be inside one of your circles">
+        <label for="chain-check">chain<span class="long"> mode</span></label>
+        <input type="checkbox" id="chain-check" onchange="onChainChange()"/>
+      </div>
       </div>
     <button id="settings-summary" onclick="toggleSettings()"></button>
     <div id="input-section">
       <input type="text" id="city-input" placeholder="type a city…" autocomplete="off" spellcheck="false" enterkeyhint="go"/>
       <!-- mousedown is cancelled so tapping it doesn't take focus from the text box and drop the phone keyboard -->
       <button class="btn primary" id="guess-btn" title="submit" aria-label="submit" onmousedown="event.preventDefault()" onclick="submitGuess()"><svg viewBox="0 0 16 16" width="15" height="15" aria-hidden="true"><path d="M2.5 8h10.5M9 4l4 4-4 4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+      <div id="guess-msg"></div>
     </div>
     <div id="stats">
       <div class="stat"><div class="stat-val" id="stat-cities">0/—</div><div class="stat-label">cities</div></div>
@@ -801,6 +812,7 @@ function formatPop(pop){
 
 // ── State ──
 let mode='radius', radKm=500, nearN=20, minPop=50000;
+let chain=false;  // chain mode: guesses after the first must be inside a circle
 let gameFinished=false;
 let revealedSet=new Set();  // player-found, counted in Found
 let finishedSet=new Set();  // giveUp-revealed, not counted, have tooltips
@@ -1229,12 +1241,20 @@ function processGuessOrigin(idx){
   }
 }
 
+// Returns true for an accepted guess, 'outside' for a real city that chain
+// mode refuses, and false for anything else.
 function onGuess(raw){
   const results=findCityByName(raw);
   if(!results) return false;
   const fiSet=new Set(filteredIndices().map(x=>x.i));
-  const valid=results.filter(r=>fiSet.has(r.i));
+  let valid=results.filter(r=>fiSet.has(r.i));
   if(!valid.length) return false;
+  // Chain mode: after the first guess, only cities already inside a circle
+  // count. A name shared by several cities keeps just the ones inside.
+  if(chain&&guessCount>0){
+    valid=valid.filter(r=>revealedSet.has(r.i));
+    if(!valid.length) return 'outside';
+  }
   if(valid.every(r=>guessedSet.has(r.i))) return false;
   guessCount++;
   if(guessCount===1) lockControls();
@@ -1266,6 +1286,7 @@ function newGame(){
   inp.disabled=false;
   inp.placeholder='type a city\u2026';
   document.getElementById('guess-btn').disabled=false;
+  hideGuessMsg();
   upStats();
   saveState();
   if(mapReady) map.easeTo({center:[10,20],zoom:2});
@@ -1321,6 +1342,7 @@ function lockControls(){
   document.getElementById('radius-select').disabled=true;
   document.getElementById('nearest-select').disabled=true;
   document.getElementById('pop-select').disabled=true;
+  document.getElementById('chain-check').disabled=true;
   document.getElementById('mode-tabs-wrap').style.pointerEvents='none';
   document.getElementById('mode-tabs-wrap').style.opacity='0.45';
 }
@@ -1329,6 +1351,7 @@ function unlockControls(){
   document.getElementById('radius-select').disabled=false;
   document.getElementById('nearest-select').disabled=false;
   document.getElementById('pop-select').disabled=false;
+  document.getElementById('chain-check').disabled=false;
   document.getElementById('mode-tabs-wrap').style.pointerEvents='';
   document.getElementById('mode-tabs-wrap').style.opacity='';
 }
@@ -1340,6 +1363,11 @@ function onRadiusChange(){
 function onNearestChange(){
   if(guessCount>0)return;
   nearN=+document.getElementById('nearest-select').value;
+  saveState();
+}
+function onChainChange(){
+  if(guessCount>0)return;
+  chain=document.getElementById('chain-check').checked;
   saveState();
 }
 function onPopChange(){
@@ -1359,14 +1387,29 @@ function submitGuess(){
   if(inp.disabled) return;
   const v=inp.value.trim();
   if(!v){inp.focus();return;}
-  if(onGuess(v)){
+  const res=onGuess(v);
+  if(res===true){
     inp.value='';
+    hideGuessMsg();
   } else {
     inp.classList.add('shake');
     inp.addEventListener('animationend',()=>inp.classList.remove('shake'),{once:true});
+    if(res==='outside') showGuessMsg('not inside your circles');
   }
   // Keep the keyboard up on phones for the next guess.
   if(!inp.disabled) inp.focus();
+}
+
+let guessMsgTimer=null;
+function showGuessMsg(text){
+  const el=document.getElementById('guess-msg');
+  el.textContent=text;
+  el.classList.add('show');
+  clearTimeout(guessMsgTimer);
+  guessMsgTimer=setTimeout(hideGuessMsg,1800);
+}
+function hideGuessMsg(){
+  document.getElementById('guess-msg').classList.remove('show');
 }
 
 // Clicking anywhere outside the finish/leaderboard box closes it. A click that
@@ -1391,7 +1434,7 @@ const SAVE_KEY='citycircles-save';
 function saveState(){
   try{
     localStorage.setItem(SAVE_KEY,JSON.stringify({
-      n:CITIES.length, mode, radKm, nearN, minPop,
+      n:CITIES.length, mode, radKm, nearN, minPop, chain,
       guesses:gameFinished?[]:[...guessedSet],
       guessCount:gameFinished?0:guessCount,
     }));
@@ -1415,6 +1458,8 @@ function restoreState(){
   radKm=restoreSelect('radius-select',s.radKm);
   nearN=restoreSelect('nearest-select',s.nearN);
   minPop=restoreSelect('pop-select',s.minPop);
+  chain=s.chain===true;
+  document.getElementById('chain-check').checked=chain;
   _filteredCache=null;
   syncModeUI();
   newGame();
@@ -1450,14 +1495,16 @@ loadCities();restoreState();
 // names, and keeps an append-only log of every submission.
 const LB_BASE='https://market.anita.garden/circles';
 
+// Chain games get their own boards (the server accepts the _chain suffix).
 function lbKey(){
-  return mode==='radius'?`radius_${radKm}_${minPop}`:`nearest_${nearN}_${minPop}`;
+  const base=mode==='radius'?`radius_${radKm}_${minPop}`:`nearest_${nearN}_${minPop}`;
+  return chain?base+'_chain':base;
 }
 
 function lbLabel(){
   const pop=minPop>=1e6?(minPop/1e6)+'m+':minPop>=1e3?(minPop/1e3)+'k+':minPop+'+';
-  if(mode==='radius') return `radius · ${radKm} km · pop ${pop}`;
-  return `nearest ${nearN} · pop ${pop}`;
+  const base=mode==='radius'?`radius · ${radKm} km · pop ${pop}`:`nearest ${nearN} · pop ${pop}`;
+  return chain?base+' · chain':base;
 }
 
 // Returns the current board's entries, or null when the server can't be reached.
