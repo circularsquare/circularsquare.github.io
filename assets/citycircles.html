@@ -194,7 +194,7 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:Georgia
           <option value="100000">100k+</option>
         </select>
       </div>
-      <div class="config-row" title="after your first guess, every city you type has to be inside one of your circles">
+      <div class="config-row" title="every city you type has to be inside one of your circles. you get one free start in the americas and one everywhere else">
         <label for="chain-check">chain<span class="long"> mode</span></label>
         <input type="checkbox" id="chain-check" onchange="onChainChange()"/>
       </div>
@@ -812,7 +812,17 @@ function formatPop(pop){
 
 // ── State ──
 let mode='radius', radKm=500, nearN=20, minPop=50000;
-let chain=false;  // chain mode: guesses after the first must be inside a circle
+let chain=false;  // chain mode: guesses must be inside a circle, bar two free starts
+let chainStarts=new Set();  // regions ('am' / 'rest') whose free start is used
+
+// Country codes counted as the Americas for chain mode's two free starts.
+const AMERICAS=new Set(('US CA MX GT BZ SV HN NI CR PA CU JM HT DO PR BS TC KY BM '+
+  'AG KN DM LC VC BB GD TT AW CW BQ SX MF GP MQ VI VG AI MS BL '+
+  'CO VE GY SR GF EC PE BO BR PY UY AR CL FK GL PM').split(' '));
+function regionOf(c){
+  if(c.cc&&c.cc!=='??') return AMERICAS.has(c.cc)?'am':'rest';
+  return c.lng<-30?'am':'rest';
+}
 let gameFinished=false;
 let revealedSet=new Set();  // player-found, counted in Found
 let finishedSet=new Set();  // giveUp-revealed, not counted, have tooltips
@@ -1249,15 +1259,21 @@ function onGuess(raw){
   const fiSet=new Set(filteredIndices().map(x=>x.i));
   let valid=results.filter(r=>fiSet.has(r.i));
   if(!valid.length) return false;
-  // Chain mode: the chain starts from one city, so a first guess shared by
-  // several (Madrid, Spain and Madrid, Colombia) takes only the biggest. After
-  // that, only cities already inside a circle count.
-  if(chain&&guessCount===0&&valid.length>1){
-    valid=[valid.reduce((a,b)=>b.c.pop>a.c.pop?b:a)];
-  }
-  if(chain&&guessCount>0){
-    valid=valid.filter(r=>revealedSet.has(r.i));
-    if(!valid.length) return 'outside';
+  // Chain mode: a guess has to be inside a circle, except for two free starts,
+  // one in the Americas and one everywhere else, so both sides of the Atlantic
+  // are reachable. A start is one city, so a name shared by several (Madrid,
+  // Spain and Madrid, Colombia) takes only the biggest in an unused region.
+  if(chain){
+    const inside=valid.filter(r=>revealedSet.has(r.i));
+    if(inside.length){
+      valid=inside;
+    } else {
+      const free=valid.filter(r=>!chainStarts.has(regionOf(r.c)));
+      if(!free.length) return 'outside';
+      const start=free.reduce((a,b)=>b.c.pop>a.c.pop?b:a);
+      chainStarts.add(regionOf(start.c));
+      valid=[start];
+    }
   }
   if(valid.every(r=>guessedSet.has(r.i))) return false;
   guessCount++;
@@ -1280,6 +1296,7 @@ function newGame(){
   guessCount=0;
   guessCircles=[];
   guessedSet=new Set();
+  chainStarts.clear();
   unlockControls();
   clearDotHover();
   syncCityDots();
@@ -1396,6 +1413,7 @@ function submitGuess(){
     inp.value='';
     hideGuessMsg();
   } else {
+    inp.value='';
     inp.classList.add('shake');
     inp.addEventListener('animationend',()=>inp.classList.remove('shake'),{once:true});
     if(res==='outside') showGuessMsg('not inside your circles');
@@ -1469,7 +1487,11 @@ function restoreState(){
   newGame();
   const guesses=(s.guesses||[]).filter(i=>Number.isInteger(i)&&i>=0&&i<CITIES.length);
   if(!guesses.length) return;
-  for(const i of guesses) processGuessOrigin(i);
+  for(const i of guesses){
+    // A chain guess that wasn't already inside a circle was a free start.
+    if(chain&&!revealedSet.has(i)) chainStarts.add(regionOf(CITIES[i]));
+    processGuessOrigin(i);
+  }
   guessCount=Math.max(1,s.guessCount|0);
   lockControls();
   syncCityDots();
