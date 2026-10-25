@@ -761,7 +761,75 @@ const CITY_ALIASES={
   'zaporozhye':                 'zaporizhzhya',
   'zayton':                     'quanzhou',
   'zumpangodeocampo':           'zumpango',
+
+  // ── Short forms of "X de Y" names, hand-picked ──
+  // The "de / do / da" pattern is too often part of the real name to strip
+  // automatically (Fort-de-France, Juiz de Fora), so these are listed one by one.
+  'hull':                       'kingstonuponhull',
+  'rostovondon':                'rostovnadonu',
+  'riyad':                      'riyadh',           // else Ar Riyad, Egypt, via NAME_QUALIFIERS
+  'queretaro':                  'santiagodequeretaro',
+  'jujuy':                      'sansalvadordejujuy',
+  'laspalmas':                  'laspalmasdegrancanaria',
+  'pozarica':                   'pozaricadehidalgo',
+  'iguala':                     'igualadelaindependencia',
+  'texcoco':                    'texcocodemora',
+  'torrejon':                   'torrejondeardoz',
+  'castello':                   'castellodelaplana',
+  'castellon':                  'castellodelaplana',
+  'jerez':                      'jerezdelafrontera',
+  'alcala':                     'alcaladehenares',
+  'campos':                     'camposdosgoytacazes',
+  'bariloche':                  'sancarlosdebariloche',
+  'mogi':                       'mogidascruzes',
+  'castellammare':              'castellammaredistabia',
+  'bassano':                    'bassanodelgrappa',
+  'sanlucar':                   'sanlucardebarrameda',
+  'chiclana':                   'chiclanadelafrontera',
+  'roquetas':                   'roquetasdemar',
+  'pozuelo':                    'pozuelodealarcon',
+  'lloret':                     'lloretdemar',
+  'cagayan':                    'cagayandeoro',
+  'elpuerto':                   'elpuertodesantamaria',
 };
+
+// Names that already belong to a smaller real city but are mostly meant for a
+// bigger one: "odessa" is Odessa, Texas in the data, "rostov" a town of 31k.
+// Unlike CITY_ALIASES these ADD the big city to the name instead of giving way,
+// so the guess counts for both (chain mode picks the bigger one as a start).
+const CITY_ALSO={
+  'odessa':                     'odesa',
+  'rostov':                     'rostovnadonu',
+  'halle':                      'hallesaale',
+  'newcastle':                  'newcastleupontyne',
+  'stoke':                      'stokeontrent',
+  'stockton':                   'stocktonontees',
+  'burton':                     'burtonupontrent',
+  'leon':                       'leondelosaldama',
+  'durango':                    'victoriadedurango',
+  'santacruz':                  'santacruzdelasierra',
+  'parral':                     'hidalgodelparral',
+  'caxias':                     'caxiasdosul',
+};
+
+// Patterns where the end (or start) of a name only says which one is meant,
+// so the main part alone is accepted: Frankfurt am Main, Halle (Saale),
+// Rostov-na-Donu, Stoke-on-Trent, Boulogne-sur-Mer, Velikiy Novgorod,
+// Al Mansurah. Each is limited to the countries where the words mean that.
+// A main part that is itself a city's name, or an alias, is left alone, and
+// one shared by several names (Frankfurt am Main, Frankfurt (Oder)) goes to
+// the biggest.
+const ccSet=s=>new Set(s.split(' '));
+const NAME_QUALIFIERS=[
+  {re:/^(.+?)\s+(?:am|an der|an|im|in der|in|ob der|bei|vor der)\s+\S/, cc:ccSet('DE AT CH IT GB')},
+  {re:/^(.+?)\s*\(.*\)$/},
+  {re:/^(.+?)-na-./, cc:ccSet('RU UA')},
+  {re:/^(.+?)(?:\s+upon\s+|-upon-|-on-|\s+on\s+)(?!the[\s-])/, cc:ccSet('GB IE RU CA')},
+  {re:/^(.+?)-(?:sur|en|sous|lès|les|le|la)-/, cc:ccSet('FR BE CH LU')},
+  {re:/^(?:Velikiy|Veliky|Velikiye)\s+(.+)$/},
+  {re:/^(?:Al|Ar|As|Ash|Az|Ad|An|At|El)[\s-](.+)$/,
+   cc:ccSet('EG SA IQ SY JO LB YE OM AE QA KW BH LY TN DZ MA SD SO MR PS')},
+];
 
 function loadCities(){
   CITIES=window.CITIES_RAW.map(c=>({name:c[0],lat:c[1],lng:c[2],pop:c[3],cc:c[4]||'??'}));
@@ -778,6 +846,27 @@ function loadCities(){
   for(const [alias,canonical] of Object.entries(CITY_ALIASES)){
     const entries=cityNameMap.get(canonical);
     if(entries&&!cityNameMap.has(alias)) cityNameMap.set(alias,entries);
+  }
+  // Main parts of qualified names, biggest city first wins a shared one.
+  const mainParts=new Map();
+  CITIES.forEach((c,i)=>{
+    for(const q of NAME_QUALIFIERS){
+      if(q.cc&&!q.cc.has(c.cc)) continue;
+      const m=c.name.match(q.re);
+      if(!m) continue;
+      const k=norm(m[1]);
+      if(k.length<4||k===c._norm||k.startsWith('saint')) continue;
+      const best=mainParts.get(k);
+      if(!best||c.pop>best.c.pop) mainParts.set(k,{c,i});
+    }
+  });
+  for(const [k,e] of mainParts) if(!cityNameMap.has(k)) cityNameMap.set(k,[e]);
+  // Shared names: add the big city alongside whatever the name already holds.
+  for(const [name,canonical] of Object.entries(CITY_ALSO)){
+    const extra=cityNameMap.get(canonical);
+    if(!extra) continue;
+    const have=cityNameMap.get(name)||[];
+    cityNameMap.set(name,[...have,...extra.filter(e=>!have.some(h=>h.i===e.i))]);
   }
 }
 
