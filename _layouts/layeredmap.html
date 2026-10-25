@@ -10,7 +10,7 @@
     <main class="page-content staticmap-main layeredmap-main" aria-label="Content">
       <div class="staticmap-viewport" id="staticmap-viewport">
         <div class="staticmap-scene" id="staticmap-scene">
-          <noscript><img class="staticmap-image" src="{{ page.image }}" alt="{{ page.title | escape }}"></noscript>
+          <noscript><img class="staticmap-image" src="{{ page.image.full | default: page.image }}" alt="{{ page.title | escape }}"></noscript>
         </div>
       </div>
       <div class="layeredmap-controls" id="layeredmap-controls" hidden></div>
@@ -28,7 +28,7 @@
       // page.image is shown instead and the controls stay hidden.
       (function() {
         var LAYERS_DIR = {{ page.layers | jsonify }};
-        var FLAT_IMAGE = {{ page.image | jsonify }};
+        var FLAT_IMAGE = {{ page.image.full | default: page.image | jsonify }};
         var IMAGE_ALT = {{ page.title | jsonify }};
         var DEFAULT_LABELS = {{ page.labels | default: "" | jsonify }};
         var MAX_LINES = 4;   // line-layer slots in the shader

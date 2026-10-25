@@ -1249,8 +1249,12 @@ function onGuess(raw){
   const fiSet=new Set(filteredIndices().map(x=>x.i));
   let valid=results.filter(r=>fiSet.has(r.i));
   if(!valid.length) return false;
-  // Chain mode: after the first guess, only cities already inside a circle
-  // count. A name shared by several cities keeps just the ones inside.
+  // Chain mode: the chain starts from one city, so a first guess shared by
+  // several (Madrid, Spain and Madrid, Colombia) takes only the biggest. After
+  // that, only cities already inside a circle count.
+  if(chain&&guessCount===0&&valid.length>1){
+    valid=[valid.reduce((a,b)=>b.c.pop>a.c.pop?b:a)];
+  }
   if(chain&&guessCount>0){
     valid=valid.filter(r=>revealedSet.has(r.i));
     if(!valid.length) return 'outside';

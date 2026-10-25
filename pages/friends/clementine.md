@@ -4,7 +4,7 @@ title: clementine
 permalink: /friends/clementine/
 ---
 
-clementine is a hybrid of mandarin and orange, a tree that bears fruit in the winter. they're grown in relatively warm climates, like lakta and coastal fulan. clementine has soft skin which is easy to peel.
+clementine is a hybrid of mandarin and orange, a tree that bears fruit in the winter. they're grown in relatively warm climates, like [lakta](/places/lakta/) and coastal [fulan](/places/fulan/). clementine has soft skin which is easy to peel.
 
 the first time i met clementine she opened her bag and pulled out a bag of like 15 clementines. we ate some. i went to school in [sanba](/places/sanba/) near clementine at the same time, but we never met there.  
 
