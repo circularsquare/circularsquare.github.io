@@ -11,3 +11,4 @@ ideas for future thoughts
 - games
 - incel
 - building / rewarding work
+- creative energy / rewrite code

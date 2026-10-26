@@ -12,4 +12,4 @@ i was born here, in a town in a clearing by the water. there's a big school on t
 
 [sanba](/places/sanba/) is a dry coastal region of lakta.
 
-al alta is a foggy coastal region of lakta. here, streams flow upward. al alta is [upstream](/thoughts/upstream/) of the world. 
+al alta is a foggy coastal region of lakta. here, streams flow upward. al alta is [upstream](/thoughts/trancins/) of the world. 

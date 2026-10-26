@@ -1,0 +1,5 @@
+{
+  // The built-in markdown path suggestions offer file paths, which aren't the
+  // site's URLs. The permalinks extension in .vscode/permalinks offers those.
+  "markdown.suggest.paths.enabled": false
+}

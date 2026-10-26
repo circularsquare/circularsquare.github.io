@@ -1,0 +1,11 @@
+{
+  "name": "garden-permalinks",
+  "displayName": "garden permalinks",
+  "description": "Suggests and checks Jekyll permalinks in this site's markdown.",
+  "version": "0.1.0",
+  "publisher": "anita",
+  "private": true,
+  "engines": { "vscode": "^1.80.0" },
+  "activationEvents": ["onLanguage:markdown", "onLanguage:html"],
+  "main": "./extension.js"
+}
