@@ -277,7 +277,7 @@ function bandIcons(sx, y) {
   return s;
 }
 
-let data, sel = [], year = 2025, grid = '1km', view = 'stack', sort = 'median';
+let data, sel = [], year = 2025, grid = '100m', view = 'stack', sort = 'median';
 // the stack's own set of countries: the default list or every country, plus a few added and removed
 let stackAll = false;
 const stackAdd = new Set(), stackDel = new Set();
@@ -925,8 +925,10 @@ window.addEventListener('scroll', hideTip);
 // search: countries in the stack view (added to the stack), places in the overlay (added to the chart)
 const search = $('search'), suggest = $('suggest');
 let matches = [], hi = 0;
-// rank: exact name, then prefix, then a word prefix, then anywhere; countries ahead of metros and
-// states at the same rank, then bigger first
+// rank: exact name, then prefix, then a word prefix, then anywhere; at the same rank a country, then
+// a city proper, then a metro, then a state, then bigger first
+const KIND_RANK = { city: 1, metro: 2, state: 3 };
+const kindRank = id => isUnit(id) ? KIND_RANK[units.get(id)?.kind] ?? 4 : 0;
 function showSuggest() {
   const q = search.value.trim().toLowerCase();
   const ov = view === 'overlay';
@@ -944,7 +946,7 @@ function showSuggest() {
     };
     const unitIds = ov ? [...units.keys()].filter(id => !taken.has(id)) : [];
     matches = [...countries, ...unitIds].map(id => ({ id, r: rank(id) })).filter(d => d.r >= 0)
-      .sort((a, b) => a.r - b.r || isUnit(a.id) - isUnit(b.id) || popOf(b.id) - popOf(a.id))
+      .sort((a, b) => a.r - b.r || kindRank(a.id) - kindRank(b.id) || popOf(b.id) - popOf(a.id))
       .slice(0, 60).map(d => d.id);
   }
   hi = 0;
