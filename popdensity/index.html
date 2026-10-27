@@ -41,6 +41,7 @@ html.stack #top { position: sticky; top: 0; z-index: 3; }
   border: 1px solid #555; border-radius: 6px; color: var(--body); font-size: 14px; white-space: nowrap;
 }
 .chip .sw { width: 14px; height: 3px; border-radius: 2px; }
+.chip .who { display: inline-flex; align-items: center; gap: 7px; }
 .chip .med { color: var(--value); font-variant-numeric: tabular-nums; font-size: 13px; }
 .chip button { background: none; border: none; color: var(--muted); cursor: pointer; font: inherit; font-size: 15px; padding: 0 4px; line-height: 1; }
 .chip button:hover { color: var(--ink); }
@@ -100,6 +101,7 @@ html.stack #rows { display: block; margin-bottom: 24px; }
   position: fixed; pointer-events: none; display: none; z-index: 6;
   background: rgba(10,10,10,.92); border: 1px solid var(--panel-border); border-radius: 8px; padding: 8px 10px; font-size: 13px;
 }
+#tip img { display: none; width: 192px; height: 192px; margin: 0 0 8px; border-radius: 4px; background: var(--bg); }
 #tip .h { display: flex; align-items: center; gap: 7px; color: var(--ink); font-weight: 700; margin-bottom: 2px; }
 #tip .sub { color: var(--muted); font-size: 12px; margin-bottom: 4px; }
 #tip .r { display: flex; align-items: center; gap: 8px; color: var(--body); }
@@ -287,6 +289,29 @@ const subFiles = new Map(), parentTotals = new Map();
 
 const $ = id => document.getElementById(id);
 const svg = $('chart'), tip = $('tip');
+// the tooltip: a picture of the place on top (when it has one and it loads), then the text
+const tipImg = new Image(), tipBody = document.createElement('div');
+tipImg.width = tipImg.height = 192; tipImg.alt = '';
+tip.append(tipImg, tipBody);
+const thumbState = new Map();     // place id -> 'loading' | 'ok' | 'fail'
+const thumbUrl = id => `${BASE}data/thumbs/${id.replace(/[^A-Za-z0-9_.-]/g, '_')}.webp`;
+let tipId = null, tipPlace = null, touchTip = null;
+function showThumb(id) {
+  tipId = id;
+  const st = id ? thumbState.get(id) : 'fail';
+  if (st === 'fail') { tipImg.style.display = 'none'; return; }
+  if (st === undefined) {
+    thumbState.set(id, 'loading');
+    const im = new Image();
+    im.onload = () => { thumbState.set(id, 'ok'); if (tipId === id) showThumb(id); };
+    im.onerror = () => { thumbState.set(id, 'fail'); if (tipId === id) { showThumb(id); if (tipPlace) tipPlace(); } };
+    im.src = thumbUrl(id);
+  }
+  tipImg.style.display = 'block';
+  if (st === 'ok') { if (tipImg.getAttribute('src') !== thumbUrl(id)) tipImg.src = thumbUrl(id); }
+  else tipImg.removeAttribute('src');
+}
+function setTip(html, id) { tipBody.innerHTML = html; showThumb(id || null); }
 const root = document.documentElement;
 const fmt = n => n >= 1e6 ? (n / 1e6).toFixed(n >= 1e7 ? 0 : 1) + 'M' : n >= 1e4 ? Math.round(n / 1e3).toLocaleString('en') + 'k' : Math.round(n).toLocaleString('en');
 const fmtDensity = n => n < 10 ? n.toFixed(1) : Math.round(n).toLocaleString('en');
@@ -476,11 +501,21 @@ function renderBar() {
     const c = curve(s.id);
     const el = document.createElement('span');
     el.className = 'chip';
-    if (isUnit(s.id)) el.title = unitOf(units.get(s.id));
-    el.innerHTML = `${swatch(s)}${flagImg(s.id)}${esc(labelOf(s.id))}` +
+    el.innerHTML = `${swatch(s)}<span class="who">${flagImg(s.id)}${esc(labelOf(s.id))}</span>` +
       `<span class="med" title="${c ? `Population in ${year}. Median density ${fmt(c.median)} people per km²` : ''}">${c ? fmt(popOf(s.id)) : c === undefined ? '…' : 'no data'}</span>` +
       `<button title="Remove">✕</button>`;
     el.querySelector('button').onclick = () => remove(s.id);
+    // hover the name for the place's picture and numbers; on a touch screen, tap it
+    const who = el.querySelector('.who');
+    const hover = e => { if (e.pointerType === 'mouse') { setTip(placeHtml(s.id), s.id); placeTip(e.clientX, e.clientY); } };
+    who.addEventListener('pointerenter', hover);
+    who.addEventListener('pointermove', hover);
+    who.addEventListener('pointerleave', e => { if (e.pointerType === 'mouse') hideTip(); });
+    who.addEventListener('click', () => {
+      if (lastPointer === 'mouse') return;
+      if (touchTip === s.id) return hideTip();
+      setTip(placeHtml(s.id), s.id); placeTipBelow(who.getBoundingClientRect()); touchTip = s.id;
+    });
     chips.appendChild(el);
   }
   // the stack's search sits in the header, so a narrow screen wraps it onto the second line with the sorts
@@ -749,13 +784,52 @@ function render() {
   writeHash(); hideTip();
 }
 
-function placeTip(cx, cy) {
-  tip.style.display = 'block';
-  const tw = tip.offsetWidth, th = tip.offsetHeight;
-  tip.style.left = Math.max(0, cx + 14 + tw > window.innerWidth ? cx - 14 - tw : cx + 14) + 'px';
-  tip.style.top = Math.min(Math.max(cy - th / 2, 0), window.innerHeight - th) + 'px';
+// a place's name, size and median, for the tooltip of a chip or a search row
+function placeHtml(id) {
+  const c = curve(id), u = isUnit(id) ? units.get(id) : null;
+  return `<div class="h">${flagImg(id)}${esc(nameOf(id))}</div>` + (u ? `<div class="sub">${esc(unitOf(u))}</div>` : '') +
+    `<div class="sub">${fmt(popOf(id))} people</div>${srcNote(id)}` +
+    (c ? `<div class="r">median density<span class="v">${fmt(c.median)}</span></div>` : '');
 }
+function placeTip(cx, cy) {
+  tipPlace = () => {
+    tip.style.display = 'block';
+    const tw = tip.offsetWidth, th = tip.offsetHeight;
+    tip.style.left = Math.max(0, cx + 14 + tw > window.innerWidth ? cx - 14 - tw : cx + 14) + 'px';
+    tip.style.top = Math.min(Math.max(cy - th / 2, 0), window.innerHeight - th) + 'px';
+  };
+  tipPlace();
+}
+// under an element, kept on screen (a tapped chip)
+function placeTipBelow(r) {
+  tipPlace = () => {
+    tip.style.display = 'block';
+    const tw = tip.offsetWidth, th = tip.offsetHeight;
+    tip.style.left = Math.max(8, Math.min(r.left, window.innerWidth - tw - 8)) + 'px';
+    tip.style.top = Math.max(0, r.bottom + 8 + th > window.innerHeight ? r.top - 8 - th : r.bottom + 8) + 'px';
+  };
+  tipPlace();
+}
+// beside a box (the suggestion list): to its right, else its left, else not at all
+function placeTipBeside(box, row) {
+  tipPlace = () => {
+    tip.style.display = 'block';
+    const tw = tip.offsetWidth, th = tip.offsetHeight;
+    let x = box.right + 8;
+    if (x + tw > window.innerWidth) x = box.left - 8 - tw;
+    if (x < 0) { tip.style.display = 'none'; return; }
+    tip.style.left = x + 'px';
+    tip.style.top = Math.min(Math.max((row.top + row.bottom) / 2 - th / 2, 0), window.innerHeight - th) + 'px';
+  };
+  tipPlace();
+}
+let lastPointer = 'mouse';
+document.addEventListener('pointerdown', e => {
+  lastPointer = e.pointerType;
+  if (e.pointerType !== 'mouse' && touchTip && !e.target.closest('.who')) hideTip();
+}, true);
 function hideTip() {
+  tipId = null; tipPlace = null; touchTip = null;
   tip.style.display = 'none';
   for (const id of ['cross', 'scross', 'sx']) { const c = $(id); if (c) c.setAttribute('visibility', 'hidden'); }
   $('hl')?.setAttribute('d', '');
@@ -782,8 +856,8 @@ svg.addEventListener('mousemove', e => {
   if (gh) {
     hl.setAttribute('d', geom.line(gh.c));
     cross.setAttribute('visibility', 'hidden');
-    tip.innerHTML = `<div class="h">${flagImg(gh.id)}${esc(nameOf(gh.id))}</div><div class="sub">${fmt(popOf(gh.id))} people</div>${srcNote(gh.id)}` +
-      `<div class="r">median density<span class="v">${fmt(gh.c.median)}</span></div>`;
+    setTip(`<div class="h">${flagImg(gh.id)}${esc(nameOf(gh.id))}</div><div class="sub">${fmt(popOf(gh.id))} people</div>${srcNote(gh.id)}` +
+      `<div class="r">median density<span class="v">${fmt(gh.c.median)}</span></div>`, gh.id);
     placeTip(e.clientX, e.clientY);
     return;
   }
@@ -794,7 +868,7 @@ svg.addEventListener('mousemove', e => {
   let rows = '';
   for (const { s, c } of curves)
     rows += `<div class="r">${swatch(s)}${flagImg(s.id)}${esc(labelOf(s.id))}<span class="v">${fmtPct(denserAt(c, lx))}</span></div>`;
-  tip.innerHTML = `<div class="h" style="display:block">${fmtDensity(10 ** lx)} people/km²</div><div class="sub">live in denser cells</div>${rows}`;
+  setTip(`<div class="h" style="display:block">${fmtDensity(10 ** lx)} people/km²</div><div class="sub">live in denser cells</div>${rows}`);
   placeTip(e.clientX, e.clientY);
 });
 svg.addEventListener('mouseleave', hideTip);
@@ -835,7 +909,8 @@ $('rows').addEventListener('mousemove', e => {
   const sub = plot ? `${fmtDensity(10 ** hit.lx)} people/km²` : `${fmt(popOf(hit.iso))} people`;
   const v = plot ? fmtPct(denserAt(hit.c, hit.lx)) : fmt(hit.c.median);
   const kk = plot ? 'live in denser cells' : 'median density';
-  tip.innerHTML = `<div class="h">${flagImg(hit.iso)}${esc(nameOf(hit.iso))}</div><div class="sub">${sub}</div><div class="r">${kk}<span class="v">${v}</span></div>${srcNote(hit.iso)}`;
+  setTip(`<div class="h">${flagImg(hit.iso)}${esc(nameOf(hit.iso))}</div><div class="sub">${sub}</div><div class="r">${kk}<span class="v">${v}</span></div>${srcNote(hit.iso)}`,
+    hit.onName ? hit.iso : null);
   // beside the name the tooltip starts after the x, not on top of it
   placeTip(hit.onName ? $('rows').getBoundingClientRect().left + hit.x1 + 20 : e.clientX, e.clientY);
 });
@@ -891,10 +966,18 @@ search.addEventListener('keydown', e => {
     [...suggest.children].forEach((d, i) => d.classList.toggle('on', i === hi));
     suggest.children[hi]?.scrollIntoView({ block: 'nearest' });
   } else if (e.key === 'Enter' && matches[hi]) pick(matches[hi]);
-  else if (e.key === 'Escape') { suggest.style.display = 'none'; search.blur(); }
+  else if (e.key === 'Escape') { suggest.style.display = 'none'; hideTip(); search.blur(); }
 });
 suggest.addEventListener('mousedown', e => { const d = e.target.closest('[data-id]'); if (d) { e.preventDefault(); pick(d.dataset.id); } });
-search.addEventListener('blur', () => { suggest.style.display = 'none'; });
+search.addEventListener('blur', () => { suggest.style.display = 'none'; hideTip(); });
+suggest.addEventListener('pointerover', e => {
+  if (e.pointerType !== 'mouse') return;
+  const d = e.target.closest('[data-id]');
+  if (!d) return;
+  setTip(placeHtml(d.dataset.id), d.dataset.id);
+  placeTipBeside(suggest.getBoundingClientRect(), d.getBoundingClientRect());
+});
+suggest.addEventListener('pointerleave', e => { if (e.pointerType === 'mouse') hideTip(); });
 $('allbtn').onclick = stackToggleAll;
 
 // info panel
