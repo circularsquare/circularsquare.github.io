@@ -1,0 +1,939 @@
+<!doctype html>
+<html lang="en" class="stack">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Population-weighted population density</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://cdn.jsdelivr.net">
+<style>
+:root {
+  --bg: #0a0a0a;
+  --ink: #eee;
+  --body: #ccc;
+  --muted: #888;
+  --value: #aaa;
+  --grid: #222;
+  --axis: #444;
+  --accent: #6889a8;
+  --link: #89b4fa;
+  --panel: rgba(10,10,10,.85);
+  --panel-border: #333;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+html.overlay, html.overlay body { height: 100%; overflow: hidden; }
+html.stack { scrollbar-gutter: stable; scrollbar-width: thin; scrollbar-color: #333 transparent; }
+body { background: var(--bg); color: var(--ink); font-family: 'Nunito', sans-serif; }
+
+#app { display: block; }
+html.overlay #app { display: flex; flex-direction: column; height: 100%; padding-bottom: 12px; }
+#top { flex: none; background: var(--bg); }
+html.stack #top { position: sticky; top: 0; z-index: 3; }
+#head { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 16px 20px 10px; }
+#title { font-size: 20px; font-weight: 700; margin: 0 auto 0 0; }
+
+#bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 0 20px 6px; min-height: 30px; }
+#tools { display: inline-flex; align-items: center; gap: 8px; }
+.chip {
+  display: inline-flex; align-items: center; gap: 7px; height: 30px; padding: 0 6px 0 10px;
+  border: 1px solid #555; border-radius: 6px; color: var(--body); font-size: 14px; white-space: nowrap;
+}
+.chip .sw { width: 14px; height: 3px; border-radius: 2px; }
+.chip .med { color: var(--value); font-variant-numeric: tabular-nums; font-size: 13px; }
+.chip button { background: none; border: none; color: var(--muted); cursor: pointer; font: inherit; font-size: 15px; padding: 0 4px; line-height: 1; }
+.chip button:hover { color: var(--ink); }
+
+.flag { width: 16px; height: 12px; flex: none; border-radius: 2px; outline: 1px solid rgba(255,255,255,.18); outline-offset: -1px; vertical-align: -1px; }
+.flag.sub { opacity: .5; }
+
+#adder { position: relative; }
+#search {
+  height: 30px; width: 170px; background: none; border: 1px solid #555; border-radius: 6px;
+  color: var(--ink); font: inherit; font-size: 14px; padding: 0 10px; outline: none;
+}
+#search:focus { border-color: var(--accent); }
+#search::placeholder { color: var(--muted); }
+#suggest {
+  position: absolute; top: 34px; left: 0; z-index: 5; min-width: 230px; width: max-content; max-width: min(360px, calc(100vw - 32px)); max-height: 320px; overflow-y: auto;
+  background: var(--panel); border: 1px solid var(--panel-border); border-radius: 8px; padding: 4px 0; display: none;
+}
+#suggest div { padding: 5px 12px; font-size: 14px; color: var(--body); cursor: pointer; display: flex; justify-content: space-between; gap: 16px; }
+#suggest div > span:first-child { display: flex; align-items: center; gap: 8px; }
+#suggest div .pop { color: var(--value); font-variant-numeric: tabular-nums; font-size: 13px; white-space: nowrap; }
+#suggest div .of { color: var(--muted); font-size: 13px; }
+#suggest div.on, #suggest div:hover { background: rgba(104,137,168,.25); color: var(--ink); }
+
+.seg { display: inline-flex; gap: 4px; margin-left: 6px; }
+.seg button, #info-btn, #allbtn {
+  height: 30px; min-width: 30px; padding: 0 8px; background: none; border: 1px solid #555; border-radius: 6px;
+  color: #ccc; font: inherit; font-size: 13px; cursor: pointer; font-variant-numeric: tabular-nums;
+  display: inline-flex; align-items: center; justify-content: center;
+}
+.seg button:hover, #info-btn:hover, #allbtn:hover { border-color: var(--accent); color: var(--ink); }
+.seg button.active, #info-btn.active, #allbtn.active { border-color: var(--accent); color: var(--accent); }
+.seg button svg, #allbtn svg { width: 16px; height: 16px; display: block; }
+#info-btn { border-radius: 50%; padding: 0; width: 30px; font-weight: 700; font-size: 14px; margin-left: 6px; }
+
+#chartwrap { position: relative; }
+html.overlay #chartwrap { flex: 1; min-height: 0; margin: 0 20px; }
+#chart { display: none; width: 100%; height: 100%; }
+html.overlay #chart { display: block; }
+#saxis { display: none; }
+html.stack #saxis { display: block; }
+#saxis svg { display: block; }
+#rows { display: none; cursor: pointer; }
+html.stack #rows { display: block; margin-bottom: 24px; }
+.tick text { fill: var(--muted); font-size: 12px; font-variant-numeric: tabular-nums; }
+.axis-title { fill: var(--muted); font-size: 12px; }
+.band-lbl { fill: #0a0a0a; font-size: 11px; font-weight: 700; }
+.band-ico { fill: none; stroke: #aaa; stroke-width: 1.1; stroke-linejoin: round; stroke-linecap: round; }
+.lbl { font-size: 13px; font-weight: 700; paint-order: stroke; stroke: var(--bg); stroke-width: 4px; stroke-linejoin: round; }
+.mv { font-size: 12px; font-weight: 700; font-variant-numeric: tabular-nums; paint-order: stroke; stroke: var(--bg); stroke-width: 4px; }
+.gh { fill: none; stroke: #fff; stroke-width: .8; }
+.nm { fill: var(--body); font-size: 12px; paint-order: stroke; stroke: var(--bg); stroke-width: 4px; stroke-linejoin: round; }
+.nm.flash { fill: var(--ink); font-weight: 700; }
+.md { font-size: 11px; font-variant-numeric: tabular-nums; paint-order: stroke; stroke: var(--bg); stroke-width: 4px; }
+
+#tip {
+  position: fixed; pointer-events: none; display: none; z-index: 6;
+  background: rgba(10,10,10,.92); border: 1px solid var(--panel-border); border-radius: 8px; padding: 8px 10px; font-size: 13px;
+}
+#tip .h { display: flex; align-items: center; gap: 7px; color: var(--ink); font-weight: 700; margin-bottom: 2px; }
+#tip .sub { color: var(--muted); font-size: 12px; margin-bottom: 4px; }
+#tip .r { display: flex; align-items: center; gap: 8px; color: var(--body); }
+#tip .r .sw { width: 12px; height: 3px; border-radius: 2px; }
+#tip .r .v { margin-left: auto; padding-left: 14px; color: var(--value); font-variant-numeric: tabular-nums; }
+
+#info {
+  position: fixed; right: 20px; top: 56px; width: min(420px, calc(100% - 32px)); display: none; z-index: 7;
+  background: var(--panel); border: 1px solid var(--panel-border); border-radius: 8px; padding: 14px 16px 12px;
+  color: var(--body); font-size: 13px; line-height: 1.5;
+}
+#info p { margin: 0 0 8px; }
+#info a { color: var(--link); }
+#info .x { position: absolute; top: 6px; right: 8px; background: none; border: none; color: var(--muted); font-size: 16px; cursor: pointer; }
+#info .x:hover { color: var(--ink); }
+#loading { color: var(--muted); font-size: 14px; position: fixed; top: 40%; width: 100%; text-align: center; }
+
+/* narrower than a desktop: only the axis stays pinned, the header scrolls away */
+@media (max-width: 1199px) {
+  html.stack #top { display: contents; }
+  html.stack #saxis { position: sticky; top: 0; z-index: 3; background: var(--bg); }
+}
+@media (max-width: 600px) {
+  #head { padding: 12px 16px 8px; }
+  #bar { padding: 0 16px 6px; }
+  html.overlay #chartwrap { margin: 0 16px; }
+  html.overlay #app { padding-bottom: 10px; }
+  .seg { margin-left: 0; }
+  #title { flex-basis: 100%; }
+  #info { right: 16px; top: 96px; }
+}
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="top">
+    <div id="head">
+      <h1 id="title">Population-weighted population density</h1>
+      <span class="seg" id="views">
+        <button data-v="stack" title="One row per country"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"><path d="M1 5h3l2-3 2 3h7M1 10h5l2-2.5 2 2.5h5M1 15h2l3-3 2 3h7"/></svg></button>
+        <button data-v="overlay" title="Compare countries"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"><path d="M1 14C4 14 4 4 6.5 4S9 14 15 14M1 14C6 14 8 8 10.5 8S13 14 15 14"/></svg></button>
+      </span>
+      <span class="seg" id="years"></span>
+      <span class="seg" id="grids" title="Grid cell size the density is measured on"></span>
+      <span id="sorts" class="seg">
+        <button data-v="median" title="Sort by median density"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"><path d="M1.5 15V9h3v6M4.5 15V3h4v12M8.5 15V6.5h3V15M11.5 15V10h3v5M0.5 15h15"/></svg></button>
+        <button data-v="pop" title="Sort by population"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"><circle cx="8" cy="4.5" r="2.5"/><path d="M3 15c0-3.5 2.2-5.5 5-5.5s5 2 5 5.5"/></svg></button>
+        <button data-v="name" title="Sort by name"><svg viewBox="0 0 16 16" fill="currentColor"><text x="0.5" y="12.5" font-family="Nunito, sans-serif" font-weight="700" font-size="11">Az</text></svg></button>
+      </span>
+      <span id="hslot"></span>
+      <button id="info-btn" title="About">i</button>
+    </div>
+    <div id="bar">
+      <span id="chips" style="display:contents"></span>
+      <span id="tools">
+        <div id="adder">
+          <input id="search" placeholder="Add a place" autocomplete="off" spellcheck="false">
+          <div id="suggest"></div>
+        </div>
+        <button id="allbtn" title="Show all countries"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"><circle cx="8" cy="8" r="6.5"/><path d="M1.5 8h13M8 1.5c-3 3-3 10 0 13M8 1.5c3 3 3 10 0 13"/></svg></button>
+      </span>
+    </div>
+    <div id="saxis"><svg id="saxis-svg"></svg></div>
+  </div>
+  <div id="chartwrap">
+    <svg id="chart"></svg>
+    <svg id="rows"></svg>
+  </div>
+</div>
+<div id="tip"></div>
+<div id="loading">loading…</div>
+<div id="info">
+  <button class="x" title="Close">✕</button>
+  <p>Each country's people, spread out by the density of the grid cell they live in. Every country gets the same total area, so a small country and a big one compare as shares.</p>
+  <p>Density is people per km² of the cell. On the 100 m grid a city block next to a park counts as dense. On the 1 km grid the two are averaged, so everything moves left. Colour follows density. On the 1 km grid the breaks at 300 and 1,500 people per km² are the ones GHSL uses for towns and cities.</p>
+  <p>The number beside each country is its median: half its people live in denser cells.</p>
+  <p>A metro or state shown with its country is drawn at the country's scale, so its area is its share of the country's people. Shown without its country, it is drawn as its own 100%.</p>
+  <div id="credit"></div>
+</div>
+
+<script>
+const COLORS = ['#3987e5', '#d95926', '#199e70', '#c98500', '#d55181', '#c8c8c8', '#9085e9', '#e66767'];
+const MAX_SEL = COLORS.length;
+const X_MIN = 1, X_MAX = 5.6;    // log10 people/km², 10 to 400k (Hong Kong's 100 m tail reaches past 200k)
+const PER = Math.log10(2);        // y is the share of people per doubling of density
+const KERNEL = [1, 2, 3, 2, 1];   // light smoothing over 0.02-decade bins
+const MIN_POP = 1000;    // keeps Monaco and Iceland; drops GHSL's 9-person Vatican and empty territories
+const SCALE_POP = 1e6;   // the stack's shared height scale comes from countries this big, so spiky microstates don't flatten it
+const GHOST_POP = 1e6;   // the overlay draws every country this big as a faint line
+const URBAN_1KM = [Math.log10(300), Math.log10(1500)];  // GHSL degree of urbanisation breaks
+// they are defined on the 1 km grid; on 100 m nearly everyone clears them, so they would say "cities" for villages
+const urban = () => grid === '1km' ? URBAN_1KM : [];
+const VIEWS = ['stack', 'overlay'], SORTS = ['median', 'pop', 'name'];
+
+// The stack starts with these. Real countries plus Hong Kong; no territories or dependencies.
+// Every country over about 30 million (the first block), then the really dense ones, the famous small
+// ones and the odd shapes in the data (second block).
+const DEFAULT_STACK = [
+  // big
+  'IND', 'CHN', 'USA', 'IDN', 'PAK', 'NGA', 'BRA', 'BGD', 'RUS', 'ETH', 'MEX', 'JPN', 'PHL', 'EGY', 'COD', 'VNM',
+  'IRN', 'TUR', 'DEU', 'THA', 'TZA', 'GBR', 'FRA', 'ZAF', 'ITA', 'KEN', 'MMR', 'COL', 'KOR', 'UGA', 'SDN', 'IRQ',
+  'ESP', 'DZA', 'ARG', 'AFG', 'POL', 'CAN', 'AGO', 'UKR', 'MAR', 'SAU', 'UZB', 'YEM', 'MOZ', 'GHA', 'MYS', 'PER', 'CMR',
+  // dense, famous or odd
+  'HKG', 'SGP', 'COG', 'SOM', 'DJI', 'GNQ', 'JOR', 'KWT', 'PRK', 'TWN', 'PSE', 'ISR', 'NLD', 'CHE', 'ISL', 'IRL',
+  'GRC', 'NZL', 'SWE', 'NOR', 'FIN', 'AUS', 'MNG', 'ZWE',
+];
+const DEFAULT_SET = new Set(DEFAULT_STACK);
+
+// ISO3 (the data's keys) to ISO2 (the flag file names)
+const ISO2 = Object.fromEntries(('IND:in,CHN:cn,USA:us,IDN:id,PAK:pk,NGA:ng,BRA:br,BGD:bd,RUS:ru,ETH:et,MEX:mx,JPN:jp,PHL:ph,EGY:eg,COD:cd,VNM:vn,IRN:ir,TUR:tr,' +
+  'DEU:de,THA:th,TZA:tz,GBR:gb,FRA:fr,ZAF:za,ITA:it,KEN:ke,MMR:mm,COL:co,KOR:kr,UGA:ug,SDN:sd,IRQ:iq,ESP:es,DZA:dz,ARG:ar,AFG:af,POL:pl,CAN:ca,AGO:ao,' +
+  'UKR:ua,MAR:ma,SAU:sa,UZB:uz,YEM:ye,MOZ:mz,GHA:gh,MYS:my,PER:pe,NPL:np,MDG:mg,CMR:cm,CIV:ci,VEN:ve,NER:ne,AUS:au,PRK:kp,SYR:sy,MLI:ml,BFA:bf,TWN:tw,' +
+  'MWI:mw,LKA:lk,ZMB:zm,SOM:so,KAZ:kz,CHL:cl,ROU:ro,TCD:td,SEN:sn,GTM:gt,ECU:ec,NLD:nl,KHM:kh,ZWE:zw,GIN:gn,RWA:rw,BEN:bj,BDI:bi,TUN:tn,BOL:bo,HTI:ht,' +
+  'BEL:be,DOM:do,SSD:ss,JOR:jo,CUB:cu,HND:hn,SWE:se,PNG:pg,TJK:tj,CZE:cz,AZE:az,GRC:gr,PRT:pt,HUN:hu,ISR:il,ARE:ae,TGO:tg,BLR:by,SLE:sl,AUT:at,CHE:ch,' +
+  'LAO:la,HKG:hk,NIC:ni,SRB:rs,LBY:ly,PRY:py,TKM:tm,KGZ:kg,BGR:bg,SLV:sv,COG:cg,CAF:cf,DNK:dk,SGP:sg,LBR:lr,SVK:sk,FIN:fi,NOR:no,NZL:nz,CRI:cr,PSE:ps,' +
+  'IRL:ie,LBN:lb,MRT:mr,OMN:om,PAN:pa,KWT:kw,HRV:hr,ERI:er,GEO:ge,MNG:mn,URY:uy,PRI:pr,MDA:md,BIH:ba,GMB:gm,JAM:jm,ALB:al,ARM:am,QAT:qa,BWA:bw,NAM:na,' +
+  'LTU:lt,GAB:ga,LSO:ls,GNB:gw,SVN:si,MKD:mk,LVA:lv,GNQ:gq,XKX:xk,TTO:tt,BHR:bh,TLS:tl,MUS:mu,EST:ee,CYP:cy,SWZ:sz,DJI:dj,BTN:bt,FJI:fj,COM:km,GUY:gy,' +
+  'MAC:mo,SLB:sb,LUX:lu,SUR:sr,MNE:me,CPV:cv,ESH:eh,MLT:mt,MDV:mv,BRN:bn,BLZ:bz,BHS:bs,ISL:is,VUT:vu,PYF:pf,NCL:nc,BRB:bb,STP:st,WSM:ws,CUW:cw,LCA:lc,' +
+  'GUM:gu,KIR:ki,GRD:gd,JEY:je,FSM:fm,TON:to,SYC:sc,ABW:aw,VCT:vc,VIR:vi,ATG:ag,IMN:im,AND:ad,DMA:dm,CYM:ky,GGY:gg,BMU:bm,GRL:gl,FRO:fo,MCO:mc,MNP:mp,' +
+  'KNA:kn,TCA:tc,MAF:mf,ASM:as,LIE:li,MHL:mh,SXM:sx,VGB:vg,SMR:sm,PLW:pw,COK:ck,AIA:ai,GIB:gi,NRU:nr,TUV:tv,WLF:wf,BLM:bl,SPM:pm,SHN:sh,MSR:ms,FLK:fk,' +
+  'NFK:nf,NIU:nu,PCN:pn,VAT:va').split(',').map(p => p.split(':')));
+const flagUrl = c => `https://cdn.jsdelivr.net/npm/flag-icons@7.2.3/flags/4x3/${c}.svg`;
+
+// density ramp: oklch stops at log10 density, lightness falls steadily from sparse to dense
+const RAMP = [[0.3, .91, .12, 140], [1.6, .83, .16, 110], [2.48, .75, .16, 75],
+              [3.18, .67, .18, 45], [3.9, .59, .20, 22], [4.6, .51, .20, 340]]
+  .map(([x, L, C, h]) => [x, L, C * Math.cos(h * Math.PI / 180), C * Math.sin(h * Math.PI / 180)]);
+function rampAt(x, dL = 0) {
+  let i = 0;
+  while (i < RAMP.length - 2 && x > RAMP[i + 1][0]) i++;
+  const a = RAMP[i], b = RAMP[i + 1], t = Math.max(0, Math.min(1, (x - a[0]) / (b[0] - a[0])));
+  const L = a[1] + (b[1] - a[1]) * t + dL, A = a[2] + (b[2] - a[2]) * t, B = a[3] + (b[3] - a[3]) * t;
+  const l = (L + .3963377774 * A + .2158037573 * B) ** 3, m = (L - .1055613458 * A - .0638541728 * B) ** 3,
+        s = (L - .0894841775 * A - 1.291485548 * B) ** 3;
+  return '#' + [4.0767416621 * l - 3.3077115913 * m + .2309699292 * s,
+                -1.2684380046 * l + 2.6097574011 * m - .3413193965 * s,
+                -.0041960863 * l - .7034186147 * m + 1.707614701 * s]
+    .map(v => { v = Math.min(1, Math.max(0, v)); v = v <= .0031308 ? 12.92 * v : 1.055 * v ** (1 / 2.4) - .055;
+                return Math.round(v * 255).toString(16).padStart(2, '0'); }).join('');
+}
+function gradient(id, x0, x1, dL = 0) {
+  let s = '';
+  for (let x = X_MIN; x <= X_MAX + 1e-9; x += 0.1) s += `<stop offset="${((x - X_MIN) / (X_MAX - X_MIN)).toFixed(4)}" stop-color="${rampAt(x, dL)}"/>`;
+  return `<linearGradient id="${id}" gradientUnits="userSpaceOnUse" x1="${x0}" x2="${x1}" y1="0" y2="0">${s}</linearGradient>`;
+}
+// the colour band that doubles as the legend: rural, towns, cities
+function band(sx, y, h, gid) {
+  const URBAN = urban(), xs = [X_MIN, ...URBAN, X_MAX], words = ['rural', 'towns', 'cities'];
+  let s = `<rect x="${sx(X_MIN)}" y="${y}" width="${sx(X_MAX) - sx(X_MIN)}" height="${h}" rx="3" fill="url(#${gid})"/>`;
+  for (const u of URBAN) s += `<rect x="${sx(u) - 1}" y="${y}" width="2" height="${h}" fill="var(--bg)"/>`;
+  for (let k = 0; k < URBAN.length + (URBAN.length ? 1 : 0); k++) {
+    const w = sx(xs[k + 1]) - sx(xs[k]);
+    if (w > words[k].length * 6.5 + 8) s += `<text class="band-lbl" x="${(sx(xs[k]) + sx(xs[k + 1])) / 2}" y="${y + h - 3.5}" text-anchor="middle">${words[k]}</text>`;
+  }
+  return s;
+}
+// small line icons under the band: a house, a cluster of buildings, towers (16 px boxes)
+const ICONS = [
+  'M2.5 8.5 8 3.5l5.5 5M4 7.5V14h8V7.5M7 14v-3.5h2V14',
+  'M1 14V9.5l2.5-2 2.5 2V14M6 14V7l3-2.5L12 7v7M12 14v-4.5l1.5-1 1.5 1V14M0.5 14h15',
+  'M1.5 14V6.5h3V14M4.5 14V2h4v12M8.5 14V5h3.5v9M12 14V8.5h2.5V14M0.5 14h15M6 5h1M6 8h1M6 11h1',
+];
+function bandIcons(sx, y) {
+  const URBAN = urban();
+  if (!URBAN.length) return '';
+  const xs = [X_MIN, ...URBAN, X_MAX];
+  let s = '';
+  for (let k = 0; k < 3; k++) {
+    if (sx(xs[k + 1]) - sx(xs[k]) < 20) continue;
+    const cx = (sx(xs[k]) + sx(xs[k + 1])) / 2;
+    s += `<path class="band-ico" transform="translate(${(cx - 12).toFixed(1)},${y}) scale(1.5)" d="${ICONS[k]}"/>`;
+  }
+  return s;
+}
+
+let data, sel = [], year = 2025, grid = '1km', view = 'stack', sort = 'median';
+// the stack's own set of countries: the default list or every country, plus a few added and removed
+let stackAll = false;
+const stackAdd = new Set(), stackDel = new Set();
+let flash = null, flashOnce = false, scrollTarget = null;
+const cache = new Map(), refs = new Map();
+// metros and states: the search index, and each country's file once one of its units is added
+let units = new Map();
+const subFiles = new Map(), parentTotals = new Map();
+
+const $ = id => document.getElementById(id);
+const svg = $('chart'), tip = $('tip');
+const root = document.documentElement;
+const fmt = n => n >= 1e6 ? (n / 1e6).toFixed(n >= 1e7 ? 0 : 1) + 'M' : n >= 1e4 ? Math.round(n / 1e3).toLocaleString('en') + 'k' : Math.round(n).toLocaleString('en');
+const fmtDensity = n => n < 10 ? n.toFixed(1) : Math.round(n).toLocaleString('en');
+const fmtPct = p => (p < 1 && p > 0 ? '<1' : p > 99 && p < 100 ? '>99' : Math.round(p)) + '%';
+const isUnit = id => id.includes(':');
+const ent = id => isUnit(id) ? units.get(id) : data.countries[id];
+const popOf = id => { const p = ent(id)?.pop || {}; return p[year] ?? p[2020] ?? 0; };
+const nameOf = id => ent(id)?.name ?? id;
+// ten countries with weak censuses come from WorldPop instead of GHSL; say so where a country is described
+const srcOf = id => data.countries[isUnit(id) ? units.get(id)?.parent : id]?.source;
+const srcNote = id => srcOf(id) ? `<div class="sub" style="margin:4px 0 0">${esc(srcOf(id))} data</div>` : '';
+// on the chart, a metro or city sharing its name with another selected place says which it is
+const labelOf = id => isUnit(id) && sel.some(o => o.id !== id && nameOf(o.id) === nameOf(id))
+  ? `${nameOf(id)} ${units.get(id).kind}` : nameOf(id);
+const unitOf = u => `${u.kind}, ${data.countries[u.parent]?.name ?? u.parent}`;
+const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;');
+// a metro or state takes its country's colour while the country is selected; dashes tell them apart
+const hue = s => (isUnit(s.id) && sel.find(p => p.id === units.get(s.id)?.parent)?.color) || s.color;
+const swatch = s => nested(s.id)
+  ? `<span class="sw" style="background:repeating-linear-gradient(90deg,${hue(s)} 0 4px,transparent 4px 6px)"></span>`
+  : `<span class="sw" style="background:${hue(s)}"></span>`;
+// flags: a country has its own; a metro, state or city shows its country's, faded
+const iso2Of = id => ISO2[isUnit(id) ? units.get(id)?.parent : id];
+const flagImg = id => {
+  const c = iso2Of(id);
+  return c ? `<img class="flag${isUnit(id) ? ' sub' : ''}" src="${flagUrl(c)}" alt="" width="16" height="12" onerror="this.style.visibility='hidden'">` : '';
+};
+
+function sumHist(h) { let t = 0; if (h) for (const v of h.v) t += v; return t; }
+function rawHist(id, g, yr) {
+  if (!isUnit(id)) return data.hist[g]?.[yr]?.[id];
+  const u = units.get(id), f = u && subFiles.get(u.parent);
+  return f?.hist?.[g]?.[yr]?.[id];
+}
+function loadSub(iso) {
+  if (subFiles.has(iso)) return;
+  subFiles.set(iso, null);
+  fetch(`${BASE}data/sub/${iso}.json`).then(r => r.ok ? r.json() : {}).catch(() => ({}))
+    .then(j => { subFiles.set(iso, j); render(); });
+}
+function initSub() {
+  return fetch(BASE + 'data/sub/index.json').then(r => r.ok ? r.json() : null).catch(() => null)
+    .then(j => { units = new Map((j?.units || []).filter(u => data.countries[u.parent]).map(u => [u.id, u])); });
+}
+
+// people per bin -> share per doubling (lightly smoothed), cumulative share and median.
+// A metro or state is scaled to its country's total, so it sits under the country's curve at the
+// same scale; its median and "% denser" stay within the unit itself.
+// A unit is drawn at its country's scale only while the country is selected too; alone it is its own 100%.
+const nested = id => isUnit(id) && sel.some(p => p.id === units.get(id)?.parent);
+function curve(id, g = grid, yr = year) {
+  const key = g + yr + id + (nested(id) ? '^' : '');
+  if (cache.has(key)) return cache.get(key);
+  if (isUnit(id) && !subFiles.get(units.get(id)?.parent)) return undefined;  // file not here yet
+  const h = rawHist(id, g, yr);
+  let out = null;
+  if (h && h.v.length) {
+    const { lo, step, n } = data.bins;
+    const share = new Float64Array(n);
+    let total = 0;
+    h.v.forEach((v, j) => { if (h.o + j < n) { share[h.o + j] = v; total += v; } });
+    let norm = total;
+    if (nested(id)) {
+      const pk = g + yr + units.get(id).parent;
+      if (!parentTotals.has(pk)) parentTotals.set(pk, sumHist(data.hist[g]?.[yr]?.[units.get(id).parent]));
+      norm = parentTotals.get(pk);
+    }
+    if (total > 0 && norm > 0) {
+      const scale = total / norm;
+      for (let i = 0; i < n; i++) share[i] /= total;
+      const cdf = new Float64Array(n), y = new Float64Array(n), r = KERNEL.length >> 1;
+      const ks = KERNEL.reduce((a, b) => a + b, 0);
+      let median = null;
+      for (let i = 0; i < n; i++) {
+        cdf[i] = (i ? cdf[i - 1] : 0) + share[i] * 100;
+        if (median === null && cdf[i] >= 50) median = 10 ** (lo + (i + (50 - (i ? cdf[i - 1] : 0)) / (share[i] * 100)) * step);
+        let s = 0;
+        for (let j = -r; j <= r; j++) { const t = i + j; if (t >= 0 && t < n) s += share[t] * KERNEL[j + r]; }
+        y[i] = s / ks / step * PER * 100 * scale;
+      }
+      const i0 = Math.max(0, Math.floor((X_MIN - lo) / step)), i1 = Math.min(n - 1, Math.ceil((X_MAX - lo) / step));
+      let peak = 0;
+      for (let i = i0; i <= i1; i++) peak = Math.max(peak, y[i]);
+      out = { y, cdf, share, median, peak, i0, i1 };
+    }
+  }
+  cache.set(key, out);
+  return out;
+}
+function denserAt(c, lx) {
+  const { lo, step, n } = data.bins;
+  const p = (lx - lo) / step, i = Math.max(0, Math.min(n - 1, Math.floor(p)));
+  const below = (i ? c.cdf[i - 1] : 0) + c.share[i] * 100 * Math.max(0, Math.min(1, p - i));
+  return Math.max(0, Math.min(100, 100 - below));
+}
+function shown() {
+  return Object.keys(data.countries).filter(iso => popOf(iso) >= MIN_POP && curve(iso));
+}
+// one shared height scale per grid, over every year: the 90th percentile country peak
+function refPeak() {
+  if (refs.has(grid)) return refs.get(grid);
+  const peaks = [];
+  for (const yr of data.years) for (const iso in data.hist[grid]?.[yr] || {}) {
+    const p = data.countries[iso]?.pop[yr];
+    if (p >= SCALE_POP) { const c = curve(iso, grid, yr); if (c) peaks.push(c.peak); }
+  }
+  peaks.sort((a, b) => a - b);
+  const r = peaks.length ? peaks[Math.floor(peaks.length * 0.9)] : 1;
+  refs.set(grid, r);
+  return r;
+}
+
+// sel holds countries (ISO3) and metros or states (their ids); a colour stays with its entry
+function toggle(id) {
+  if (sel.some(s => s.id === id)) return remove(id);
+  if (sel.length >= MAX_SEL || !ent(id)) return;
+  const used = new Set(sel.map(s => s.color));
+  sel.push({ id, color: COLORS.find(c => !used.has(c)) });
+  if (isUnit(id)) loadSub(units.get(id).parent);
+  render();
+}
+function remove(id) { sel = sel.filter(s => s.id !== id); render(); }
+
+// the stack's set: a base (the default list, or every country) with a few countries added to it or taken out
+function stackSet() {
+  const s = new Set(stackAll ? Object.keys(data.countries) : DEFAULT_STACK.filter(i => data.countries[i]));
+  for (const i of stackAdd) s.add(i);
+  for (const i of stackDel) s.delete(i);
+  return s;
+}
+function stackList() { const s = stackSet(); return shown().filter(i => s.has(i)); }
+function stackSwitch(id, on) {
+  const inBase = stackAll || DEFAULT_SET.has(id);
+  if (on) { stackDel.delete(id); if (!inBase) stackAdd.add(id); }
+  else { stackAdd.delete(id); if (inBase) stackDel.add(id); }
+}
+function stackAddCountry(id) {
+  if (!data.countries[id]) return;
+  stackSwitch(id, true);
+  flash = id; flashOnce = true; scrollTarget = id;
+  render();
+}
+function stackRemoveCountry(id) { stackSwitch(id, false); render(); }
+function stackToggleAll() { stackAll = !stackAll; stackAdd.clear(); stackDel.clear(); render(); window.scrollTo(0, 0); }
+
+// hash: view/ids/year/grid/sort/stack. The last part is only there when the stack differs from the
+// default list: "all" for every country, then +ISO3 for each one added and -ISO3 for each one taken out.
+function stackHash() {
+  return [stackAll ? 'all' : '', ...[...stackAdd].map(i => '+' + i), ...[...stackDel].map(i => '-' + i)].filter(Boolean).join(',');
+}
+function writeHash() {
+  const parts = [view, sel.map(s => s.id).join(','), year, grid, sort], st = stackHash();
+  if (st) parts.push(st);
+  history.replaceState(null, '', '#' + parts.join('/'));
+}
+function readHash() {
+  const parts = decodeURIComponent(location.hash.slice(1)).split('/');
+  if (VIEWS.includes(parts[0])) view = parts.shift();
+  const [c, y, g, so, st] = parts;
+  const ids = (c === undefined ? 'CHN,USA,BGD' : c).split(',').filter(i => i && ent(i));
+  sel = [];
+  const used = new Set();
+  for (const id of ids.slice(0, MAX_SEL)) { const color = COLORS.find(x => !used.has(x)); used.add(color); sel.push({ id, color }); }
+  if (data.years.includes(+y)) year = +y;
+  if (data.grids.includes(g)) grid = g;
+  if (SORTS.includes(so)) sort = so;
+  stackAll = false; stackAdd.clear(); stackDel.clear();
+  for (const t of (st || '').split(',')) {
+    if (t === 'all') stackAll = true;
+    else if (t[0] === '+' && data.countries[t.slice(1)]) stackAdd.add(t.slice(1));
+    else if (t[0] === '-' && data.countries[t.slice(1)]) stackDel.add(t.slice(1));
+  }
+}
+function applyHash() {
+  readHash();
+  for (const s of sel) if (isUnit(s.id)) loadSub(units.get(s.id).parent);
+  render();
+}
+
+const wideMQ = window.matchMedia('(min-width: 1200px)');
+function renderBar() {
+  const ov = view === 'overlay';
+  root.className = view;
+  const chips = $('chips');
+  chips.innerHTML = '';
+  if (ov) for (const s of sel) {
+    const c = curve(s.id);
+    const el = document.createElement('span');
+    el.className = 'chip';
+    if (isUnit(s.id)) el.title = unitOf(units.get(s.id));
+    el.innerHTML = `${swatch(s)}${flagImg(s.id)}${esc(labelOf(s.id))}` +
+      `<span class="med" title="${c ? `Population in ${year}. Median density ${fmt(c.median)} people per km²` : ''}">${c ? fmt(popOf(s.id)) : c === undefined ? '…' : 'no data'}</span>` +
+      `<button title="Remove">✕</button>`;
+    el.querySelector('button').onclick = () => remove(s.id);
+    chips.appendChild(el);
+  }
+  // the stack's search sits in the header, so a narrow screen wraps it onto the second line with the sorts
+  const inHead = !ov;
+  const dest = inHead ? $('hslot') : $('bar');
+  if ($('tools').parentNode !== dest) dest.appendChild($('tools'));
+  $('bar').style.display = inHead ? 'none' : '';
+  $('adder').style.display = !ov || sel.length < MAX_SEL ? '' : 'none';
+  $('search').placeholder = ov ? 'Add a place' : 'Add a country';
+  $('allbtn').style.display = ov ? 'none' : '';
+  $('allbtn').title = stackAll ? 'Show fewer countries' : 'Show all countries';
+  $('allbtn').classList.toggle('active', stackAll);
+  $('sorts').style.display = ov ? 'none' : '';
+  for (const [id, v] of [['years', year], ['grids', grid], ['views', view], ['sorts', sort]])
+    for (const b of $(id).children) b.classList.toggle('active', b.dataset.v === String(v));
+}
+
+function xTicks(sx, y, iw, m) {
+  const xt = iw < 600 ? { 0: '1', 1: '10', 2: '100', 3: '1k', 4: '10k', 5: '100k' }
+                      : { 0: '1', 1: '10', 2: '100', 3: '1,000', 4: '10,000', 5: '100,000' };
+  let h = '';
+  for (let d = Math.ceil(X_MIN); d <= X_MAX; d++) {
+    const anchor = sx(d) - m.l < 6 ? 'start' : 'middle';
+    h += `<g class="tick"><text x="${sx(d)}" y="${y}" text-anchor="${anchor}">${xt[d]}</text></g>`;
+  }
+  return h;
+}
+
+// ---------- overlay view ----------
+let geom = null;
+function renderChart() {
+  const W = svg.clientWidth, H = svg.clientHeight;
+  if (!W || !H) return;
+  const narrow = W < 600;
+  const icons = urban().length > 0;
+  const { lo, step } = data.bins;
+  const m = { l: narrow ? 34 : 52, r: narrow ? 4 : 16, t: 24 };
+  const iw = W - m.l - m.r;
+  const sx = v => m.l + (v - X_MIN) / (X_MAX - X_MIN) * iw;
+  const bx = i => sx(lo + (i + .5) * step);
+  const curves = sel.map(s => ({ s, c: curve(s.id) })).filter(d => d.c);
+
+  // medians go under the axis, in rows where they would touch
+  const meds = curves.map(({ s, c }) => ({ s, c, x: sx(Math.log10(c.median)), t: fmt(c.median) })).sort((a, b) => a.x - b.x);
+  let lastX = -1e9, row = 0, maxRow = 0;
+  for (const md of meds) {
+    row = md.x - lastX < md.t.length * 7 + 8 ? row + 1 : 0;
+    md.row = row;
+    if (!row) lastX = md.x;
+    maxRow = Math.max(maxRow, row);
+  }
+  const bandOff = 10 + 13 * Math.min(3, maxRow + 1);
+  m.b = bandOff + (icons ? 58 : 32) + 22;
+  const ih = H - m.t - m.b;
+  if (ih < 40) return;
+
+  let yMax = 0;
+  for (const { c } of curves) yMax = Math.max(yMax, c.peak);
+  yMax = yMax ? niceCeil(yMax * 1.12) : 20;
+  const sy = v => m.t + ih - Math.min(v, yMax * 4) / yMax * ih;
+  const line = c => { let d = ''; for (let i = c.i0; i <= c.i1; i++) d += (i === c.i0 ? 'M' : 'L') + bx(i).toFixed(1) + ',' + sy(c.y[i]).toFixed(1); return d; };
+
+  let h = `<defs>${gradient('ramp-o', sx(X_MIN), sx(X_MAX))}<clipPath id="clip"><rect x="${m.l}" y="${m.t - 6}" width="${iw}" height="${ih + 6}"/></clipPath></defs>`;
+  const yStep = niceStep(yMax / 5);
+  for (let v = yStep; v <= yMax + 1e-9; v += yStep) {
+    h += `<line x1="${m.l}" x2="${m.l + iw}" y1="${sy(v)}" y2="${sy(v)}" stroke="var(--grid)"/>`;
+    h += `<g class="tick"><text x="${m.l - 8}" y="${sy(v) + 4}" text-anchor="end">${+v.toFixed(1)}%</text></g>`;
+  }
+  h += `<g class="tick"><text x="${m.l - 8}" y="${sy(0) + 4}" text-anchor="end">0%</text></g>`;
+  for (let d = Math.ceil(X_MIN); d <= X_MAX; d++)
+    h += `<line x1="${sx(d)}" x2="${sx(d)}" y1="${m.t}" y2="${m.t + ih}" stroke="var(--grid)"/>`;
+  for (const u of urban())
+    h += `<line x1="${sx(u)}" x2="${sx(u)}" y1="${m.t}" y2="${m.t + ih}" stroke="#3a3a3a" stroke-dasharray="2 4"/>`;
+
+  // every country as a faint line behind the chosen ones, bigger countries a little brighter
+  const ghosts = [];
+  let g = `<g clip-path="url(#clip)">`;
+  for (const iso in data.countries) {
+    const pop = popOf(iso);
+    if (pop < GHOST_POP || sel.some(s => s.id === iso)) continue;
+    const c = curve(iso);
+    if (!c) continue;
+    const op = Math.max(.03, Math.min(.12, .03 + .09 * (Math.log10(pop) - 6) / 2.2));
+    ghosts.push({ id: iso, c });
+    g += `<path class="gh" d="${line(c)}" stroke-opacity="${op.toFixed(3)}"/>`;
+  }
+  h += g + `<path id="hl" fill="none" stroke="#fff" stroke-width="1.5" stroke-opacity=".8"/>`;
+  // chosen: the area under each curve takes the density ramp (stronger for a metro or state drawn inside its country)
+  for (const { s, c } of curves)
+    h += `<path d="${line(c)}L${bx(c.i1)},${sy(0)}L${bx(c.i0)},${sy(0)}Z" fill="url(#ramp-o)" fill-opacity="${nested(s.id) ? .4 : .14}"/>`;
+  for (const { s, c } of curves)
+    h += `<path d="${line(c)}" fill="none" stroke="var(--bg)" stroke-width="5" stroke-opacity=".8"/>` +
+         `<path d="${line(c)}" fill="none" stroke="${hue(s)}" stroke-width="2.25" stroke-linejoin="round"${nested(s.id) ? ' stroke-dasharray="6 3"' : ''}/>`;
+  h += `</g>`;
+
+  // medians: a dotted stem and a dot on the curve, the value under the axis
+  for (const md of meds) {
+    const mi = Math.round((Math.log10(md.c.median) - lo) / step - .5), my = sy(md.c.y[mi]);
+    h += `<line x1="${md.x}" x2="${md.x}" y1="${sy(0)}" y2="${my}" stroke="${hue(md.s)}" stroke-width="1.25" stroke-dasharray="1 3" stroke-linecap="round"/>`;
+    h += `<circle cx="${md.x}" cy="${my}" r="3.5" fill="${hue(md.s)}" stroke="var(--bg)" stroke-width="1.5"><title>${esc(nameOf(md.s.id))} median ${fmt(md.c.median)}</title></circle>`;
+    if (md.row < 3) h += `<text class="mv" x="${md.x}" y="${sy(0) + 14 + md.row * 13}" text-anchor="middle" fill="${hue(md.s)}">${md.t}</text>`;
+  }
+
+  // band, icons and ticks
+  const by = sy(0) + bandOff;
+  h += band(sx, by, 15, 'ramp-o');
+  h += bandIcons(sx, by + 18);
+  h += xTicks(sx, by + (icons ? 58 : 32), iw, m);
+  h += `<text class="axis-title" x="${m.l + iw / 2}" y="${H - 4}" text-anchor="middle">people per km²</text>`;
+  h += `<text class="axis-title" x="${m.l - (narrow ? 32 : 44)}" y="${m.t - 10}">share of people</text>`;
+
+  // names at each peak, in the curve's colour, nudged up where they would overlap
+  const peaks = [];
+  for (const { s, c } of curves) {
+    let pk = c.i0;
+    for (let i = c.i0; i <= c.i1; i++) if (c.y[i] > c.y[pk]) pk = i;
+    peaks.push({ s, name: esc(labelOf(s.id)), len: labelOf(s.id).length, x: bx(pk), y: sy(c.y[pk]) - 8 });
+  }
+  peaks.sort((a, b) => b.y - a.y);
+  const placed = [];
+  for (const p of peaks) {
+    const w = p.len * 7.5 + 6;
+    let y = p.y;
+    for (let moved = true; moved;) {
+      moved = false;
+      for (const q of placed) if (Math.abs(q.x - p.x) < (q.w + w) / 2 && Math.abs(q.y - y) < 15) { y = q.y - 15; moved = true; }
+    }
+    y = Math.max(y, m.t + 12);
+    const x = Math.min(Math.max(p.x, m.l + w / 2), m.l + iw - w / 2);
+    placed.push({ x: p.x, y, w });
+    h += `<text class="lbl" x="${x}" y="${y}" text-anchor="middle" fill="${hue(p.s)}">${p.name}</text>`;
+  }
+  h += `<line id="cross" y1="${m.t}" y2="${m.t + ih}" stroke="#777" visibility="hidden"/>`;
+  svg.innerHTML = h;
+  geom = { m, iw, ih, sx, sy, line, curves, ghosts, lo, step };
+}
+
+function niceStep(v) {
+  const e = 10 ** Math.floor(Math.log10(v)), f = v / e;
+  return (f <= 1 ? 1 : f <= 2 ? 2 : f <= 5 ? 5 : 10) * e;
+}
+function niceCeil(v) { const s = niceStep(v / 8); return Math.ceil(v / s) * s; }
+
+// ---------- stacked view: ridges ----------
+// Rows overlap: each ridge can rise about three rows into the ones above it. A solid backing hides what is
+// behind, then the ramp colour fading downward, then a bright edge. A white stem marks the median. The
+// name sits where the ridge starts, with its median after it.
+let sgeom = null;
+const FW = 16, FH = 12;
+function renderStack() {
+  const rows = $('rows'), axis = $('saxis-svg');
+  const W = $('app').clientWidth;
+  if (!W) return;
+  const narrow = W < 600, gx = narrow ? 16 : 20;
+  const m = { l: gx, r: gx };
+  const iw = W - m.l - m.r;
+  const rowH = narrow ? 15 : 16, amp = rowH * 3, cap = rowH * 5.5;
+  const sx = v => m.l + (v - X_MIN) / (X_MAX - X_MIN) * iw;
+  const k = amp / refPeak();
+  const { lo, step } = data.bins;
+  const bx = i => sx(lo + (i + .5) * step);
+
+  const list = stackList().map(iso => ({ iso, c: curve(iso) }));
+  if (sort === 'median') list.sort((a, b) => b.c.median - a.c.median);
+  else if (sort === 'pop') list.sort((a, b) => popOf(b.iso) - popOf(a.iso));
+  else list.sort((a, b) => nameOf(a.iso).localeCompare(nameOf(b.iso)));
+  // room above the first rows for whatever of a ridge rises past the top
+  let pad = 6;
+  list.forEach(({ c }, r) => { pad = Math.max(pad, Math.min(c.peak * k, cap) - (r + 1) * rowH + 4); });
+
+  // sticky axis: tick labels over the colour band
+  const AH = urban().length ? 66 : 42;
+  let a = `<defs>${gradient('ramp-a', sx(X_MIN), sx(X_MAX))}</defs>`;
+  a += xTicks(sx, 14, iw, m);
+  if (W >= 900) a += `<text class="axis-title" x="${W - m.r}" y="14" text-anchor="end">people per km²</text>`;
+  a += band(sx, 20, 15, 'ramp-a');
+  a += bandIcons(sx, 38);
+  axis.setAttribute('height', AH);
+  axis.setAttribute('width', W);
+  axis.innerHTML = a;
+
+  const H = pad + list.length * rowH + 12;
+  let h = `<defs>${gradient('gf', sx(X_MIN), sx(X_MAX))}${gradient('gs', sx(X_MIN), sx(X_MAX), .1)}
+    <linearGradient id="vf" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity="1"/><stop offset="1" stop-color="#fff" stop-opacity=".45"/></linearGradient>
+    <mask id="fade" maskContentUnits="objectBoundingBox"><rect width="1" height="1" fill="url(#vf)"/></mask>
+    <clipPath id="fclip"><rect width="${FW}" height="${FH}" rx="2"/></clipPath></defs>`;
+  for (let d = Math.ceil(X_MIN); d <= X_MAX; d++) h += `<line x1="${sx(d)}" x2="${sx(d)}" y1="0" y2="${H}" stroke="#161616"/>`;
+  for (const u of urban()) h += `<line x1="${sx(u)}" x2="${sx(u)}" y1="0" y2="${H}" stroke="#262626" stroke-dasharray="2 4"/>`;
+
+  const selColor = new Map(sel.map(s => [s.id, s.color]));
+  const fl = flashOnce ? flash : null;
+  flashOnce = false;
+  const items = [];
+  list.forEach(({ iso, c }, r) => {
+    const base = pad + (r + 1) * rowH;
+    // the ridge runs only where it is at least half a pixel tall
+    let a0 = c.i1, a1 = c.i0, start = null;
+    for (let i = c.i0; i <= c.i1; i++) {
+      const hy = c.y[i] * k;
+      if (hy > .5) { a0 = Math.min(a0, i); a1 = i; }
+      if (start === null && hy > 1.2) start = bx(i);
+    }
+    // small countries fainter, so the big ones lead; heights stay comparable
+    const op = Math.max(.42, Math.min(1, .42 + .58 * (Math.log10(Math.max(popOf(iso), 1)) - 5.5) / 2));
+    if (a0 <= a1) {
+      let top = '';
+      for (let i = a0; i <= a1; i++) top += (i === a0 ? 'M' : 'L') + bx(i).toFixed(1) + ',' + (base - Math.min(c.y[i] * k, cap)).toFixed(1);
+      const area = `M${bx(a0).toFixed(1)},${base}` + top.replace('M', 'L') + `L${bx(a1).toFixed(1)},${base}Z`;
+      h += `<path d="${area}" fill="var(--bg)"/>`;
+      h += `<g opacity="${op.toFixed(2)}">`;
+      h += `<path d="${area}" fill="url(#gf)" mask="url(#fade)"/>`;
+      h += `<path d="${top}" fill="none" stroke="var(--bg)" stroke-width="3" stroke-linejoin="round"/>`;
+      h += `<path d="${top}" fill="none" stroke="url(#gs)" stroke-width="1.1" stroke-linejoin="round"/>`;
+      h += `</g>`;
+    }
+    // median: a short white stem from the baseline
+    const lm = Math.log10(c.median);
+    const mi = Math.max(0, Math.round((lm - lo) / step - .5)), mx = sx(lm), my = base - Math.min(c.y[mi] * k, cap);
+    h += `<line x1="${mx}" x2="${mx}" y1="${base}" y2="${my}" stroke="#fff" stroke-opacity=".7" stroke-width="1"/>`;
+    const md = fmt(c.median);
+    h += `<text class="lab" data-r="${r}" x="0" y="${base - 3}" text-anchor="end" opacity="${Math.max(.6, op).toFixed(2)}">` +
+         `<tspan class="nm${iso === fl ? ' flash' : ''}">${esc(nameOf(iso))}</tspan><tspan class="md" dx="5" fill="${rampAt(lm, .12)}">${md}</tspan></text>`;
+    items.push({ iso, c, base, start, op });
+  });
+  rows.setAttribute('width', W);
+  rows.setAttribute('height', H);
+  rows.innerHTML = h;
+
+  // measure the names, then put each one where its ridge starts with a dark card and a flag behind it
+  const labs = [...rows.querySelectorAll('text.lab')];
+  const boxes = labs.map(t => t.getBBox());
+  labs.forEach((t, i) => {
+    const it = items[+t.dataset.r], b = boxes[i], w = b.width, col = selColor.get(it.iso);
+    const lead = FW + 4 + (col ? 11 : 0);
+    const lx = Math.max(m.l + lead + w, (it.start ?? sx(2)) - 6);
+    const left = lx - w, flagX = left - 4 - FW, fy = b.y + b.height / 2 - FH / 2;
+    const x0 = (col ? flagX - 11 : flagX) - 3, x1 = lx + 3, op = t.getAttribute('opacity');
+    t.setAttribute('x', lx.toFixed(1));
+    let ins = `<rect x="${x0.toFixed(1)}" y="${(b.y + 1).toFixed(1)}" width="${(x1 - x0).toFixed(1)}" height="${(b.height - 2).toFixed(1)}" rx="2" fill="#0a0a0a"/>`;
+    if (col) ins += `<rect x="${(flagX - 11).toFixed(1)}" y="${(fy + FH / 2 - 1.5).toFixed(1)}" width="8" height="3" rx="1.5" fill="${col}"/>`;
+    const c2 = ISO2[it.iso];
+    if (c2) ins += `<g transform="translate(${flagX.toFixed(1)},${fy.toFixed(1)})" opacity="${op}"><g clip-path="url(#fclip)"><image href="${flagUrl(c2)}" width="${FW}" height="${FH}"/></g>` +
+                   `<rect width="${FW}" height="${FH}" rx="2" fill="none" stroke="#fff" stroke-opacity=".2"/></g>`;
+    t.insertAdjacentHTML('beforebegin', ins);
+    Object.assign(it, { x0, x1, y0: b.y, y1: b.y + b.height });
+  });
+  rows.insertAdjacentHTML('beforeend',
+    `<line id="scross" y1="0" y2="${H}" stroke="#777" visibility="hidden"/>` +
+    `<g id="sx" visibility="hidden"><rect width="14" height="14" rx="3" fill="#0a0a0a"/>` +
+    `<path d="M4,4L10,10M10,4L4,10" stroke="#aaa" stroke-width="1.4" stroke-linecap="round"/><title>Remove</title></g>`);
+  sgeom = { m, iw, rowH, pad, items, narrow };
+
+  if (scrollTarget) {
+    const it = items.find(i => i.iso === scrollTarget);
+    scrollTarget = null;
+    if (it) {
+      const top = rows.getBoundingClientRect().top + window.scrollY;
+      window.scrollTo(0, Math.max(0, top + it.base - window.innerHeight / 2));
+    }
+  }
+}
+
+function render() {
+  renderBar();
+  if (view === 'overlay') renderChart(); else renderStack();
+  writeHash(); hideTip();
+}
+
+function placeTip(cx, cy) {
+  tip.style.display = 'block';
+  const tw = tip.offsetWidth, th = tip.offsetHeight;
+  tip.style.left = Math.max(0, cx + 14 + tw > window.innerWidth ? cx - 14 - tw : cx + 14) + 'px';
+  tip.style.top = Math.min(Math.max(cy - th / 2, 0), window.innerHeight - th) + 'px';
+}
+function hideTip() {
+  tip.style.display = 'none';
+  for (const id of ['cross', 'scross', 'sx']) { const c = $(id); if (c) c.setAttribute('visibility', 'hidden'); }
+  $('hl')?.setAttribute('d', '');
+  svg.style.cursor = '';
+}
+
+// overlay: the nearest faint line lights up and is named; clicking it adds it. Otherwise a crosshair
+// lists the share of each chosen curve living in denser cells.
+function nearestGhost(px, py) {
+  const { m, iw, sy, ghosts, lo, step } = geom;
+  const i = Math.round((X_MIN + (px - m.l) / iw * (X_MAX - X_MIN) - lo) / step - .5);
+  let best = null, bd = 14;
+  for (const gh of ghosts) { const v = gh.c.y[i]; if (v === undefined) continue; const d = Math.abs(sy(v) - py); if (d < bd) { bd = d; best = gh; } }
+  return best;
+}
+svg.addEventListener('mousemove', e => {
+  if (!geom) return hideTip();
+  const { m, iw, ih, curves } = geom;
+  const r = svg.getBoundingClientRect(), px = e.clientX - r.left, py = e.clientY - r.top;
+  if (px < m.l || px > m.l + iw || py < m.t || py > m.t + ih) return hideTip();
+  const hl = $('hl'), cross = $('cross');
+  const gh = nearestGhost(px, py);
+  svg.style.cursor = gh ? 'pointer' : '';
+  if (gh) {
+    hl.setAttribute('d', geom.line(gh.c));
+    cross.setAttribute('visibility', 'hidden');
+    tip.innerHTML = `<div class="h">${flagImg(gh.id)}${esc(nameOf(gh.id))}</div><div class="sub">${fmt(popOf(gh.id))} people</div>${srcNote(gh.id)}` +
+      `<div class="r">median density<span class="v">${fmt(gh.c.median)}</span></div>`;
+    placeTip(e.clientX, e.clientY);
+    return;
+  }
+  hl.setAttribute('d', '');
+  if (!curves.length) return hideTip();
+  const lx = X_MIN + (px - m.l) / iw * (X_MAX - X_MIN);
+  cross.setAttribute('x1', px); cross.setAttribute('x2', px); cross.setAttribute('visibility', 'visible');
+  let rows = '';
+  for (const { s, c } of curves)
+    rows += `<div class="r">${swatch(s)}${flagImg(s.id)}${esc(labelOf(s.id))}<span class="v">${fmtPct(denserAt(c, lx))}</span></div>`;
+  tip.innerHTML = `<div class="h" style="display:block">${fmtDensity(10 ** lx)} people/km²</div><div class="sub">live in denser cells</div>${rows}`;
+  placeTip(e.clientX, e.clientY);
+});
+svg.addEventListener('mouseleave', hideTip);
+svg.addEventListener('click', e => {
+  if (!geom) return;
+  const { m, iw, ih } = geom;
+  const r = svg.getBoundingClientRect(), px = e.clientX - r.left, py = e.clientY - r.top;
+  if (px < m.l || px > m.l + iw || py < m.t || py > m.t + ih) return;
+  const gh = nearestGhost(px, py);
+  if (gh) toggle(gh.id);
+});
+
+// stack: hover a row for its tooltip; hover its name for a small x that takes it out of the stack;
+// click the ridge to add it to the overlay
+function stackHit(e) {
+  if (!sgeom) return null;
+  const { m, iw, rowH, pad, items } = sgeom;
+  const r = $('rows').getBoundingClientRect(), px = e.clientX - r.left, py = e.clientY - r.top;
+  const i = Math.floor((py - pad) / rowH);
+  if (i < 0 || i >= items.length) return null;
+  const it = items[i];
+  const onName = px >= it.x0 && px <= it.x1 + 18;
+  return { ...it, px, py, inPlot: px >= m.l && px <= m.l + iw, onName, onX: onName && px >= it.x1,
+           lx: X_MIN + (px - m.l) / iw * (X_MAX - X_MIN) };
+}
+$('rows').addEventListener('mousemove', e => {
+  const hit = stackHit(e);
+  if (!hit) return hideTip();
+  const cross = $('scross'), sxb = $('sx');
+  if (hit.onName) {
+    sxb.setAttribute('transform', `translate(${(hit.x1 + 2).toFixed(1)},${((hit.y0 + hit.y1) / 2 - 7).toFixed(1)})`);
+    sxb.setAttribute('visibility', 'visible');
+  } else sxb.setAttribute('visibility', 'hidden');
+  if (hit.onX) { cross.setAttribute('visibility', 'hidden'); tip.style.display = 'none'; return; }
+  const plot = hit.inPlot && !hit.onName;   // over the name it is about the country, not the density under the pointer
+  cross.setAttribute('visibility', plot ? 'visible' : 'hidden');
+  cross.setAttribute('x1', hit.px); cross.setAttribute('x2', hit.px);
+  const sub = plot ? `${fmtDensity(10 ** hit.lx)} people/km²` : `${fmt(popOf(hit.iso))} people`;
+  const v = plot ? fmtPct(denserAt(hit.c, hit.lx)) : fmt(hit.c.median);
+  const kk = plot ? 'live in denser cells' : 'median density';
+  tip.innerHTML = `<div class="h">${flagImg(hit.iso)}${esc(nameOf(hit.iso))}</div><div class="sub">${sub}</div><div class="r">${kk}<span class="v">${v}</span></div>${srcNote(hit.iso)}`;
+  // beside the name the tooltip starts after the x, not on top of it
+  placeTip(hit.onName ? $('rows').getBoundingClientRect().left + hit.x1 + 20 : e.clientX, e.clientY);
+});
+$('rows').addEventListener('mouseleave', hideTip);
+$('rows').addEventListener('click', e => {
+  const hit = stackHit(e);
+  if (!hit) return;
+  if (hit.onX) stackRemoveCountry(hit.iso); else toggle(hit.iso);
+});
+window.addEventListener('scroll', hideTip);
+
+// search: countries in the stack view (added to the stack), places in the overlay (added to the chart)
+const search = $('search'), suggest = $('suggest');
+let matches = [], hi = 0;
+// rank: exact name, then prefix, then a word prefix, then anywhere; countries ahead of metros and
+// states at the same rank, then bigger first
+function showSuggest() {
+  const q = search.value.trim().toLowerCase();
+  const ov = view === 'overlay';
+  const taken = ov ? new Set(sel.map(s => s.id)) : stackSet();
+  const countries = shown().filter(id => !taken.has(id));
+  if (!q) {
+    matches = countries.sort((a, b) => nameOf(a).localeCompare(nameOf(b)));
+  } else {
+    const rank = (id) => {
+      const n = nameOf(id).toLowerCase();
+      if (n === q || (!isUnit(id) && id.toLowerCase() === q)) return 0;
+      if (n.startsWith(q)) return 1;
+      if (n.split(/[\s\-'(]+/).some(w => w.startsWith(q))) return 2;
+      return n.includes(q) ? 3 : -1;
+    };
+    const unitIds = ov ? [...units.keys()].filter(id => !taken.has(id)) : [];
+    matches = [...countries, ...unitIds].map(id => ({ id, r: rank(id) })).filter(d => d.r >= 0)
+      .sort((a, b) => a.r - b.r || isUnit(a.id) - isUnit(b.id) || popOf(b.id) - popOf(a.id))
+      .slice(0, 60).map(d => d.id);
+  }
+  hi = 0;
+  suggest.innerHTML = matches.map((id, i) =>
+    `<div data-id="${esc(id)}" class="${i === hi ? 'on' : ''}"><span>${flagImg(id)}<span>${esc(nameOf(id))}${isUnit(id) ? `<span class="of"> · ${esc(unitOf(units.get(id)))}</span>` : ''}</span></span>` +
+    `<span class="pop">${popOf(id) ? fmt(popOf(id)) : ''}</span></div>`).join('');
+  suggest.style.display = matches.length ? 'block' : 'none';
+}
+function pick(id) {
+  if (view === 'overlay') toggle(id); else stackAddCountry(id);
+  search.value = ''; suggest.style.display = 'none'; search.blur();
+}
+search.addEventListener('focus', showSuggest);
+search.addEventListener('input', showSuggest);
+search.addEventListener('keydown', e => {
+  if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+    e.preventDefault();
+    hi = Math.max(0, Math.min(matches.length - 1, hi + (e.key === 'ArrowDown' ? 1 : -1)));
+    [...suggest.children].forEach((d, i) => d.classList.toggle('on', i === hi));
+    suggest.children[hi]?.scrollIntoView({ block: 'nearest' });
+  } else if (e.key === 'Enter' && matches[hi]) pick(matches[hi]);
+  else if (e.key === 'Escape') { suggest.style.display = 'none'; search.blur(); }
+});
+suggest.addEventListener('mousedown', e => { const d = e.target.closest('[data-id]'); if (d) { e.preventDefault(); pick(d.dataset.id); } });
+search.addEventListener('blur', () => { suggest.style.display = 'none'; });
+$('allbtn').onclick = stackToggleAll;
+
+// info panel
+const info = $('info'), infoBtn = $('info-btn');
+infoBtn.onclick = e => { e.stopPropagation(); const open = info.style.display !== 'block'; info.style.display = open ? 'block' : 'none'; infoBtn.classList.toggle('active', open); };
+info.querySelector('.x').onclick = () => { info.style.display = 'none'; infoBtn.classList.remove('active'); };
+document.addEventListener('click', e => { if (!info.contains(e.target) && e.target !== infoBtn) { info.style.display = 'none'; infoBtn.classList.remove('active'); } });
+
+for (const b of $('views').children) b.onclick = () => { view = b.dataset.v; render(); window.scrollTo(0, 0); };
+for (const b of $('sorts').children) b.onclick = () => { sort = b.dataset.v; render(); window.scrollTo(0, 0); };
+window.addEventListener('resize', () => { if (!data) return; renderBar(); if (view === 'overlay') renderChart(); else renderStack(); });
+document.fonts?.ready.then(() => { if (data && view === 'stack') renderStack(); });
+
+// data/ sits next to the page in the maps tree; the published page reads it from R2. Decided by
+// fetching the file, never by hostname: the website served locally is localhost too and has no data/.
+const R2 = 'https://data.anita.garden/popdensity/';
+let BASE = '';
+fetch('data/hist.json').then(r => r.json()).catch(() => { BASE = R2; return fetch(R2 + 'data/hist.json').then(r => r.json()); }).then(async d => {
+  data = d;
+  // 1975 and 2000 stay in the file but aren't shown: the WorldPop countries have no grid that old
+  data.years = data.years.filter(y => y >= 2020);
+  await initSub();
+  $('loading').remove();
+  const wp = Object.keys(data.countries).filter(i => data.countries[i].source).map(nameOf).sort();
+  $('credit').innerHTML = `<p>Data: ${esc(data.citation || data.source)}</p>` +
+    (wp.length ? `<p>GHSL's census inputs are old or coarse in ${esc(wp.join(', '))}, so these use WorldPop instead: ${esc(data.sources?.['WorldPop R2025A'] || 'WorldPop R2025A')}</p>` : '') +
+    `<p>` +
+    `Metros are GHSL functional urban areas; city limits are from © OpenStreetMap contributors.</p>`;
+  for (const y of [...data.years].sort((a, b) => a - b)) {
+    const b = document.createElement('button'); b.textContent = y; b.dataset.v = y;
+    b.onclick = () => { year = y; render(); }; $('years').appendChild(b);
+  }
+  for (const g of data.grids) {
+    const b = document.createElement('button'); b.textContent = g; b.dataset.v = g;
+    b.onclick = () => { grid = g; render(); }; $('grids').appendChild(b);
+  }
+  if (!data.years.includes(year)) year = data.years[0];
+  applyHash();
+});
+</script>
+</body>
+</html>
