@@ -1183,10 +1183,53 @@ function formatPopLarge(n){
   if(n>=1e3) return Math.round(n/1e3)+'k';
   return n.toString();
 }
+// ── People inside the circles ──
+// popgrid.bin (build_popgrid.py in the citycircles folder) is GHS-POP 2025 on
+// a 0.25° grid. A cell counts once its centre is inside any circle, so
+// overlapping circles never count anyone twice. Summing the cities instead
+// counted only city proper populations, and GeoNames double counts some
+// (New York City and Manhattan are both in it).
+let POPGRID=null, popCovered=null, popCount=0, popCircles=0;
+fetch('/assets/games/popgrid.bin').then(r=>r.ok?r.arrayBuffer():null).then(buf=>{
+  if(!buf) return;
+  const n=(buf.byteLength-721*4)/6;
+  POPGRID={pop:new Uint32Array(buf,0,n),
+           rowStart:new Uint32Array(buf,n*4,721),
+           col:new Uint16Array(buf,n*4+721*4,n)};
+  upStats();
+}).catch(()=>{});
+
+function coveredPop(){
+  if(!POPGRID) return null;
+  if(!popCovered||popCircles>guessCircles.length){
+    popCovered=new Uint8Array(POPGRID.pop.length); popCount=0; popCircles=0;
+  }
+  const {pop,rowStart,col}=POPGRID, S=0.25, rad=Math.PI/180;
+  for(;popCircles<guessCircles.length;popCircles++){
+    const gc=guessCircles[popCircles];
+    const dLat=gc.radiusKm/111.19+S;
+    const r0=Math.max(0,Math.floor((90-gc.lat-dLat)/S));
+    const r1=Math.min(719,Math.floor((90-gc.lat+dLat)/S));
+    const sinA=Math.sin(gc.lat*rad), cosA=Math.cos(gc.lat*rad);
+    const cosR=Math.cos(gc.radiusKm/6371), lng0=gc.lng*rad;
+    for(let row=r0;row<=r1;row++){
+      const lat=(90-(row+0.5)*S)*rad, sl=Math.sin(lat), cl=Math.cos(lat);
+      for(let k=rowStart[row];k<rowStart[row+1];k++){
+        if(popCovered[k]) continue;
+        // Spherical law of cosines: inside when the angle to the centre is
+        // under the radius. No wrapping needed at the antimeridian.
+        const lng=(-180+(col[k]+0.5)*S)*rad;
+        if(sinA*sl+cosA*cl*Math.cos(lng-lng0)>=cosR){popCovered[k]=1;popCount+=pop[k];}
+      }
+    }
+  }
+  return popCount;
+}
+
 function upStats(){
   document.getElementById('stat-cities').textContent=revealedSet.size+'/'+totalCities();
-  let pop=0; for(const i of revealedSet) pop+=CITIES[i].pop;
-  document.getElementById('stat-pop').textContent=revealedSet.size?formatPopLarge(pop):'—';
+  const pop=coveredPop();
+  document.getElementById('stat-pop').textContent=guessCircles.length&&pop!==null?formatPopLarge(pop):'—';
   // Nothing to finish before the first guess, and nothing left after a finish.
   document.getElementById('finish-btn').disabled=gameFinished||guessCount===0;
 }
@@ -1384,6 +1427,7 @@ function newGame(){
   finishedSet.clear();
   guessCount=0;
   guessCircles=[];
+  popCovered=null;
   guessedSet=new Set();
   chainStarts.clear();
   unlockControls();
