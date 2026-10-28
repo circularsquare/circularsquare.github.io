@@ -176,6 +176,18 @@ a:active {
 }
 .site-footer { border-top: 1px solid var(--teal); padding: 10px 0px; margin-top: auto;}
 
+// page titles: 10% smaller than minima's, 7px less space above and 5px less below
+.page-content { padding-top: $spacing-unit - 7px; }
+.post-header { margin-bottom: $spacing-unit - 5px; }
+// minima gives every heading 15px below; ### and #### sit closer to what they head
+.page-content h3, .page-content h4 { margin-bottom: 5px; }
+.post-title {
+  @include relative-font-size(2.625 * 0.9);
+  @include media-query($on-laptop) {
+    @include relative-font-size(2.25 * 0.9);
+  }
+}
+
 
 th, td {
     padding: 1px; 
@@ -376,6 +388,58 @@ table {border-spacing: 30px;}
   max-height: 207px;
   object-fit: contain;
 }
+
+/* Thumbnail strip on the projects page, fed by _data/featured.yml */
+.featured {
+  position: relative;
+  margin: 0 0 6px;
+  padding: 8px;
+  background: var(--twhite);
+}
+// four thumbnails and a sliver of the fifth fit across; swipe or the arrows for the rest
+.featured-strip {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-x pan-y;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+  &::-webkit-scrollbar { display: none; }
+}
+.featured-item {
+  flex: 0 0 calc((100% - 3 * 8px) / 4 * 0.95);
+  scroll-snap-align: start;
+  img {
+    display: block;
+    width: 100%;
+    height: auto;
+    aspect-ratio: 3 / 2;
+    object-fit: cover;
+    border: 1px solid var(--teal);
+    background: var(--white);
+    box-sizing: border-box;
+  }
+}
+.featured-arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 22px;
+  height: 32px;
+  padding: 0;
+  font: inherit;
+  font-size: 22px;
+  line-height: 28px;
+  color: var(--teal);
+  background: var(--twhite);
+  border: 1px solid var(--teal);
+  cursor: pointer;
+  &[hidden] { display: none; }
+}
+.featured-prev { left: 2px; }
+.featured-next { right: 2px; }
 
 /* 88x31 button wall, fed by _data/buttons.yml */
 .button-wall {

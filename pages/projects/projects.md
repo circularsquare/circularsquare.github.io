@@ -5,52 +5,51 @@ permalink: /projects/
 ---
 
 {% include img-preview.html %}
+{% include featured.html %}
+#### maps
+- interactive 
+    - <a href="/languagedots/" data-thumb="/assets/thumbs/languagedots.png">language dot map</a> 
+    - <a href="/ancestrydotsna/" data-thumb="/assets/thumbs/ancestrydots.png">ancestry dot map</a> (<a href="/ancestrydotsna/">usa + canada</a>) (<a href="/ancestrydots/">usa</a>) (<a href="/assets/posters/ancestrydots.png" data-thumb="/assets/thumbs/posters/ancestrydots.jpg">poster</a>)
+    - <a href="/religiondots/" data-thumb="/assets/thumbs/religiondots.png">religion dot map</a>
+    - <a href="/flights/" data-thumb="/assets/thumbs/flights.jpg">flight traffic</a>
+    - <a href="/cityhistory/" data-thumb="/assets/thumbs/cityhistory.png">city history</a>
+    - <a href="https://graffiti.anita.garden/">graffiti nyc</a>
+- trains
+    - <a href="/japanrail/" data-thumb="/assets/thumbs/japanrail.png">japan rail</a> (posters: <a href="/assets/posters/japanrail.png" data-thumb="/assets/thumbs/posters/japanrail.jpg">english</a>, <a href="/assets/posters/japanrail_ja.png" data-thumb="/assets/thumbs/posters/japanrail_ja.jpg">japanese</a>)
+    - <a href="/korearail/" data-thumb="">korea rail</a>
+    - <a href="/noritetsu/">noritetsu</a> (in progress)
+    - <a href="/nycriders/" data-thumb="/assets/thumbs/nycriders.png">nyc riders</a> (<a href="/assets/posters/nycriders.png" data-thumb="/assets/thumbs/posters/nycriders.jpg">poster</a>)
+    - <a href="/londonriders/">london riders</a>
+- equal population maps
+    - <a href="/asia1mloc/" data-thumb="/assets/thumbs/maps/asia1mloc.jpg">asia in regions of 1 million people</a> (<a href="/asia1meng/" data-thumb="/assets/thumbs/maps/asia1meng.jpg">english labels</a>)
+    - <a href="/euro1m/" data-thumb="/assets/thumbs/euro1m.jpg">europe in regions of 1 million</a>
+    - <a href="/na1m/" data-thumb="/assets/thumbs/na1m.jpg">north america in regions of 1 million</a>
+    - <a href="/sa1m/" data-thumb="/assets/thumbs/maps/sa1m.jpg">south america in regions of 1 million</a>
+    - <a href="/world10mfull/" data-thumb="/assets/thumbs/world10mfull.jpg">the world in regions of 10 million</a>
+- city maps
+    - <a href="/nycvoronoi/" data-thumb="/assets/thumbs/nycvoronoi.jpg">nyc subway station catchment areas</a>
+        - <a href="/nycarea/" data-thumb="/assets/thumbs/maps/nycarea.jpg">+ regional rail stations</a> ([uncompressed](/assets/maps/nycarea.png))
+    - <a href="/nystreets/" data-thumb="/assets/thumbs/nystreets.jpg">nyc street trips heat map</a>
+    - <a href="/bus/" data-thumb="/assets/thumbs/bus.jpg">nyc bus lines by ridership</a>
+- miscellaneous
+    - <a href="/worldtrain/" data-thumb="/assets/thumbs/worldtrain.jpg">fantasy world metro map</a>
+    - <a href="/popdensity/">population weighted population density</a>
+    - <a href="bread" data-thumb="/assets/thumbs/breads.png">bread</a>
+    - [music i like](/music/)
+    - [site map](site/)
+    - (if you'd like to support my map making, you can donate [here](https://ko-fi.com/anitamaps)!)<br>
 
-- maps
-    - interactive 
-        - <a href="/languagedots/" data-thumb="/assets/thumbs/languagedots.png">language dot map</a> 
-        - <a href="/ancestrydotsna/" data-thumb="/assets/thumbs/ancestrydots.png">ancestry dot map</a> (<a href="/ancestrydotsna/">usa + canada</a>) (<a href="/ancestrydots/">usa</a>) (<a href="/assets/posters/ancestrydots.png" data-thumb="/assets/thumbs/posters/ancestrydots.jpg">poster</a>)
-        - <a href="/religiondots/" data-thumb="/assets/thumbs/religiondots.png">religion dot map</a>
-        - <a href="/japanrail/" data-thumb="/assets/thumbs/japanrail.png">japan rail</a> (posters: <a href="/assets/posters/japanrail.png" data-thumb="/assets/thumbs/posters/japanrail.jpg">english</a>, <a href="/assets/posters/japanrail_ja.png" data-thumb="/assets/thumbs/posters/japanrail_ja.jpg">japanese</a>)
-        - <a href="/korearail/" data-thumb="">korea rail</a>
-        - <a href="/noritetsu/">noritetsu</a> (in progress)
-        - <a href="/nycriders/" data-thumb="/assets/thumbs/nycriders.png">nyc riders</a> (<a href="/assets/posters/nycriders.png" data-thumb="/assets/thumbs/posters/nycriders.jpg">poster</a>)
-        - <a href="/londonriders/">london riders</a>
-        - <a href="/flights/" data-thumb="/assets/thumbs/flights.jpg">flight traffic</a>
-        - <a href="/cityhistory/" data-thumb="/assets/thumbs/cityhistory.png">city history</a>
-        - <a href="https://graffiti.anita.garden/">graffiti nyc</a>
-    - equal population maps
-        - <a href="/asia1mloc/" data-thumb="/assets/thumbs/maps/asia1mloc.jpg">asia in regions of 1 million people</a> (in progress)
-            - <a href="/asia1meng/" data-thumb="/assets/thumbs/maps/asia1meng.jpg">with english/latin text labels</a>
-        - <a href="/euro1m/" data-thumb="/assets/thumbs/euro1m.jpg">europe in regions of 1 million people</a>
-        - <a href="/na1m/" data-thumb="/assets/thumbs/na1m.jpg">north america in regions of 1 million people</a>
-        - <a href="/sa1m/" data-thumb="/assets/thumbs/maps/sa1m.jpg">south america in regions of 1 million people</a>
-        - <a href="/world10mfull/" data-thumb="/assets/thumbs/world10mfull.jpg">the world in regions of 10 million people</a>
+#### games
+- [trains world](/trainsworld/) (new!)
+- <a href="/circles/" data-thumb="/assets/thumbs/citycircles.png">city circles quiz</a>
+- <a href="/assets/guessthecity.html" data-thumb="/assets/thumbs/guessthecity.png">guess the city</a>
+- [bluebs](https://circularsquare.github.io/bluebs/) (old)
+- [shonei](/shonei/) (in progress) 
+<br>
 
-    - city maps
-        - <a href="/nycvoronoi/" data-thumb="/assets/thumbs/nycvoronoi.jpg">nyc subway stations by population in catchment area</a>
-            - <a href="/nycarea/" data-thumb="/assets/thumbs/maps/nycarea.jpg">+ regional rail stations</a> ([uncompressed version](/assets/maps/nycarea.png))
-        - <a href="/nystreets/" data-thumb="/assets/thumbs/nystreets.jpg">nyc street trips heat map</a>
-        - <a href="/bus/" data-thumb="/assets/thumbs/bus.jpg">nyc bus lines by ridership</a>
-    - miscellaneous
-        - <a href="/worldtrain/" data-thumb="/assets/thumbs/worldtrain.jpg">fantasy world metro map</a>
-        - <a href="bread" data-thumb="/assets/thumbs/breads.png">bread</a>
-        - [music i like](/music/)
-
-    - (if you'd like to support my map making, you can donate [here](https://ko-fi.com/anitamaps)!)<br><br>
-
-- games
-    - <a href="/circles/" data-thumb="/assets/thumbs/citycircles.png">city circles quiz</a>
-    - <a href="/assets/guessthecity.html" data-thumb="/assets/thumbs/guessthecity.png">guess the city</a>
-    - [bluebs](https://circularsquare.github.io/bluebs/)
-    - [shonei](/shonei/) 
-  <br><br>
-
-- [this site](site/)
+#### other
 - [photos](/photos/)
 - [audio](/audio/)
-
-
 - [(other people's maps i like)](/lists/maps/)
 
 <iframe src="//incr.easrng.net/badge?key=amanita" style="background: url(//incr.easrng.net/bg.gif)" title="increment badge" width="88" height="31" frameborder="0"></iframe>

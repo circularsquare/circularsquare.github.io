@@ -8,6 +8,8 @@ i am anita chen! i live in brooklyn.
 
 you will probably be most interested in my [projects](/projects/).
 
+i am a reluctant member of the [bushwick institute](https://bushwick.institute/)!
+
 - [professional](professional/)
 - [photos](/photos/)
 - [bunnies](bunnies/)

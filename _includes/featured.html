@@ -1,0 +1,41 @@
+<div class="featured">
+  <button type="button" class="featured-arrow featured-prev" aria-label="scroll left" hidden>&lsaquo;</button>
+  <div class="featured-strip">
+{%- for item in site.data.featured %}
+    <a class="featured-item" href="{{ item.url }}" title="{{ item.name }}"{% if item.pinned %} data-pinned{% endif %}>
+      <img src="{{ item.image }}" alt="{{ item.name }}" width="150" height="100"{% unless item.pinned %} loading="lazy"{% endunless %}>
+    </a>
+{%- endfor %}
+  </div>
+  <button type="button" class="featured-arrow featured-next" aria-label="scroll right" hidden>&rsaquo;</button>
+</div>
+<script>
+(function () {
+  var box = document.currentScript.previousElementSibling;
+  var strip = box.querySelector(".featured-strip");
+  var prev = box.querySelector(".featured-prev");
+  var next = box.querySelector(".featured-next");
+
+  // shuffle everything after the pinned ones
+  var rest = Array.prototype.filter.call(strip.children, function (a) { return !a.hasAttribute("data-pinned"); });
+  for (var i = rest.length - 1; i > 0; i--) {
+    var j = Math.floor(Math.random() * (i + 1));
+    var t = rest[i]; rest[i] = rest[j]; rest[j] = t;
+  }
+  rest.forEach(function (a) { strip.appendChild(a); });
+
+  function update() {
+    prev.hidden = strip.scrollLeft <= 1;
+    next.hidden = strip.scrollLeft + strip.clientWidth >= strip.scrollWidth - 1;
+  }
+  function page(dir) {
+    // four thumbnails, each with the gap after it
+    strip.scrollBy({ left: dir * 4 * (strip.firstElementChild.offsetWidth + 8), behavior: "smooth" });
+  }
+  prev.addEventListener("click", function () { page(-1); });
+  next.addEventListener("click", function () { page(1); });
+  strip.addEventListener("scroll", update, { passive: true });
+  window.addEventListener("resize", update);
+  update();
+})();
+</script>

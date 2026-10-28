@@ -1,5 +1,8 @@
 <script>
 document.addEventListener("DOMContentLoaded", function () {
+  // on touch screens a tap fires mouseenter, so the preview only flashes before the page changes
+  if (!window.matchMedia("(hover: hover)").matches) return;
+
   var tooltip = document.createElement("div");
   tooltip.className = "img-preview-tooltip";
   tooltip.style.display = "none";
