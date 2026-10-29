@@ -98,6 +98,15 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:Georgia
    top of the screen and has no height limit of its own, so a fixed 20-row box
    would run off the bottom on a short window. */
 #win-lb-entries{max-height:min(360px,45vh);overflow-y:auto;border:1px solid var(--border)}
+/* Desktop: no fixed cap. The overlay stops 16px above the bottom of the window
+   and the board takes whatever height is left, so a tall window shows all 20
+   rows plus your own row below them without scrolling, and a short board is
+   only as tall as its rows. Phones keep the cap above and scroll the overlay. */
+@media (min-width:641px){
+  #win-overlay.show{display:flex;flex-direction:column;max-height:calc(100vh - 32px)}
+  #win-box,#win-lb-section{display:flex;flex-direction:column;min-height:0}
+  #win-lb-entries{max-height:none;min-height:0;flex:0 1 auto}
+}
 .lb-table{width:100%;border-collapse:collapse;font-size:var(--fs-sm)}
 .lb-table td.r{text-align:right}
 .lb-table td{padding:5px 6px;border-bottom:1px solid var(--border);color:var(--text)}
