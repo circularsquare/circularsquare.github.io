@@ -15,6 +15,14 @@ A page including this MUST have YAML front matter, even an empty `---` / `---`
 pair. Jekyll only renders Liquid in files that have it; without it the file is
 copied verbatim and this include is emitted as literal text into the page.
 {%- endcomment -%}
+<!-- Owner opt-out: visit any page with ?notrack once per browser, ?track to undo. -->
+<script>
+  try {
+    if (/[?&]notrack\b/.test(location.search)) localStorage.setItem('notrack', '1');
+    if (/[?&]track\b/.test(location.search)) localStorage.removeItem('notrack');
+    if (localStorage.getItem('notrack')) window['ga-disable-G-RW5BF5TNQH'] = true;
+  } catch (e) {}
+</script>
 <!-- Google tag (gtag.js) -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-RW5BF5TNQH"></script>
 <script>

@@ -103,6 +103,7 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:Georgia
 .lb-table td{padding:5px 6px;border-bottom:1px solid var(--border);color:var(--text)}
 .lb-table tbody tr:last-child td{border-bottom:none}
 .lb-you td{background:var(--surface2)}
+.lb-gap td{color:var(--muted);text-align:center;padding:2px 6px}
 .lb-empty{font-size:var(--fs-sm);color:var(--muted);padding:10px 0;text-align:center}
 .win-lb-head{font-size:var(--fs-sm);color:var(--text)}
 #win-lb-label{font-size:var(--fs-sm);color:var(--muted);margin-bottom:8px}
@@ -1666,14 +1667,33 @@ function lbLabel(){
   return chain?base+' · chain':base;
 }
 
-// Returns the current board's entries, or null when the server can't be reached.
-// null renders as "unavailable" rather than as an empty board, so an outage
-// doesn't look like nobody has ever played.
+// A random id this browser keeps for itself, so the board can mark this
+// player's own rows and their best. Shared with Guess the City (same origin).
+// Made on the first submitted score; '' when there is none or storage is
+// blocked. Rows are only marked with it, never merged.
+const LB_PLAYER_KEY='lbPlayer';
+function lbPlayer(make){
+  try{
+    let id=localStorage.getItem(LB_PLAYER_KEY);
+    if(!id&&make){
+      const b=new Uint8Array(16);
+      crypto.getRandomValues(b);
+      id=Array.from(b,x=>x.toString(16).padStart(2,'0')).join('');
+      localStorage.setItem(LB_PLAYER_KEY,id);
+    }
+    return id||'';
+  }catch(e){return '';}
+}
+
+// Returns the current board ({entries, you}), or null when the server can't be
+// reached. null renders as "unavailable" rather than as an empty board, so an
+// outage doesn't look like nobody has ever played.
 async function lbFetch(){
   try{
-    const r=await fetch(`${LB_BASE}/board?board=${encodeURIComponent(lbKey())}`);
+    const p=lbPlayer(false);
+    const r=await fetch(`${LB_BASE}/board?board=${encodeURIComponent(lbKey())}`+(p?`&player=${p}`:''));
     if(!r.ok) return null;
-    return (await r.json()).entries||[];
+    return await r.json();
   }catch(e){return null;}
 }
 
@@ -1695,11 +1715,11 @@ async function lbSubmit(name,found,total){
   const r=await fetch(`${LB_BASE}/score`,{
     method:'POST',
     headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({board:lbKey(),name,found,total})
+    body:JSON.stringify({board:lbKey(),name,found,total,player:lbPlayer(true)})
   });
   const d=await r.json().catch(()=>({}));
   if(!r.ok) throw new Error(d.error||'could not reach the leaderboard');
-  return d.entries||[];
+  return d;
 }
 
 // Names are typed by strangers and go straight into innerHTML below, so they
@@ -1709,17 +1729,21 @@ function esc(s){
   return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
 
-function lbRenderTable(entries,highlightName){
-  if(!entries) return '<div class="lb-empty">leaderboard unavailable</div>';
+// The server marks this browser's own rows (e.you). When their best is below
+// the rows shown, it goes on the end at its real rank.
+function lbRenderTable(data){
+  if(!data) return '<div class="lb-empty">leaderboard unavailable</div>';
+  const entries=data.entries||[];
   if(!entries.length) return '<div class="lb-empty">no scores yet</div>';
-  let html='<table class="lb-table"><tbody>';
-  let highlightDone=false;
-  entries.forEach((e,i)=>{
-    const you=!highlightDone&&highlightName&&e.name===highlightName;
-    if(you) highlightDone=true;
+  const row=(rank,e)=>{
     const score=e.total?`${e.found}/${e.total}`:e.found;
-    html+=`<tr${you?' class="lb-you"':''}><td>${i+1}</td><td>${esc(e.name)}</td><td class="r">${esc(score)}</td></tr>`;
-  });
+    return `<tr${e.you?' class="lb-you"':''}><td>${rank}</td><td>${esc(e.name)}</td><td class="r">${esc(score)}</td></tr>`;
+  };
+  let html='<table class="lb-table"><tbody>';
+  entries.forEach((e,i)=>{html+=row(i+1,e);});
+  if(data.you&&data.you.rank>entries.length){
+    html+='<tr class="lb-gap"><td colspan="3">…</td></tr>'+row(data.you.rank,{...data.you.best,you:true});
+  }
   html+='</tbody></table>';
   return html;
 }
@@ -1732,9 +1756,9 @@ async function winSubmitScore(){
   btn.disabled=true;
   status.textContent='submitting…';
   try{
-    const list=await lbSubmit(name,revealedSet.size,totalCities());
+    const board=await lbSubmit(name,revealedSet.size,totalCities());
     status.textContent='submitted!';
-    document.getElementById('win-lb-entries').innerHTML=lbRenderTable(list,name);
+    document.getElementById('win-lb-entries').innerHTML=lbRenderTable(board);
   }catch(e){
     // Re-enable so a refused name (or a blip) can be corrected and retried,
     // rather than leaving the player with a dead button.
@@ -1764,7 +1788,7 @@ function lbLoadInto(){
   const entries=document.getElementById('win-lb-entries');
   entries.innerHTML='<div class="lb-empty">loading…</div>';
   (async()=>{
-    entries.innerHTML=lbRenderTable(await lbFetch(),null);
+    entries.innerHTML=lbRenderTable(await lbFetch());
   })();
 }
 

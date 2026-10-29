@@ -259,6 +259,7 @@
     .lb-score { color: var(--accent); font-weight: 500; }
     .lb-diff { color: var(--text-dim); font-size: 0.65rem; }
     .lb-empty { font-family: var(--font-mono); font-size: 0.75rem; color: var(--text-dim); }
+    .lb-you { background: var(--accent-light); border-radius: 4px; }
 
     .maplibregl-map { background: #eef3eb; }
     .satellite-mode #clue-map .maplibregl-map,
@@ -1298,6 +1299,24 @@
       ));
     }
 
+    // A random id this browser keeps for itself, so the global board can mark
+    // this player's own rows and their best. Shared with City Circles (same
+    // origin). Made on the first submitted score; "" when there is none or
+    // storage is blocked. Rows are only marked with it, never merged.
+    const LB_PLAYER_KEY = "lbPlayer";
+    function lbPlayer(make) {
+      try {
+        let id = localStorage.getItem(LB_PLAYER_KEY);
+        if (!id && make) {
+          const b = new Uint8Array(16);
+          crypto.getRandomValues(b);
+          id = Array.from(b, x => x.toString(16).padStart(2, "0")).join("");
+          localStorage.setItem(LB_PLAYER_KEY, id);
+        }
+        return id || "";
+      } catch { return ""; }
+    }
+
     async function fetchGlobalLeaderboard() {
       const container = document.getElementById("lb-global-entries");
       if (globalLeaderboardCache) renderGlobalLeaderboard(globalLeaderboardCache);
@@ -1305,11 +1324,12 @@
       const { difficulty, mode } = getCurrentFilter();
       try {
         const board = lbBoard(difficulty, mode);
-        const res = await fetch(`${LB_BASE}/board?board=${encodeURIComponent(board)}`);
+        const player = lbPlayer(false);
+        const res = await fetch(`${LB_BASE}/board?board=${encodeURIComponent(board)}`
+          + (player ? `&player=${player}` : ""));
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const entries = (await res.json()).entries || [];
-        globalLeaderboardCache = entries;
-        renderGlobalLeaderboard(entries);
+        globalLeaderboardCache = await res.json();
+        renderGlobalLeaderboard(globalLeaderboardCache);
       } catch (err) {
         console.warn("Failed to fetch global leaderboard:", err);
         if (!globalLeaderboardCache)
@@ -1318,20 +1338,28 @@
     }
 
     // The server already returns just this board's top entries, ranked — no
-    // client-side filtering or sorting left to do.
-    function renderGlobalLeaderboard(entries) {
+    // client-side filtering or sorting left to do. It also marks this
+    // browser's own rows (e.you); when their best is below the rows shown, it
+    // goes on the end at its real rank.
+    function renderGlobalLeaderboard(data) {
       const container = document.getElementById("lb-global-entries");
+      const entries = (data.entries || []).slice(0, GLOBAL_CAT_MAX);
       if (!entries.length) {
         container.innerHTML = '<span class="lb-empty">No entries for this mode yet — be first!</span>';
         return;
       }
-      container.innerHTML = entries.slice(0, GLOBAL_CAT_MAX).map((e, i) => `
-        <div class="lb-entry">
-          <span class="lb-rank">${i + 1}.</span>
+      const row = (rank, e) => `
+        <div class="lb-entry${e.you ? " lb-you" : ""}">
+          <span class="lb-rank">${rank}.</span>
           <span class="lb-score">${esc(e.found)}/${esc(e.total)}</span>
           <span class="lb-diff">${esc(e.name || "anon")}</span>
         </div>
-      `).join("");
+      `;
+      let html = entries.map((e, i) => row(i + 1, e)).join("");
+      if (data.you && data.you.rank > entries.length) {
+        html += '<span class="lb-empty">…</span>' + row(data.you.rank, { ...data.you.best, you: true });
+      }
+      container.innerHTML = html;
     }
 
     // Throws with the server's own message (a refused name, a rate limit) so the
@@ -1345,11 +1373,12 @@
           name,
           found: score,
           total: CONFIG.totalTime * CONFIG.roundsPerGame,
+          player: lbPlayer(true),
         }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error || "could not reach the leaderboard");
-      globalLeaderboardCache = data.entries || [];
+      globalLeaderboardCache = data;
       if (currentLbTab === "global") renderGlobalLeaderboard(globalLeaderboardCache);
     }
 
