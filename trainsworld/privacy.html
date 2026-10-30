@@ -22,7 +22,7 @@
 <body>
 <main>
 <h1>trainsworld privacy</h1>
-<p class="muted">Last updated 25 October 2026</p>
+<p class="muted">Last updated 29 October 2026</p>
 
 <p>trainsworld is a railway building game that runs in your browser. It is a hobby project
 run by one person, Anita. This page describes what it stores about you.</p>
@@ -33,7 +33,19 @@ browser's site data deletes them.</p>
 <p>The game also keeps a random id for this browser in its storage. It is sent only while you
 are signed in (below), and says nothing about your computer.</p>
 
+<h2>Play counts</h2>
+<p>While a game is open and its tab is showing, the page sends a short note to the server once a
+minute. It holds a random id made when the page loads (kept in memory only, so a reload makes a
+new one), the city the game started in, whether it is a sandbox game, and the version of the
+game. The server adds this up into totals per day: how many games were played, for how many
+minutes, from which starting city and on which version. It does not keep your IP address. The id
+is kept as a hash until the end of that day (UTC) and then dropped, so only the totals stay.</p>
+<p>If you are signed in, your minutes are also added up per day under your account. Deleting
+your account removes them.</p>
+
 <h2>With an account</h2>
+<p>Accounts are for people 13 and over. If you are under 13, play without one. If Anita learns
+an account belongs to someone under 13, she deletes it.</p>
 <p>Signing in is optional. The account is the same one used by
 <a href="../noritetsu/">noritetsu</a>, another map on this site, so signing in on one signs
 you in on the other. If you sign in, the server keeps:</p>
@@ -46,15 +58,16 @@ you in on the other. If you sign in, the server keeps:</p>
     in your browser is copied to the server whenever it is saved: the game itself (your
     network, money, game clock and the name you gave it), the figures shown on its card
     (day, cities, lines, stations, cash), a small picture of its network, when it was saved,
-    and the random id of the browser that saved it. The server also keeps up to two older
-    copies of each game. Games you choose to keep only in your browser when you sign in are
+    and the random id of the browser that saved it. The server also keeps up to four older
+    copies of each game: the last two, one from about a day ago and one from about a week ago. Games you choose to keep only in your browser when you sign in are
     not sent. Your IP address, browser and device name are not stored with them.</li>
   <li>For each game you play while signed in: its points in total and per city, and its game
     day. Sandbox games send nothing but the fact that they are sandboxes.</li>
   <li>If you join the leaderboards, the display name you choose.</li>
 </ul>
 <p>Everything travels to the server over an encrypted connection (HTTPS). On the server it is
-stored without encryption, on a computer Anita rents for this site.</p>
+stored without encryption, on a computer Anita rents from Hetzner in Ashburn, Virginia, in the
+United States.</p>
 <p>A recovery email is used only to confirm the address and to send password reset links.
 Those emails are sent through <a href="https://resend.com/legal/privacy-policy">Resend</a>.</p>
 
@@ -65,14 +78,28 @@ and email are never shown to anyone. Nothing is public if you do not join.</p>
 <p>Your games are private. Only you can open them, when signed in; no one else's account can
 list or read them. Anita runs the server, so she can read the files on it.</p>
 
+<h2>Feedback</h2>
+<p>The feedback form in Settings sends the message you type, and the name and email if you fill
+them in. If you are signed in, your account id and name go with it. The server also keeps the
+IP address the report came from, to spot spam; it is left out of the email. The report is
+stored on the server and emailed to Anita through <a href="https://resend.com/legal/privacy-policy">Resend</a>.</p>
+
 <h2>Other things</h2>
 <p>There are no ads, and trainsworld does not use tracking cookies or sell or share your data.
-The server sees your IP address with each request and uses it to limit abuse; it is not
-kept with your account. The game loads its data from Cloudflare and its map from
-OpenFreeMap, and the sign-in button from Google when you open the account panel; those
-services see requests as they would from any website.</p>
-<p>The server's whole disk is backed up once a day and each backup is kept for 7 days, so a
-deleted game or account can stay in the backups for up to 7 days after you delete it.</p>
+The server sees your IP address with each request, uses it to limit abuse, and it can show up
+in the server's logs; it is not kept with your account or your play counts. The game loads its
+data from Cloudflare and its map from OpenFreeMap, and the sign-in button from Google when you
+open the account panel; those services see requests as they would from any website. The
+fonts come from the game's own site.</p>
+<p>Your browser's Do Not Track setting changes nothing here, because trainsworld does not follow
+you across other sites.</p>
+
+<h2>How long things are kept</h2>
+<p>Games, scores and account details stay until you delete them. Play count totals stay; the
+ids behind them go at the end of each day. Feedback reports stay until Anita deletes them; write
+to her if you want yours removed. The server's whole disk is backed up once per day and each
+backup is kept for 7 days, so a deleted game or account can stay in the backups for up to 7
+days after you delete it.</p>
 
 <h2>Deleting your data</h2>
 <p>Deleting a saved game while signed in removes it from the server straight away, with its
@@ -83,7 +110,8 @@ removes your login details, email address, games, scores and leaderboard entries
 noritetsu rides, from the server straight away. The games in your browser stay there.</p>
 
 <h2>Contact</h2>
-<p>Questions or requests: <a href="https://anita.garden/">anita.garden</a>.</p>
+<p>To see, fix or delete what is stored about you, or with any other question, write through
+<a href="https://anita.garden/">anita.garden</a> or use Submit feedback in the game's Settings.</p>
 
 <p class="muted"><a href="./">Back to the game</a> · <a href="terms.html">Terms</a></p>
 </main>
