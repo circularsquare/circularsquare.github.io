@@ -1,0 +1,353 @@
+/* The cooking game. Loaded with kitchen.js by _includes/kitchen.html.
+   --kpx is one art pixel and --khalf half of one, both set by kitchen.js;
+   every size is a whole number of them. */
+
+:root { --kpx: 2px; --khalf: 1px; }
+
+.k-sprite {
+  display: block;
+  max-width: none;   /* minima caps img at 100% of its parent */
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+.k-missing { background: #c8c8c8; }
+
+.k-icon { display: block; fill: var(--black); }
+
+/* ── the ground: one row of plants and stations standing on the footer ── */
+.k-ground { flex: none; }
+.k-ground-row {
+  display: flex;
+  align-items: flex-end;
+  gap: calc(12 * var(--kpx));
+  line-height: 0;
+}
+
+/* ── plants ── */
+.k-plant {
+  position: relative;
+  line-height: 0;
+}
+.k-plant[hidden], .k-station-host[hidden] { display: none; }
+.k-mirror { transform: scaleX(-1); }
+.k-fruit {
+  display: block;
+  position: absolute;
+  cursor: pointer;
+  animation: k-bob 2.4s step-end infinite;
+}
+.k-pull { cursor: pointer; }
+@keyframes k-bob {
+  0% { transform: translateY(0); }
+  50% { transform: translateY(calc(-1 * var(--kpx))); }
+}
+
+/* ── dragged and dropped items ── */
+#k-layer {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9000;
+}
+/* dropped items scroll with the page */
+#k-floor-layer {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 0;
+  height: 0;
+  z-index: 8999;
+}
+.k-floor, .k-ghost {
+  position: absolute;
+  left: 0;
+  top: 0;
+}
+.k-floor { cursor: grab; touch-action: none; }
+.k-float {
+  position: absolute;
+  left: 0;
+  top: 0;
+  white-space: nowrap;
+  font-size: 12px;
+  line-height: 1;
+  color: var(--text);
+}
+
+/* ── inventory ── */
+/* stands at the right end of the ground row */
+#k-inv {
+  display: flex;
+  margin-left: auto;
+  line-height: normal;   /* the ground row sets 0, which squashes "eat" */
+}
+#k-inv[hidden] { display: none; }
+
+/* inventoryslot.png is drawn at 2x already (40px, a 2px border), so it's
+   sized in half art pixels. Tiles overlap by their border so the outside
+   stays one border thick. */
+.k-tile {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  box-sizing: border-box;
+  width: calc(40 * var(--khalf));
+  height: calc(40 * var(--khalf));
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: url('inventoryslot.png') 0 0 / 100% 100%;
+  image-rendering: pixelated;
+  touch-action: none;
+  font: inherit;
+  color: var(--text);
+}
+.k-tile + .k-tile { margin-left: calc(-2 * var(--khalf)); }
+.k-potslot { background-image: url('potslot.png'); }
+.k-slot .k-sprite { cursor: grab; }
+.k-selected::before {
+  content: '';
+  position: absolute;
+  inset: calc(2 * var(--khalf));
+  background: var(--ltan);
+  mix-blend-mode: multiply;
+}
+.k-tile > * { position: relative; }
+
+/* infobook.png: 2x like the slots, the book in its bottom left corner */
+.k-dexbtn {
+  flex: none;
+  width: calc(40 * var(--khalf));
+  height: calc(40 * var(--khalf));
+  margin: 0 0 0 calc(2 * var(--kpx));
+  padding: 0;
+  border: 0;
+  background: url('infobook.png') 0 0 / 100% 100%;
+  image-rendering: pixelated;
+  cursor: pointer;
+}
+.k-dexbtn[hidden] { display: none; }
+
+/* the "eat" popover, above the selected slot */
+.k-pop {
+  position: absolute;
+  left: 0;
+  bottom: calc(100% + 2 * var(--kpx));
+  padding: var(--kpx);
+  background: var(--black);
+}
+.k-pop button {
+  display: block;
+  margin: 0;
+  padding: var(--kpx) calc(3 * var(--kpx));
+  border: 0;
+  border-radius: 0;
+  background: var(--white);
+  color: var(--text);
+  font: inherit;
+  font-size: 12px;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.k-pop button:hover { background: var(--ltan); }
+
+/* ── stations ── */
+.k-station {
+  position: relative;
+  line-height: 0;
+}
+.k-station-body { position: relative; cursor: pointer; }
+.k-steam {
+  position: absolute;
+  top: calc(2 * var(--kpx));
+  width: var(--kpx);
+  height: var(--kpx);
+  background: #fafafa;
+  opacity: 0;
+  animation: k-steam 1.8s steps(9) infinite;
+}
+.k-cooking .k-steam { animation-duration: 0.9s; }
+@keyframes k-steam {
+  0% { transform: translateY(0); opacity: 1; }
+  100% { transform: translateY(calc(-9 * var(--kpx))); opacity: 0; }
+}
+.k-cooking .k-station-body { animation: k-jiggle 0.3s step-end infinite; }
+@keyframes k-jiggle {
+  0% { transform: translateX(0); }
+  50% { transform: translateX(var(--kpx)); }
+}
+/* the fire under the pot: a strip of frames stepped through by kitchen.js's
+   timing (--strip is the whole strip's width) */
+.k-fire {
+  position: absolute;
+  pointer-events: none;
+  background-repeat: no-repeat;
+  image-rendering: pixelated;
+  animation-name: k-fire;
+  animation-iteration-count: infinite;
+}
+@keyframes k-fire {
+  from { background-position: 0 0; }
+  to { background-position: calc(-1 * var(--strip)) 0; }
+}
+
+/* the item waiting in the pot: its top half, sitting at the top of the pot */
+.k-inside {
+  position: absolute;
+  top: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+/* the two slots, floating above the station */
+.k-panel {
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 4 * var(--kpx));
+  z-index: 10;
+  display: flex;
+  transform: translateX(-50%);
+}
+.k-panel[hidden] { display: none; }
+/* the slots bob: up 0.5s, middle 0.2s, down 0.5s, middle 0.2s; the second a
+   little behind the first */
+.k-panel .k-slot { animation: k-float 1.4s step-end infinite; }
+.k-panel .k-slot + .k-slot { animation-delay: 0.2s; }
+@keyframes k-float {
+  0% { transform: translateY(calc(-1 * var(--kpx))); }
+  35.7% { transform: translateY(0); }
+  50% { transform: translateY(var(--kpx)); }
+  85.7% { transform: translateY(0); }
+}
+
+/* ── dex ── */
+#k-dex {
+  position: fixed;
+  inset: 0;
+  z-index: 9002;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+#k-dex[hidden] { display: none; }
+.k-box {
+  position: relative;
+  max-width: calc(9 * 23 * var(--kpx));
+  max-height: 80vh;
+  overflow-y: auto;
+  padding: calc(4 * var(--kpx));
+  padding-top: calc(12 * var(--kpx));
+  background: var(--white);
+  border: var(--kpx) solid var(--black);
+}
+.k-close {
+  position: absolute;
+  top: var(--kpx);
+  right: var(--kpx);
+  margin: 0;
+  padding: 0 calc(2 * var(--kpx));
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: 14px;
+  line-height: 1.2;
+  cursor: pointer;
+}
+.k-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--kpx);
+}
+.k-grid + .k-grid {
+  margin-top: calc(4 * var(--kpx));
+  padding-top: calc(4 * var(--kpx));
+  border-top: var(--kpx) solid #d8d8d8;
+}
+.k-cell {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: content-box;
+  width: calc(20 * var(--kpx));
+  height: calc(20 * var(--kpx));
+  margin: 0;
+  padding: var(--kpx);
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  cursor: pointer;
+}
+.k-cell:hover, .k-cell.k-picked { background: var(--ltan); }
+.k-cell.k-unknown { cursor: default; }
+.k-unknown .k-sprite { filter: brightness(0) invert(0.88); }
+.k-q {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #a8a8a8;
+  font-size: 14px;
+  font-weight: bold;
+}
+.k-cell .k-star {
+  position: absolute;
+  right: 0;
+  top: 0;
+}
+.k-star { display: inline-block; fill: #e0a000; vertical-align: middle; }
+.k-detail {
+  display: flex;
+  align-items: center;
+  gap: calc(4 * var(--kpx));
+  margin-top: calc(4 * var(--kpx));
+  padding-top: calc(4 * var(--kpx));
+  border-top: var(--kpx) solid #d8d8d8;
+  font-size: 12px;
+  line-height: 1.4;
+}
+.k-detail[hidden] { display: none; }
+.k-name { font-weight: bold; }
+
+/* ── little motions ── */
+.k-bounce { animation: k-bounce 0.3s step-end; }
+@keyframes k-bounce {
+  0% { transform: translateY(calc(-2 * var(--kpx))); }
+  33% { transform: translateY(calc(-1 * var(--kpx))); }
+  66% { transform: translateY(0); }
+}
+.k-shake { animation: k-shake 0.3s step-end; }
+@keyframes k-shake {
+  0% { transform: translateX(var(--kpx)); }
+  25% { transform: translateX(calc(-1 * var(--kpx))); }
+  50% { transform: translateX(var(--kpx)); }
+  75% { transform: translateX(0); }
+}
+
+/* ── the russula ── */
+.k-trip {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  pointer-events: none;
+  mix-blend-mode: multiply;
+  animation-name: k-trip;
+  animation-timing-function: linear;
+  animation-fill-mode: both;
+}
+@keyframes k-trip {
+  0% { background: rgba(255, 255, 255, 0); }
+  12% { background: rgba(255, 90, 90, 0.55); }
+  30% { background: rgba(255, 220, 60, 0.55); }
+  48% { background: rgba(90, 210, 90, 0.55); }
+  66% { background: rgba(80, 120, 255, 0.55); }
+  82% { background: rgba(0, 0, 0, 0.9); }
+  100% { background: rgba(255, 255, 255, 0); }
+}

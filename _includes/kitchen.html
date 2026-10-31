@@ -1,0 +1,31 @@
+<script>
+  // The cooking game (assets/cooking/). Off for the public until
+  // kitchen_public is set in _config.yml. To try it before then, visit any page
+  // with ?kitchen=on; ?kitchen=off turns it back off. Kept in localStorage.
+  //
+  // It's extra flavor, so it stays out of the way: the game itself only loads
+  // on pages with a plant or station, or for someone carrying something
+  // (they need their inventory everywhere). An empty inventory switches it off.
+  (function () {
+    var on = {{ site.kitchen_public | default: false }};
+    var carrying = false;
+    try {
+      var q = new URLSearchParams(location.search).get('kitchen');
+      if (q === 'on') localStorage.setItem('kitchenOn', '1');
+      if (q === 'off') localStorage.removeItem('kitchenOn');
+      if (localStorage.getItem('kitchenOn') === '1') on = true;
+      var saved = JSON.parse(localStorage.getItem('kitchen') || 'null');
+      carrying = !!(saved && saved.inv && saved.inv.some(Boolean));
+    } catch (e) {}
+    if (!on) return;
+    if (!carrying && !document.querySelector('.k-plant, .k-station-host')) return;
+    var v = '{{ site.time | date: "%s" }}';
+    var css = document.createElement('link');
+    css.rel = 'stylesheet';
+    css.href = '{{ "/assets/cooking/kitchen.css" | relative_url }}?v=' + v;
+    document.head.appendChild(css);
+    var js = document.createElement('script');
+    js.src = '{{ "/assets/cooking/kitchen.js" | relative_url }}?v=' + v;
+    document.body.appendChild(js);
+  })();
+</script>

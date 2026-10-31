@@ -18,3 +18,7 @@ i got a sleeping bag to go on a camping trip with [chrysanthemum](/friends/chrys
 
 [bunnies](/friends/nanachimitty/) don't like being warm, because they are fuzzy. 
 
+
+
+{% include plant.html kind="pepper" %}
+{% include plant.html kind="ice" %}

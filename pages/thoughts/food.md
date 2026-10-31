@@ -12,3 +12,6 @@ and isn't food so [ugly](/thoughts/beauty/)? an human ends so many smaller being
 
 the only solutions are suicide or fruitarianism. only eating the parts of a plant that are voluntarily given, intended to be eaten. but [freesia](/friends/freesia/) said that steve jobs did that and it gave him cancer, so i guess that won't work.
 
+{% include plant.html kind="potato" %}
+{% include plant.html kind="potato" %}
+

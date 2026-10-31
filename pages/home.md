@@ -8,3 +8,5 @@ this is my home
 
 welcome home!  
 
+{% include station.html kind="pot" %}
+

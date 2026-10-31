@@ -20,3 +20,5 @@ clementine is the distilled sun.
 
 clementine is a baller.
 
+{% include plant.html kind="clementine" %}
+

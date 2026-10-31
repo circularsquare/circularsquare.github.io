@@ -10,3 +10,5 @@ blueberry is sister of [olive](/friends/olive/) and daughter of [hydrangea](/fri
 
 blueberry used to not speak much, and just watched intently with her big blue eyes. watching olive and hydrangea and [aloe](/friends/aloe/) and me. now she is a ball of sweetness and spontaneity (though she remains a follower). so wonderful... 
 
+
+{% include plant.html kind="blueberry" %}

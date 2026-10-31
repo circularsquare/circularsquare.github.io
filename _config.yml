@@ -27,6 +27,10 @@ baseurl: "" # the subpath of your site, e.g. /blog
 url: "https://anita.garden" # the base hostname & protocol for your site, e.g. http://example.com
 github_username: circularsquare
 
+# The cooking game (_data/kitchen.yml). Off until there's enough drawn; until
+# then ?kitchen=on in any page's address turns it on for that browser.
+kitchen_public: false
+
 # Build settings
 theme: minima
 plugins:
@@ -85,6 +89,7 @@ exclude:
   - README.md
   - package-lock.json
   - scripts/
+  - cooking/
 
 # exclude:
 #   - .sass-cache/

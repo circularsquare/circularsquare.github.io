@@ -1,0 +1,376 @@
+# The cooking game's data. Read by assets/cooking/kitchen.js.
+#
+# Sprites are found by name: an item, plant or station with id "potato" uses
+# assets/cooking/potato.png, a plant uses <id>plant.png, a station <id>.png.
+# Anything whose png doesn't exist yet is left out of the game entirely (no
+# plant, no dex cell, recipes that make it are skipped), so this file can list
+# far more than is drawn. Dropping in a png is what turns an entry on.
+#
+# Items appear in the dex in the order written here.
+#
+# Sizes: ingredients are 16x16 and dishes 20x20. One that's drawn bigger or
+# smaller says so with size: 24.
+
+# What eating says, by quality. good / ok / bad.
+eat_text:
+  good: "yum!"
+  ok: "hmm..."
+  bad: "..."
+
+# ── ingredients ────────────────────────────────────────────────────────────
+# tags: used by recipes ("any leafy"). Pick freely; a tag is just a word.
+# eat:  quality when eaten raw. Leave it out for things you can't eat raw.
+# page: where its plant lives. Only a note for you; placement is done with
+#       {% include plant.html kind="..." %} in that page.
+ingredients:
+  - id: potato
+    name: potato
+    tags: [veg, root, starchy]
+    page: /thoughts/food/        # placeholder spot, move it anywhere
+  - id: pepper
+    name: pepper
+    tags: [veg, spicy]
+    eat: ok
+    page: /thoughts/temperature/
+  - id: watercress
+    name: watercress
+    tags: [veg, leafy, green]
+    eat: ok
+    page: /friends/watercress/
+  - id: dandelion
+    name: dandelion greens
+    tags: [veg, leafy, green, bitter]
+    eat: bad
+    page: /friends/dandelion/
+  - id: bellflower
+    name: bellflower
+    tags: [veg, leafy, green, flower]
+    eat: ok
+    page: /friends/bellflower/
+  - id: milkweed
+    name: milkweed pod
+    tags: [veg, green]
+    page: /friends/milkweed/
+  - id: clementine
+    name: clementine
+    tags: [fruit, citrus, sweet]
+    eat: good
+    page: /friends/clementine/
+  - id: blueberry
+    name: blueberry
+    tags: [fruit, berry, sweet]
+    eat: good
+    page: /friends/blueberry/
+  - id: plum
+    name: plum
+    tags: [fruit, sweet]
+    eat: good
+    page: /friends/plum/
+  - id: arbutus
+    name: strawberry tree fruit
+    tags: [fruit, berry]
+    eat: ok
+    page: /friends/strawberrytree/
+  - id: olive
+    name: olive
+    tags: [fruit, savory]
+    eat: bad                    # raw olives are horrible
+    page: /friends/olive/
+  - id: pinenut
+    name: pine nut
+    tags: [nut]
+    eat: good
+    page: /friends/pine/
+  - id: ginkgo
+    name: ginkgo nut
+    tags: [nut, smelly]
+    page: /friends/gingko/
+  - id: russula
+    name: russula
+    tags: [mushroom]
+    eat: ok
+    effect: trip                # the page goes red, yellow, green, blue, black
+    page: /friends/russula/
+  - id: linden
+    name: linden flower
+    tags: [flower, tea]
+    page: /friends/linden/
+  - id: jasmine
+    name: jasmine
+    tags: [flower, tea]
+    page: /friends/jasmine/
+  - id: chrysanthemum
+    name: chrysanthemum
+    tags: [flower, tea]
+    page: /friends/chrysanthemum/
+  - id: lavender
+    name: lavender
+    tags: [flower, herb]
+    page: /friends/lavender/
+  - id: honeysuckle
+    name: honeysuckle
+    tags: [flower, sweet]
+    eat: good                   # sucking the nectar out
+    page: /friends/honeysuckle/
+  - id: mint
+    name: mint
+    tags: [herb, leafy, green]
+    eat: ok
+    page: /anemos/herbs/
+  - id: foxglove
+    name: foxglove
+    tags: [flower, poison]
+    eat: bad
+    page: /friends/foxglove/
+  - id: honey
+    name: honey
+    tags: [sweet]
+    eat: good
+    page: /friends/bee/
+  - id: birchsap
+    name: birch sap
+    tags: [sweet, drink]
+    eat: ok
+    page: /friends/birch/
+  - id: ice
+    name: ice
+    tags: [cold]
+    eat: ok
+    page: /thoughts/temperature/
+  - id: wheat
+    name: wheat
+    tags: [grain]
+    page: /projects/bread/
+  - id: tapioca
+    name: tapioca pearls
+    tags: [starchy]
+    page: /lists/bubbletea/
+  - id: egg
+    name: egg
+    tags: [egg]
+    page: /friends/aloe/        # from the chickens, later
+  - id: corn
+    name: corn
+    tags: [grain, veg, sweet]
+    page: ""                    # no page yet; chicken food
+  - id: soy
+    name: soybean
+    tags: [bean]
+    page: ""                    # no page yet; chicken food
+  - id: onion
+    name: onion
+    tags: [veg, allium]
+    page: ""
+  - id: tomato
+    name: tomato
+    tags: [veg]
+    eat: ok
+    page: /thoughts/shame/
+
+# ── dishes ─────────────────────────────────────────────────────────────────
+# quality: what eating it says (good / ok / bad). Bad dishes can't go on the
+#          table, later.
+# tags:    give a dish tags only if it can itself go back in the pot.
+dishes:
+  - id: potatosoup
+    name: potato soup
+    quality: good
+  - id: spicypotatosoup
+    name: spicy potato soup
+    quality: good
+  - id: clementinejam
+    name: clementine jam
+    quality: good
+    size: 16
+    tags: [sweet]
+  - id: blueberryjam
+    name: blueberry jam
+    quality: good
+    size: 16
+    tags: [sweet]
+  - id: pepperjam
+    name: pepper jam
+    quality: good
+    size: 16
+    tags: [sweet, spicy]
+  - id: salad
+    name: salad
+    quality: good
+  - id: fruitsalad
+    name: fruit salad
+    quality: good
+  - id: clementinesorbet
+    name: clementine sorbet
+    quality: good
+  - id: blueberrysorbet
+    name: blueberry sorbet
+    quality: good
+  - id: plumsorbet
+    name: plum sorbet
+    quality: good
+  - id: sorbet
+    name: sorbet
+    quality: good
+  - id: jam
+    name: jam
+    quality: good
+    tags: [sweet]
+  - id: tea
+    name: tea
+    quality: good
+    tags: [tea, drink]
+  - id: icedtea
+    name: iced tea
+    quality: good
+    tags: [tea, drink, cold]
+  - id: bubbletea
+    name: bubble tea
+    quality: good
+  - id: porridge
+    name: porridge
+    quality: ok
+  - id: mushroomsoup
+    name: mushroom soup
+    quality: good
+  - id: pepperstew
+    name: pepper stew
+    quality: good
+  - id: boiledegg
+    name: boiled egg
+    quality: ok
+  - id: eggdropsoup
+    name: egg drop soup
+    quality: good
+  - id: candiednuts
+    name: candied nuts
+    quality: good
+  - id: syrup
+    name: flower syrup
+    quality: ok
+    tags: [sweet]
+  - id: soupq
+    name: soup?
+    quality: ok
+  - id: potslop                 # the pot's catch-all
+    name: "???"
+    quality: bad
+
+# ── plants ─────────────────────────────────────────────────────────────────
+# Plants stand on the ground (the top of the footer) in a row, in the order
+# their includes appear in the page. Include one twice for two of it.
+# item:   what it grows. Defaults to the plant's own id.
+# spots:  where fruits sit, as the top-left corner of the item's sprite, in
+#         the plant png's own pixels.
+#         Fruits are drawn with the stem to the top left. Ones in the left
+#         third of the plant are mirrored, in the middle third either way.
+# pull:   true for roots: no fruits shown, clicking pulls up the whole plant,
+#         which is gone until it regrows.
+# look:   use another plant's png: look: potato uses potatoplant.png.
+# bare:   true for no plant at all; the item itself lies on the ground.
+# regrow: minutes until a picked spot (or pulled plant) grows back.
+plants:
+  - id: potato
+    pull: true
+    regrow: 5
+  - id: clementine
+    spots: [[12, 14], [36, 8], [40, 26]]
+    regrow: 5
+  - id: blueberry
+    spots: [[10, 36], [26, 42], [42, 36]]
+    regrow: 5
+  - id: pepper
+    spots: [[14, 34], [28, 40], [40, 32]]
+    regrow: 5
+  - id: tomato
+    look: potato
+    spots: [[10, 24], [32, 18], [30, 36]]
+    regrow: 5
+  - id: ice
+    bare: true
+    regrow: 5
+
+# ── stations ───────────────────────────────────────────────────────────────
+# size: only for the gray stand-in until the png exists; a drawn station
+#       uses the png's own size.
+# fire: an animated strip drawn over the station. png is the file, at is the
+#       top-left corner of a frame in the station's own pixels, size is one
+#       frame, the frames sit side by side in the png.
+stations:
+  - id: pot
+    size: [32, 32]
+    fire: {png: fire, at: [6, 11], size: [16, 16], frames: 4, fps: 2}
+  - id: pan                     # later
+    size: [32, 16]
+
+# ── recipes ────────────────────────────────────────────────────────────────
+# Checked top to bottom; the first match wins, so specific ones go first and
+# catch-alls last. The two ingredients can be in either order.
+#   potato        that exact item
+#   any leafy     any item with that tag
+#   anything      any item, or an empty slot
+#   nothing       an empty slot
+# One entry in `in` means the other slot is empty.
+recipes:
+  # potato soup
+  - {at: pot, in: [potato, pepper], out: spicypotatosoup}
+  - {at: pot, in: [potato], out: potatosoup}
+  - {at: pot, in: [potato, potato], out: potatosoup}
+  - {at: pot, in: [potato, any allium], out: potatosoup}
+  - {at: pot, in: [potato, any leafy], out: potatosoup}
+
+  # sorbet: the fruit picks the color
+  - {at: pot, in: [clementine, ice], out: clementinesorbet}
+  - {at: pot, in: [blueberry, ice], out: blueberrysorbet}
+  - {at: pot, in: [plum, ice], out: plumsorbet}
+  - {at: pot, in: [any fruit, ice], out: sorbet}
+
+  # tea
+  - {at: pot, in: [any tea, ice], out: icedtea}
+  - {at: pot, in: [any tea, tapioca], out: bubbletea}
+  - {at: pot, in: [any tea], out: tea}
+  - {at: pot, in: [any tea, any tea], out: tea}
+  - {at: pot, in: [any tea, any sweet], out: tea}
+
+  # the poison one goes before anything that could take a flower
+  - {at: pot, in: [foxglove, anything], out: potslop}
+
+  # jam: the fruit on its own, doubled, or with something sweet that isn't
+  # another fruit (two different fruits make fruit salad)
+  - {at: pot, in: [clementine], out: clementinejam}
+  - {at: pot, in: [clementine, clementine], out: clementinejam}
+  - {at: pot, in: [blueberry], out: blueberryjam}
+  - {at: pot, in: [blueberry, blueberry], out: blueberryjam}
+  - {at: pot, in: [any fruit, any fruit], out: fruitsalad}
+  - {at: pot, in: [clementine, any sweet], out: clementinejam}
+  - {at: pot, in: [blueberry, any sweet], out: blueberryjam}
+  - {at: pot, in: [pepper, any sweet], out: pepperjam}
+
+  # sweet things
+  - {at: pot, in: [any flower, honey], out: syrup}
+  - {at: pot, in: [any flower, birchsap], out: syrup}
+  - {at: pot, in: [any nut, any sweet], out: candiednuts}
+  - {at: pot, in: [any fruit, any sweet], out: jam}
+
+  # savory
+  - {at: pot, in: [russula, anything], out: mushroomsoup}
+  - {at: pot, in: [pepper, any veg], out: pepperstew}
+  - {at: pot, in: [pepper], out: pepperstew}
+  - {at: pot, in: [egg], out: boiledegg}
+  - {at: pot, in: [egg, any veg], out: eggdropsoup}
+  - {at: pot, in: [any leafy, any veg], out: salad}
+  - {at: pot, in: [any leafy, any fruit], out: salad}
+  - {at: pot, in: [any grain], out: porridge}
+  - {at: pot, in: [any grain, any fruit], out: porridge}
+  - {at: pot, in: [any grain, any sweet], out: porridge}
+
+  # plausible but unnamed
+  - {at: pot, in: [any veg, anything], out: soupq}
+  - {at: pot, in: [any bean, anything], out: soupq}
+
+  # pan, later: same ingredients, different dishes
+  # - {at: pan, in: [potato], out: fries}
+  # - {at: pan, in: [egg], out: friedegg}
+  # - {at: pan, in: [corn], out: popcorn}
+
+  # everything else
+  - {at: pot, in: [anything, anything], out: potslop}
