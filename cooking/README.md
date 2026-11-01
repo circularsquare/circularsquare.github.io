@@ -18,11 +18,11 @@ The cooking game. This folder is notes and tools only; it isn't published.
 ## adding an ingredient
 
 1. Add it under `ingredients:` in `_data/kitchen.yml` with its tags (it may be there already as a planned one).
-2. Draw `assets/cooking/<id>.png` (16x16) and the plant, `<id>plant.png`.
-3. Add it under `plants:`: `spots:` for fruit on the plant, or `pull: true` for roots.
+2. Draw `assets/cooking/<id>.png` (16x16) and the plant, `<id>plant.png`. Optionally `<id>onplant.png`, any size, for how it looks while still on the plant.
+3. Add it under `plants:`: `spots:` (fruit centers) for fruit on the plant, `pull: true` for roots, `bare: true` for something just lying on the ground. `repeat:` and `sway:` make a swaying field.
 4. Put `{% include plant.html kind="<id>" %}` in its page.
 5. Run `python cooking/combos.py <id>` to see what it makes with everything else. Anything from a catch-all ("soup?", "???") that should be its own dish gets a recipe; recipes go above the catch-alls.
-6. Draw any new dishes (20x20, `<id>.png`).
+6. Draw any new dishes (20x20, `<id>.png`). A dish that would share an id with an ingredient gets `food` on the end: `teafood`, `ricefood`.
 7. Run `python cooking/combos.py` to refresh `combos.md`.
 
 In the checklist, "rule" says how specific the match was: **exact** (a recipe names both items), **tag rule** (`any leafy`), **catch-all** (`anything`). "not drawn; today: ..." means the recipe exists but the dish has no png yet, so the game gives the fallback for now.

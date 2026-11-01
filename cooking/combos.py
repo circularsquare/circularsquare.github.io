@@ -138,7 +138,7 @@ def report():
         elif p.get('bare'):
             plant = 'none (lies on the ground)'
         else:
-            plant = tick((p.get('look') or pid) + 'plant' in DRAWN)
+            plant = tick((p.get('png') or (p.get('look') or pid) + 'plant') in DRAWN)
         placed = ', '.join(PLACED.get(pid, [])) if pid else ''
         out.append(f"| {i['id']} | {i.get('name', '')} | {', '.join(tags(i['id']))} "
                    f"| {tick(i['id'] in DRAWN)} | {plant} | {placed or '-'} |")

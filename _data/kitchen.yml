@@ -8,8 +8,12 @@
 #
 # Items appear in the dex in the order written here.
 #
-# Sizes: ingredients are 16x16 and dishes 20x20. One that's drawn bigger or
-# smaller says so with size: 24.
+# Sizes: every png is shown at its own size, so ingredients are drawn 16x16
+# and dishes 20x20 by habit, but a dish drawn 16x16 just comes out smaller.
+# size: is only the space held while the png loads; leave it out normally.
+#
+# An ingredient and a dish can't share an id. When they'd have the same name,
+# the dish gets "food" on the end: tea (leaves) and teafood (the drink).
 
 # What eating says, by quality. good / ok / bad.
 eat_text:
@@ -153,10 +157,10 @@ ingredients:
     name: corn
     tags: [grain, veg, sweet]
     page: ""                    # no page yet; chicken food
-  - id: soy
+  - id: soybean
     name: soybean
     tags: [bean]
-    page: ""                    # no page yet; chicken food
+    page: /friends/gingko/       # also chicken food, later
   - id: onion
     name: onion
     tags: [veg, allium]
@@ -166,6 +170,19 @@ ingredients:
     tags: [veg]
     eat: ok
     page: /thoughts/shame/
+  - id: tea
+    name: tea leaves
+    tags: [tea]
+    page: ""                    # no page yet
+  - id: apple
+    name: apple
+    tags: [fruit, sweet]
+    eat: good
+    page: ""                    # no page or plant yet
+  - id: rice
+    name: rice
+    tags: [grain, starchy]
+    page: ""                    # no page yet
 
 # ── dishes ─────────────────────────────────────────────────────────────────
 # quality: what eating it says (good / ok / bad). Bad dishes can't go on the
@@ -181,18 +198,25 @@ dishes:
   - id: clementinejam
     name: clementine jam
     quality: good
-    size: 16
     tags: [sweet]
   - id: blueberryjam
     name: blueberry jam
     quality: good
-    size: 16
     tags: [sweet]
   - id: pepperjam
     name: pepper jam
     quality: good
-    size: 16
     tags: [sweet, spicy]
+  - id: ricefood
+    name: rice
+    quality: good
+  - id: tofu
+    name: tofu
+    quality: ok
+    tags: [tofu]
+  - id: soondubu
+    name: soondubu
+    quality: good
   - id: salad
     name: salad
     quality: good
@@ -215,10 +239,16 @@ dishes:
     name: jam
     quality: good
     tags: [sweet]
-  - id: tea
+  - id: teafood
     name: tea
     quality: good
     tags: [tea, drink]
+  - id: orangetea
+    name: orange tea
+    quality: good
+  - id: blueberrytea
+    name: blueberry tea
+    quality: good
   - id: icedtea
     name: iced tea
     quality: good
@@ -259,34 +289,59 @@ dishes:
 # Plants stand on the ground (the top of the footer) in a row, in the order
 # their includes appear in the page. Include one twice for two of it.
 # item:   what it grows. Defaults to the plant's own id.
-# spots:  where fruits sit, as the top-left corner of the item's sprite, in
-#         the plant png's own pixels.
+# spots:  where fruits sit: the center of each fruit, in the plant png's own
+#         pixels. The fruit is <item>onplant.png if that exists (any size),
+#         otherwise the item's own sprite.
 #         Fruits are drawn with the stem to the top left. Ones in the left
 #         third of the plant are mirrored, in the middle third either way.
 # pull:   true for roots: no fruits shown, clicking pulls up the whole plant,
 #         which is gone until it regrows.
 # look:   use another plant's png: look: potato uses potatoplant.png.
+# png:    name the plant's png outright: png: beehive uses beehive.png.
 # bare:   true for no plant at all; the item itself lies on the ground.
+# repeat: that many copies side by side, a little field. Each is picked on
+#         its own.
+# sway:   true to lean in the wind, the top quarter most.
 # regrow: minutes until a picked spot (or pulled plant) grows back.
 plants:
   - id: potato
     pull: true
     regrow: 5
   - id: clementine
-    spots: [[12, 14], [36, 8], [40, 26]]
+    spots: [[20, 22], [44, 16], [48, 34]]
     regrow: 5
   - id: blueberry
-    spots: [[10, 36], [26, 42], [42, 36]]
+    spots: [[18, 44], [34, 50], [50, 44]]
     regrow: 5
   - id: pepper
-    spots: [[14, 34], [28, 40], [40, 32]]
+    spots: [[22, 42], [36, 48], [48, 40]]
     regrow: 5
   - id: tomato
     look: potato
-    spots: [[10, 24], [32, 18], [30, 36]]
+    spots: [[18, 32], [40, 26], [38, 44]]
     regrow: 5
   - id: ice
     bare: true
+    regrow: 5
+  - id: tea
+    spots: [[16, 24], [34, 30], [22, 40]]
+    regrow: 5
+  - id: honey
+    png: beehive
+    spots: [[12, 24], [17, 27], [22, 23]]
+    regrow: 5
+  - id: soybean
+    spots: [[7, 20], [17, 24], [12, 33]]
+    regrow: 5
+  - id: wheat
+    pull: true
+    repeat: 4
+    sway: true
+    regrow: 5
+  - id: rice
+    pull: true
+    repeat: 4
+    sway: true
     regrow: 5
 
 # ── stations ───────────────────────────────────────────────────────────────
@@ -327,9 +382,20 @@ recipes:
   # tea
   - {at: pot, in: [any tea, ice], out: icedtea}
   - {at: pot, in: [any tea, tapioca], out: bubbletea}
-  - {at: pot, in: [any tea], out: tea}
-  - {at: pot, in: [any tea, any tea], out: tea}
-  - {at: pot, in: [any tea, any sweet], out: tea}
+  - {at: pot, in: [any tea, clementine], out: orangetea}
+  - {at: pot, in: [any tea, blueberry], out: blueberrytea}
+  - {at: pot, in: [any tea], out: teafood}
+  - {at: pot, in: [any tea, any tea], out: teafood}
+  - {at: pot, in: [any tea, any sweet], out: teafood}
+
+  # soy
+  - {at: pot, in: [soybean], out: tofu}
+  - {at: pot, in: [soybean, soybean], out: tofu}
+  - {at: pot, in: [tofu, pepper], out: soondubu}
+
+  # rice
+  - {at: pot, in: [rice], out: ricefood}
+  - {at: pot, in: [rice, rice], out: ricefood}
 
   # the poison one goes before anything that could take a flower
   - {at: pot, in: [foxglove, anything], out: potslop}

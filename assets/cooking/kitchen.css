@@ -27,8 +27,39 @@
 
 /* ── plants ── */
 .k-plant {
-  position: relative;
+  display: flex;
+  align-items: flex-end;
   line-height: 0;
+}
+.k-plant-art {
+  position: relative;
+  display: block;
+}
+
+/* wind: bands of the plant (copies of its png, cut by kitchen.js) lean in
+   whole art pixels, the top band further than the one under it */
+.k-band {
+  position: absolute;
+  left: 0;
+  right: 0;
+  overflow: hidden;
+  pointer-events: none;
+  animation: 4s step-end infinite;
+}
+.k-band .k-sprite { position: absolute; left: 0; }
+.k-sway-top { animation-name: k-sway-top; }
+.k-sway-mid { animation-name: k-sway-mid; }
+@keyframes k-sway-top {
+  0% { transform: translateX(0); }
+  6% { transform: translateX(var(--kpx)); }
+  12% { transform: translateX(calc(2 * var(--kpx))); }
+  24% { transform: translateX(var(--kpx)); }
+  30% { transform: translateX(0); }
+}
+@keyframes k-sway-mid {
+  0% { transform: translateX(0); }
+  9% { transform: translateX(var(--kpx)); }
+  27% { transform: translateX(0); }
 }
 .k-plant[hidden], .k-station-host[hidden] { display: none; }
 .k-mirror { transform: scaleX(-1); }

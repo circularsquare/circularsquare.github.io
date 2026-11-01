@@ -17,3 +17,5 @@ in my room i also have an extra fat and very soft form of bee flying in the air.
 <img src="/assets/plants/beecarpenter.png" width="45%">
 <img src="/assets/plants/beeleafcutter.png" width="45%">
 <img src="/assets/plants/beebig.jpeg" width="45%">
+
+{% include plant.html kind="honey" %}

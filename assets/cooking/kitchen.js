@@ -51,11 +51,12 @@
   }
 
   // look: borrows another plant's png (tomato grows on potatoplant.png).
+  // png:  names the png outright (honey grows on beehive.png).
   // bare: no plant at all, the item just lies on the ground.
   const PLANTS = {};
   for (const p of DATA.plants || []) {
     const item = p.item || p.id;
-    const png = p.bare ? item : (p.look || p.id) + 'plant';
+    const png = p.bare ? item : p.png || (p.look || p.id) + 'plant';
     if (DRAWN.has(png) && ITEMS[item]) PLANTS[p.id] = Object.assign({}, p, { item, png });
   }
 
@@ -150,7 +151,10 @@
     if (!bar.hidden) alignToDevice(bar);
   }
 
-  // w and h in art pixels. Left out, the png's own size is used.
+  // Always shown at the png's own size, one art pixel per png pixel, so a
+  // dish drawn 16x16 by accident just comes out small. w and h (art pixels)
+  // are only the size to hold until the png loads, or the gray stand-in's
+  // size when there's no png.
   function sprite(name, w, h) {
     const drawn = DRAWN.has(name);
     const el = document.createElement(drawn ? 'img' : 'span');
@@ -165,8 +169,16 @@
       el.style.height = art(ch);
     };
     if (w) size(w, h || w);
-    else if (drawn) el.addEventListener('load', () => { size(el.naturalWidth, el.naturalHeight); queueAlign(); }, { once: true });
-    else size(32, 32);
+    else if (!drawn) size(32, 32);
+    if (drawn) {
+      const fit = () => {
+        if (el.naturalWidth === w && el.naturalHeight === (h || w)) return;
+        size(el.naturalWidth, el.naturalHeight);
+        queueAlign();
+      };
+      if (el.complete && el.naturalWidth) fit();
+      else el.addEventListener('load', fit, { once: true });
+    }
     return el;
   }
 
@@ -330,7 +342,14 @@
     const ground = footer
       ? footer.getBoundingClientRect().top + window.scrollY
       : document.documentElement.scrollHeight;
-    return ground - ITEMS[f.id].size * PX;
+    return ground - itemBox(f).height;
+  }
+
+  // The item's drawn size in css px (its png may not match the yml's size).
+  function itemBox(f) {
+    const w = f.el.offsetWidth ? f.el.getBoundingClientRect().width : ITEMS[f.id].size * PX;
+    const h = f.el.offsetHeight ? f.el.getBoundingClientRect().height : ITEMS[f.id].size * PX;
+    return { width: w, height: h };
   }
 
   // Height is counted in whole art pixels up from the ground, so a resting
@@ -345,7 +364,7 @@
   function fall(f) {
     f.resting = false;
     f.vy = 0;
-    f.x = Math.max(0, Math.min(f.x, document.documentElement.clientWidth - ITEMS[f.id].size * PX));
+    f.x = Math.max(0, Math.min(f.x, document.documentElement.clientWidth - itemBox(f).width));
     f.y = Math.min(f.y, groundY(f));
     placeFloor(f);
     if (falling) return;
@@ -600,11 +619,16 @@
       const waiting = st.in.find(Boolean);
       s.inside.replaceChildren();
       if (waiting) {
-        const size = ITEMS[waiting].size;
-        s.inside.style.left = `calc(50% - ${art(size / 2)})`;
-        s.inside.style.width = art(size);
-        s.inside.style.height = art(Math.floor(size / 2));
-        s.inside.append(itemSprite(waiting));
+        const el = itemSprite(waiting);
+        const box = (w, h) => {
+          s.inside.style.left = `calc(50% - ${art(Math.floor(w / 2))})`;
+          s.inside.style.width = art(w);
+          s.inside.style.height = art(Math.floor(h / 2));
+        };
+        box(ITEMS[waiting].size, ITEMS[waiting].size);
+        // The png's own size, once known, in case it differs from the yml's.
+        if (el.decode) el.decode().then(() => box(el.naturalWidth, el.naturalHeight), () => {});
+        s.inside.append(el);
       }
       s.host.classList.toggle('k-cooking', cooking(s.kind));
     }
@@ -651,8 +675,8 @@
   // A falling item whose bottom passes the rim, over the mouth, goes in.
   // The rim is a few art pixels below the top of the sprite.
   function fellIntoStation(f, before) {
-    const size = ITEMS[f.id].size * PX;
-    const cx = f.x + size / 2;
+    const { width, height: size } = itemBox(f);
+    const cx = f.x + width / 2;
     for (const s of stationEls) {
       const r = s.body.getBoundingClientRect();
       const left = r.left + window.scrollX, top = r.top + window.scrollY;
@@ -705,52 +729,113 @@
   // whole plant, which vanishes until it grows back.
   const fruits = [];
 
+  // A repeat: plant is several copies side by side (a field), each picked on
+  // its own.
   function buildPlants() {
     const seen = {};
     document.querySelectorAll('.k-plant').forEach(host => {
       const kind = host.dataset.kind;
       const def = PLANTS[kind];
       if (!def) return;
-      const n = seen[kind] = (seen[kind] || 0) + 1;
       host.hidden = false;
-      const plant = def.bare ? itemSprite(def.item) : sprite(def.png);
-      host.append(plant);
-      if (def.pull || def.bare) {
-        plant.classList.add('k-pull');
-        const fr = { key: `${location.pathname}|${kind}|${n}`, id: def.item, el: plant, regrow: (def.regrow || 5) * 60000 };
-        plant.addEventListener('click', () => harvest(fr));
-        fruits.push(fr);
-        return;
+      const copies = Math.max(1, def.repeat || 1);
+      for (let c = 0; c < copies; c++) {
+        const n = seen[kind] = (seen[kind] || 0) + 1;
+        buildPlant(host, def, `${location.pathname}|${kind}|${n}`, c);
       }
-      const mine = [];
-      (def.spots || []).forEach(([x, y], s) => {
-        // The wrapper bobs; the sprite inside may be mirrored.
-        const el = document.createElement('span');
-        el.className = 'k-fruit';
-        el.style.left = art(x);
-        el.style.top = art(y);
-        el.style.animationDelay = -(Math.random() * 2.4).toFixed(2) + 's';
-        el.append(itemSprite(def.item));
-        const fr = { key: `${location.pathname}|${kind}|${n}|${s}`, id: def.item, el, regrow: (def.regrow || 5) * 60000 };
-        el.addEventListener('click', () => harvest(fr));
-        host.append(el);
-        fruits.push(fr);
-        mine.push([x, el]);
-      });
-      // Fruits are drawn with the stem to the top left, which suits the right
-      // side of a plant. Left third: mirrored. Middle third: either.
-      const mirror = () => {
-        const third = plant.naturalWidth / 3;
-        const size = ITEMS[def.item].size;
-        for (const [x, el] of mine) {
-          const cx = x + size / 2;
-          const flip = cx < third || (cx < 2 * third && Math.random() < 0.5);
-          el.firstChild.classList.toggle('k-mirror', flip);
-        }
-      };
-      if (plant.complete) mirror();
-      else plant.addEventListener('load', mirror, { once: true });
     });
+  }
+
+  const decoded = img => (img.decode ? img.decode() : Promise.resolve()).catch(() => {});
+
+  function buildPlant(host, def, key, copy) {
+    const regrow = (def.regrow || 5) * 60000;
+    // One plant's picture, with its fruits and sway bands on top.
+    const pic = document.createElement('span');
+    pic.className = 'k-plant-art';
+    const plant = def.bare ? itemSprite(def.item) : sprite(def.png);
+    pic.append(plant);
+    host.append(pic);
+    if (def.sway && plant.tagName === 'IMG') decoded(plant).then(() => sway(pic, plant, def.png, copy));
+
+    if (def.pull || def.bare) {
+      pic.classList.add('k-pull');
+      const fr = { key, id: def.item, el: pic, regrow };
+      pic.addEventListener('click', () => harvest(fr));
+      fruits.push(fr);
+      return;
+    }
+
+    // Spots are fruit centers. The fruit is <item>onplant.png if there is
+    // one (any size), otherwise the item's own sprite.
+    const onPlant = DRAWN.has(def.item + 'onplant') ? def.item + 'onplant' : null;
+    const mine = [];
+    (def.spots || []).forEach(([cx, cy], s) => {
+      // The wrapper bobs; the sprite inside may be mirrored.
+      const el = document.createElement('span');
+      el.className = 'k-fruit';
+      el.style.animationDelay = -(Math.random() * 2.4).toFixed(2) + 's';
+      const img = onPlant ? sprite(onPlant) : itemSprite(def.item);
+      el.append(img);
+      const place = (w, h) => {
+        el.style.left = art(cx - Math.floor(w / 2));
+        el.style.top = art(cy - Math.floor(h / 2));
+      };
+      place(ITEMS[def.item].size, ITEMS[def.item].size);
+      if (img.tagName === 'IMG') decoded(img).then(() => place(img.naturalWidth, img.naturalHeight));
+      const fr = { key: `${key}|${s}`, id: def.item, el, regrow };
+      el.addEventListener('click', () => harvest(fr));
+      pic.append(el);
+      fruits.push(fr);
+      mine.push([cx, el]);
+    });
+    // Fruits are drawn with the stem to the top left, which suits the right
+    // side of a plant. Left third: mirrored. Middle third: either.
+    decoded(plant).then(() => {
+      const third = plant.naturalWidth / 3;
+      for (const [cx, el] of mine) {
+        const flip = cx < third || (cx < 2 * third && Math.random() < 0.5);
+        el.firstChild.classList.toggle('k-mirror', flip);
+      }
+    });
+  }
+
+  // Wind: the top quarter of what's drawn leans up to 2 art pixels, the next
+  // quarter 1, the rest stays. Copies in a field start a little after one
+  // another, so a gust sweeps across. The plant is redrawn as three stacked
+  // bands (the original stays, hidden, for size and clicks).
+  function sway(box, plant, png, copy) {
+    const w = plant.naturalWidth, h = plant.naturalHeight;
+    const top = firstDrawnRow(plant);
+    const drawn = h - top;
+    const cuts = [0, top + Math.round(drawn / 4), top + Math.round(drawn / 2), h];
+    plant.style.visibility = 'hidden';
+    ['k-sway-top', 'k-sway-mid', ''].forEach((cls, i) => {
+      const band = document.createElement('span');
+      band.className = ('k-band ' + cls).trim();
+      band.style.top = art(cuts[i]);
+      band.style.height = art(cuts[i + 1] - cuts[i]);
+      band.style.animationDelay = (copy * 0.15) + 's';
+      const img = sprite(png, w, h);
+      img.style.top = art(-cuts[i]);
+      band.append(img);
+      box.append(band);
+    });
+  }
+
+  function firstDrawnRow(img) {
+    try {
+      const c = document.createElement('canvas');
+      c.width = img.naturalWidth;
+      c.height = img.naturalHeight;
+      const ctx = c.getContext('2d');
+      ctx.drawImage(img, 0, 0);
+      const px = ctx.getImageData(0, 0, c.width, c.height).data;
+      for (let y = 0; y < c.height; y++) {
+        for (let x = 0; x < c.width; x++) if (px[(y * c.width + x) * 4 + 3]) return y;
+      }
+    } catch (e) {}
+    return 0;
   }
 
   function grown(fr) {
@@ -932,7 +1017,19 @@
     groundRow.append(bar);
     wrap.append(groundRow);
     ground.append(wrap);
-    footer.before(ground);
+    return () => footer.before(ground);
+  }
+
+  // The row goes into the page only once its pngs have loaded and sized
+  // themselves, so the page changes height once instead of jumping as each
+  // one arrives.
+  function whenLoaded(root, then) {
+    const waits = [...root.querySelectorAll('img')].filter(i => !i.complete).map(i =>
+      new Promise(r => { i.addEventListener('load', r, { once: true }); i.addEventListener('error', r, { once: true }); }));
+    const timeout = new Promise(r => setTimeout(r, 2000));
+    // The setTimeout lets each sprite's own load handler (which sets its
+    // size) run first.
+    Promise.race([Promise.all(waits), timeout]).then(() => setTimeout(then, 0));
   }
 
   function start() {
@@ -940,12 +1037,17 @@
     document.body.append(floorLayer, layer, dex);
     buildPlants();
     document.querySelectorAll('.k-station-host').forEach(buildStation);
-    buildGround();
+    const placeGround = buildGround();
     renderFruits();
     renderInv();
     renderStations();
-    for (const s of stationEls) serve(s.kind);   // a dish left mid-cook
-    align();
+    if (placeGround) {
+      whenLoaded(groundRow, () => {
+        placeGround();
+        align();
+        for (const s of stationEls) serve(s.kind);   // a dish left mid-cook
+      });
+    }
     if (fruits.length) setInterval(renderFruits, 5000);
     window.addEventListener('resize', () => {
       setScale();

@@ -19,13 +19,26 @@
     } catch (e) {}
     if (!on) return;
     if (!carrying && !document.querySelector('.k-plant, .k-station-host')) return;
+    // The ground row can make a short page tall enough to scroll; keeping
+    // room for the scrollbar from the start stops the page shifting sideways
+    // when it appears.
+    document.documentElement.style.scrollbarGutter = 'stable';
     var v = '{{ site.time | date: "%s" }}';
+    // The script waits for the styles, so nothing it adds is ever drawn
+    // unstyled (that showed as the page jumping sideways for a frame).
     var css = document.createElement('link');
     css.rel = 'stylesheet';
     css.href = '{{ "/assets/cooking/kitchen.css" | relative_url }}?v=' + v;
+    var started = false;
+    function start() {
+      if (started) return;
+      started = true;
+      var js = document.createElement('script');
+      js.src = '{{ "/assets/cooking/kitchen.js" | relative_url }}?v=' + v;
+      document.body.appendChild(js);
+    }
+    css.onload = start;
+    css.onerror = start;
     document.head.appendChild(css);
-    var js = document.createElement('script');
-    js.src = '{{ "/assets/cooking/kitchen.js" | relative_url }}?v=' + v;
-    document.body.appendChild(js);
   })();
 </script>
