@@ -19,7 +19,7 @@ The cooking game. This folder is notes and tools only; it isn't published.
 
 1. Add it under `ingredients:` in `_data/kitchen.yml` with its tags (it may be there already as a planned one).
 2. Draw `assets/cooking/<id>.png` (16x16) and the plant, `<id>plant.png`. Optionally `<id>onplant.png`, any size, for how it looks while still on the plant.
-3. Add it under `plants:`: `spots:` (fruit centers) for fruit on the plant, `pull: true` for roots, `bare: true` for something just lying on the ground. `repeat:` and `sway:` make a swaying field.
+3. Add it under `plants:`: `spots:` (fruit centers) for fruit on the plant, `pull: true` for roots, `bare: true` for something just lying on the ground. `repeat:` and `sway:` make a swaying field. `stalks: true` splits a same-size `<id>onplant.png` into separate stalks, each picked and swaying on its own. `bees:` puts bee.png around a plant.
 4. Put `{% include plant.html kind="<id>" %}` in its page.
 5. Run `python cooking/combos.py <id>` to see what it makes with everything else. Anything from a catch-all ("soup?", "???") that should be its own dish gets a recipe; recipes go above the catch-alls.
 6. Draw any new dishes (20x20, `<id>.png`). A dish that would share an id with an ingredient gets `food` on the end: `teafood`, `ricefood`.

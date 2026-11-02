@@ -288,6 +288,7 @@
     state.flags.ate = true;
     save();
     renderInv();
+    sound('chew.mp3', 0.6);
     floatText((DATA.eat_text || {})[it.eat] || '...', slots[i]);
     if (it.effect === 'trip') trip(Date.now());
   }
@@ -336,6 +337,34 @@
     f.el.remove();
     floor.splice(floor.indexOf(f), 1);
   }
+
+  // For the cursor bunnies (_includes/cursor.html): they eat vegetables,
+  // fruit and tea left on the floor. Positions are in the window; the point is the
+  // item's lower middle, where a bunny's feet would meet it.
+  // What they'll eat: anything with one of bunny_food's tags in the yml,
+  // unless the item says bunnies: false (potatoes).
+  const BUNNY_TAGS = DATA.bunny_food || ['veg', 'fruit', 'tea'];
+  const bunnyFood = id => ITEMS[id].bunnies !== false && ITEMS[id].tags.some(t => BUNNY_TAGS.includes(t));
+  window.kitchenFood = {
+    find(x, y, range) {
+      let best = null, bestD = range;
+      for (const f of floor) {
+        if (!bunnyFood(f.id)) continue;
+        const box = itemBox(f);
+        const fx = f.x + box.width / 2 - window.scrollX;
+        const fy = f.y + box.height * 0.75 - window.scrollY;
+        const d = Math.hypot(fx - x, fy - y);
+        if (d < bestD) { best = { item: f, x: fx, y: fy }; bestD = d; }
+      }
+      return best;
+    },
+    eat(f) {
+      if (!floor.includes(f)) return null;
+      removeFloor(f);
+      sound('chew.mp3', 0.4);
+      return ITEMS[f.id].tags;
+    },
+  };
 
   function groundY(f) {
     const footer = document.querySelector('.site-footer');
@@ -398,15 +427,19 @@
   let press = null;
   let pressed = false;   // a press just ended; swallow its click
 
+  // Where an item can be picked up from: an inventory slot, a station's slot,
+  // the finished dish floating over a station, or the floor.
   function itemAt(src) {
     if (src.type === 'inv') return state.inv[src.i];
     if (src.type === 'in') return state.st[src.kind].in[src.i];
+    if (src.type === 'out') return state.st[src.kind].out;
     return src.f.id;
   }
 
   function take(src) {
     if (src.type === 'inv') state.inv[src.i] = null;
     else if (src.type === 'in') state.st[src.kind].in[src.i] = null;
+    else if (src.type === 'out') state.st[src.kind].out = null;
     else removeFloor(src.f);
   }
 
@@ -461,10 +494,14 @@
     if (src.type === 'inv') {
       selected = selected === src.i ? null : src.i;
       renderInv();
-    } else if (src.type === 'floor') {
+    } else if (src.type === 'floor' || src.type === 'out') {
+      // Picking up: only with room for it, so a dish over the pot stays put.
       if (state.inv.indexOf(null) < 0) return shake(el);
+      const id = itemAt(src);
       take(src);
-      give(src.f.id, r.left, r.top);
+      sound('pop.wav', 0.5);
+      give(id, r.left, r.top);
+      renderStations();
     } else {
       const id = itemAt(src);
       take(src);
@@ -499,9 +536,13 @@
 
     // Let go right on a station or one of its slots: straight in. Anywhere
     // else it falls, and can still fall into a pot on the way down.
+    if (st && st._kind === 'table') {
+      placeOnTable(p.src);
+      return;
+    }
     if (st) {
       const into = target.closest('.k-in');
-      if (!putInStation(st, p.src, into ? +into.dataset.i : null)) shake(st.querySelector('.k-station-body'));
+      if (!putInStation(st, p.src, into ? +into.dataset.i : null)) shakeSlots(st);
       return;
     }
 
@@ -533,6 +574,7 @@
     const kind = host.dataset.kind;
     const def = STATIONS[kind];
     if (!def) return;
+    if (def.table) return buildTable(host, kind);
     host.hidden = false;
     host.classList.add('k-station');
     host._kind = kind;
@@ -541,7 +583,14 @@
     body.className = 'k-station-body';
     // Drawn stations use the png's own size; size: is only for the stand-in.
     const [w, h] = def.size || [32, 32];
-    body.append(DRAWN.has(kind) ? sprite(kind) : sprite(kind, w, h));
+    const look = DRAWN.has(kind) ? sprite(kind) : sprite(kind, w, h);
+    body.append(look);
+    // While cooking it shows <kind>covered.png, the pot with its lid on.
+    const covered = DRAWN.has(kind + 'covered') ? sprite(kind + 'covered') : null;
+    if (covered) {
+      covered.hidden = true;
+      body.append(covered);
+    }
     // An animated strip over the station, like the fire under the pot.
     const fire = def.fire;
     if (fire && DRAWN.has(fire.png)) {
@@ -577,10 +626,10 @@
       if (pressed) return;
       const st = state.st[kind];
       if (selected != null) {
-        if (!putInStation(host, { type: 'inv', i: selected }, null)) shake(body);
+        if (!putInStation(host, { type: 'inv', i: selected }, null)) shakeSlots(host);
         selected = null;
         renderInv();
-      } else if (st.in.filter(Boolean).length === 1 && !cooking(kind)) {
+      } else if (st.in.some(Boolean) && !cooking(kind)) {
         cookAt(kind);
       } else if (openEl === host) {
         closeStation();
@@ -603,8 +652,15 @@
     });
     panel.append(ins[0], ins[1]);
 
-    host.append(body, panel);
-    stationEls.push({ host, kind, body, panel, ins, inside });
+    // The finished dish, floating over the station until it's picked up.
+    const ready = document.createElement('div');
+    ready.className = 'k-ready';
+    ready.addEventListener('pointerdown', e => {
+      if (state.st[kind].out && !cooking(kind)) startPress(e, { type: 'out', kind }, ready);
+    });
+
+    host.append(body, ready, panel);
+    stationEls.push({ host, kind, body, panel, ins, inside, look, covered, ready });
   }
 
   const cooking = kind => (cookingUntil[kind] || 0) > Date.now();
@@ -630,7 +686,25 @@
         if (el.decode) el.decode().then(() => box(el.naturalWidth, el.naturalHeight), () => {});
         s.inside.append(el);
       }
-      s.host.classList.toggle('k-cooking', cooking(s.kind));
+      const busy = cooking(s.kind);
+      s.host.classList.toggle('k-cooking', busy);
+      if (s.covered) {
+        s.covered.hidden = !busy;
+        s.look.hidden = busy;
+      }
+      // A new dish rises out of the station (k-rising), then bobs over it.
+      const dish = st.out && !busy ? st.out : null;
+      if (s.ready.dataset.id !== (dish || '')) {
+        s.ready.dataset.id = dish || '';
+        s.ready.replaceChildren();
+        s.ready.classList.remove('k-rising');
+        if (dish) {
+          s.ready.append(itemSprite(dish));
+          void s.ready.offsetWidth;
+          s.ready.classList.add('k-rising');
+        }
+      }
+      s.host.classList.toggle('k-has-ready', !!dish);
     }
   }
 
@@ -639,6 +713,12 @@
     closeStation();
     openEl = host;
     host.querySelector('.k-panel').hidden = false;
+  }
+
+  // A refusal shakes the station's slots, opening them first so it shows.
+  function shakeSlots(host) {
+    openStation(host);
+    host.querySelectorAll('.k-panel .k-slot').forEach(shake);
   }
 
   function closeStation() {
@@ -664,11 +744,12 @@
     if (i < 0) return false;
     take(src);
     st.in[i] = id;
+    sound('pop.wav', 0.5);
     save();
     renderInv();
     renderStations();
     openStation(host);
-    if (st.in[0] && st.in[1]) cookAt(kind);
+    if (st.in[0] && st.in[1] && !st.out) cookAt(kind);
     return true;
   }
 
@@ -688,40 +769,204 @@
     return false;
   }
 
+  // The dish waits over the station; until it's taken, nothing else cooks
+  // (ingredients can still go in and wait).
   function cookAt(kind) {
     const st = state.st[kind];
-    if (cooking(kind) || (!st.in[0] && !st.in[1])) return;
-    const result = recipe(kind, st.in[0], st.in[1]);
     const s = stationEls.find(x => x.kind === kind);
-    if (!result) return shake(s.body);
-    // Saved straight away, so leaving mid-cook doesn't lose the dish; it
-    // comes out on the next visit.
+    if (cooking(kind) || (!st.in[0] && !st.in[1])) return;
+    if (st.out) return shake(s.ready);
+    const result = recipe(kind, st.in[0], st.in[1]);
+    if (!result) return shakeSlots(s.host);
+    // Saved straight away, so leaving mid-cook doesn't lose the dish; it's
+    // waiting on the next visit.
     st.in = [null, null];
     st.out = result;
     state.made[result] = (state.made[result] || 0) + 1;
     save();
     cookingUntil[kind] = Date.now() + COOK_MS;
+    sound('boil.mp3', 0.6);
     closeStation();
     renderStations();
-    setTimeout(() => serve(kind), COOK_MS);
+    setTimeout(renderStations, COOK_MS);
   }
 
-  function serve(kind) {
-    const st = state.st[kind];
-    const s = stationEls.find(x => x.kind === kind);
-    if (!st.out || !s) return;
-    const id = st.out;
-    st.out = null;
-    renderStations();
-    const r = s.body.getBoundingClientRect();
-    const i = state.inv.indexOf(null);
-    if (i >= 0) putInSlot(i, id);
-    else {
-      // Next to the station, and not back into it.
-      dropToFloor(id, r.right + 2 * PX, r.top).noCatch = true;
-      save();
+  // ── the table ─────────────────────────────────────────────────────────────
+
+  // One dish, shared by every visitor through the server (shonei-server's
+  // kitchen.go). Leave a dish for the next person, or take the one there.
+  // A dish goes stale after 6 hours, on the server's side. Bad dishes can't
+  // go on it. If the server can't be reached the table just looks empty and
+  // won't take anything.
+  // localStorage kitchenApi points it at a local server for testing,
+  // e.g. http://127.0.0.1:8083.
+  const TABLE_API = (() => {
+    try { return (localStorage.getItem('kitchenApi') || 'https://market.anita.garden') + '/kitchen/table'; }
+    catch (e) { return 'https://market.anita.garden/kitchen/table'; }
+  })();
+  let table = null;          // { host, body, onTop, slot }
+  let tableDish = null;
+
+  function buildTable(host, kind) {
+    host.hidden = false;
+    host.classList.add('k-station', 'k-table');
+    host._kind = kind;
+    const body = document.createElement('div');
+    body.className = 'k-station-body';
+    body.append(sprite(kind));
+    // The dish sitting on the table top.
+    const onTop = document.createElement('div');
+    onTop.className = 'k-table-dish';
+    // The one slot, floating above while the table is open.
+    const panel = document.createElement('div');
+    panel.className = 'k-panel';
+    panel.hidden = true;
+    const slot = document.createElement('div');
+    slot.className = 'k-tile k-tableslot k-slot';
+    panel.append(slot);
+    host.append(body, onTop, panel);
+    table = { host, body, onTop, slot };
+
+    const takeClick = e => { if (!pressed && e.target.closest('.k-sprite')) takeFromTable(); };
+    onTop.addEventListener('click', takeClick);
+    slot.addEventListener('click', takeClick);
+    body.addEventListener('click', () => {
+      if (pressed) return;
+      if (selected != null) {
+        placeOnTable({ type: 'inv', i: selected });
+        selected = null;
+        renderInv();
+      } else if (openEl === host) closeStation();
+      else openStation(host);
+    });
+
+    fetchTable();
+    setInterval(() => { if (!document.hidden) fetchTable(); }, 60000);
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) fetchTable(); });
+  }
+
+  function renderTable() {
+    if (!table) return;
+    for (const el of [table.onTop, table.slot]) {
+      el.replaceChildren();
+      if (tableDish && ITEMS[tableDish]) el.append(itemSprite(tableDish));
     }
   }
+
+  function tableCall(path, body) {
+    return fetch(TABLE_API + path, body ? {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    } : undefined).then(r => r.json().then(d => ({ ok: r.ok, status: r.status, d })));
+  }
+
+  function fetchTable() {
+    tableCall('').then(({ ok, d }) => {
+      if (!ok) return;
+      tableDish = d.dish || null;
+      renderTable();
+    }).catch(() => {});
+  }
+
+  function placeOnTable(src) {
+    const id = itemAt(src);
+    const it = id && ITEMS[id];
+    if (!it || it.kind !== 'dish' || it.quality === 'bad' || tableDish) return shakeSlots(table.host);
+    // Shown at once; put back in the inventory if the server says no.
+    take(src);
+    tableDish = id;
+    sound('pop.wav', 0.5);
+    save();
+    renderInv();
+    renderStations();
+    renderTable();
+    const putBack = () => {
+      const r = table.body.getBoundingClientRect();
+      give(id, r.left, r.top - ITEMS[id].size * PX);
+      shakeSlots(table.host);
+    };
+    tableCall('', { dish: id }).then(({ ok, status, d }) => {
+      if (ok) return;
+      tableDish = status === 409 ? d.dish || null : null;
+      renderTable();
+      putBack();
+    }).catch(() => {
+      tableDish = null;
+      renderTable();
+      putBack();
+    });
+  }
+
+  function takeFromTable() {
+    const id = tableDish;
+    if (!id) return;
+    if (state.inv.indexOf(null) < 0) return shake(table.body);
+    tableDish = null;
+    renderTable();
+    tableCall('/take', { dish: id }).then(({ ok, d }) => {
+      if (!ok) {
+        // Someone else got there first.
+        tableDish = d.dish || null;
+        renderTable();
+        return shake(table.body);
+      }
+      const r = table.body.getBoundingClientRect();
+      sound('pop.wav', 0.5);
+      give(id, r.left, r.top);
+    }).catch(() => {
+      tableDish = id;
+      renderTable();
+      shake(table.body);
+    });
+  }
+
+  // ── sounds ────────────────────────────────────────────────────────────────
+
+  // pop.wav (picking up, putting in a pot), boil.mp3 (cooking) and chew.mp3
+  // (eating). Nothing is fetched until the first time a sound is wanted.
+  let audio = null;
+  const sounds = {};   // file -> AudioBuffer, or the promise of one
+  const VOLUME = 0.7;  // all the sounds together
+
+  // Opens the audio (browsers only allow it during a click or tap) and starts
+  // loading the file. Returns a promise of the decoded sound.
+  function loadSound(file) {
+    audio = audio || new (window.AudioContext || window.webkitAudioContext)();
+    if (audio.state === 'suspended') audio.resume();
+    if (!sounds[file]) {
+      sounds[file] = fetch(ART + file).then(r => r.arrayBuffer())
+        .then(b => new Promise((ok, bad) => audio.decodeAudioData(b, ok, bad)))
+        .then(buf => (sounds[file] = buf));
+      sounds[file].catch(() => {});
+    }
+    return Promise.resolve(sounds[file]);
+  }
+
+  function sound(file, level) {
+    // Never from a tab nobody is looking at.
+    if (document.hidden) return;
+    try {
+      const play = buf => {
+        const src = audio.createBufferSource(), gain = audio.createGain();
+        gain.gain.value = level * VOLUME;
+        src.buffer = buf;
+        src.connect(gain).connect(audio.destination);
+        src.start();
+      };
+      if (sounds[file] instanceof AudioBuffer && audio) return play(sounds[file]);
+      // Still loading: play when it arrives, if that's soon.
+      const asked = Date.now();
+      loadSound(file).then(buf => { if (Date.now() - asked < 400) play(buf); }, () => {});
+    } catch (e) {}
+  }
+
+  // The pop is wanted on the first pick, so start loading it at the first
+  // touch of anything in the game.
+  document.addEventListener('pointerdown', e => {
+    if (sounds['pop.wav'] || !e.target.closest('.k-plant, .k-station, #k-inv, .k-floor')) return;
+    try { loadSound('pop.wav'); } catch (err) {}
+  }, { capture: true, passive: true });
 
   // ── plants ────────────────────────────────────────────────────────────────
 
@@ -757,6 +1002,12 @@
     pic.append(plant);
     host.append(pic);
     if (def.sway && plant.tagName === 'IMG') decoded(plant).then(() => sway(pic, plant, def.png, copy));
+    if (def.bees && DRAWN.has('bee') && plant.tagName === 'IMG') decoded(plant).then(() => addBees(pic, plant, def.bees));
+
+    if (def.stalks && DRAWN.has(def.item + 'onplant')) {
+      buildStalks(pic, def, key, regrow);
+      return;
+    }
 
     if (def.pull || def.bare) {
       pic.classList.add('k-pull');
@@ -798,6 +1049,247 @@
         el.firstChild.classList.toggle('k-mirror', flip);
       }
     });
+  }
+
+  // stalks: <item>onplant.png is drawn the same size as the plant, with
+  // separate stalks (pieces that don't touch). Each one is picked on its own
+  // and sways on its own, some stiffer than others. The plant behind is still.
+  function buildStalks(pic, def, key, regrow) {
+    pic.classList.add('k-pull');
+    // Held hidden in the row so the row waits for it to load.
+    const src = sprite(def.item + 'onplant');
+    src.style.display = 'none';
+    pic.append(src);
+    const mine = [];
+    let label = null, width = 0;
+    decoded(src).then(() => {
+      const split = splitPieces(src);
+      if (!split) return;
+      ({ label, width } = split);
+      split.pieces.forEach((p, i) => {
+        const el = stalkElement(split, p);
+        const fr = { key: `${key}|${i}`, id: def.item, el, regrow };
+        pic.append(el);
+        fruits.push(fr);
+        mine.push(fr);
+      });
+      renderFruits();
+    });
+    // Clicks go by which stalk's pixels are under the pointer (or right next
+    // to it), since their boxes overlap.
+    pic.addEventListener('click', e => {
+      if (!label) return;
+      const r = pic.getBoundingClientRect();
+      const x = Math.floor((e.clientX - r.left) / PX), y = Math.floor((e.clientY - r.top) / PX);
+      for (const [dx, dy] of [[0, 0], [1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [-1, -1], [1, -1], [-1, 1]]) {
+        const i = label[(y + dy) * width + (x + dx)];
+        if (x + dx < 0 || x + dx >= width || i == null || i < 0) continue;
+        if (grown(mine[i])) { harvest(mine[i]); return; }
+      }
+    });
+  }
+
+  // Splits a png into its separate pieces (pixels touching, corners count).
+  // Specks of a few pixels join the nearest piece.
+  function splitPieces(img) {
+    let px;
+    const w = img.naturalWidth, h = img.naturalHeight;
+    try {
+      const c = document.createElement('canvas');
+      c.width = w;
+      c.height = h;
+      const ctx = c.getContext('2d');
+      ctx.drawImage(img, 0, 0);
+      px = ctx.getImageData(0, 0, w, h).data;
+    } catch (e) { return null; }
+    const label = new Int32Array(w * h).fill(-1);
+    let pieces = [];
+    for (let start = 0; start < w * h; start++) {
+      if (!px[start * 4 + 3] || label[start] >= 0) continue;
+      const piece = { cells: [], x0: w, y0: h, x1: 0, y1: 0 };
+      const stack = [start];
+      label[start] = pieces.length;
+      while (stack.length) {
+        const i = stack.pop();
+        const x = i % w, y = (i - x) / w;
+        piece.cells.push(i);
+        piece.x0 = Math.min(piece.x0, x); piece.x1 = Math.max(piece.x1, x);
+        piece.y0 = Math.min(piece.y0, y); piece.y1 = Math.max(piece.y1, y);
+        for (let dy = -1; dy <= 1; dy++) {
+          for (let dx = -1; dx <= 1; dx++) {
+            const nx = x + dx, ny = y + dy, n = ny * w + nx;
+            if (nx < 0 || ny < 0 || nx >= w || ny >= h || label[n] >= 0 || !px[n * 4 + 3]) continue;
+            label[n] = pieces.length;
+            stack.push(n);
+          }
+        }
+      }
+      pieces.push(piece);
+    }
+    const big = pieces.filter(p => p.cells.length >= 8);
+    for (const p of pieces) {
+      if (p.cells.length >= 8 || !big.length) continue;
+      const cx = (p.x0 + p.x1) / 2, cy = (p.y0 + p.y1) / 2;
+      const near = big.reduce((a, b) =>
+        Math.hypot((a.x0 + a.x1) / 2 - cx, (a.y0 + a.y1) / 2 - cy) <= Math.hypot((b.x0 + b.x1) / 2 - cx, (b.y0 + b.y1) / 2 - cy) ? a : b);
+      near.cells.push(...p.cells);
+      near.x0 = Math.min(near.x0, p.x0); near.x1 = Math.max(near.x1, p.x1);
+      near.y0 = Math.min(near.y0, p.y0); near.y1 = Math.max(near.y1, p.y1);
+    }
+    if (big.length) pieces = big;
+    pieces.forEach((p, i) => { for (const c of p.cells) label[c] = i; });
+    return { px, width: w, label, pieces };
+  }
+
+  // One stalk: its pixels cut into a still bottom and one or two leaning
+  // bands on top. Stiff stalks lean 1 pixel at the very top; loose ones 2.
+  function stalkElement(split, p) {
+    const { px, width: w } = split;
+    const bw = p.x1 - p.x0 + 1, bh = p.y1 - p.y0 + 1;
+    const stiff = Math.random() < 0.4;
+    const cuts = stiff
+      ? [[0, Math.round(bh * 0.35), 'k-sway-mid'], [Math.round(bh * 0.35), bh, '']]
+      : [[0, Math.round(bh * 0.25), 'k-sway-top'], [Math.round(bh * 0.25), Math.round(bh * 0.5), 'k-sway-mid'], [Math.round(bh * 0.5), bh, '']];
+    const mine = new Set(p.cells);
+    const el = document.createElement('span');
+    el.className = 'k-stalk';
+    el.style.left = art(p.x0);
+    el.style.top = art(p.y0);
+    el.style.width = art(bw);
+    el.style.height = art(bh);
+    const duration = (3 + Math.random() * 2.5).toFixed(2) + 's';
+    // Left to right, so a gust sweeps across the plant.
+    const delay = (p.x0 * 0.03 + Math.random() * 0.3).toFixed(2) + 's';
+    for (const [r0, r1, cls] of cuts) {
+      if (r1 <= r0) continue;
+      const c = document.createElement('canvas');
+      c.width = bw;
+      c.height = r1 - r0;
+      const ctx = c.getContext('2d');
+      const out = ctx.createImageData(bw, r1 - r0);
+      for (let y = r0; y < r1; y++) {
+        for (let x = 0; x < bw; x++) {
+          const i = (p.y0 + y) * w + p.x0 + x;
+          if (!mine.has(i)) continue;
+          const o = ((y - r0) * bw + x) * 4;
+          for (let k = 0; k < 4; k++) out.data[o + k] = px[i * 4 + k];
+        }
+      }
+      ctx.putImageData(out, 0, 0);
+      const band = document.createElement('span');
+      band.className = ('k-band ' + cls).trim();
+      band.style.top = art(r0);
+      band.style.height = art(r1 - r0);
+      band.style.animationDuration = duration;
+      band.style.animationDelay = delay;
+      c.className = 'k-sprite';
+      c.style.width = art(bw);
+      c.style.height = art(r1 - r0);
+      band.append(c);
+      el.append(band);
+    }
+    return el;
+  }
+
+  // ── bees ──────────────────────────────────────────────────────────────────
+
+  // bee.png is two frames side by side. Bees start near their plant, drift
+  // about at random with a light pull back toward it, and face the way they
+  // fly. One loop for all of them, running only while a plant with bees is
+  // on screen.
+  const bees = [];
+  let beesRunning = false, beeLast = 0;
+  const beesShown = new Set();
+  // The cursor pulls bees too, the same way, once it's within reach.
+  const BEE_CURSOR_REACH = 80;   // art pixels
+  let cursor = null;             // in the window
+  document.addEventListener('pointermove', e => { cursor = { x: e.clientX, y: e.clientY }; }, { passive: true });
+  document.addEventListener('pointerleave', () => { cursor = null; });
+
+  // How far a pull reaches for: nothing within 16 art pixels, so bees mill
+  // around a spot instead of sitting on it.
+  const beePull = (dx, dy) => (Math.hypot(dx, dy) > 16 ? 0.5 : 0);
+
+  function addBees(pic, plant, opts) {
+    const count = typeof opts === 'object' ? opts.count || 3 : Number(opts) || 3;
+    const facesLeft = typeof opts === 'object' && opts.faces === 'left';
+    const home = { x: plant.naturalWidth / 2 - 4, y: plant.naturalHeight * 0.45 - 4 };
+    for (let i = 0; i < count; i++) {
+      const el = document.createElement('span');
+      el.className = 'k-bee';
+      el.style.animationDelay = -(Math.random() * 0.2).toFixed(2) + 's';
+      pic.append(el);
+      const a = Math.random() * Math.PI * 2;
+      bees.push({
+        el, pic, home, facesLeft, left: false,
+        x: home.x + Math.cos(a) * 10, y: home.y + Math.sin(a) * 8,
+        vx: (Math.random() - 0.5) * 20, vy: (Math.random() - 0.5) * 20,
+      });
+    }
+    placeBees();
+    if ('IntersectionObserver' in window) {
+      new IntersectionObserver(entries => {
+        for (const e of entries) {
+          if (e.isIntersecting) beesShown.add(e.target); else beesShown.delete(e.target);
+        }
+        startBees();
+      }).observe(pic);
+    } else {
+      beesShown.add(pic);
+      startBees();
+    }
+  }
+
+  function startBees() {
+    if (beesRunning || !beesShown.size) return;
+    beesRunning = true;
+    beeLast = performance.now();
+    requestAnimationFrame(beeFrame);
+  }
+
+  function beeFrame(now) {
+    if (!beesShown.size) { beesRunning = false; return; }
+    const dt = Math.min(0.05, (now - beeLast) / 1000);
+    beeLast = now;
+    const origins = new Map();
+    for (const b of bees) {
+      if (!beesShown.has(b.pic)) continue;
+      // art pixels per second: a random jostle, drag, and pulls toward home
+      // and toward the cursor when it's near
+      let fx = (Math.random() - 0.5) * 320, fy = (Math.random() - 0.5) * 320;
+      const hx = b.home.x - b.x, hy = b.home.y - b.y;
+      fx += hx * beePull(hx, hy);
+      fy += hy * beePull(hx, hy) * 1.3;
+      if (cursor) {
+        if (!origins.has(b.pic)) origins.set(b.pic, b.pic.getBoundingClientRect());
+        const r = origins.get(b.pic);
+        const cx = (cursor.x - r.left) / PX - 4 - b.x, cy = (cursor.y - r.top) / PX - 4 - b.y;
+        if (Math.hypot(cx, cy) < BEE_CURSOR_REACH) {
+          fx += cx * beePull(cx, cy);
+          fy += cy * beePull(cx, cy) * 1.3;
+        }
+      }
+      b.vx += fx * dt;
+      b.vy += fy * dt;
+      b.vx *= 1 - 1.2 * dt;
+      b.vy *= 1 - 1.2 * dt;
+      const speed = Math.hypot(b.vx, b.vy);
+      if (speed > 28) { b.vx *= 28 / speed; b.vy *= 28 / speed; }
+      b.x += b.vx * dt;
+      b.y += b.vy * dt;
+      // Turn only on a clear change of direction, so it doesn't flicker.
+      if (b.vx < -3) b.left = true;
+      else if (b.vx > 3) b.left = false;
+    }
+    placeBees();
+    requestAnimationFrame(beeFrame);
+  }
+
+  function placeBees() {
+    for (const b of bees) {
+      const flip = b.left !== b.facesLeft ? ' scaleX(-1)' : '';
+      b.el.style.transform = `translate(${Math.round(b.x) * PX}px, ${Math.round(b.y) * PX}px)${flip}`;
+    }
   }
 
   // Wind: the top quarter of what's drawn leans up to 2 art pixels, the next
@@ -854,6 +1346,7 @@
     state.flags.harvested = true;
     const r = fr.el.getBoundingClientRect();
     renderFruits();
+    sound('pop.wav', 0.5);
     give(fr.id, r.left, r.top);
     renderInv();
   }
@@ -1045,7 +1538,6 @@
       whenLoaded(groundRow, () => {
         placeGround();
         align();
-        for (const s of stationEls) serve(s.kind);   // a dish left mid-cook
       });
     }
     if (fruits.length) setInterval(renderFruits, 5000);

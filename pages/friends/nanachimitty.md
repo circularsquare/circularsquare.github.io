@@ -2,6 +2,7 @@
 layout: page
 title: nanachi and mitty
 permalink: /friends/nanachimitty/
+grey_bunnies: 2  # nanachi and mitty themselves, hopping about (cursor.html)
 ---
 
 are my babies!

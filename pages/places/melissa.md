@@ -17,3 +17,4 @@ i live here.
     - [stratus](/places/stratus/)
 - [jornor](/places/jornor/)
 - [kozuloa](/places/kozuloa/)
+{% include plant.html kind="apple" %}

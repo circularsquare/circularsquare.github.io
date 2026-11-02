@@ -21,6 +21,10 @@ eat_text:
   ok: "hmm..."
   bad: "..."
 
+# What the cursor bunnies eat off the floor: items with any of these tags.
+# An item with bunnies: false is left alone even so.
+bunny_food: [veg, fruit, tea]
+
 # ── ingredients ────────────────────────────────────────────────────────────
 # tags: used by recipes ("any leafy"). Pick freely; a tag is just a word.
 # eat:  quality when eaten raw. Leave it out for things you can't eat raw.
@@ -30,6 +34,7 @@ ingredients:
   - id: potato
     name: potato
     tags: [veg, root, starchy]
+    bunnies: false               # raw potato is bad for them
     page: /thoughts/food/        # placeholder spot, move it anywhere
   - id: pepper
     name: pepper
@@ -173,16 +178,16 @@ ingredients:
   - id: tea
     name: tea leaves
     tags: [tea]
-    page: ""                    # no page yet
+    page: /chat/
   - id: apple
     name: apple
     tags: [fruit, sweet]
     eat: good
-    page: ""                    # no page or plant yet
+    page: /places/melissa/
   - id: rice
     name: rice
     tags: [grain, starchy]
-    page: ""                    # no page yet
+    page: /anita/
 
 # ── dishes ─────────────────────────────────────────────────────────────────
 # quality: what eating it says (good / ok / bad). Bad dishes can't go on the
@@ -302,6 +307,11 @@ dishes:
 # repeat: that many copies side by side, a little field. Each is picked on
 #         its own.
 # sway:   true to lean in the wind, the top quarter most.
+# stalks: true when <item>onplant.png is drawn the same size as the plant,
+#         with stalks that don't touch: each stalk is picked on its own and
+#         sways on its own. The plant behind stays still. No spots needed.
+# bees:   bee.png flying around the plant. count, and which way the drawing
+#         faces (left or right) so they turn the right way.
 # regrow: minutes until a picked spot (or pulled plant) grows back.
 plants:
   - id: potato
@@ -323,20 +333,23 @@ plants:
   - id: ice
     bare: true
     regrow: 5
+  - id: apple
+    look: clementine            # until it has its own tree
+    spots: [[20, 22], [44, 16], [48, 34]]
+    regrow: 5
   - id: tea
     spots: [[16, 24], [34, 30], [22, 40]]
     regrow: 5
   - id: honey
     png: beehive
     spots: [[12, 24], [17, 27], [22, 23]]
+    bees: {count: 3, faces: left}
     regrow: 5
   - id: soybean
     spots: [[7, 20], [17, 24], [12, 33]]
     regrow: 5
   - id: wheat
-    pull: true
-    repeat: 4
-    sway: true
+    stalks: true
     regrow: 5
   - id: rice
     pull: true
@@ -347,6 +360,7 @@ plants:
 # ── stations ───────────────────────────────────────────────────────────────
 # size: only for the gray stand-in until the png exists; a drawn station
 #       uses the png's own size.
+# <id>covered.png, if drawn, is shown while cooking (the pot with its lid).
 # fire: an animated strip drawn over the station. png is the file, at is the
 #       top-left corner of a frame in the station's own pixels, size is one
 #       frame, the frames sit side by side in the png.
@@ -354,6 +368,8 @@ stations:
   - id: pot
     size: [32, 32]
     fire: {png: fire, at: [6, 11], size: [16, 16], frames: 4, fps: 2}
+  - id: table                   # one dish, shared by everyone (shonei-server)
+    table: true
   - id: pan                     # later
     size: [32, 16]
 

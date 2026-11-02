@@ -12,6 +12,7 @@
   user-select: none;
   -webkit-user-drag: none;
 }
+.k-sprite[hidden] { display: none; }
 .k-missing { background: #c8c8c8; }
 
 .k-icon { display: block; fill: var(--black); }
@@ -47,6 +48,26 @@
   animation: 4s step-end infinite;
 }
 .k-band .k-sprite { position: absolute; left: 0; }
+/* one pickable stalk of a stalks: plant, made of bands like the above */
+.k-stalk {
+  position: absolute;
+  pointer-events: none;
+}
+
+/* bee.png: two 8x8 frames side by side, flapping fast */
+.k-bee {
+  --strip: calc(16 * var(--kpx));
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: 1;
+  width: calc(8 * var(--kpx));
+  height: calc(8 * var(--kpx));
+  background: url('bee.png') 0 0 / calc(16 * var(--kpx)) calc(8 * var(--kpx)) no-repeat;
+  image-rendering: pixelated;
+  pointer-events: none;
+  animation: k-fire 0.12s steps(2) infinite;
+}
 .k-sway-top { animation-name: k-sway-top; }
 .k-sway-mid { animation-name: k-sway-mid; }
 @keyframes k-sway-top {
@@ -140,6 +161,20 @@
 }
 .k-tile + .k-tile { margin-left: calc(-2 * var(--khalf)); }
 .k-potslot { background-image: url('potslot.png'); }
+.k-tableslot { background-image: url('tableslot.png'); }
+
+/* the shared dish, sitting on the table top */
+.k-table-dish {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: calc(2 * var(--kpx));
+  display: flex;
+  justify-content: center;
+  pointer-events: none;
+}
+.k-table-dish .k-sprite,
+.k-tableslot .k-sprite { pointer-events: auto; cursor: pointer; }
 .k-slot .k-sprite { cursor: grab; }
 .k-selected::before {
   content: '';
@@ -234,6 +269,30 @@
   overflow: hidden;
   pointer-events: none;
 }
+/* the finished dish: rises out of the station, then bobs just above it */
+.k-ready {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: calc(100% + 2 * var(--kpx));
+  z-index: 5;
+  display: flex;
+  justify-content: center;
+  pointer-events: none;
+}
+.k-ready .k-sprite {
+  pointer-events: auto;
+  cursor: grab;
+  touch-action: none;
+  animation: k-bob 2.4s step-end infinite;
+}
+.k-ready.k-rising { animation: k-rise 0.5s steps(7) both; }
+@keyframes k-rise {
+  from { bottom: calc(100% - 12 * var(--kpx)); }
+  to { bottom: calc(100% + 2 * var(--kpx)); }
+}
+.k-has-ready .k-panel { bottom: calc(100% + 26 * var(--kpx)); }
+
 /* the two slots, floating above the station */
 .k-panel {
   position: absolute;
@@ -354,7 +413,8 @@
   33% { transform: translateY(calc(-1 * var(--kpx))); }
   66% { transform: translateY(0); }
 }
-.k-shake { animation: k-shake 0.3s step-end; }
+.k-shake,
+.k-panel .k-slot.k-shake { animation: k-shake 0.3s step-end; }
 @keyframes k-shake {
   0% { transform: translateX(var(--kpx)); }
   25% { transform: translateX(calc(-1 * var(--kpx))); }

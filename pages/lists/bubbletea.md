@@ -26,3 +26,5 @@ gen 5: (2020-): these shops have sleek minimalist designs for both drinks and st
 |           |           | ding      | moge        | lemomo
 |           |           |           | chun yang   | chagee
 |           |           |           | omomo       | 
+
+{% include plant.html kind="tea" %}

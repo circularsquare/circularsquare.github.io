@@ -18,7 +18,12 @@
     --teal: #204939;
 }
 body {
-    background-color: var(--lgreen); 
+    // minima sets 100vh, which on phones is the height with the address bar
+    // hidden, so a short page's footer sat just off screen. svh is the height
+    // with it showing.
+    min-height: 100vh;
+    min-height: 100svh;
+    background-color: var(--lgreen);
     font-family: Georgia;
     font-size: 12px; 
     color: var(--text);

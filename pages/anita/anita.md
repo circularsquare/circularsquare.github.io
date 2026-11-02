@@ -19,3 +19,5 @@ i am a reluctant member of the [bushwick institute](https://bushwick.institute/)
 - [twitter](https://x.com/amanitahalo) 
 
 i can be reached at anitaxinchen@gmail.com, or you can leave a message in [chat](/chat/) or in [graffiti](https://graffiti.anita.garden/)!
+
+{% include plant.html kind="rice" %}

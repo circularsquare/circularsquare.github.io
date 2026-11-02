@@ -9,4 +9,5 @@ this is my home
 welcome home!  
 
 {% include station.html kind="pot" %}
+{% include station.html kind="table" %}
 
