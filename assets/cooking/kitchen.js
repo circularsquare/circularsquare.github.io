@@ -766,6 +766,16 @@
       if (before + size > rim || f.y + size < rim) continue;
       if (putInStation(s.host, { type: 'floor', f }, null)) return true;
     }
+    // The table catches anything it would take, when it lands on the top
+    // (TABLE_TOP art pixels down its png). Anything else falls past.
+    if (table && !tableDish && tableTakes(f.id)) {
+      const r = table.body.getBoundingClientRect();
+      const left = r.left + window.scrollX, top = r.top + window.scrollY + TABLE_TOP * PX;
+      if (cx >= left + PX && cx <= left + r.width - PX && before + size <= top && f.y + size >= top) {
+        placeOnTable({ type: 'floor', f });
+        return true;
+      }
+    }
     return false;
   }
 
@@ -793,11 +803,11 @@
 
   // ── the table ─────────────────────────────────────────────────────────────
 
-  // One dish, shared by every visitor through the server (shonei-server's
-  // kitchen.go). Leave a dish for the next person, or take the one there.
-  // A dish goes stale after 6 hours, on the server's side. Bad dishes can't
-  // go on it. If the server can't be reached the table just looks empty and
-  // won't take anything.
+  // One thing to eat, shared by every visitor through the server
+  // (shonei-server's kitchen.go). Leave something for the next person, or take
+  // what's there. It goes stale after 6 hours, on the server's side. Anything
+  // edible goes on it except a bad dish (the ???). If the server can't be
+  // reached the table just looks empty and won't take anything.
   // localStorage kitchenApi points it at a local server for testing,
   // e.g. http://127.0.0.1:8083.
   const TABLE_API = (() => {
@@ -806,6 +816,13 @@
   })();
   let table = null;          // { host, body, onTop, slot }
   let tableDish = null;
+  const TABLE_TOP = 15;      // the table top's row in table.png
+
+  // Anything you could eat, except a bad dish (the ???).
+  function tableTakes(id) {
+    const it = ITEMS[id];
+    return !!(it && it.eat && !(it.kind === 'dish' && it.quality === 'bad'));
+  }
 
   function buildTable(host, kind) {
     host.hidden = false;
@@ -872,7 +889,7 @@
   function placeOnTable(src) {
     const id = itemAt(src);
     const it = id && ITEMS[id];
-    if (!it || it.kind !== 'dish' || it.quality === 'bad' || tableDish) return shakeSlots(table.host);
+    if (!it || !tableTakes(id) || tableDish) return shakeSlots(table.host);
     // Shown at once; put back in the inventory if the server says no.
     take(src);
     tableDish = id;
@@ -883,7 +900,10 @@
     renderTable();
     const putBack = () => {
       const r = table.body.getBoundingClientRect();
-      give(id, r.left, r.top - ITEMS[id].size * PX);
+      // To the inventory, or the floor beside the table (not back onto it).
+      if (state.inv.indexOf(null) >= 0) give(id, r.left, r.top);
+      else dropToFloor(id, r.right + 2 * PX, r.top - ITEMS[id].size * PX).noCatch = true;
+      save();
       shakeSlots(table.host);
     };
     tableCall('', { dish: id }).then(({ ok, status, d }) => {
@@ -927,7 +947,7 @@
   // (eating). Nothing is fetched until the first time a sound is wanted.
   let audio = null;
   const sounds = {};   // file -> AudioBuffer, or the promise of one
-  const VOLUME = 0.7;  // all the sounds together
+  const VOLUME = 0.35; // all the sounds together
 
   // Opens the audio (browsers only allow it during a click or tap) and starts
   // loading the file. Returns a promise of the decoded sound.

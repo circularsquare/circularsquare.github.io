@@ -168,7 +168,7 @@
   position: absolute;
   left: 0;
   right: 0;
-  bottom: calc(2 * var(--kpx));
+  bottom: calc(3 * var(--kpx));
   display: flex;
   justify-content: center;
   pointer-events: none;

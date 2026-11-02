@@ -191,7 +191,7 @@ ingredients:
 
 # ── dishes ─────────────────────────────────────────────────────────────────
 # quality: what eating it says (good / ok / bad). Bad dishes can't go on the
-#          table, later.
+#          table; anything else edible can, raw ingredients included.
 # tags:    give a dish tags only if it can itself go back in the pot.
 dishes:
   - id: potatosoup
@@ -368,7 +368,7 @@ stations:
   - id: pot
     size: [32, 32]
     fire: {png: fire, at: [6, 11], size: [16, 16], frames: 4, fps: 2}
-  - id: table                   # one dish, shared by everyone (shonei-server)
+  - id: table                   # one thing to eat, shared by everyone (shonei-server)
     table: true
   - id: pan                     # later
     size: [32, 16]

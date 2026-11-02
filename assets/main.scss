@@ -213,6 +213,24 @@ table {border-spacing: 30px;}
   align-items:center;
 }
 
+// The bread page fits on one screen, footer included (also on phones, where
+// svh leaves room for the address bar): the map takes whatever height is left.
+.breadmap-body {
+  height: 100vh;
+  height: 100svh;
+}
+.breadmap-body .page-content {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+.breadmap-body #map-viewport {
+  flex: 1 1 0;
+  height: auto;
+  min-height: 120px;
+  aspect-ratio: auto;
+}
+
 #map-scene {
   width: 100%;
   height: auto !important; /* Override the 100% height from desktop */
@@ -233,6 +251,12 @@ table {border-spacing: 30px;}
   display: block; /* Removes extra space below image */
   object-fit: cover;
   border: 1px solid #ccc;
+}
+
+// The full-screen maps keep the old 100vh: they should fill the whole
+// screen, and have no footer to keep on it.
+.staticmap-body {
+  min-height: 100vh;
 }
 
 .staticmap-body .site-footer {

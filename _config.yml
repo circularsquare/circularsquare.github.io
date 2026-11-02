@@ -87,6 +87,7 @@ exclude:
   - seo-drafts.md
   - serve.sh
   - README.md
+  - CLAUDE.md
   - package-lock.json
   - scripts/
   - cooking/
