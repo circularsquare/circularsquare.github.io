@@ -9,6 +9,7 @@ permalink: /maps/
     - <a href="/ancestrydotsna" data-thumb="/assets/thumbs/ancestrydots.png">ancestry dot map</a> (<a href="/ancestrydotsna">usa + canada</a>) (<a href="/ancestrydots">usa</a>)
     - <a href="/japanrail" data-thumb="/assets/thumbs/japanrail.png">japan rail</a>
     - <a href="/nycriders" data-thumb="/assets/thumbs/nycriders.png">nyc riders</a>
+    - <a href="/trackdepth">nyc track depth</a>
     - <a href="/londonriders">london riders</a>
     - <a href="/flights" data-thumb="/assets/thumbs/flights.jpg">flight traffic</a>
     - <a href="/cityhistory" data-thumb="/assets/thumbs/cityhistory.png">city history</a>

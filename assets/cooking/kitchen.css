@@ -168,7 +168,7 @@
   position: absolute;
   left: 0;
   right: 0;
-  bottom: calc(3 * var(--kpx));
+  bottom: calc(4 * var(--kpx));
   display: flex;
   justify-content: center;
   pointer-events: none;
@@ -233,7 +233,7 @@
   top: calc(2 * var(--kpx));
   width: var(--kpx);
   height: var(--kpx);
-  background: #fafafa;
+  background: #d9e3e2;
   opacity: 0;
   animation: k-steam 1.8s steps(9) infinite;
 }
@@ -405,6 +405,7 @@
 }
 .k-detail[hidden] { display: none; }
 .k-name { font-weight: bold; }
+.k-people { color: #a8a8a8; }
 
 /* ── little motions ── */
 .k-bounce { animation: k-bounce 0.3s step-end; }

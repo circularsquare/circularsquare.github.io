@@ -21,6 +21,10 @@ eat_text:
   ok: "hmm..."
   bad: "..."
 
+# "eat" normally waits until someone has taken their first dish. Items with any
+# of these tags can be eaten raw from the start.
+eat_from_start: [fruit]
+
 # What the cursor bunnies eat off the floor: items with any of these tags.
 # An item with bunnies: false is left alone even so.
 bunny_food: [veg, fruit, tea]
@@ -69,7 +73,7 @@ ingredients:
     name: blueberry
     tags: [fruit, berry, sweet]
     eat: good
-    page: /friends/blueberry/
+    page: /friends/blueberry/    # and /places/
   - id: plum
     name: plum
     tags: [fruit, sweet]
@@ -165,7 +169,7 @@ ingredients:
   - id: soybean
     name: soybean
     tags: [bean]
-    page: /friends/gingko/       # also chicken food, later
+    page: /friends/gingko/       # and /thoughts/beingseen/; also chicken food, later
   - id: onion
     name: onion
     tags: [veg, allium]
@@ -214,6 +218,10 @@ dishes:
     tags: [sweet, spicy]
   - id: ricefood
     name: rice
+    quality: good
+    tags: [cooked]              # so it can go back in the pot (chazuke)
+  - id: chazuke
+    name: chazuke
     quality: good
   - id: tofu
     name: tofu
@@ -312,6 +320,7 @@ dishes:
 #         sways on its own. The plant behind stays still. No spots needed.
 # bees:   bee.png flying around the plant. count, and which way the drawing
 #         faces (left or right) so they turn the right way.
+# lift:   art pixels the plant is raised off the ground (a hanging hive).
 # regrow: minutes until a picked spot (or pulled plant) grows back.
 plants:
   - id: potato
@@ -342,6 +351,7 @@ plants:
     regrow: 5
   - id: honey
     png: beehive
+    lift: 10                    # hangs from a stick, so it sits 10 art pixels above the ground
     spots: [[12, 24], [17, 27], [22, 23]]
     bees: {count: 3, faces: left}
     regrow: 5
@@ -352,9 +362,7 @@ plants:
     stalks: true
     regrow: 5
   - id: rice
-    pull: true
-    repeat: 4
-    sway: true
+    stalks: true
     regrow: 5
 
 # ── stations ───────────────────────────────────────────────────────────────
@@ -394,6 +402,12 @@ recipes:
   - {at: pot, in: [blueberry, ice], out: blueberrysorbet}
   - {at: pot, in: [plum, ice], out: plumsorbet}
   - {at: pot, in: [any fruit, ice], out: sorbet}
+
+  # chazuke: rice and tea, each raw or cooked
+  - {at: pot, in: [rice, tea], out: chazuke}
+  - {at: pot, in: [rice, teafood], out: chazuke}
+  - {at: pot, in: [ricefood, tea], out: chazuke}
+  - {at: pot, in: [ricefood, teafood], out: chazuke}
 
   # tea
   - {at: pot, in: [any tea, ice], out: icedtea}

@@ -15,3 +15,5 @@ part of it may be from being told told i was [beautiful](/thoughts/beauty/) and 
 part of it may be compensation for my deficiencies in [language](/thoughts/language/). i want to be seen if not heard.
 
 in any case, thank you for seeing me!
+
+{% include plant.html kind="soybean" %}

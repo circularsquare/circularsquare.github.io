@@ -24,3 +24,5 @@ permalink: /places/
 
 - [anemos](/anemos/)
 
+{% include plant.html kind="blueberry" %}
+

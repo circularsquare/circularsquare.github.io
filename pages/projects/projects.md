@@ -19,6 +19,7 @@ permalink: /projects/
     - <a href="/korearail/" data-thumb="">korea rail</a>
     - <a href="/noritetsu/">noritetsu</a> (in progress)
     - <a href="/nycriders/" data-thumb="/assets/thumbs/nycriders.png">nyc riders</a> (<a href="/assets/posters/nycriders.png" data-thumb="/assets/thumbs/posters/nycriders.jpg">poster</a>)
+    - <a href="/trackdepth/">nyc track depth</a>
     - <a href="/londonriders/">london riders</a>
 - equal population maps
     - <a href="/asia1mloc/" data-thumb="/assets/thumbs/maps/asia1mloc.jpg">asia in regions of 1 million people</a> (<a href="/asia1meng/" data-thumb="/assets/thumbs/maps/asia1meng.jpg">english labels</a>)

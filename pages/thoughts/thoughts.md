@@ -8,8 +8,11 @@ assorted word vomit
 
 - [lists](/lists/)
 
-- [time](time/)
 - [temperature](temperature/)
+- [cities](cities/)
+- [achievement](achievement/)
+- [apocalypse](apocalypse/)
+- [time](time/)
 - [mean reversion](meanreversion/)
 - [momentum](momentum/)
 - [internal world](internalworld/)
@@ -24,12 +27,13 @@ assorted word vomit
 - [documentation](documentation/)
 - [roadsides](roadsides/)
 - [words](words/)
+- [food](food/)
 - [winter](winter/)
 - [chapters](chapters/)
 - [pain](pain/)
 - [ai](ai/)
 - [being seen](beingseen/)
 - [language](language/)
-- [achievement](achievement/)
-- [apocalypse](apocalypse/)
+
+
 {: #thought-list}

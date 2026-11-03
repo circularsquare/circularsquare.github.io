@@ -1,0 +1,1936 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>nyc track depth</title>
+<meta name="description" content="NYC Subway track depth map">
+<meta property="og:title" content="nyc track depth">
+<meta property="og:description" content="NYC Subway track depth map">
+<meta property="og:image" content="https://anita.garden/trackdepth/preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="nyc track depth">
+<meta name="twitter:description" content="NYC Subway track depth map">
+<meta name="twitter:image" content="https://anita.garden/trackdepth/preview.png">
+<link rel="icon" type="image/png" href="icon.png">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700&display=swap" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/cesium@1.145.0/Build/Cesium/Widgets/widgets.css" />
+<script>
+// Start the data downloads at once, alongside CesiumJS (about 4 MB from the CDN), instead of after it.
+window.__t0 = performance.now();
+// what the loading bar watches; filled in by the page script
+window.__load = { dataIn: false, tracks: false, stations: false, terrainAsked: 0, terrainDone: 0, globeLoaded: false, imagery: false, queue: 0, queueMax: 0 };
+// Where the data lives: the local tree has data/ beside this page; the published page (anita.garden,
+// a Jekyll site with no data/) reads it from R2. Decided by asking for a small local file, not by
+// hostname. Synchronous on purpose: everything below, Cesium's tile layers included, needs the
+// answer before it starts (locally a few ms; on the site one quick 404).
+window.__base = (() => {
+  try {
+    const x = new XMLHttpRequest();
+    x.open('HEAD', 'data/services.json', false);
+    x.send();
+    if (x.status === 200) return 'data/';
+  } catch (e) {}
+  return 'https://data.anita.garden/trackdepth/data/';
+})();
+window.__data = {
+  tracks: fetch(window.__base + 'tracks.json').then(r => r.json()),
+  services: fetch(window.__base + 'services.json').then(r => r.ok ? r.json() : { services: [] }).catch(() => ({ services: [] })),
+  water: fetch(window.__base + 'water.json').then(r => r.json()).catch(() => null),
+};
+</script>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body { height: 100%; }
+body { background: #0a0a0a; color: #eee; font-family: 'Nunito', sans-serif; overflow: hidden; }
+#map { position: absolute; inset: 0; touch-action: none; }
+#credits { display: none; }
+#title { position: absolute; top: 10px; left: 14px; font-size: 20px; font-weight: 700; color: #ccc; z-index: 2; pointer-events: none; }
+.panel { background: rgba(10,10,10,.85); border: 1px solid #333; border-radius: 8px; color: #ccc; font-size: 12px; }
+.ptitle { font-size: 11px; color: #888; margin: 8px 0 6px; }
+.ghost { background: none; border: 1px solid #555; color: #ccc; border-radius: 6px; cursor: pointer; font: inherit; }
+.ghost.active { color: #6889a8; border-color: #6889a8; }
+.ghost svg { display: block; margin: auto; }
+#legend { position: absolute; top: 10px; right: 10px; padding: 8px 10px; z-index: 2; width: 284px; max-width: calc(100vw - 20px); }
+#legend .row { display: flex; align-items: center; gap: 6px; }
+#legend .row .ghost { height: 30px; padding: 0 10px; }
+#legend .row .ghost.icon { width: 30px; padding: 0; }
+#legend .row #btn-fold, #legend .row #btn-pause { margin-left: auto; }
+#legend .row #btn-fold + #btn-pause { margin-left: 0; }
+#btn-fold { display: none; }
+#legend.folded #btn-fold svg { transform: rotate(180deg); }
+#legend .bar { width: 100%; height: 8px; border-radius: 2px; }
+#legend .ticks { position: relative; height: 14px; font-size: 10px; color: #888; font-variant-numeric: tabular-nums; margin-top: 2px; }
+#legend .ticks span { position: absolute; transform: translateX(-50%); }
+#legend .ticks span:first-child { transform: none; }
+#legend .ticks span:last-child { transform: translateX(-100%); }
+body.line-mode #ramp-title, body.line-mode #legend-ramp { display: none; }
+#exag { display: flex; align-items: center; gap: 8px; margin-top: 8px; }
+#exag input { flex: 1; accent-color: #6889a8; min-width: 0; }
+#exag-val { color: #888; width: 26px; text-align: right; font-variant-numeric: tabular-nums; }
+.toggle { display: flex; align-items: center; gap: 6px; margin-top: 6px; cursor: pointer; width: fit-content; }
+.toggle input { accent-color: #6889a8; margin: 0; }
+#services { position: absolute; top: 42px; left: 10px; padding: 7px 8px; z-index: 2; display: none; flex-direction: column; gap: 7px; width: 254px; }
+#services.ready { display: flex; }
+#services .grp { display: flex; flex-wrap: wrap; gap: 5px; align-items: center; }
+#services .other { padding-top: 7px; border-top: 1px solid #333; }
+.sys { background: none; border: 1px solid #555; color: #ccc; height: 20px; padding: 0 6px; border-radius: 4px; font: 700 10px/1 'Nunito', sans-serif; cursor: pointer; flex: none; }
+.sys.active { color: #6889a8; border-color: #6889a8; }
+.bul { display: inline-flex; align-items: center; justify-content: center; flex: none; width: 21px; height: 21px; border-radius: 50%;
+  border: none; font: 700 12px/1 'Nunito', sans-serif; cursor: pointer; padding: 0; }
+.bul.diamond { width: 15px; height: 15px; margin: 3px; border-radius: 2px; transform: rotate(45deg); }
+.bul.diamond span { transform: rotate(-45deg); }
+.bul.pill { width: auto; padding: 0 5px; border-radius: 11px; font-size: 10px; }
+.bul.on { box-shadow: 0 0 0 2px #0a0a0a, 0 0 0 3.5px #ddd; }
+.bul.small { width: 16px; height: 16px; font-size: 10px; cursor: default; vertical-align: -3px; margin-right: 2px; }
+.bul.small.diamond { width: 11px; height: 11px; margin: 2px 4px 2px 2px; }
+.bul.small.pill { width: auto; font-size: 9px; }
+.bul.tag { width: auto; height: 18px; padding: 0 6px; border-radius: 4px; font-size: 10px; white-space: nowrap; }
+.bul.small.tag { width: auto; height: 15px; font-size: 9px; padding: 0 4px; }
+#profile { position: absolute; left: 10px; right: 10px; bottom: 10px; height: 262px; padding: 8px 10px; z-index: 2; display: none; background: rgba(10,10,10,.94); }
+#profile.open { display: block; }
+#profile .head { display: flex; align-items: center; gap: 8px; height: 24px; }
+#pname { color: #ccc; font-weight: 700; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+#pread { margin-left: auto; color: #aaa; font-variant-numeric: tabular-nums; white-space: nowrap; }
+#flip, #close { width: 24px; height: 24px; flex: none; border-radius: 4px; line-height: 1; }
+#flip[hidden] { display: none; }
+#chart { width: 100%; height: 220px; display: block; margin-top: 4px; touch-action: none; }
+#chart text { fill: #888; font-size: 10px; font-family: inherit; }
+#chart text.stn { fill: #aaa; paint-order: stroke; stroke: #0a0a0a; stroke-width: 3px; stroke-linejoin: round; }
+#info-btn { position: absolute; left: 10px; bottom: 10px; width: 30px; height: 30px; z-index: 3; }
+body.has-profile #info-btn { bottom: 282px; }
+#info { position: absolute; left: 10px; bottom: 48px; width: 340px; max-width: calc(100vw - 20px); padding: 10px 12px; z-index: 3; display: none; line-height: 1.45; }
+body.has-profile #info { bottom: 320px; }
+#info.open { display: block; }
+#info p + p { margin-top: 6px; }
+#info a { color: #89b4fa; }
+#loading { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); z-index: 4; width: 200px; padding: 7px 10px 8px; pointer-events: none;
+  transition: opacity .4s; font-size: 11px; color: #999; }
+#loading.done { opacity: 0; }
+#loading .track { height: 3px; margin-top: 5px; border-radius: 2px; background: #2a2a2a; overflow: hidden; }
+#loading .fill { height: 100%; width: 0; background: #6889a8; transition: width .2s; }
+#pop { position: absolute; z-index: 2; pointer-events: none; display: none; max-width: 240px; background: rgba(10,10,10,.9); color: #ccc; border: 1px solid #333;
+  border-radius: 6px; padding: 6px 8px; font-family: 'Nunito', sans-serif; font-size: 12px; font-variant-numeric: tabular-nums; }
+.pe { line-height: 20px; overflow-wrap: anywhere; }
+.pe .bul:last-of-type { margin-right: 6px; }
+.pe + .pe { margin-top: 4px; padding-top: 4px; border-top: 1px solid #333; }
+@media (max-width: 640px) {
+  #services, #services.ready { display: none; }
+  #legend .row .ghost { padding: 0 8px; }
+  #legend .row #btn-fold { display: block; }
+  #legend.folded > :not(.row) { display: none; }
+  #loading { top: auto; bottom: 10px; left: 48px; transform: none; width: 160px; }
+  body.has-profile #loading { bottom: 262px; }
+  #legend { top: 40px; left: 10px; right: 10px; width: auto; max-width: none; padding: 6px 8px; }
+  #legend .ptitle { margin: 6px 0 4px; }
+  #legend .toggles { display: flex; gap: 14px; flex-wrap: wrap; }
+  #services { top: auto; bottom: 10px; left: 48px; right: 10px; width: auto; flex-direction: row; overflow-x: auto; padding: 6px 7px; scrollbar-width: none; gap: 5px; align-items: center; }
+  #services .grp { flex-wrap: nowrap; }
+  #services .other { padding: 0 0 0 7px; border-top: none; border-left: 1px solid #333; }
+  body.has-profile #services { bottom: 262px; }
+  #profile { height: 244px; left: 6px; right: 6px; bottom: 6px; padding: 6px 8px; }
+  #chart { height: 206px; }
+  body.has-profile #info-btn { bottom: 262px; }
+  body.has-profile #info { bottom: 300px; }
+}
+</style>
+</head>
+<body>
+<div id="map"></div>
+<div id="credits"></div>
+<div id="pop"></div>
+<div id="title">nyc track depth</div>
+<div id="services" class="panel"></div>
+<div id="legend" class="panel">
+  <div class="row">
+    <button class="ghost active" data-mode="depth">Depth</button>
+    <button class="ghost" data-mode="elev">Elevation</button>
+    <button class="ghost" data-mode="line">Line</button>
+    <button class="ghost icon" id="btn-fold" title="Hide settings"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l4-4 4 4"/></svg></button>
+    <button class="ghost icon" id="btn-pause" title="Pause trains"><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path class="ico-pause" d="M4.5 3h2.5v10H4.5zM9 3h2.5v10H9z"/><path class="ico-play" d="M5 3l8 5-8 5z" style="display:none"/></svg></button>
+  </div>
+  <div class="ptitle" id="ramp-title"></div>
+  <div id="legend-ramp"></div>
+  <div id="exag"><span>Vertical scale</span><input type="range" id="exag-in" min="1" max="15" step="0.5" value="3"><span id="exag-val"></span></div>
+  <div class="toggles">
+    <label class="toggle"><input type="checkbox" id="show-stations" checked> Show stations</label>
+    <label class="toggle"><input type="checkbox" id="show-trains" checked> Show trains</label>
+    <label class="toggle"><input type="checkbox" id="by-track"> Select single tracks</label>
+  </div>
+</div>
+<div id="profile" class="panel">
+  <div class="head"><span id="pbul"></span><span id="pname"></span><button class="ghost" id="flip" title="Other direction"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M2 4.5h9M8.5 2l2.5 2.5L8.5 7M12 9.5H3M5.5 7 3 9.5 5.5 12"/></svg></button><span id="pread"></span><button class="ghost" id="close" title="Close">&times;</button></div>
+  <svg id="chart"></svg>
+</div>
+<button id="info-btn" class="ghost" title="About"><span style="font-family:'Times New Roman',Times,serif;font-style:italic;font-size:19px;font-weight:bold">i</span></button>
+<div id="info" class="panel">
+  <p>A first estimate. Most depths come from rules of thumb for each kind of structure, pinned to real numbers where the MTA lists how far a station's elevators travel. The band around the rail on a profile is one standard deviation.</p>
+  <p>Track and routes from <a href="https://www.openstreetmap.org" target="_blank">OpenStreetMap</a>. Ground height from <a href="https://www.usgs.gov/3d-elevation-program" target="_blank">USGS 3DEP</a> lidar, river and harbour beds from <a href="https://www.ncei.noaa.gov/products/coastal-elevation-models" target="_blank">NOAA CUDEM</a>. Elevator rises from the <a href="https://data.ny.gov/d/94fv-bak7" target="_blank">MTA elevator and escalator inventory</a>. Basemap from <a href="https://openfreemap.org" target="_blank">OpenFreeMap</a>,<a href="https://openmaptiles.org" target="_blank">OpenMapTiles</a> and <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a>. Drawn with <a href="https://cesium.com/platform/cesiumjs/" target="_blank">CesiumJS</a>.</p>
+</div>
+<div id="loading" class="panel"><div id="loading-text">Loading tracks…</div><div class="track"><div class="fill"></div></div></div>
+<script>
+// Loading bar: one line naming the first step not yet done, and a bar filling across all of them.
+// Up from the start (it is drawn while CesiumJS downloads); the map stays usable under it.
+(() => {
+  const L = window.__load, el = document.getElementById('loading'), fill = el.querySelector('.fill'), text = document.getElementById('loading-text');
+  const steps = [
+    { label: 'Loading tracks…', w: 0.35, done: () => L.tracks, frac: () => L.tracks ? 1 : L.dataIn ? 0.5 : 0.1 },
+    { label: 'Loading stops…', w: 0.05, done: () => L.stations, frac: () => L.stations ? 1 : 0 },
+    { label: 'Loading terrain…', w: 0.3, done: () => L.globeLoaded && L.terrainAsked > 0 && L.terrainDone >= L.terrainAsked,
+      // tiles done of those asked, held back by how full Cesium's tile queue still is (it asks for
+      // tiles in waves, so done/asked alone reached 90% early and then sat there)
+      frac: () => L.terrainAsked ? Math.min(L.terrainDone / L.terrainAsked, L.queueMax ? 1 - L.queue / L.queueMax : 0) : 0 },
+    { label: 'Loading base map…', w: 0.3, done: () => L.imagery, frac: () => L.imagery ? 1 : L.queueMax ? 1 - L.queue / L.queueMax : 0 },
+  ];
+  // The bar only goes up: each step keeps the most it has reached (its fraction drops when new
+  // tiles are queued), and the whole never goes below what was drawn. A step not done holds at most
+  // 90% of its share, and finishes it when done.
+  // Steps fill in order: one after the current counts nothing yet (the base map used to pre-fill
+  // from the shared tile queue, then the bar sat still). The current step also eases toward 98% of
+  // its share every tick (a 4 s time constant), so a long terrain load keeps moving.
+  let shown = 0;
+  steps.forEach(s => { s.best = 0; });
+  const tick = setInterval(() => {
+    const ci = steps.findIndex(s => !s.done());
+    let p = 0;
+    steps.forEach((s, i) => {
+      if (s.done()) s.best = 1;
+      else if (i === ci) s.best = Math.max(s.best + (0.98 - s.best) * 0.025, Math.min(0.9, s.frac() || 0));
+      p += s.w * (i <= ci || ci < 0 ? s.best : 0);
+    });
+    shown = Math.max(shown, p);
+    fill.style.width = (shown * 100).toFixed(1) + '%';
+    const next = steps.find(s => !s.done());
+    if (next) { text.textContent = next.label; return; }
+    clearInterval(tick);
+    window.__tLoaded = performance.now();
+    el.classList.add('done');
+    setTimeout(() => { el.style.display = 'none'; }, 500);
+  }, 100);
+})();
+</script>
+<script>window.CESIUM_BASE_URL = 'https://cdn.jsdelivr.net/npm/cesium@1.145.0/Build/Cesium/';</script>
+<script src="https://cdn.jsdelivr.net/npm/cesium@1.145.0/Build/Cesium/Cesium.js"></script>
+<script>
+window.__tCesium = performance.now();
+Cesium.Ion.defaultAccessToken = '';
+const load = window.__load;
+// data/ locally, R2 on the published page (decided in the head)
+const DATA_BASE = window.__base;
+// phones and small tablets: cheaper rendering, no line selector (see the CSS)
+const MOBILE = matchMedia('(max-width: 640px), (pointer: coarse)').matches;
+
+// ---------- ramps and wording ----------
+// Two ramps, high to deep: sky colours above, green at the reference, warm below.
+// Depth: height of the rail relative to the surface. Elevation: relative to sea level (NAVD88).
+// Stops are dense near the reference, where most track is.
+const RAMPS = {
+  depth: { title: 'Height above surface, m', key: 'h',
+    stops: [[45, '#ffffff'], [28, '#b9b7ff'], [15, '#5a8dff'], [6, '#22c3c9'], [0, '#3ccf5a'], [-4, '#ffe14d'],
+            [-8, '#ff9f3a'], [-13, '#ff4d3d'], [-20, '#d1245f'], [-32, '#a12a9c'], [-55, '#6a2fb0']] },
+  // rail heights run from -34 to +60 m; half the track sits between +2 and +17
+  elev: { title: 'Height above sea level, m', key: 'e',
+    stops: [[60, '#ffffff'], [40, '#b9b7ff'], [24, '#5a8dff'], [10, '#22c3c9'], [0, '#3ccf5a'], [-4, '#ffe14d'],
+            [-8, '#ff9f3a'], [-13, '#ff4d3d'], [-19, '#d1245f'], [-27, '#a12a9c'], [-40, '#6a2fb0']] },
+};
+// mode: what colours the track (depth, elev or line). basis: what the heights in hovers and the
+// profile are measured from, set only by Depth and Elevation; Line keeps the last one.
+let mode = 'depth', basis = 'depth', exag = 3;
+const is3D = true;   // the page is 3D only (the flat view is gone; old #flat links open in 3D)
+const ramp = () => RAMPS[basis];
+const hex = c => [parseInt(c.slice(1, 3), 16), parseInt(c.slice(3, 5), 16), parseInt(c.slice(5, 7), 16)];
+function rampRGB(v) {
+  const s = ramp().stops;  // descending
+  if (v >= s[0][0]) return hex(s[0][1]);
+  for (let k = 1; k < s.length; k++) {
+    if (v >= s[k][0]) {
+      const t = (v - s[k][0]) / (s[k - 1][0] - s[k][0]), a = hex(s[k][1]), b = hex(s[k - 1][1]);
+      return [0, 1, 2].map(j => Math.round(a[j] + (b[j] - a[j]) * t));
+    }
+  }
+  return hex(s[s.length - 1][1]);
+}
+function drawLegend() {
+  // evenly spaced stops, so the dense near-zero steps get as much room as the far ones
+  const stops = ramp().stops, n = stops.length - 1;
+  const grad = 'linear-gradient(to right,' + stops.map(([v, c], i) => `${c} ${(i / n * 100).toFixed(1)}%`).join(',') + ')';
+  // the second and second-last labels are left out: next to the end labels they ran together in
+  // the narrower panel (their colours stay in the bar)
+  const ticks = stops.map(([v], i) => i === 1 || i === n - 1 ? '' : `<span style="left:${(i / n * 100).toFixed(1)}%">${v > 0 ? '+' + v : v < 0 ? '−' + -v : 0}</span>`).join('');
+  document.getElementById('legend-ramp').innerHTML = `<div class="bar" style="background:${grad}"></div><div class="ticks">${ticks}</div>`;
+  document.getElementById('ramp-title').textContent = ramp().title;
+}
+drawLegend();
+
+const fmt = v => (v == null || isNaN(v)) ? '?' : Math.abs(v).toFixed(1);
+const relSurface = h => h >= 0 ? `${fmt(h)} m above surface` : `${fmt(h)} m below surface`;
+const relSea = z => z >= 0 ? `${fmt(z)} m above sea level` : `${fmt(z)} m below sea level`;
+const heightText = (z, g) => basis === 'depth' ? relSurface(z - g) : relSea(z);
+function lighten(c, k) { const a = hex(c); return a.map(v => Math.round(v + (255 - v) * k)); }
+function lineColour(c) {
+  // dark trunk colours (the A's blue) are hard to see on black; lift them for lines
+  const [r, g, b] = hex(c), lum = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+  return lum < 90 ? lighten(c, 0.35) : hex(c);
+}
+const rgbStr = a => `rgb(${a.join(',')})`;
+
+// ---------- geometry constants ----------
+// NAVD88 0 sits GEOID metres above the WGS84 ellipsoid (GEOID18 from the NGS geoid API at Times Sq,
+// 40.758 N 73.9855 W: -31.74 m; -31.0 in the north-east of the extent to -32.5 in the south-west).
+// One constant for terrain, water, tracks and portals, so they stay consistent with each other.
+const GEOID = -31.74;
+const ZMIN = 9, ZMAX = 13;
+const EXTENT = [-74.26, 40.508, -73.645, 40.975];   // make_terrain.py prints it
+// The vertical scale in use: the slider's.
+const S = () => exag;
+const heightOf = z => GEOID + z * S();
+
+// ---------- terrain tiles ----------
+// data/terrain/{z}/{x}/{y}.png, Terrarium, web mercator z9-13, NAVD88 m. Fetched and decoded in two
+// workers, so the main thread only builds a small heightmap. Kept in a small LRU; `ready` holds
+// the decoded ones for synchronous lookups (the camera's ground clearance).
+const WORKER = `
+self.onmessage = async e => {
+  const { id, url } = e.data;
+  try {
+    const r = await fetch(url);
+    if (!r.ok) { self.postMessage({ id, h: null }); return; }
+    const bmp = await createImageBitmap(await r.blob(), { colorSpaceConversion: 'none', premultiplyAlpha: 'none' });
+    const cv = new OffscreenCanvas(bmp.width, bmp.height), g = cv.getContext('2d', { willReadFrequently: true });
+    g.drawImage(bmp, 0, 0);
+    const p = g.getImageData(0, 0, 256, 256).data, h = new Float32Array(65536);
+    for (let i = 0; i < 65536; i++) { const v = p[i * 4] * 256 + p[i * 4 + 1] + p[i * 4 + 2] / 256 - 32768; h[i] = v < -1000 ? 0 : v; }
+    self.postMessage({ id, h }, [h.buffer]);
+  } catch (err) { self.postMessage({ id, h: null }); }
+};`;
+const workerURL = URL.createObjectURL(new Blob([WORKER], { type: 'text/javascript' }));
+const workers = [new Worker(workerURL), new Worker(workerURL)], waiting = new Map();
+let nextJob = 0;
+workers.forEach(w => w.onmessage = e => { const f = waiting.get(e.data.id); waiting.delete(e.data.id); f(e.data.h); });
+const decoded = new Map(), ready = new Map();
+function loadTile(z, x, y) {
+  const key = z + '/' + x + '/' + y;
+  if (decoded.has(key)) { const v = decoded.get(key); decoded.delete(key); decoded.set(key, v); return v; }
+  const id = nextJob++;
+  const job = new Promise(res => {
+    waiting.set(id, res);
+    workers[id % 2].postMessage({ id, url: new URL(`${DATA_BASE}terrain/${key}.png`, location.href).href });
+  }).then(h => { ready.set(key, h); return h; });
+  decoded.set(key, job);
+  if (decoded.size > 400) { const old = decoded.keys().next().value; decoded.delete(old); ready.delete(old); }
+  return job;
+}
+// make_terrain.py writes each tile sampled at 256 points over the tile AND its far edge (stride
+// 256/255): pixel 0 is on the west/north edge, pixel 255 on the east/south edge, the same value as
+// the next tile's pixel 0. So a heightmap sample at fraction f of the tile is pixel f * 255,
+// bilinear within the one tile, and neighbouring tiles agree exactly on their shared edge.
+function edgeSample(t, u, v) {
+  const i = Math.min(254, Math.floor(u)), j = Math.min(254, Math.floor(v)), s = u - i, r = v - j;
+  return (t[j * 256 + i] * (1 - s) + t[j * 256 + i + 1] * s) * (1 - r) + (t[(j + 1) * 256 + i] * (1 - s) + t[(j + 1) * 256 + i + 1] * s) * r;
+}
+// NAVD88 height of the ground at a point, from the finest decoded tile (0 if none yet)
+function groundAt(lon, lat) {
+  for (let z = ZMAX; z >= ZMIN; z--) {
+    const n = 2 ** z, fx = (lon + 180) / 360 * n, fy = (1 - Math.asinh(Math.tan(lat * Math.PI / 180)) / Math.PI) / 2 * n;
+    const tx = Math.floor(fx), ty = Math.floor(fy), t = ready.get(z + '/' + tx + '/' + ty);
+    if (t) return edgeSample(t, (fx - tx) * 255, (fy - ty) * 255);
+  }
+  return 0;
+}
+const tilingScheme = new Cesium.WebMercatorTilingScheme();
+const flatTile = (level) => new Cesium.HeightmapTerrainData({ buffer: new Float32Array(17 * 17).fill(GEOID), width: 17, height: 17, childTileMask: level < ZMAX ? 15 : 0 });
+// Our own terrain provider (CustomHeightmapTerrainProvider's interface, written out so that tiles
+// can be web mercator, can say they have no children past z13, and can be built async). Heights
+// are ellipsoid heights, NAVD88 + GEOID; scene.verticalExaggeration stretches them about GEOID, i.e.
+// about NAVD88 0. 129 x 129 per tile: the textures carry the detail.
+const W = 129, E0 = Cesium.TerrainProvider.getEstimatedLevelZeroGeometricErrorForAHeightmap(Cesium.Ellipsoid.WGS84, 65, 1);
+const terrainProvider = {
+  tilingScheme, ellipsoid: Cesium.Ellipsoid.WGS84, hasWaterMask: false, hasVertexNormals: false, credit: undefined,
+  errorEvent: new Cesium.Event(), availability: undefined, ready: true, readyPromise: Promise.resolve(true),
+  getLevelMaximumGeometricError: level => E0 / (1 << level),
+  getTileDataAvailable: (x, y, level) => level <= ZMAX,
+  loadTileDataAvailability: () => undefined,
+  requestTileGeometry(x, y, level) {
+    if (level < ZMIN) return Promise.resolve(flatTile(level));
+    load.terrainAsked++;
+    return loadTile(level, x, y).finally(() => load.terrainDone++).then(t => {
+      if (!t) return flatTile(level);
+      const buf = new Float32Array(W * W), k = 255 / (W - 1);
+      for (let j = 0; j < W; j++) for (let i = 0; i < W; i++) buf[j * W + i] = GEOID + edgeSample(t, i * k, j * k);
+      return new Cesium.HeightmapTerrainData({ buffer: buf, width: W, height: W, childTileMask: level < ZMAX ? 15 : 0 });
+    });
+  },
+};
+
+// ---------- viewer ----------
+// Our own dark raster for streets: OpenFreeMap vector tiles drawn with MapLibre in Stadia's Alidade
+// Smooth Dark colours, street names only (no place, POI or water labels, so nothing stays north-up
+// when the map turns). 512 px tiles, z12-16 over EXTENT, in data/basemap. Not drawn on coarse tiles
+// (terrain level < 12). Credits are listed in the info panel.
+const basemap = new Cesium.ImageryLayer(new Cesium.UrlTemplateImageryProvider({
+  url: DATA_BASE + 'basemap/{z}/{x}/{y}.webp', tilingScheme: new Cesium.WebMercatorTilingScheme(),
+  tileWidth: 512, tileHeight: 512, minimumLevel: 12, maximumLevel: 16,
+  rectangle: Cesium.Rectangle.fromDegrees(...EXTENT),
+}), { minimumTerrainLevel: 12, rectangle: Cesium.Rectangle.fromDegrees(...EXTENT) });   // none outside the square
+const widget = new Cesium.CesiumWidget('map', {
+  terrainProvider, baseLayer: basemap, skyBox: false, skyAtmosphere: false, creditContainer: 'credits',
+  // MSAA 2: measured no slower than 1 and about 2-4 ms a frame cheaper than 4; none on phones
+  scene3DOnly: true, msaaSamples: MOBILE ? 1 : 2, requestRenderMode: true, maximumRenderTimeChange: Infinity,
+});
+const scene = widget.scene, camera = scene.camera, globe = scene.globe;
+// Canvas resolution: Cesium's default draws 1 canvas pixel per CSS pixel whatever the screen
+// (useBrowserRecommendedResolution), so a 3x phone was blurry rather than slow. Phones get up to
+// 1.5 canvas pixels per CSS pixel on small screens and 2 on larger ones, never more than the screen has.
+if (MOBILE) widget.resolutionScale = Math.min(devicePixelRatio, Math.min(innerWidth, innerHeight) <= 430 ? 1.5 : 2);
+// The ground colours make_terrain.py bakes (data/terrain/tex: near-black land with a hillshade,
+// parks, lakes, the riverbed tinted under the water), over the basemap at 0.45 opacity as in the
+// deck.gl page. Both layers are brightened to make up for the translucent globe, which dims
+// everything once more.
+const tex = globe.imageryLayers.addImageryProvider(new Cesium.UrlTemplateImageryProvider({
+  url: DATA_BASE + 'terrain/tex/{z}/{x}/{y}.webp', tilingScheme, minimumLevel: ZMIN, maximumLevel: ZMAX,
+  rectangle: Cesium.Rectangle.fromDegrees(...EXTENT),
+}));
+// A tile request cut short (the camera moved on, a busy moment on the server) left the tile marked
+// failed for good: grey patches where the ground colours never came. Retry a few times.
+window.__imgErrors = [];
+for (const layer of [basemap, tex]) layer.imageryProvider.errorEvent.addEventListener(err => {
+  if (window.__imgErrors.length < 20) window.__imgErrors.push(`${err.level}/${err.x}/${err.y} try ${err.timesRetried}: ${err.error && (err.error.message || err.error.type || err.error)}`);
+  if (err.timesRetried < 4) err.retry = true;
+});
+const TEX_ALPHA = 0.45, BRIGHT = 1.0;
+tex.alpha = TEX_ALPHA;
+basemap.brightness = BRIGHT; tex.brightness = BRIGHT;
+scene.backgroundColor = Cesium.Color.fromCssColorString('#0a0a0a');
+scene.fog.enabled = false;
+if (scene.sun) scene.sun.show = false;
+if (scene.moon) scene.moon.show = false;
+globe.baseColor = Cesium.Color.fromCssColorString('#0a0a0a');
+globe.showGroundAtmosphere = false;
+globe.enableLighting = false;
+globe.depthTestAgainstTerrain = true;
+// The ground is translucent, so tunnels show through it. The camera stays above it (below), so
+// the back faces are only the far slopes of hills seen through the near ones: hidden.
+globe.translucency.enabled = true;
+globe.translucency.frontFaceAlpha = 0.45;
+globe.translucency.backFaceAlpha = 0;
+globe.tileCacheSize = 400;
+// Nothing is drawn outside the square: the globe, its imagery and terrain stop at LIMIT, the data
+// extent pulled in 0.002 deg (about 170 m) so the terrain tiles' no-data edge (a drop to sea level,
+// a wall at 3x) and half-covered imagery tiles fall outside it.
+const LIMIT = [EXTENT[0] + 0.002, EXTENT[1] + 0.002, EXTENT[2] - 0.002, EXTENT[3] - 0.002];
+const LIMIT_RECT = Cesium.Rectangle.fromDegrees(...LIMIT);
+globe.cartographicLimitRectangle = LIMIT_RECT;
+// (preloadAncestors stays on: tiles past z13 are upsampled from their parents, and without the
+// ancestors loaded they waited forever)
+scene.verticalExaggeration = S();
+scene.verticalExaggerationRelativeHeight = GEOID;
+scene.screenSpaceCameraController.enableCollisionDetection = true;
+scene.screenSpaceCameraController.enableInputs = false;   // our own controls below
+// Contours, drawn by the globe over the imagery, so they stay sharp at every zoom: a faint light
+// line every 5 m and a slightly stronger one every 25 m of real height (NAVD88: the geoid offset
+// and the vertical scale are undone), and the ground between them a few percent darker the lower
+// it lies. 5 m lines fade out where they would come closer than about 4-9 px (steep slopes, far
+// away), 25 m lines likewise. Nothing below -0.95 m: the riverbed under the water (make_terrain.py
+// keeps land at -0.9 m or above and the bed at -1 m or below).
+const contours = new Cesium.Material({ fabric: { type: 'TrackdepthContours', uniforms: { geoid: GEOID, scale: 3 }, source: `
+czm_material czm_getMaterial(czm_materialInput materialInput) {
+  czm_material m = czm_getDefaultMaterial(materialInput);
+  float h = (materialInput.height - geoid) / scale;
+  m.diffuse = vec3(0.0);
+  m.alpha = 0.0;
+  if (h < -0.95) return m;
+  float px = max(fwidth(h), 1e-4);
+  float d5 = abs(fract(h / 5.0 + 0.5) - 0.5) * 5.0;
+  float d25 = abs(fract(h / 25.0 + 0.5) - 0.5) * 25.0;
+  float l5 = (1.0 - smoothstep(0.3, 0.9, d5 / px)) * smoothstep(4.0, 9.0, 5.0 / px);
+  float l25 = (1.0 - smoothstep(0.5, 1.3, d25 / px)) * smoothstep(3.0, 7.0, 25.0 / px);
+  float lineA = max(l5 * 0.12, l25 * 0.15);
+  float bandA = clamp(1.0 - floor(h / 5.0) * 5.0 / 60.0, 0.0, 1.0) * 0.08;
+  float a = lineA + bandA * (1.0 - lineA);
+  m.diffuse = vec3(0.8) * (lineA / max(a, 1e-4));
+  m.alpha = a;
+  return m;
+}` } });
+globe.material = contours;
+// Cracks: Cesium draws no tile skirts on a translucent globe, so where a coarse tile meets a finer
+// one the T-junctions open into hairline gaps that showed the black background (a dashed black line
+// across the map, zoomed out). Drawing the skirts made pale bands along every tile edge instead.
+// So an opaque backdrop lies far below everything (1.5 km under sea level, deeper than the deepest
+// track at 15x), about the ground's own tone: a gap now shows ground-coloured backdrop, and the
+// translucent ground lies over it everywhere else.
+// Exactly the square and only 60 m x the scale down (just under the deepest track): a bigger or
+// deeper one showed as a dark slab around the square seen at an angle.
+const BACKDROP = [16, 16, 15];   // lighter greyed the whole ground through the 0.45 globe
+let backdropPrim = null;
+function buildBackdrop() {
+  if (backdropPrim) scene.primitives.remove(backdropPrim);
+  backdropPrim = scene.primitives.add(new Cesium.Primitive({ allowPicking: false, asynchronous: false,
+    geometryInstances: new Cesium.GeometryInstance({
+      geometry: new Cesium.RectangleGeometry({ rectangle: LIMIT_RECT, height: GEOID - 60 * S(), granularity: 0.0005,
+        vertexFormat: Cesium.PerInstanceColorAppearance.FLAT_VERTEX_FORMAT }),
+      attributes: { color: Cesium.ColorGeometryInstanceAttribute.fromColor(Cesium.Color.fromBytes(...BACKDROP, 255)) } }),
+    appearance: new Cesium.PerInstanceColorAppearance({ flat: true, translucent: false }) }));
+}
+buildBackdrop();
+const requestRender = () => scene.requestRender();
+
+// ---------- camera ----------
+// The view is MapLibre's: lon/lat of the centre (on NAVD88 0), zoom (512 px tiles), pitch,
+// bearing, with the same vertical field of view (36.87 deg), so a view frames the same ground as
+// the deck.gl page did. The camera is kept at least CLEAR m above the ground under it (zooming out
+// if needed).
+const FOVY = 0.6435011087932844, CLEAR = 40, MAXPITCH = 80;
+const view = { lon: -73.945, lat: 40.747, zoom: 10.3, pitch: 62, bearing: -25 };   // Long Island City, the square's middle
+function fitFov() {
+  const c = scene.canvas, aspect = c.clientWidth / Math.max(1, c.clientHeight);
+  camera.frustum.fov = aspect > 1 ? 2 * Math.atan(Math.tan(FOVY / 2) * aspect) : FOVY;
+}
+function minZoom() {
+  const lat0 = (LIMIT[1] + LIMIT[3]) / 2, k = Math.cos(lat0 * Math.PI / 180);
+  const wM = (LIMIT[2] - LIMIT[0]) * 111320 * k, hM = (LIMIT[3] - LIMIT[1]) * 110540;
+  const c = scene.canvas, mpp = Math.min(wM / Math.max(1, c.clientWidth), hM / Math.max(1, c.clientHeight));
+  return Math.log2(2 * Math.PI * 6378137 * k / (512 * mpp));
+}
+function apply() {
+  fitFov();
+  view.pitch = Math.max(0, Math.min(is3D ? MAXPITCH : 0, view.pitch));
+  view.bearing = ((view.bearing + 180) % 360 + 360) % 360 - 180;   // free through north; kept in -180..180
+  // Zooming out stops 1.5x farther than the zoom at which the square just spans the screen's width
+  // (or height, if that is the smaller in square terms): a margin of black round it at the widest.
+  view.zoom = Math.max(minZoom() - Math.log2(1.5), Math.min(19.5, view.zoom));
+  // The centre is held so the screen's half-width and half-height (seen from straight above, and
+  // never counted wider than at the square-filling zoom) stay inside the square.
+  {
+    const c = scene.canvas, k = Math.cos(view.lat * Math.PI / 180);
+    const mppV = 2 * Math.PI * 6378137 * k / (512 * 2 ** Math.max(view.zoom, minZoom()));
+    const hw = Math.min((LIMIT[2] - LIMIT[0]) / 2, Math.max(0.024, c.clientWidth / 2 * mppV / (111320 * k)));
+    const hh = Math.min((LIMIT[3] - LIMIT[1]) / 2, Math.max(0.018, c.clientHeight / 2 * mppV / 110540));
+    view.lat = Math.max(LIMIT[1] + hh, Math.min(LIMIT[3] - hh, view.lat));
+    view.lon = Math.max(LIMIT[0] + hw, Math.min(LIMIT[2] - hw, view.lon));
+  }
+  const H = scene.canvas.clientHeight;
+  const mpp = 2 * Math.PI * 6378137 * Math.cos(view.lat * Math.PI / 180) / (512 * 2 ** view.zoom);
+  const range = (H / 2) / Math.tan(FOVY / 2) * mpp;
+  const target = Cesium.Cartesian3.fromDegrees(view.lon, view.lat, GEOID);
+  // the camera never looks exactly straight down: at -90 deg Cesium's lookAt loses the heading, and
+  // every bearing snapped to north (looking straight down)
+  const hpr = new Cesium.HeadingPitchRange(Cesium.Math.toRadians(view.bearing), -Cesium.Math.toRadians(90 - Math.max(view.pitch, 0.01)), range);
+  camera.lookAt(target, hpr);
+  camera.lookAtTransform(Cesium.Matrix4.IDENTITY);
+  const c = camera.positionCartographic;
+  const floor = GEOID + Math.max(0, groundAt(Cesium.Math.toDegrees(c.longitude), Cesium.Math.toDegrees(c.latitude))) * S() + CLEAR;
+  if (c.height < floor) {
+    hpr.range = range * (floor - GEOID) / Math.max(1, c.height - GEOID);
+    camera.lookAt(target, hpr);
+    camera.lookAtTransform(Cesium.Matrix4.IDENTITY);
+  }
+  requestRender();
+}
+// a jump: the coarse stand-in imagery is held back until the new view has loaded
+function setView(v) {
+  Object.assign(view, { lon: v.center[0], lat: v.center[1], zoom: v.zoom, pitch: v.pitch || 0, bearing: v.bearing || 0 });
+  holdImagery();
+  if (typeof focal !== 'undefined') focal = NaN;
+  apply();
+}
+// an eased move (line buttons, the 3D toggle): the imagery stays on
+let flight = null;
+function flyTo(v, ms = 600) {
+  hidePop();
+  const from = { ...view }, to = { ...view, ...v }, t0 = performance.now();
+  if (Math.abs(to.bearing - from.bearing) > 180) to.bearing += to.bearing > from.bearing ? -360 : 360;
+  cancelAnimationFrame(flight);
+  const step = () => {
+    const k = Math.min(1, (performance.now() - t0) / ms), e = 1 - (1 - k) ** 3;
+    for (const key of ['lon', 'lat', 'zoom', 'pitch', 'bearing']) view[key] = from[key] + (to[key] - from[key]) * e;
+    apply();
+    if (k < 1) flight = requestAnimationFrame(step);
+  };
+  flight = requestAnimationFrame(step);
+}
+window.setView = setView;
+new ResizeObserver(() => apply()).observe(scene.canvas);
+
+// The point on the ground under a screen position: the ray against a level plane through the
+// ground there (found by one refinement from NAVD88 0). Points further than 8 camera heights are
+// refused: near the horizon a few pixels of cursor are kilometres, which flung the camera.
+const ell = Cesium.Ellipsoid.WGS84;
+function planeAt(lon, lat, h) {
+  const p = Cesium.Cartesian3.fromDegrees(lon, lat, h);
+  return { point: p, plane: Cesium.Plane.fromPointNormal(p, ell.geodeticSurfaceNormal(p, new Cesium.Cartesian3())) };
+}
+function rayHit(x, y, plane) {
+  const ray = camera.getPickRay(new Cesium.Cartesian2(x, y));
+  if (!ray) return undefined;
+  const p = Cesium.IntersectionTests.rayPlane(ray, plane);
+  const reach = Math.max(1500, 8 * (camera.positionCartographic.height - GEOID));
+  if (!p || Cesium.Cartesian3.distance(p, camera.positionWC) > reach) return undefined;
+  return p;
+}
+function groundPlaneUnder(x, y) {
+  const first = rayHit(x, y, planeAt(view.lon, view.lat, GEOID).plane);
+  if (!first) return undefined;
+  const c = Cesium.Cartographic.fromCartesian(first), lon = Cesium.Math.toDegrees(c.longitude), lat = Cesium.Math.toDegrees(c.latitude);
+  const { plane } = planeAt(lon, lat, GEOID + groundAt(lon, lat) * S());
+  const p = rayHit(x, y, plane);
+  return p ? { plane, p } : undefined;
+}
+function shiftCentre(d) {
+  const c0 = Cesium.Cartesian3.fromDegrees(view.lon, view.lat, GEOID);
+  const c = Cesium.Cartographic.fromCartesian(Cesium.Cartesian3.add(c0, d, new Cesium.Cartesian3()));
+  view.lon = Cesium.Math.toDegrees(c.longitude); view.lat = Cesium.Math.toDegrees(c.latitude);
+}
+
+// Mouse: left-drag grabs the ground and pans; right-drag or ctrl-left-drag rotates (sideways) and
+// tilts (up and down) about the centre; the wheel zooms toward the cursor; a click without a drag
+// picks. Touch: one finger pans, two fingers pinch-zoom and twist-rotate about their midpoint, or
+// tilt when both move up or down.
+const el = scene.canvas, ptrs = new Map();
+let drag = null, down = null;
+el.addEventListener('contextmenu', e => e.preventDefault());
+const pos = e => { const r = el.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; };
+function startPan(x, y) { const g = groundPlaneUnder(x, y); drag = g ? { kind: 'pan', plane: g.plane, grab: g.p } : null; }
+function panTo(x, y) {
+  if (!drag || drag.kind !== 'pan') return;
+  const p = rayHit(x, y, drag.plane);
+  if (!p) return;
+  shiftCentre(Cesium.Cartesian3.subtract(drag.grab, p, new Cesium.Cartesian3()));
+  apply();
+}
+function zoomAround(x, y, dz) {
+  const g = groundPlaneUnder(x, y);
+  view.zoom += dz;
+  apply();
+  if (!g) return;
+  const p = rayHit(x, y, g.plane);
+  if (!p) return;
+  shiftCentre(Cesium.Cartesian3.subtract(g.p, p, new Cesium.Cartesian3()));
+  apply();
+}
+el.addEventListener('pointerdown', e => {
+  el.setPointerCapture(e.pointerId);
+  cancelAnimationFrame(flight);
+  const [x, y] = pos(e);
+  ptrs.set(e.pointerId, { x, y });
+  down = { x, y, moved: false, n: ptrs.size };
+  hidePop();
+  if (e.pointerType === 'touch') {
+    if (ptrs.size === 1) startPan(x, y);
+    else if (ptrs.size === 2) drag = { kind: 'touch2' };
+    return;
+  }
+  if (e.button === 2 || (e.button === 0 && e.ctrlKey)) drag = { kind: 'rotate', x, y };
+  else if (e.button === 0) startPan(x, y);
+});
+el.addEventListener('pointermove', e => {
+  const [x, y] = pos(e);
+  if (!ptrs.has(e.pointerId)) { if (e.pointerType === 'mouse') onHover(x, y); return; }
+  const prev = ptrs.get(e.pointerId);
+  if (down && Math.hypot(x - down.x, y - down.y) > 4) down.moved = true;
+  if (e.pointerType === 'touch' && ptrs.size === 2) {
+    const [a, b] = [...ptrs.values()];
+    const other = a === prev ? b : a;
+    const m0 = [(prev.x + other.x) / 2, (prev.y + other.y) / 2], m1 = [(x + other.x) / 2, (y + other.y) / 2];
+    const d0 = Math.hypot(prev.x - other.x, prev.y - other.y), d1 = Math.hypot(x - other.x, y - other.y);
+    const a0 = Math.atan2(prev.y - other.y, prev.x - other.x), a1 = Math.atan2(y - other.y, x - other.x);
+    ptrs.set(e.pointerId, { x, y });
+    const vertical = Math.abs(y - prev.y) > 2 * Math.abs(x - prev.x) && Math.abs(d1 - d0) < 2;
+    if (vertical) { view.pitch -= (m1[1] - m0[1]) * 0.5; apply(); return; }
+    const g = groundPlaneUnder(m0[0], m0[1]);
+    view.zoom += Math.log2(Math.max(1, d1) / Math.max(1, d0));
+    view.bearing += (a1 - a0) * 180 / Math.PI;   // same sense as the mouse's right-drag
+    apply();
+    if (g) { const p = rayHit(m1[0], m1[1], g.plane); if (p) { shiftCentre(Cesium.Cartesian3.subtract(g.p, p, new Cesium.Cartesian3())); apply(); } }
+    return;
+  }
+  ptrs.set(e.pointerId, { x, y });
+  if (!drag) return;
+  if (drag.kind === 'pan') panTo(x, y);
+  else if (drag.kind === 'rotate') {
+    view.bearing += (x - drag.x) * 0.8;
+    view.pitch -= (y - drag.y) * 0.5;
+    drag.x = x; drag.y = y;
+    apply();
+  }
+});
+const endPtr = e => {
+  const [x, y] = pos(e);
+  ptrs.delete(e.pointerId);
+  if (e.type === 'pointerup' && down && !down.moved && down.n === 1 && ptrs.size === 0 && (e.button === 0 || e.pointerType === 'touch') && !e.ctrlKey) {
+    if (e.pointerType !== 'mouse') onHover(x, y);   // no hover on touch: a tap also shows what is there
+    onClick(x, y);
+  }
+  if (ptrs.size === 1 && e.pointerType === 'touch') { const [p] = ptrs.values(); startPan(p.x, p.y); }
+  else if (ptrs.size === 0) { drag = null; down = null; }
+};
+el.addEventListener('pointerup', endPtr);
+el.addEventListener('pointercancel', endPtr);
+el.addEventListener('pointerleave', () => hidePop());
+el.addEventListener('wheel', e => {
+  e.preventDefault();
+  hidePop();
+  const [x, y] = pos(e), px = e.deltaMode === 1 ? e.deltaY * 40 : e.deltaY;
+  zoomAround(x, y, -px / 450);
+}, { passive: false });
+
+// The basemap and the ground colours are hidden on first load and after a jump until every tile
+// of the new view has loaded (tilesLoaded steady for 400 ms: it flickers true between passes), so
+// their coarse stand-ins (giant blurry labels, smeared colours) never show; the ground stays
+// near-black until then. Alpha 0, not show = false: a hidden layer stops loading.
+let imageryHeld = false, loadedSince = 0;
+function holdImagery() { imageryHeld = true; loadedSince = 0; basemap.alpha = 0; tex.alpha = 0; }
+// "Loaded" here means the tiles the view shows: Cesium's high and medium load queues empty (its low
+// queue is ancestors and siblings preloaded for later moves, which drained 1-2 s after the rest).
+const viewLoaded = () => {
+  const s = globe._surface;
+  if (!s || !s._tileLoadQueueHigh) return globe.tilesLoaded;
+  return globe.tilesLoaded || (s._tileLoadQueueHigh.length === 0 && s._tileLoadQueueMedium.length === 0 && load.terrainAsked > 0 && load.terrainDone >= load.terrainAsked);
+};
+scene.postRender.addEventListener(() => {
+  if (!imageryHeld) return;
+  const now = performance.now();
+  if (!viewLoaded()) { loadedSince = 0; setTimeout(requestRender, 50); return; }
+  if (!loadedSince) loadedSince = now;
+  if (now - loadedSince > 400) { imageryHeld = false; basemap.alpha = 1; tex.alpha = TEX_ALPHA; if (!window.__tImagery) window.__tImagery = now; load.imagery = true; }
+  setTimeout(requestRender, 50);
+});
+// for the loading bar
+scene.postRender.addEventListener(() => { if (globe.tilesLoaded) load.globeLoaded = true; });
+globe.tileLoadProgressEvent.addEventListener(n => { load.queue = n; load.queueMax = Math.max(load.queueMax, n); });
+// Keep rendering every frame while tiles stream in: Cesium works through its tile load queue only
+// inside a render, 5 ms per frame by default (raised to 12 here), and requestRenderMode renders
+// only on request. Asking every 50 ms made a close view take 10 s to fill after the network was done.
+if (globe._surface && typeof globe._surface._loadQueueTimeSlice === 'number') globe._surface._loadQueueTimeSlice = 12;
+scene.preRender.addEventListener(() => { if (!globe.tilesLoaded) requestAnimationFrame(requestRender); });
+
+// ---------- blur outside focus ----------
+// A subtle tilt-shift: pixels are blurred by how far their distance from the camera is from the
+// focus distance, as a ratio (|ln(d / focus)|), so something twice as far and something half as
+// far blur alike. The focus is the ground under the screen centre, eased toward each frame.
+// Strength grows with pitch (nothing looking straight down) and zoom (nothing zoomed out).
+// Distance per pixel: to a level plane through the focus point, along that pixel's ray (the depth
+// buffer is no use with the translucent ground), so a tunnel blurs like the ground at its place on
+// screen. Not Cesium's createDepthOfFieldStage, which blurs everything beyond the focus almost
+// fully and hardly anything in front of it.
+const DOF_FS = `
+uniform sampler2D colorTexture;
+uniform sampler2D blurTexture;
+uniform float focalDistance;
+uniform float strength;
+uniform vec4 groundPlane;   // eye coordinates: normal xyz, distance w
+in vec2 v_textureCoordinates;
+void main(void) {
+  vec2 uv = v_textureCoordinates;
+  vec4 c = texture(colorTexture, uv);
+  vec4 q = czm_inverseProjection * vec4(uv * 2.0 - 1.0, -1.0, 1.0);
+  vec3 dir = normalize(q.xyz / q.w);
+  float den = dot(groundPlane.xyz, dir), t = den != 0.0 ? -groundPlane.w / den : -1.0;
+  float f = t > 0.0 ? clamp(abs(log(-(t * dir).z / focalDistance)) * strength, 0.0, 0.85) : 0.85 * strength / 0.55;
+  out_FragColor = mix(c, texture(blurTexture, uv), f);
+}`;
+var focal = NaN, strength = 0;   // var: setView (earlier) resets focal on a jump
+const groundPlaneEC = new Cesium.Cartesian4(0, 0, 1, 0);
+const dofBlur = Cesium.PostProcessStageLibrary.createBlurStage();
+dofBlur.uniforms.sigma = 2.2; dofBlur.uniforms.stepSize = 1.2; dofBlur.uniforms.delta = 1.0;
+const dof = scene.postProcessStages.add(new Cesium.PostProcessStageComposite({ name: 'tilt', inputPreviousStageTexture: false, stages: [dofBlur,
+  new Cesium.PostProcessStage({ name: 'tilt_mix', fragmentShader: DOF_FS, uniforms: {
+    blurTexture: dofBlur.name, focalDistance: () => focal, strength: () => strength, groundPlane: () => groundPlaneEC } })] }));
+const smooth = (a, b, x) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
+scene.preRender.addEventListener(() => {
+  strength = 0.55 * smooth(35, 72, view.pitch) * smooth(13.5, 16, view.zoom);
+  dof.enabled = strength > 0.01 && !window.__noTilt;   // __noTilt: for measuring its cost
+  if (!dof.enabled) return;
+  const g = groundPlaneUnder(scene.canvas.clientWidth / 2, scene.canvas.clientHeight / 2);
+  if (!g) return;
+  const target = Cesium.Cartesian3.distance(g.p, camera.positionWC);
+  focal = isFinite(focal) ? focal + (target - focal) * 0.25 : target;   // a jump snaps
+  if (Math.abs(target - focal) > target * 0.01) setTimeout(requestRender, 16);
+  const n = ell.geodeticSurfaceNormal(g.p, new Cesium.Cartesian3());
+  const pe = Cesium.Matrix4.multiplyByPoint(camera.viewMatrix, g.p, new Cesium.Cartesian3());
+  const ne = Cesium.Matrix4.multiplyByPointAsVector(camera.viewMatrix, n, new Cesium.Cartesian3());
+  Cesium.Cartesian3.normalize(ne, ne);
+  groundPlaneEC.x = ne.x; groundPlaneEC.y = ne.y; groundPlaneEC.z = ne.z; groundPlaneEC.w = -Cesium.Cartesian3.dot(ne, pe);
+});
+
+// ---------- data ----------
+let DATA, SERVICES = [], wayToSvc = new Map(), idToTi = new Map(), grid = new Map();
+let selected = null;  // { pts, colour, service, variant, tis:Set of ti, stations }
+const GRID = 0.0005;
+const gkey = (lon, lat) => Math.floor(lon / GRID) + ',' + Math.floor(lat / GRID);
+const metres = (a, b) => Math.hypot((a[0] - b[0]) * 84300, (a[1] - b[1]) * 111000);
+
+// ---------- services ----------
+function bulletHTML(s, cls = '', attrs = '') {
+  return `<button class="bul ${s.shape} ${cls}" style="background:${s.colour};color:${s.text}" ${attrs}><span>${s.label}</span></button>`;
+}
+function svcOfTrack(ti) {
+  const list = wayToSvc.get(DATA.tracks[ti].id) || [];
+  return [...new Set(list.map(x => x.s))];
+}
+// Subway bullets, then a quieter row of the other systems. A system with one service (Amtrak,
+// NJ Transit, AirTrain) selects it; one with several lines (PATH, LIRR, Metro-North) opens a row of
+// its lines as small coloured tags.
+let openSystem = null;
+// NJ Transit's lines in NJ Transit's own order (services.json has them alphabetical); others keep
+// the data's order (a stable sort)
+const TAG_ORDER = Object.fromEntries(['NJT NEC', 'NJT NJCL', 'NJT RVL', 'NJT M&E', 'NJT MOBO', 'NJT Main', 'NJT Bergen', 'NJT PVL', 'NJT Meadowlands',
+  'AirTrain', 'AirTrain Newark'].map((r, i) => [r, i]));
+// In a system's row of line tags, a line labelled with the system's own name ("AirTrain" beside
+// "Newark") is labelled by the rest of its full name instead ("AirTrain JFK" -> "JFK").
+function tagged(s) {
+  if (!s.system || s.label !== s.system || !s.name || !s.name.startsWith(s.system + ' ')) return s;
+  return { ...s, label: s.name.slice(s.system.length + 1) };
+}
+function drawBullets() {
+  const el = document.getElementById('services');
+  const on = i => selected && selected.service === i ? 'on' : '';
+  const tip = s => s.name && s.name !== s.label ? ` title="${s.name}"` : '';
+  const subway = SERVICES.map((s, i) => [s, i]).filter(([s]) => !s.system);
+  const systems = [...new Set(SERVICES.filter(s => s.system).map(s => s.system))];
+  if (selected && selected.service != null && SERVICES[selected.service].system) openSystem = SERVICES[selected.service].system;
+  const sysBtn = sys => {
+    const lines = SERVICES.map((s, i) => [s, i]).filter(([s]) => s.system === sys);
+    if (lines.length === 1) {
+      const [s, i] = lines[0];
+      return `<button class="sys ${on(i) ? 'active' : ''}" data-s="${i}"${tip(s)}>${s.label}</button>`;
+    }
+    return `<button class="sys ${openSystem === sys ? 'active' : ''}" data-sys="${sys}">${sys}</button>`;
+  };
+  const lines = openSystem ? SERVICES.map((s, i) => [s, i]).filter(([s]) => s.system === openSystem)
+    .sort(([a], [b]) => (TAG_ORDER[a.ref] ?? 99) - (TAG_ORDER[b.ref] ?? 99)) : [];
+  el.innerHTML = `<div class="grp">${subway.map(([s, i]) => bulletHTML(s, on(i), `data-s="${i}"${tip(s)}`)).join('')}</div>` +
+    (systems.length ? `<div class="grp other">${systems.map(sysBtn).join('')}</div>` : '') +
+    (lines.length > 1 ? `<div class="grp lines">${lines.map(([s, i]) => bulletHTML(tagged(s), on(i), `data-s="${i}"${tip(s)}`)).join('')}</div>` : '');
+  el.classList.toggle('ready', SERVICES.length > 0);
+  el.querySelectorAll('[data-s]').forEach(b => b.onclick = () => {
+    const si = +b.dataset.s;
+    if (selected && selected.service === si) closeProfile(); else { openService(si, 0, null); fitSelection(); }
+  });
+  el.querySelectorAll('[data-sys]').forEach(b => b.onclick = () => {
+    openSystem = openSystem === b.dataset.sys ? null : b.dataset.sys;
+    drawBullets();
+  });
+}
+// Line mode: one colour per track. Services on the track that run there full time count (else
+// all of them); the colour shared by the most of them wins (4/5/6 green, A/C/E blue), a tie goes to
+// the first in bullet order; no service (yards, connectors) is dim grey.
+let trackLineRGB = [];
+function computeLineColours() {
+  trackLineRGB = DATA.tracks.map(t => {
+    const list = wayToSvc.get(t.id) || [];
+    if (!list.length) return [75, 75, 80];
+    const full = list.filter(x => SERVICES[x.s].variants.some(v => !v.when && v.ways.some(([id]) => id === t.id)));
+    const use = (full.length ? full : list).map(x => x.s).sort((a, b) => a - b);
+    const count = new Map();
+    for (const s of use) { const c = SERVICES[s].colour.toUpperCase(); count.set(c, (count.get(c) || 0) + 1); }
+    let best = null, bn = -1;
+    for (const s of use) { const c = SERVICES[s].colour.toUpperCase(), n = count.get(c); if (n > bn) { bn = n; best = c; } }
+    return lineColour(best);
+  });
+}
+
+// ---------- tracks ----------
+// One Primitive of polylines (per-vertex colours), rebuilt asynchronously when the colouring or the
+// vertical scale changes; the previous one stays up until the new one is ready. Each track is its
+// own instance (id = track index) for picking.
+let tracksPrim = null, pendingPrim = null;
+function pointRGB(t, i, ti) {
+  if (mode === 'line') return trackLineRGB[ti];
+  return rampRGB(mode === 'depth' ? t.z[i] - t.ground[i] : t.z[i]);
+}
+// Nothing is drawn outside the square: a track is cut into its runs of points inside LIMIT (points
+// are 25 m apart, so a run ends within 25 m of the edge), and each run is its own instance.
+const inLimit = (lon, lat) => lon >= LIMIT[0] && lon <= LIMIT[2] && lat >= LIMIT[1] && lat <= LIMIT[3];
+function insideRuns(t) {
+  const runs = [];
+  let cur = [];
+  for (let i = 0; i < t.lon.length; i++) {
+    if (inLimit(t.lon[i], t.lat[i])) cur.push(i);
+    else { if (cur.length > 1) runs.push(cur); cur = []; }
+  }
+  if (cur.length > 1) runs.push(cur);
+  return runs;
+}
+function buildTracks() {
+  const T = DATA.tracks, s = S(), insts = [];
+  for (let ti = 0; ti < T.length; ti++) {
+    const t = T[ti], f = t.service === 'yard' && mode !== 'line' ? 0.6 : 1;
+    for (const run of insideRuns(t)) {
+      const flat = [], col = [];
+      for (const i of run) {
+        flat.push(t.lon[i], t.lat[i], GEOID + t.z[i] * s);
+        const c = pointRGB(t, i, ti);
+        col.push(new Cesium.Color(c[0] / 255 * f, c[1] / 255 * f, c[2] / 255 * f, 1));
+      }
+      insts.push(new Cesium.GeometryInstance({ id: { kind: 'track', ti },
+        geometry: new Cesium.PolylineGeometry({ positions: Cesium.Cartesian3.fromDegreesArrayHeights(flat), colors: col, colorsPerVertex: true, width: 2.2, arcType: Cesium.ArcType.NONE }) }));
+    }
+  }
+  if (pendingPrim) scene.primitives.remove(pendingPrim);
+  // The first build runs on the main thread (about 0.4 s): Cesium's geometry workers start cold
+  // from the CDN and share the queue with the terrain, which made the first tracks wait 2 s.
+  // Rebuilds (a mode or scale change) go to the workers so the page stays responsive.
+  pendingPrim = scene.primitives.add(new Cesium.Primitive({ geometryInstances: insts, appearance: new Cesium.PolylineColorAppearance(), asynchronous: !!tracksPrim }));
+  requestRender();
+}
+scene.postRender.addEventListener(() => {
+  if (!pendingPrim) return;
+  if (!pendingPrim.ready) { setTimeout(requestRender, 50); return; }
+  if (tracksPrim) scene.primitives.remove(tracksPrim);
+  tracksPrim = pendingPrim; pendingPrim = null;
+  if (!window.__tTracks) window.__tTracks = performance.now();
+  load.tracks = true;
+  requestRender();
+});
+
+// ---------- stations: dots and stems ----------
+let stationPts = null, stemsPrim = null;   // stemsPrim, discPrim: [far set, near set]
+function stationRGB(s) { return mode === 'line' ? [221, 221, 221] : rampRGB(mode === 'depth' ? s.z - s.ground : s.z); }
+function buildStations() {
+  const show = document.getElementById('show-stations').checked, s = S();
+  if (!stationPts) {
+    stationPts = scene.primitives.add(new Cesium.PointPrimitiveCollection());
+    DATA.stations.forEach((st, k) => stationPts.add({ id: { kind: 'station', k }, pixelSize: 7, outlineColor: Cesium.Color.fromCssColorString('#0a0a0a'), outlineWidth: 1 }));
+  }
+  for (let k = 0; k < stationPts.length; k++) {
+    const st = DATA.stations[k], p = stationPts.get(k), c = stationRGB(st);
+    p.position = Cesium.Cartesian3.fromDegrees(st.lon, st.lat, GEOID + st.z * s);
+    p.color = Cesium.Color.fromBytes(c[0], c[1], c[2], 255);
+    p.show = inLimit(st.lon, st.lat);   // none outside the square
+  }
+  stationPts.show = show;
+  load.stations = true;
+  // a stick from each dot to the ground above or below it, in the dot's colour: one batched
+  // primitive, one draw call (as a PolylineCollection each stick had its own material and draw call,
+  // which halved the frame rate). Stations within 0.3 m of the street get none.
+  // Two sets, one shown at a time (stickSets): "far", a stick per station dot; and "near", for
+  // once the station boxes are in (z15.4), where an elevated station's box gets a stick at each end
+  // of its platform instead (two per box), so neighbouring els read apart. Each set is one primitive.
+  const stick = (lon, lat, z, ground, rgb) => new Cesium.GeometryInstance({
+    geometry: new Cesium.PolylineGeometry({ width: 1, arcType: Cesium.ArcType.NONE,
+      positions: Cesium.Cartesian3.fromDegreesArrayHeights([lon, lat, GEOID + z * s, lon, lat, GEOID + ground * s]) }),
+    attributes: { color: Cesium.ColorGeometryInstanceAttribute.fromColor(Cesium.Color.fromBytes(...rgb, 190)) } });
+  const centre = DATA.stations.map((st, k) => [st, k]).filter(([st]) => Math.abs(st.z - st.ground) > 0.3 && inLimit(st.lon, st.lat));
+  const ends = boxEnds, split = new Set(ends.map(e => e.dot));
+  const stickPrim = insts => scene.primitives.add(new Cesium.Primitive({ show: false, allowPicking: false, asynchronous: false,
+    geometryInstances: insts, appearance: new Cesium.PolylineColorAppearance({ translucent: true }) }));
+  for (const p of stemsPrim || []) scene.primitives.remove(p);
+  stemsPrim = [
+    stickPrim(centre.map(([st]) => stick(st.lon, st.lat, st.z, st.ground, stationRGB(st)))),
+    stickPrim([...centre.filter(([, k]) => !split.has(k)).map(([st]) => stick(st.lon, st.lat, st.z, st.ground, stationRGB(st))),
+      ...ends.map(e => stick(e.lon, e.lat, e.z, e.ground, stationRGB(DATA.stations[e.dot])))]),
+  ];
+  buildDiscs();
+  showStickSet();
+  requestRender();
+}
+// the two ends of each elevated station box (data/platforms.json, set by startBoxes below):
+// [{ dot, lon, lat, z (rail, m NAVD88), ground }], two per box
+let boxEnds = [];
+function computeBoxEnds(boxes) {
+  const out = [];
+  for (const b of boxes) {
+    const st = b.dot == null ? null : DATA.stations[b.dot];
+    const ring = b.ring || [];
+    if (!st || ring.length < 3) continue;
+    const zMean = b.z.reduce((a, v) => a + v, 0) / b.z.length;
+    if (!(zMean > st.ground + 0.3)) continue;   // underground and street-level boxes keep one stick
+    // the long axis: the two ring points furthest apart; each end is the mean of the ring points
+    // within 12 m of that end along the axis
+    const kx = 111320 * Math.cos(ring[0][1] * Math.PI / 180), ky = 110540;
+    let A = 0, B = 1, best = -1;
+    for (let i = 0; i < ring.length; i++) for (let j = i + 1; j < ring.length; j++) {
+      const d = Math.hypot((ring[i][0] - ring[j][0]) * kx, (ring[i][1] - ring[j][1]) * ky);
+      if (d > best) { best = d; A = i; B = j; }
+    }
+    const ux = (ring[B][0] - ring[A][0]) * kx / best, uy = (ring[B][1] - ring[A][1]) * ky / best;
+    const t = ring.map(([lon, lat]) => (lon - ring[A][0]) * kx * ux + (lat - ring[A][1]) * ky * uy);
+    for (const near of [v => v < 12, v => v > best - 12]) {
+      const idx = t.map((v, i) => near(v) ? i : -1).filter(i => i >= 0);
+      const lon = idx.reduce((a, i) => a + ring[i][0], 0) / idx.length, lat = idx.reduce((a, i) => a + ring[i][1], 0) / idx.length;
+      const z = idx.reduce((a, i) => a + b.z[i], 0) / idx.length;
+      // the ground there: from the nearest point of the box's own tracks, else the station's
+      let ground = st.ground, gd = 60;
+      for (const id of b.tracks || []) {
+        const tr = DATA.tracks[idToTi.get(id)];
+        if (!tr) continue;
+        for (let i = 0; i < tr.lon.length; i++) {
+          const d = Math.hypot((tr.lon[i] - lon) * kx, (tr.lat[i] - lat) * ky);
+          if (d < gd) { gd = d; ground = tr.ground[i]; }
+        }
+      }
+      out.push({ dot: b.dot, lon, lat, z, ground });
+    }
+  }
+  return out;
+}
+// show the far or the near set of sticks and discs, by zoom (the boxes are fully in at z15.4)
+const BOXES_IN = 15.4;
+let stickNear = null;
+function showStickSet() {
+  const show = document.getElementById('show-stations').checked, near = view.zoom >= BOXES_IN && boxEnds.length > 0;
+  stickNear = near;
+  [stemsPrim, discPrim].forEach(set => (set || []).forEach((p, i) => { p.show = show && (i === 1) === near; }));
+}
+scene.preRender.addEventListener(() => {
+  if (stemsPrim && (view.zoom >= BOXES_IN && boxEnds.length > 0) !== stickNear) showStickSet();
+});
+// where the stick meets the ground, a small flat disc lying on the surface in the same colour, a
+// little transparent: 2.1 m across, grown when zoomed out so it stays about 4 px across, at most
+// 28 m (rebuilt in steps)
+let discPrim = null, discR = 0;
+function discRadius() {
+  const mpp = 2 * Math.PI * 6378137 * Math.cos(view.lat * Math.PI / 180) / (512 * 2 ** view.zoom);
+  return 0.7 * Math.min(20, Math.max(1.5, 2 ** Math.ceil(Math.log2(3 * mpp))));
+}
+function discGeometry(lon, lat, h, r, n = 16) {
+  const pts = [Cesium.Cartesian3.fromDegrees(lon, lat, h)];
+  const mLon = 1 / (111320 * Math.cos(lat * Math.PI / 180)), mLat = 1 / 110540;
+  for (let k = 0; k < n; k++) { const a = k / n * 2 * Math.PI; pts.push(Cesium.Cartesian3.fromDegrees(lon + r * Math.cos(a) * mLon, lat + r * Math.sin(a) * mLat, h)); }
+  const values = new Float64Array(pts.length * 3);
+  pts.forEach((p, i) => { values[i * 3] = p.x; values[i * 3 + 1] = p.y; values[i * 3 + 2] = p.z; });
+  const indices = new Uint16Array(n * 3);
+  for (let k = 0; k < n; k++) { indices[k * 3] = 0; indices[k * 3 + 1] = 1 + k; indices[k * 3 + 2] = 1 + (k + 1) % n; }
+  return new Cesium.Geometry({
+    attributes: { position: new Cesium.GeometryAttribute({ componentDatatype: Cesium.ComponentDatatype.DOUBLE, componentsPerAttribute: 3, values }) },
+    indices, primitiveType: Cesium.PrimitiveType.TRIANGLES, boundingSphere: Cesium.BoundingSphere.fromPoints(pts) });
+}
+function buildDiscs() {
+  if (!DATA) return;
+  const s = S(), r = discR = discRadius();
+  // a 16-sided triangle fan built by hand: Cesium's own Ellipse and Polygon geometries made
+  // long streaks across the map (or a render crash) at some settings
+  const disc = (lon, lat, ground, rgb) => new Cesium.GeometryInstance({
+    geometry: discGeometry(lon, lat, GEOID + ground * s + 0.3 * s, r),
+    attributes: { color: Cesium.ColorGeometryInstanceAttribute.fromColor(Cesium.Color.fromBytes(...rgb, 170)) } });
+  const discSet = insts => scene.primitives.add(new Cesium.Primitive({ show: false, allowPicking: false, asynchronous: false,
+    geometryInstances: insts, appearance: new Cesium.PerInstanceColorAppearance({ flat: true, translucent: true }) }));
+  // the far set: a disc per station; the near set: elevated boxed stations get one at each stick
+  const all = DATA.stations.map((st, k) => [st, k]).filter(([st]) => inLimit(st.lon, st.lat));
+  const split = new Set(boxEnds.map(e => e.dot));
+  for (const p of discPrim || []) scene.primitives.remove(p);
+  discPrim = [
+    discSet(all.map(([st]) => disc(st.lon, st.lat, st.ground, stationRGB(st)))),
+    discSet([...all.filter(([, k]) => !split.has(k)).map(([st]) => disc(st.lon, st.lat, st.ground, stationRGB(st))),
+      ...boxEnds.map(e => disc(e.lon, e.lat, e.ground, stationRGB(DATA.stations[e.dot])))]),
+  ];
+  stickNear = null;
+  if (stemsPrim) showStickSet();
+  requestRender();
+}
+let discPending = false;
+scene.preRender.addEventListener(() => {
+  if (!discPrim || discPending || discRadius() === discR) return;
+  discPending = true;
+  setTimeout(() => { discPending = false; buildDiscs(); }, 0);
+});
+
+// ---------- selection highlight and cursor ----------
+let selPrim = null, cursorPts = null;
+function buildSelection() {
+  if (selPrim) { scene.primitives.remove(selPrim); selPrim = null; }
+  if (selected) {
+    const T = DATA.tracks, s = S(), [r, g, b] = selected.rgb;
+    selPrim = scene.primitives.add(new Cesium.Primitive({ allowPicking: false, asynchronous: false,
+      geometryInstances: [...selected.tis].flatMap(ti => insideRuns(T[ti]).map(run => {
+        const t = T[ti], flat = [];
+        for (const i of run) flat.push(t.lon[i], t.lat[i], GEOID + t.z[i] * s);
+        return new Cesium.GeometryInstance({ geometry: new Cesium.PolylineGeometry({ positions: Cesium.Cartesian3.fromDegreesArrayHeights(flat), width: 7, arcType: Cesium.ArcType.NONE }),
+          attributes: { color: Cesium.ColorGeometryInstanceAttribute.fromColor(Cesium.Color.fromBytes(r, g, b, 120)) } });
+      })),
+      appearance: new Cesium.PolylineColorAppearance({ translucent: true, renderState: { depthTest: { enabled: false }, depthMask: false } }) }));
+  }
+  requestRender();
+}
+function setCursor(p) {
+  if (!cursorPts) cursorPts = scene.primitives.add(new Cesium.PointPrimitiveCollection());
+  cursorPts.removeAll();
+  if (p) cursorPts.add({ position: Cesium.Cartesian3.fromDegrees(p.lon, p.lat, GEOID + p.z * S()), pixelSize: 10, color: Cesium.Color.WHITE,
+    outlineColor: Cesium.Color.BLACK, outlineWidth: 1, disableDepthTestDistance: Number.POSITIVE_INFINITY });
+  requestRender();
+}
+
+// ---------- water ----------
+// data/water.json (make_water.py: the OSM coastline, piers cut out), flat at NAVD88 0, a dark blue
+// at the deck.gl page's opacity (partly see-through), drawn over the translucent ground. Fine granularity so the
+// surface follows the ellipsoid's curve instead of cutting chords under it.
+function addWater(fc) {
+  if (!fc) return;
+  const ring = r => Cesium.Cartesian3.fromDegreesArray(r.slice(0, -1).flat());
+  const colour = Cesium.ColorGeometryInstanceAttribute.fromColor(Cesium.Color.fromBytes(40, 84, 140, 150));
+  // clipped to the square (each ring against the rectangle, Sutherland-Hodgman; rings left with
+  // fewer than 3 points are dropped): the water used to float over the black beyond the terrain
+  const clip = r => {
+    let pts = r.slice(0, -1);
+    for (const [axis, lim, keepAbove] of [[0, LIMIT[0], true], [0, LIMIT[2], false], [1, LIMIT[1], true], [1, LIMIT[3], false]]) {
+      const inside = p => keepAbove ? p[axis] >= lim : p[axis] <= lim, out = [];
+      pts.forEach((p, i) => {
+        const q = pts[(i + pts.length - 1) % pts.length], pi = inside(p), qi = inside(q);
+        if (pi !== qi) { const t = (lim - q[axis]) / (p[axis] - q[axis]); out.push([q[0] + (p[0] - q[0]) * t, q[1] + (p[1] - q[1]) * t]); }
+        if (pi) out.push(p);
+      });
+      pts = out;
+      if (pts.length < 3) return null;
+    }
+    return [...pts, pts[0]];
+  };
+  const polys = fc.features.flatMap(f => f.geometry.type === 'Polygon' ? [f.geometry.coordinates] : f.geometry.coordinates)
+    .map(p => { const outer = clip(p[0]); return outer && [outer, ...p.slice(1).map(clip).filter(Boolean)]; }).filter(Boolean);
+  scene.primitives.add(new Cesium.Primitive({ allowPicking: false,
+    geometryInstances: polys.map(p => new Cesium.GeometryInstance({
+      geometry: new Cesium.PolygonGeometry({
+        polygonHierarchy: new Cesium.PolygonHierarchy(ring(p[0]), p.slice(1).map(h => new Cesium.PolygonHierarchy(ring(h)))),
+        height: GEOID, granularity: 0.00005, vertexFormat: Cesium.PerInstanceColorAppearance.FLAT_VERTEX_FORMAT }),
+      attributes: { color: colour } })),
+    appearance: new Cesium.PerInstanceColorAppearance({ flat: true, translucent: true }) }));
+}
+
+// ---------- portals ----------
+// One arch per tunnel mouth (portals in tracks.json: rail height, bearing into the tunnel, number
+// of parallel tracks merged), standing across the track at rail height x the vertical scale:
+// 4.5 m per track + 1 m wide, straight sides then an elliptical crown, a light ring around a
+// near-black opening, a thin darker outline. Its own height is scaled by the square root of the
+// vertical scale only (full scale made a single-track arch 20 m tall and 5.5 m wide). Always true
+// size with a 1.2 m ring (enlarging it when far made flat paper cutouts): zoomed out it is just
+// small, and it fades in from z13 to z14. A white cape trails behind each arch on the tunnel side,
+// fading out over about one arch-width, so it reads which way goes into the ground. Not pickable.
+let portalPrims = [], portalAlpha = -1;
+const RING = [200, 205, 210], HOLE = [12, 12, 14];
+const edgeMat = Cesium.Material.fromType('Color', { color: Cesium.Color.fromBytes(90, 94, 100, 220) });
+// the capes' white, fading along st.t; `fade` carries the zoom fade-in
+const capeMat = new Cesium.Material({ fabric: { type: 'TrackdepthCape', uniforms: { fade: 0 }, source: `
+czm_material czm_getMaterial(czm_materialInput materialInput) {
+  czm_material m = czm_getDefaultMaterial(materialInput);
+  float t = materialInput.st.t;
+  m.diffuse = vec3(0.92, 0.93, 0.95);
+  m.alpha = 0.5 * (1.0 - t) * (1.0 - t) * fade;
+  return m;
+}` } });
+function archOutline(halfW, side, crown, n = 16) {
+  // points (x across, y up) from the left foot over the crown to the right foot
+  const out = [[-halfW, 0], [-halfW, side]];
+  for (let k = 1; k < n; k++) { const a = Math.PI - Math.PI * k / n; out.push([halfW * Math.cos(a), side + crown * Math.sin(a)]); }
+  out.push([halfW, side], [halfW, 0]);
+  return out;
+}
+function buildPortals() {
+  portalPrims.forEach(p => scene.primitives.remove(p));
+  portalPrims = [];
+  if (!DATA.portals || !DATA.portals.length) return;
+  const s = S(), hs = Math.sqrt(s), rings = [], holes = [], edges = [], capes = [];
+  const vf = Cesium.PerInstanceColorAppearance.FLAT_VERTEX_FORMAT;
+  const colour = rgb => ({ color: Cesium.ColorGeometryInstanceAttribute.fromColor(Cesium.Color.fromBytes(...rgb, 0)) });
+  for (const [pi, p] of DATA.portals.entries()) {
+    if (!inLimit(p.lon, p.lat)) continue;   // none outside the square
+    const b = p.bearing * Math.PI / 180, ax = Math.cos(b), ay = -Math.sin(b);   // across, in (east, north)
+    const mLon = 1 / (111320 * Math.cos(p.lat * Math.PI / 180)), mLat = 1 / 110540;
+    const base = GEOID + p.z * s;
+    const Wd = 4.5 * p.tracks + 1, side = 3.5 * hs, crown = Math.min(Wd / 2, 3) * hs, t = 1.2;
+    const at = x => [p.lon + x * ax * mLon, p.lat + x * ay * mLat];
+    // the ring: a wall whose bottom follows the opening and whose top follows the outer arch
+    const outer = archOutline(Wd / 2 + t, side, crown + t), inner = archOutline(Wd / 2, side, crown);
+    const xs = [], mins = [], maxs = [];
+    const N = 40, R = Wd / 2 + t;
+    const topAt = (arch, x) => {   // height of an arch outline at x
+      for (let i = 1; i < arch.length; i++) {
+        const [x0, y0] = arch[i - 1], [x1, y1] = arch[i];
+        if ((x - x0) * (x - x1) <= 0 && x1 !== x0) return y0 + (y1 - y0) * (x - x0) / (x1 - x0);
+      }
+      return arch[1][1];
+    };
+    for (let i = 0; i <= N; i++) {
+      const x = -R + 2 * R * i / N;
+      const inside = Math.abs(x) < Wd / 2 - 1e-3;
+      xs.push(x); mins.push(inside ? topAt(inner, x) : 0); maxs.push(topAt(outer, x));
+      if (Math.abs(Math.abs(x) - Wd / 2) < R / N && !inside) { /* keep */ }
+    }
+    const wall = (xa, lo, hi) => new Cesium.WallGeometry({ vertexFormat: vf,
+      positions: Cesium.Cartesian3.fromDegreesArray(xa.flatMap(x => at(x))), minimumHeights: lo.map(h => base + h), maximumHeights: hi.map(h => base + h) });
+    rings.push(new Cesium.GeometryInstance({ id: 'r' + pi, geometry: wall(xs, mins, maxs), attributes: colour(RING) }));
+    // the opening, near-black, just behind the ring (a hair into the tunnel)
+    const hx = [], hlo = [], hhi = [];
+    for (let i = 0; i <= 24; i++) { const x = -Wd / 2 + Wd * i / 24; hx.push(x); hlo.push(0); hhi.push(topAt(inner, Math.max(-Wd / 2 + 1e-3, Math.min(Wd / 2 - 1e-3, x)))); }
+    holes.push(new Cesium.GeometryInstance({ id: 'h' + pi, geometry: wall(hx, hlo, hhi), attributes: colour(HOLE) }));
+    // the cape: the outer arch swept back along the track into the tunnel side, 1.25 arch-widths
+    // long, white fading from the arch to nothing (st.t runs 0 at the arch to 1 at its end)
+    {
+      const L = 1.25 * (Wd + 2 * t), M = 8, np = outer.length, dx = Math.sin(b), dy = Math.cos(b);
+      const pos = [], st = [], idx = [];
+      for (let k = 0; k <= M; k++) {
+        const d = L * k / M;
+        outer.forEach(([x, y], i) => {
+          const c = Cesium.Cartesian3.fromDegrees(p.lon + (x * ax + d * dx) * mLon, p.lat + (x * ay + d * dy) * mLat, base + y);
+          pos.push(c.x, c.y, c.z); st.push(i / (np - 1), k / M);
+        });
+      }
+      for (let k = 0; k < M; k++) for (let i = 0; i + 1 < np; i++) {
+        const a0 = k * np + i, a1 = a0 + 1, b0 = a0 + np, b1 = b0 + 1;
+        idx.push(a0, b0, a1, a1, b0, b1);
+      }
+      const P = new Float64Array(pos);
+      capes.push(new Cesium.GeometryInstance({ geometry: new Cesium.Geometry({
+        attributes: {
+          position: new Cesium.GeometryAttribute({ componentDatatype: Cesium.ComponentDatatype.DOUBLE, componentsPerAttribute: 3, values: P }),
+          st: new Cesium.GeometryAttribute({ componentDatatype: Cesium.ComponentDatatype.FLOAT, componentsPerAttribute: 2, values: new Float32Array(st) }),
+        },
+        indices: new Uint16Array(idx), primitiveType: Cesium.PrimitiveType.TRIANGLES,
+        boundingSphere: Cesium.BoundingSphere.fromVertices(Array.from(P)) }) }));
+    }
+    // the outline around the outside of the ring
+    edges.push(new Cesium.GeometryInstance({ geometry: new Cesium.PolylineGeometry({ width: 1, arcType: Cesium.ArcType.NONE,
+      positions: Cesium.Cartesian3.fromDegreesArrayHeights(outer.flatMap(([x, y]) => [...at(x), base + y])),
+      vertexFormat: Cesium.PolylineMaterialAppearance.VERTEX_FORMAT }) }));
+  }
+  const app = () => new Cesium.PerInstanceColorAppearance({ flat: true, translucent: true, closed: false });
+  portalPrims = [
+    // the near-black opening is kept but hidden: open arches read better with the capes (2026-11-02)
+    new Cesium.Primitive({ geometryInstances: holes, appearance: app(), allowPicking: false, asynchronous: false, releaseGeometryInstances: false, show: false }),
+    new Cesium.Primitive({ geometryInstances: rings, appearance: app(), allowPicking: false, asynchronous: false, releaseGeometryInstances: false }),
+    new Cesium.Primitive({ geometryInstances: edges, appearance: new Cesium.PolylineMaterialAppearance({ material: edgeMat }), allowPicking: false, asynchronous: false }),
+    new Cesium.Primitive({ geometryInstances: capes, allowPicking: false, asynchronous: false,
+      appearance: new Cesium.MaterialAppearance({ material: capeMat, flat: true, translucent: true, closed: false,
+        vertexFormat: Cesium.MaterialAppearance.MaterialSupport.TEXTURED.vertexFormat, renderState: { depthMask: false } }) }),
+  ].map(p => scene.primitives.add(p));
+  portalAlpha = -1;
+  requestRender();
+}
+// per-instance colours carry the fade (set once the primitives exist, and when it changes)
+function fadePortals(a) {
+  if (Math.abs(a - portalAlpha) < 0.02 || !portalPrims.length || !portalPrims[1].ready) return;
+  portalAlpha = a;
+  const [holes, rings] = portalPrims;
+  DATA.portals.forEach((p, pi) => {
+    const r = rings.getGeometryInstanceAttributes('r' + pi), h = holes.getGeometryInstanceAttributes('h' + pi);
+    if (r) r.color = Cesium.ColorGeometryInstanceAttribute.toValue(Cesium.Color.fromBytes(...RING, Math.round(205 * a)));
+    if (h) h.color = Cesium.ColorGeometryInstanceAttribute.toValue(Cesium.Color.fromBytes(...HOLE, Math.round(215 * a)));
+  });
+  requestRender();
+}
+// fade in from z13 to z14 (hidden further out, where they would be a few pixels)
+scene.preRender.addEventListener(() => {
+  if (!portalPrims.length) return;
+  const a = is3D ? smooth(13, 14, view.zoom) : 0; 
+  portalPrims.forEach(p => p.show = a > 0.01);
+  edgeMat.uniforms.color.alpha = 0.85 * a;
+  capeMat.uniforms.fade = a;
+  if (!portalPrims[1].ready) setTimeout(requestRender, 50); else fadePortals(a);
+});
+
+// ---------- hovers and clicks ----------
+// Everything under the cursor: stations first, then every track (each once). Cesium's drillPick
+// over a 9 px box, so thin lines are easy to hit; tracks behind the translucent ground are hit too.
+function hitsAt(x, y) {
+  const st = [], tracks = [], seen = new Set();
+  if (!DATA) return { st, tracks };
+  let picks = [];
+  try { picks = scene.drillPick(new Cesium.Cartesian2(x, y), 8, 9, 9); } catch (e) { picks = []; }
+  for (const p of picks) {
+    const id = p && p.id;
+    if (!id || !id.kind) continue;
+    if (id.kind === 'station') { if (document.getElementById('show-stations').checked && !st.length) st.push(id.k); continue; }
+    if (id.kind === 'track' && !seen.has(id.ti)) { seen.add(id.ti); tracks.push({ ti: id.ti, i: nearestPointOnScreen(id.ti, x, y) }); }
+  }
+  return { st, tracks };
+}
+const toWindow = Cesium.SceneTransforms.worldToWindowCoordinates || Cesium.SceneTransforms.wgs84ToWindowCoordinates;
+function nearestPointOnScreen(ti, x, y) {
+  const t = DATA.tracks[ti], s = S(), out = new Cesium.Cartesian2();
+  let best = 0, bd = Infinity;
+  for (let i = 0; i < t.lon.length; i++) {
+    const w = toWindow(scene, Cesium.Cartesian3.fromDegrees(t.lon[i], t.lat[i], GEOID + t.z[i] * s), out);
+    if (!w) continue;
+    const d = (w.x - x) ** 2 + (w.y - y) ** 2;
+    if (d < bd) { bd = d; best = i; }
+  }
+  return best;
+}
+// Hovers: whole metres, one entry per level. Tracks under the cursor within 2 m of each other in
+// height are one entry (parallel tracks on one level), with all their services' bullets.
+const hoverHeight = (v, sd) => {
+  const m = Math.round(Math.abs(v)), where = basis === 'depth' ? 'surface' : 'sea level';
+  return `<span style="white-space:nowrap">${m} m ${v >= 0 || m === 0 ? 'above' : 'below'} ${where} &plusmn; ${Math.max(1, Math.round(sd))}</span>`;
+};
+const bullets = list => list.map(si => bulletHTML(SERVICES[si], 'small')).join('');
+function trackEntries(tracks) {
+  const T = DATA.tracks, val = h => basis === 'depth' ? T[h.ti].z[h.i] - T[h.ti].ground[h.i] : T[h.ti].z[h.i];
+  tracks.sort((a, b) => val(b) - val(a));
+  if (document.getElementById('by-track').checked) {
+    return tracks.slice(0, 3).map(h => {
+      const t = T[h.ti];
+      return `<div class="pe">${t.name || 'Unnamed track'}${t.track ? ' · track ' + t.track : ''}<br>${bullets(svcOfTrack(h.ti))}${hoverHeight(val(h), t.sd[h.i])}</div>`;
+    }).join('');
+  }
+  const groups = [];
+  for (const h of tracks) {
+    const g = groups[groups.length - 1];
+    if (g && g.top - val(h) <= 2) g.list.push(h); else groups.push({ top: val(h), list: [h] });
+  }
+  return groups.slice(0, 3).map(g => {
+    const mean = g.list.reduce((s, h) => s + val(h), 0) / g.list.length;
+    const sd = Math.max(...g.list.map(h => T[h.ti].sd[h.i]));
+    const sv = [...new Set(g.list.flatMap(h => svcOfTrack(h.ti)))].sort((a, b) => a - b);
+    return `<div class="pe">${bullets(sv)}${hoverHeight(mean, sd)}</div>`;
+  }).join('');
+}
+const pop = document.getElementById('pop');
+function hidePop() { pop.style.display = 'none'; el.style.cursor = ''; if (mapHair) { mapHair = false; hideHair(); } }
+function showPop(x, y, html) {
+  pop.innerHTML = html;
+  pop.style.display = 'block';
+  const w = pop.offsetWidth, h = pop.offsetHeight, W = innerWidth;
+  pop.style.left = Math.min(x + 12, W - w - 6) + 'px';
+  pop.style.top = Math.max(6, y - h - 12) + 'px';
+}
+let hoverPending = null, mapHair = false;
+function onHover(x, y) {
+  if (!DATA) return;
+  if (hoverPending) { hoverPending = [x, y]; return; }
+  hoverPending = [x, y];
+  requestAnimationFrame(() => {
+    const [hx, hy] = hoverPending; hoverPending = null;
+    const { st, tracks } = hitsAt(hx, hy);
+    if (!st.length && !tracks.length) { hidePop(); return; }
+    el.style.cursor = 'pointer';
+    let html;
+    if (st.length) {
+      const s = DATA.stations[st[0]];
+      html = `${s.name} · ${s.line}<br>${hoverHeight(basis === 'depth' ? s.z - s.ground : s.z, s.sd)}`;
+    } else {
+      html = trackEntries(tracks);
+    }
+    showPop(hx, hy, html);
+    // over the open line: the profile's hairline follows the cursor
+    const on = selected && tracks.find(h => selected.tis.has(h.ti));
+    if (on) {
+      // the same point if the profile runs on this track; else (the other direction's track) the
+      // profile's nearest point within 60 m
+      let best = -1, bd = Infinity;
+      selected.pts.forEach((p, k) => { if (p.ti === on.ti) { const d = Math.abs(p.j - on.i); if (d < bd) { bd = d; best = k; } } });
+      if (best < 0) {
+        const t = DATA.tracks[on.ti], q = [t.lon[on.i], t.lat[on.i]];
+        selected.pts.forEach((p, k) => { const d = metres([p.lon, p.lat], q); if (d < bd && d < 60) { bd = d; best = k; } });
+      }
+      if (best >= 0) { showHair(selected.pts[best], false); mapHair = true; }
+    } else if (mapHair) { mapHair = false; hideHair(); }
+  });
+}
+
+// Clicking a track opens the service that runs on it. Clicking the same spot again steps to
+// the next service there (4, 5, 6 on Lexington), or the next track down with single tracks.
+let lastPick = null;
+function onClick(x, y) {
+  if (!DATA) return;
+  const { st, tracks } = hitsAt(x, y);
+  if (!tracks.length) {
+    if (!st.length) closeProfile();
+    return;
+  }
+  const byTrack = document.getElementById('by-track').checked;
+  const t = DATA.tracks;
+  tracks.sort((a, b) => (t[b.ti].z[b.i] - t[b.ti].ground[b.i]) - (t[a.ti].z[a.i] - t[a.ti].ground[a.i]));
+  if (byTrack) {
+    const key = 't' + tracks.map(h => h.ti).join(',');
+    const n = lastPick && lastPick.key === key ? (lastPick.n + 1) % tracks.length : 0;
+    lastPick = { key, n };
+    openChain(tracks[n].ti, tracks[n].i);
+    return;
+  }
+  // services on the exact tracks under the cursor, in bullet order; else on track nearby
+  let opts = [];
+  for (const h of tracks) for (const x of wayToSvc.get(t[h.ti].id) || []) {
+    if (!opts.some(o => o.s === x.s)) opts.push({ s: x.s, ti: h.ti, i: h.i });
+  }
+  if (!opts.length) opts = nearbyServices(t[tracks[0].ti].lon[tracks[0].i], t[tracks[0].ti].lat[tracks[0].i], 40);
+  if (!opts.length) { openChain(tracks[0].ti, tracks[0].i); return; }
+  // services that run there full time come first (the 6 before the late-night 4 on the local track)
+  const partTime = o => SERVICES[o.s].variants.some(v => !v.when && v.ways.some(([id]) => id === t[o.ti].id)) ? 0 : 1;
+  opts.forEach(o => { o.pt = partTime(o); });
+  opts.sort((a, b) => a.pt - b.pt || a.s - b.s);
+  const key = 's' + opts.map(o => o.s).join(',');
+  const n = lastPick && lastPick.key === key ? (lastPick.n + 1) % opts.length : 0;
+  lastPick = { key, n };
+  const o = opts[n];
+  openService(o.s, variantWith(o.s, t[o.ti].id), { ti: o.ti, i: o.i });
+}
+function nearbyServices(lon, lat, maxM) {
+  const cx = Math.floor(lon / GRID), cy = Math.floor(lat / GRID), found = new Map();
+  for (let dx = -1; dx <= 1; dx++) for (let dy = -1; dy <= 1; dy++) {
+    const cell = grid.get((cx + dx) + ',' + (cy + dy)) || [];
+    for (let k = 0; k < cell.length; k += 2) {
+      const ti = cell[k], i = cell[k + 1], tr = DATA.tracks[ti];
+      const svc = wayToSvc.get(tr.id);
+      if (!svc) continue;
+      const d = metres([tr.lon[i], tr.lat[i]], [lon, lat]);
+      if (d > maxM) continue;
+      for (const x of svc) if (!found.has(x.s) || found.get(x.s).d > d) found.set(x.s, { s: x.s, ti, i, d });
+    }
+  }
+  return [...found.values()];
+}
+function variantWith(si, wayId) {
+  const vs = SERVICES[si].variants;
+  const k = vs.findIndex(v => v.ways.some(([id]) => id === wayId));
+  return k < 0 ? 0 : k;
+}
+
+// ---------- modes, 3D, scale ----------
+// Everything is redrawn for a change of colouring or vertical scale: tracks, stations, the
+// selection, the portals.
+function redraw() {
+  if (!DATA) return;
+  scene.verticalExaggeration = S();
+  contours.uniforms.scale = S();
+  buildBackdrop();
+  buildTracks();
+  buildStations();
+  buildSelection();
+  buildPortals();
+  window.trackdepth && window.trackdepth._scaleChanged();
+}
+function setMode(m) {
+  mode = m;
+  if (m !== 'line') basis = m;
+  document.querySelectorAll('[data-mode]').forEach(b => b.classList.toggle('active', b.dataset.mode === m));
+  document.body.classList.toggle('line-mode', m === 'line');
+  drawLegend();
+  hidePop();
+  if (DATA) { buildTracks(); buildStations(); }
+  if (selected) drawChart();
+  writeHash();
+  window.dispatchEvent(new CustomEvent('trackdepth:mode', { detail: { mode } }));   // station boxes retint
+}
+document.querySelectorAll('[data-mode]').forEach(b => b.onclick = () => setMode(b.dataset.mode));
+const exagIn = document.getElementById('exag-in');
+const showExag = () => { document.getElementById('exag-val').textContent = exag + '×'; };
+showExag();
+// The ground follows the slider at once (scene.verticalExaggeration is applied on the GPU); the
+// tracks and the rest are rebuilt a moment after it stops.
+let scaleTimer = null;
+exagIn.oninput = () => {
+  exag = +exagIn.value; showExag();
+  scene.verticalExaggeration = S();
+  contours.uniforms.scale = S();
+  apply();
+  clearTimeout(scaleTimer); scaleTimer = setTimeout(redraw, 120);
+};
+// trains.js (loaded after this script) draws the trains; this box shows or hides them (#notrains)
+document.getElementById('show-trains').onchange = () => {
+  const on = document.getElementById('show-trains').checked;
+  if (window.trackdepth && window.trackdepth.trains) window.trackdepth.trains.setVisible(on);
+  writeHash();
+};
+// Pause: stops the trains (trains.js keeps its clock still while paused); the button or the space
+// bar. Space does nothing else on this page (no scrolling, no pressing a focused button or
+// checkbox) and is left alone while typing in a text field.
+let paused = false;
+function setPaused(p) {
+  paused = p;
+  const tr = window.trackdepth && window.trackdepth.trains;
+  if (tr && tr.setPaused) tr.setPaused(p); else if (tr) tr.paused = p;   // setPaused: newer trains.js
+  const b = document.getElementById('btn-pause');
+  b.title = p ? 'Resume trains' : 'Pause trains';
+  b.classList.toggle('active', p);
+  b.querySelector('.ico-pause').style.display = p ? 'none' : '';
+  b.querySelector('.ico-play').style.display = p ? '' : 'none';
+  requestRender();
+}
+// Phones: the settings fold away to the mode row (remembered for the session)
+{
+  const lg = document.getElementById('legend'), fb = document.getElementById('btn-fold');
+  const fold = f => { lg.classList.toggle('folded', f); fb.title = f ? 'Show settings' : 'Hide settings'; try { sessionStorage.setItem('td-folded', f ? '1' : ''); } catch (e) {} };
+  let saved = null;
+  try { saved = sessionStorage.getItem('td-folded'); } catch (e) {}
+  if (saved != null) fold(saved === '1');
+  fb.onclick = () => fold(!lg.classList.contains('folded'));
+}
+document.getElementById('btn-pause').onclick = e => { setPaused(!paused); e.currentTarget.blur(); };
+const typing = t => t && (t.isContentEditable || t.tagName === 'TEXTAREA' || (t.tagName === 'INPUT' && !['checkbox', 'radio', 'range', 'button'].includes(t.type)));
+window.addEventListener('keydown', e => {
+  if (e.code !== 'Space' || typing(e.target)) return;
+  e.preventDefault(); e.stopPropagation();
+  if (!e.repeat) setPaused(!paused);
+}, true);
+window.addEventListener('keyup', e => { if (e.code === 'Space' && !typing(e.target)) { e.preventDefault(); e.stopPropagation(); } }, true);
+document.getElementById('show-stations').onchange = () => {
+  if (DATA) buildStations();
+  window.dispatchEvent(new CustomEvent('trackdepth:stations', { detail: { show: document.getElementById('show-stations').checked } }));
+};
+
+// ---------- selection ----------
+// Points of one track, whole (rev: backwards) or the stretch between fractions f0 and f1 of its
+// length (services.json runs; f0 > f1 runs backwards).
+function trackPoints(ti, rev, f0 = 0, f1 = 1) {
+  const t = DATA.tracks[ti];
+  if (!t.cum) {
+    t.cum = [0];
+    for (let i = 1; i < t.lon.length; i++) t.cum.push(t.cum[i - 1] + metres([t.lon[i - 1], t.lat[i - 1]], [t.lon[i], t.lat[i]]));
+  }
+  const tot = t.cum[t.cum.length - 1] || 1, a = Math.min(f0, f1) * tot - 13, b = Math.max(f0, f1) * tot + 13;
+  let idx = [...t.lon.keys()].filter(j => t.cum[j] >= a && t.cum[j] <= b);
+  if (rev || f0 > f1) idx.reverse();
+  return idx.map(j => ({ ti, j, lon: t.lon[j], lat: t.lat[j], g: t.ground[j], z: t.z[j], sd: t.sd[j], bed: t.bed ? t.bed[j] : null }));
+}
+// Lay track pieces end to end. Each piece is flipped if the given direction leaves a gap and the
+// other one doesn't; a real gap (a way missing from the data) lifts the pen.
+function layOut(pieces) {
+  const pts = [];
+  let d = 0;
+  for (let [ti, rev, f0, f1] of pieces) {
+    let p = trackPoints(ti, rev, f0, f1);
+    if (!p.length) continue;
+    if (pts.length && f0 == null) {
+      const last = pts[pts.length - 1], a = [p[0].lon, p[0].lat], b = [p[p.length - 1].lon, p[p.length - 1].lat], l = [last.lon, last.lat];
+      if (metres(l, a) > 30 && metres(l, b) < metres(l, a)) p = p.reverse();
+    }
+    for (const q of p) {
+      if (pts.length) {
+        const last = pts[pts.length - 1], m = metres([last.lon, last.lat], [q.lon, q.lat]);
+        if (m < 0.5) continue;
+        if (m > 60) q.brk = true;
+        d += m;
+      }
+      q.d = d; pts.push(q);
+    }
+  }
+  return westFirst(pts);
+}
+// Every profile is drawn with its west end (smaller longitude) on the left, whichever way the
+// train runs. `flipped` says the points now run against the direction of travel.
+function westFirst(pts) {
+  if (pts.length < 2 || pts[0].lon <= pts[pts.length - 1].lon) { pts.flipped = false; return pts; }
+  const out = pts.slice().reverse();
+  let d = 0;
+  out.forEach((q, k) => {
+    q.brk = false;
+    if (k) {
+      const m = metres([out[k - 1].lon, out[k - 1].lat], [q.lon, q.lat]);
+      if (m > 60) q.brk = true;
+      d += m;
+    }
+    q.d = d;
+  });
+  out.flipped = true;
+  return out;
+}
+// Chain ways with the same name and track ref through shared end points.
+function chainFrom(ti) {
+  const t0 = DATA.tracks[ti];
+  const same = DATA.tracks.map((t, i) => i).filter(i => DATA.tracks[i].name === t0.name && DATA.tracks[i].track === t0.track);
+  const k = (t, end) => end ? `${t.lon[t.lon.length - 1]},${t.lat[t.lat.length - 1]}` : `${t.lon[0]},${t.lat[0]}`;
+  const ends = new Map();
+  for (const i of same) for (const e of [0, 1]) {
+    const key = k(DATA.tracks[i], e);
+    if (!ends.has(key)) ends.set(key, []);
+    ends.get(key).push([i, e]);
+  }
+  const used = new Set([ti]);
+  const walk = (key) => {
+    const seq = [];
+    while (true) {
+      const next = (ends.get(key) || []).filter(([i]) => !used.has(i));
+      if (next.length !== 1) break;
+      const [i, e] = next[0];
+      used.add(i);
+      const rev = e === 1;
+      seq.push([i, rev]);
+      key = k(DATA.tracks[i], rev ? 0 : 1);
+    }
+    return seq;
+  };
+  const fwd = walk(k(t0, 1));
+  const back = walk(k(t0, 0)).map(([i, rev]) => [i, !rev]).reverse();
+  return [...back, [ti, false], ...fwd];
+}
+function openChain(ti, pi) {
+  const chain = chainFrom(ti), pts = layOut(chain), t0 = DATA.tracks[ti];
+  const here = pts.findIndex(p => p.ti === ti && p.j === pi);
+  showSelection({ pts, here, colour: '#cfd9e4', rgb: [255, 255, 255], service: null, tis: new Set(chain.map(c => c[0])), stations: stationsAlong(pts, { stops: [] }),
+    title: (t0.name || 'Unnamed track') + (t0.track ? ' · track ' + t0.track : '') });
+}
+function openService(si, vi, at) {
+  const s = SERVICES[si], v = s.variants[vi];
+  const pieces = v.ways.filter(([id]) => idToTi.has(id)).map(([id, f0, f1]) => [idToTi.get(id), false, f0, f1]);
+  if (!pieces.length) return;
+  const pts = layOut(pieces);
+  const tis = new Set();
+  for (const vv of s.variants) for (const [id] of vv.ways) if (idToTi.has(id)) tis.add(idToTi.get(id));
+  let here = -1;
+  if (at) here = pts.findIndex(p => p.ti === at.ti && p.j === at.i);
+  const stations = stationsAlong(pts, v, !!s.system);
+  const end = pts.flipped ? stations[0] : stations[stations.length - 1];
+  const to = end ? end.name : v.to.replace(/\s+/g, ' ').trim();
+  showSelection({ pts, here, colour: rgbStr(lineColour(s.colour)), rgb: hex(s.colour), service: si, variant: vi, tis,
+    stations, title: (to ? 'to ' + to : s.name) + (v.when ? ' · ' + v.when : '') });
+}
+// Stops of the service along its profile: OSM stop positions, named after the nearest MTA
+// station of the same depth. Routes without stops fall back to stations right on the track.
+const ABBR = { street: 'st', avenue: 'av', ave: 'av', road: 'rd', boulevard: 'blvd', parkway: 'pkwy', place: 'pl', square: 'sq',
+  heights: 'hts', junction: 'jct', center: 'ctr', plaza: 'plz', east: 'e', west: 'w', north: 'n', south: 's' };
+function nameWords(n) {
+  return new Set(n.toLowerCase().replace(/(\d+)(st|nd|rd|th)\b/g, '$1').split(/[^a-z0-9]+/).filter(Boolean).map(w => ABBR[w] || w)
+    .filter(w => !['st', 'av', 'the', 'and'].includes(w)));
+}
+function stationsAlong(pts, v, own = false) {
+  const nearest = (lon, lat) => {
+    let best = -1, bd = Infinity;
+    for (let k = 0; k < pts.length; k += 1) {
+      const d = metres([pts[k].lon, pts[k].lat], [lon, lat]);
+      if (d < bd) { bd = d; best = k; }
+    }
+    return [best, bd];
+  };
+  const out = [];
+  if (v.stops && v.stops.length) {
+    for (const [lon, lat, name] of v.stops) {
+      const [k, d] = nearest(lon, lat);
+      if (k < 0 || d > 150) continue;
+      let nm = name, bs = Infinity;
+      const want = nameWords(name);
+      for (const s of DATA.stations) {
+        const dd = metres([s.lon, s.lat], [lon, lat]);
+        if (dd > 250) continue;
+        const got = nameWords(s.name), same = [...want].filter(w => got.has(w)).length / Math.max(1, Math.min(want.size, got.size));
+        const score = dd + 8 * Math.abs(s.z - pts[k].z) - (same >= 0.5 ? 300 : 0);
+        if (score < bs) { bs = score; nm = s.name; }
+      }
+      // On a rail line other than the subway, the nearest station can be a different one that
+      // shares most words (Grand Central Madison beside Grand Central Terminal): when neither
+      // name's words contain the other's, keep the stop's own name. The subway keeps the MTA's.
+      if (own) {
+        const a = nameWords(name), b = nameWords(nm);
+        if (![...a].every(w => b.has(w)) && ![...b].every(w => a.has(w))) nm = name;
+      }
+      if (!out.length || (out[out.length - 1].k !== k && out[out.length - 1].name !== nm)) out.push({ k, name: nm });
+    }
+  } else {
+    for (const s of DATA.stations) {
+      const [k, d] = nearest(s.lon, s.lat);
+      if (d < 40 && Math.abs(s.z - pts[k].z) < 4) out.push({ k, name: s.name });
+    }
+  }
+  return out.sort((a, b) => a.k - b.k);
+}
+function showSelection(sel) {
+  selected = sel;
+  setCursor(null);
+  document.getElementById('pname').textContent = sel.title;
+  document.getElementById('pbul').innerHTML = sel.service == null ? '' : bulletHTML(SERVICES[sel.service], 'small');
+  document.getElementById('flip').hidden = sel.service == null || SERVICES[sel.service].variants.length < 2;
+  document.getElementById('pread').textContent = '';
+  document.body.classList.add('has-profile');
+  document.getElementById('profile').classList.add('open');
+  drawBullets();
+  drawChart();
+  buildSelection();
+  writeHash();
+}
+// bring a service picked from its bullet into view, clear of the panels: the zoom that fits the
+// line's extent (turned to the current bearing, its depth along the view foreshortened by the
+// pitch) into the space between the panels, centred there
+function fitSelection() {
+  if (!selected) return;
+  let w = 180, s = 90, e = -180, n = -90;
+  for (const p of selected.pts) { w = Math.min(w, p.lon); e = Math.max(e, p.lon); s = Math.min(s, p.lat); n = Math.max(n, p.lat); }
+  const narrow = innerWidth <= 640, prof = document.getElementById('profile').offsetHeight;
+  const pad = narrow ? { top: 200, bottom: prof + 60, left: 20, right: 20 } : { top: 180, bottom: prof + 30, left: 40, right: 40 };
+  const availW = innerWidth - pad.left - pad.right, availH = innerHeight - pad.top - pad.bottom;
+  if (availH < 120) return;
+  const lat0 = (s + n) / 2, kx = 111320 * Math.cos(lat0 * Math.PI / 180), ky = 110540, br = view.bearing * Math.PI / 180;
+  let u0 = Infinity, u1 = -Infinity, v0 = Infinity, v1 = -Infinity;
+  for (const [lo, la] of [[w, s], [w, n], [e, s], [e, n]]) {
+    const x = (lo - (w + e) / 2) * kx, y = (la - lat0) * ky;
+    const u = x * Math.cos(br) - y * Math.sin(br), v = x * Math.sin(br) + y * Math.cos(br);
+    u0 = Math.min(u0, u); u1 = Math.max(u1, u); v0 = Math.min(v0, v); v1 = Math.max(v1, v);
+  }
+  const fore = Math.max(0.35, Math.cos(view.pitch * Math.PI / 180));
+  const mppNeed = Math.max((u1 - u0) / availW, (v1 - v0) * fore / availH, 0.5);
+  const zoom = Math.min(14, Math.log2(2 * Math.PI * 6378137 * Math.cos(lat0 * Math.PI / 180) / (512 * mppNeed)));
+  // the padded area's centre sits (top - bottom) / 2 px below the screen's centre: move the view
+  // centre the other way along the view direction
+  const mpp = 2 * Math.PI * 6378137 * Math.cos(lat0 * Math.PI / 180) / (512 * 2 ** zoom);
+  const off = (pad.bottom - pad.top) / 2 * mpp / fore, offX = (pad.right - pad.left) / 2 * mpp;
+  const dx = -off * Math.sin(br) + offX * Math.cos(br), dy = -off * Math.cos(br) - offX * Math.sin(br);
+  flyTo({ lon: (w + e) / 2 + dx / kx, lat: lat0 + dy / ky, zoom });
+}
+document.getElementById('flip').onclick = () => {
+  if (!selected || selected.service == null) return;
+  const s = SERVICES[selected.service];
+  openService(selected.service, (selected.variant + 1) % s.variants.length, null);
+};
+
+// ---------- profile ----------
+let chartX = null;
+function showHair(best, fromChart = true) {
+  const svg = document.getElementById('chart'), h = svg.querySelector('#hair');
+  if (!h || !chartX) return;
+  h.setAttribute('x1', chartX(best.d)); h.setAttribute('x2', chartX(best.d)); h.setAttribute('visibility', 'visible');
+  document.getElementById('pread').textContent = `${heightText(best.z, best.g)} ± ${fmt(best.sd)}` + (basis === 'depth' ? '' : ` · ${relSurface(best.z - best.g)}`);
+  setCursor(best);
+}
+function hideHair() {
+  const h = document.querySelector('#chart #hair');
+  if (h) h.setAttribute('visibility', 'hidden');
+  document.getElementById('pread').textContent = '';
+  setCursor(null);
+}
+function drawChart() {
+  const pts = selected.pts, svg = document.getElementById('chart');
+  const W = svg.clientWidth, H = svg.clientHeight, L = 34, R = 8, T = 4, B = 16;
+  const D = pts[pts.length - 1].d || 1;
+  // the plot always shows real heights (NAVD88), terrain and all; the mode only changes wording
+  const rel = false;
+  // The ground in tracks.json is a running median of 7 points along each OSM way, so a short way
+  // (4 to 8 points, common on the LIRR) keeps its end spikes where bare earth under a bridge or
+  // beside a road shows. Median again over 7 points along the whole laid-out profile, so the line
+  // reads as the street.
+  let s0 = 0;
+  for (let i = 1; i <= pts.length; i++) {
+    if (i < pts.length && !pts[i].brk) continue;
+    for (let j = s0; j < i; j++) {
+      const w = [];
+      for (let k = Math.max(s0, j - 3); k <= Math.min(i - 1, j + 3); k++) if (pts[k].g != null) w.push(pts[k].g);
+      w.sort((a, b) => a - b);
+      const m = w.length >> 1;
+      pts[j].gm = !w.length ? pts[j].g : w.length % 2 ? w[m] : (w[m - 1] + w[m]) / 2;
+    }
+    s0 = i;
+  }
+  const rv = p => rel ? p.z - p.g : p.z;   // rail value
+  const gv = p => rel ? 0 : p.gm;          // surface value
+  let lo = Infinity, hi = -Infinity;
+  for (const p of pts) { lo = Math.min(lo, rv(p) - p.sd, gv(p)); hi = Math.max(hi, rv(p) + p.sd, gv(p)); }
+  lo = Math.floor((lo - 2) / 10) * 10; hi = Math.ceil((hi + 4) / 10) * 10;
+  const x = d => L + d / D * (W - L - R), y = v => T + (hi - v) / (hi - lo || 1) * (H - T - B);
+  chartX = x;
+  const X = p => x(p.d).toFixed(1), Y = v => y(v).toFixed(1);
+  const runs = [];  // stretches without a gap
+  let cur = [];
+  for (const p of pts) { if (p.brk && cur.length) { runs.push(cur); cur = []; } cur.push(p); }
+  if (cur.length) runs.push(cur);
+  const line = (sel) => runs.map(r => 'M' + r.map(p => X(p) + ',' + Y(sel(p))).join('L')).join('');
+  const area = (r, top, bot) => 'M' + r.map(p => X(p) + ',' + Y(top(p))).join('L') + 'L' + r.slice().reverse().map(p => X(p) + ',' + Y(bot(p))).join('L') + 'Z';
+  // sky above the surface, earth below; water where the surface is a river or the harbour
+  let bg = '';
+  const yTop = T, yBot = H - B;
+  for (const r of runs) {
+    const top = 'M' + r.map(p => X(p) + ',' + yTop).join('L');
+    bg += `<path d="${top}L${r.slice().reverse().map(p => X(p) + ',' + Y(gv(p))).join('L')}Z" fill="url(#sky)"/>`;
+    bg += `<path d="M${r.map(p => X(p) + ',' + Y(gv(p))).join('L')}L${X(r[r.length - 1])},${yBot}L${X(r[0])},${yBot}Z" fill="url(#earth)"/>`;
+  }
+  let water = '';
+  for (const r of runs) {
+    // Water down to the riverbed where tracks.json has one (`bed`); elsewhere only a shallow
+    // band that fades out, since the bed is unknown there.
+    let w = [], kind = null;
+    const bedv = p => rel ? p.bed - p.g : p.bed;
+    const flush = () => {
+      if (w.length > 1) {
+        const bot = kind === 'bed' ? bedv : p => gv(p) - 3;
+        water += `<path d="${area(w, gv, bot)}" fill="#0c0e12"/><path d="${area(w, gv, bot)}" fill="url(#${kind === 'bed' ? 'deep' : 'water'})"/>`;
+        if (kind === 'bed') water += `<path d="M${w.map(p => X(p) + ',' + Y(bedv(p))).join('L')}" fill="none" stroke="#a07850" stroke-opacity="0.6" stroke-width="1"/>`;
+      }
+      w = []; kind = null;
+    };
+    for (const p of r) {
+      const k = p.bed != null ? 'bed' : p.gm < 1 ? 'fade' : null;
+      if (k !== kind) { const last = w[w.length - 1]; flush(); if (k && last) w.push(last); }
+      kind = k;
+      if (k) w.push(p);
+    }
+    flush();
+  }
+  let grid = '';
+  const span = hi - lo, step = span > 120 ? 40 : span > 60 ? 20 : 10;
+  for (let v = Math.ceil(lo / step) * step; v <= hi; v += step) grid += `<line x1="${L}" x2="${W - R}" y1="${Y(v)}" y2="${Y(v)}" stroke="#fff" stroke-opacity="0.07"/><text x="${L - 4}" y="${y(v) + 3}" text-anchor="end">${v}</text>`;
+  const kmStep = D > 30000 ? 5 : D > 12000 ? 2 : 1, kmPx = (W - L - R) / (D / 1000);
+  const ks = kmStep * Math.ceil(46 / (kmPx * kmStep) || 1);
+  for (let k = 0; k * 1000 <= D; k += ks) grid += `<text x="${x(k * 1000)}" y="${H - 3}" text-anchor="middle">${k} km</text>`;
+  const band = runs.map(r => area(r, p => rv(p) + p.sd, p => rv(p) - p.sd)).join('');
+  const here = selected.here >= 0 ? pts[selected.here] : null;
+  // station dots on the rail, names standing up from them. A name that would crowd the previous
+  // one is skipped, except the first and the last of the line, which are always drawn (a name
+  // stands 3.5 px either side of its dot, so a dot at the plot's edge still has room): the last
+  // one displaces the name before it.
+  let stn = '';
+  const ss = selected.stations, drawn = new Set();
+  let lastX = -1e9, lastI = -1;
+  ss.forEach((s, i) => {
+    const px = x(pts[s.k].d);
+    if (i === 0 || px - lastX >= 12 || i === ss.length - 1) {
+      if (i === ss.length - 1 && lastI > 0 && px - lastX < 12) drawn.delete(lastI);
+      drawn.add(i); lastX = px; lastI = i;
+    }
+  });
+  ss.forEach((s, i) => {
+    const p = pts[s.k], px = x(p.d), py = y(rv(p));
+    stn += `<circle cx="${px.toFixed(1)}" cy="${py.toFixed(1)}" r="2.6" fill="#0a0a0a" stroke="${selected.colour}" stroke-width="1.4"/>`;
+    if (!drawn.has(i)) return;
+    const len = s.name.length * 5.3, roomUp = py - 6 - T, roomDown = H - B - 4 - py - 6;
+    const up = len <= roomUp || (len > roomDown && roomUp >= roomDown);
+    let name = s.name;
+    const room = up ? roomUp : roomDown;
+    if (len > room) name = name.slice(0, Math.max(1, Math.floor(room / 5.3) - 1)) + '…';
+    const ty = up ? py - 6 : py + 6;
+    stn += `<text class="stn" transform="translate(${(px + 3.5).toFixed(1)},${ty.toFixed(1)}) rotate(-90)" text-anchor="${up ? 'start' : 'end'}">${name.replace(/&/g, '&amp;').replace(/</g, '&lt;')}</text>`;
+  });
+  svg.innerHTML = `<defs>
+      <linearGradient id="sky" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#6a9fd8" stop-opacity="0.02"/><stop offset="1" stop-color="#6a9fd8" stop-opacity="0.13"/></linearGradient>
+      <linearGradient id="earth" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#a07850" stop-opacity="0.24"/><stop offset="1" stop-color="#a07850" stop-opacity="0.08"/></linearGradient>
+      <linearGradient id="deep" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#3a7fd0" stop-opacity="0.5"/><stop offset="1" stop-color="#3a7fd0" stop-opacity="0.3"/></linearGradient>
+      <linearGradient id="water" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#3a7fd0" stop-opacity="0.55"/><stop offset="1" stop-color="#3a7fd0" stop-opacity="0.05"/></linearGradient>
+    </defs>` + bg + water + grid +
+    `<path d="${band}" fill="${selected.colour}" opacity="0.22"/>` +
+    `<path d="${line(gv)}" fill="none" stroke="#8a8a8a" stroke-width="1"/>` +
+    `<path d="${line(rv)}" fill="none" stroke="${selected.colour}" stroke-width="2" stroke-linejoin="round"/>` +
+    (here ? `<line x1="${x(here.d)}" x2="${x(here.d)}" y1="${T}" y2="${H - B}" stroke="#666" stroke-dasharray="2,3"/>` : '') +
+    `<text x="${L + 4}" y="${T + 10}">height above sea level, m</text>` +
+    stn +
+    `<line id="hair" y1="${T}" y2="${H - B}" stroke="#aaa" visibility="hidden"/>`;
+  const move = e => {
+    const r = svg.getBoundingClientRect(), dd = (e.clientX - r.left - L) / (W - L - R) * D;
+    let best = pts[0];
+    for (const p of pts) if (Math.abs(p.d - dd) < Math.abs(best.d - dd)) best = p;
+    showHair(best);
+  };
+  svg.onpointermove = move;
+  svg.onpointerdown = move;
+  svg.onpointerleave = hideHair;
+}
+window.addEventListener('resize', () => selected && drawChart());
+function closeProfile() {
+  document.getElementById('profile').classList.remove('open'); document.body.classList.remove('has-profile');
+  selected = null; lastPick = null;
+  setCursor(null);
+  drawBullets();
+  buildSelection();
+  writeHash();
+}
+document.getElementById('close').onclick = closeProfile;
+document.getElementById('info-btn').onclick = () => {
+  document.getElementById('info').classList.toggle('open'); document.getElementById('info-btn').classList.toggle('active');
+};
+document.getElementById('by-track').onchange = () => { lastPick = null; };
+
+// view state in the hash: #elev or #line, #notrains, #s=5 (service), so a view can be shared or
+// reloaded. (#v=lon,lat,zoom,pitch,bearing sets the camera on load; not written. An old #flat is
+// ignored.)
+function writeHash() {
+  if (!DATA) return;
+  const parts = [];
+  if (mode !== 'depth') parts.push(mode);
+  if (!document.getElementById('show-trains').checked) parts.push('notrains');
+  if (selected && selected.service != null) parts.push('s=' + encodeURIComponent(SERVICES[selected.service].ref) + (selected.variant ? '.' + selected.variant : ''));
+  history.replaceState(null, '', parts.length ? '#' + parts.join('&') : location.pathname + location.search);
+}
+function readHash() {
+  const parts = location.hash.slice(1).split('&').filter(Boolean);
+  if (parts.includes('elev')) setMode('elev');
+  if (parts.includes('line')) setMode('line');
+  if (parts.includes('notrains')) document.getElementById('show-trains').checked = false;
+  const hv = parts.find(p => p.startsWith('v='));
+  if (hv) { const [lon, lat, zoom, pitch, bearing] = hv.slice(2).split(',').map(Number); setView({ center: [lon, lat], zoom, pitch, bearing }); }
+  else setView({ center: [view.lon, view.lat], zoom: view.zoom, pitch: 62, bearing: -25 });
+  return parts;
+}
+
+// ---------- start ----------
+const hashParts = readHash();
+(async () => {
+  const [tj, sj, wj] = await Promise.all([window.__data.tracks, window.__data.services, window.__data.water]);
+  window.__tData = performance.now();
+  load.dataIn = true;
+  DATA = tj;
+  DATA.tracks.forEach((t, ti) => {
+    idToTi.set(t.id, ti);
+    t.lon.forEach((lon, i) => {
+      const k = gkey(lon, t.lat[i]);
+      if (!grid.has(k)) grid.set(k, []);
+      grid.get(k).push(ti, i);
+    });
+  });
+  SERVICES = sj.services || [];
+  SERVICES.forEach((s, si) => s.variants.forEach((v, vi) => v.ways.forEach(([id]) => {
+    if (!wayToSvc.has(id)) wayToSvc.set(id, []);
+    const l = wayToSvc.get(id);
+    if (!l.some(x => x.s === si)) l.push({ s: si, v: vi });
+  })));
+  computeLineColours();
+  drawBullets();
+  redraw();
+  addWater(wj);
+  const s = hashParts.find(p => p.startsWith('s='));
+  if (s) {
+    const [ref, v] = decodeURIComponent(s.slice(2)).split('.');
+    const si = SERVICES.findIndex(x => x.ref === ref);
+    if (si >= 0) openService(si, Math.min(+v || 0, SERVICES[si].variants.length - 1), null);
+  }
+  writeHash();
+  window.trackdepth._ready();
+})();
+
+// ---------- plug-ins (trains.js) ----------
+// What a plug-in gets: window.trackdepth, and a 'trackdepth:ready' event on window once the data
+// is in. Heights: heightOf(z) is the ellipsoid height (m) at which a NAVD88 height z is drawn now
+// (GEOID + z x the vertical scale in use); onScale(fn) is called after the scale
+// changes, when everything has been redrawn at the new heights. The page renders on request
+// only: an animation calls requestRender() every frame it changes something.
+// To add trains: a script tag for trains.js after this script (written here without its angle
+// brackets: a closing script tag inside this one would end it). Station boxes (stations3d.js,
+// initStationBoxes(viewer, ...)): the same, with `widget` as the viewer; "Show stations" is
+// trackdepth.showStations, and a 'trackdepth:stations' event ({ detail: { show } }) fires when it
+// is ticked or unticked.
+window.trackdepth = {
+  Cesium, widget, viewer: widget, scene, camera, GEOID,
+  LIMIT,   // [west, south, east, north]: the square everything is clipped to (trains.js reads it)
+  get showStations() { return document.getElementById('show-stations').checked; },
+  get data() { return DATA; }, get services() { return SERVICES; }, idToTi, wayToSvc,
+  get scale() { return S(); }, heightOf, groundAt, requestRender,
+  get view() { return { ...view }; }, setView, flyTo,
+  _scaleFns: [], onScale(fn) { this._scaleFns.push(fn); },
+  _scaleChanged() { this._scaleFns.forEach(f => { try { f(S()); } catch (e) { console.error(e); } }); },
+  ready: false,
+  _ready() { this.ready = true; window.dispatchEvent(new Event('trackdepth:ready')); },
+};
+window.__state = () => ({ tilesLoaded: globe.tilesLoaded, tracks: !!tracksPrim, imagery: !imageryHeld,
+  t: { cesium: window.__tCesium, data: window.__tData, tracks: window.__tTracks, imagery: window.__tImagery } });
+</script>
+<script src="trains.js"></script>
+<script src="stations3d.js"></script>
+<script>
+// ---------- station boxes (stations3d.js) ----------
+// Platform-length boxes per station level (data/platforms.json, make_platforms.py), fading in from
+// z14.6 to z15.4 while the dots of boxed stations fade out; the sticks and ground discs stay.
+// Shown with "Show stations"; a hover over a box reports its station.
+const platformsJSON = fetch(DATA_BASE + 'platforms.json').then(r => r.json()).catch(() => null);
+async function startBoxes() {
+  let platforms = await platformsJSON;
+  if (!platforms || typeof initStationBoxes !== 'function') return;
+  // none outside the square: boxes with any corner outside it are left out, platforms renumbered
+  {
+    const keep = new Map();
+    const boxes = (platforms.boxes || []).filter((b, i) => {
+      const ok = (b.ring || []).every(([lon, lat]) => inLimit(lon, lat));
+      if (ok) keep.set(i, keep.size);
+      return ok;
+    });
+    const plats = (platforms.platforms || []).filter(p => keep.has(p.box)).map(p => ({ ...p, box: keep.get(p.box) }));
+    platforms = { ...platforms, boxes, platforms: plats };
+  }
+  // elevated boxes get a stick at each end of the platform once they're in (buildStations)
+  boxEnds = computeBoxEnds(platforms.boxes);
+  buildStations();
+  window.stationBoxes = initStationBoxes(widget, {
+    platforms, geoid: GEOID, getExaggeration: () => S(), getZoom: () => view.zoom,
+    dots: stationPts, stations: DATA.stations, pickId: b => b.dot == null ? null : { kind: 'station', k: b.dot },
+    tracks: DATA.tracks, trackColour: (ti, i) => pointRGB(DATA.tracks[ti], i, ti),   // a light tint of its tracks' colour
+  });
+  window.addEventListener('trackdepth:mode', () => stationBoxes.recolour());
+  window.trackdepth.onScale(() => stationBoxes.recolour());
+  const cb = document.getElementById('show-stations');
+  stationBoxes.setVisible(cb.checked);
+  cb.addEventListener('change', () => stationBoxes.setVisible(cb.checked));
+}
+if (window.trackdepth.ready) startBoxes(); else window.addEventListener('trackdepth:ready', startBoxes, { once: true });
+</script>
+</body>
+</html>

@@ -14,7 +14,7 @@ rerun it after changing the yml or adding pngs.
 | bellflower | bellflower | veg, leafy, green, flower | - | no plant entry | - |
 | milkweed | milkweed pod | veg, green | - | no plant entry | - |
 | clementine | clementine | fruit, citrus, sweet | yes | yes | pages/friends/clementine.md |
-| blueberry | blueberry | fruit, berry, sweet | yes | yes | pages/friends/blueberry.md |
+| blueberry | blueberry | fruit, berry, sweet | yes | yes | pages/friends/blueberry.md, pages/places/places.md |
 | plum | plum | fruit, sweet | - | no plant entry | - |
 | arbutus | strawberry tree fruit | fruit, berry | - | no plant entry | - |
 | olive | olive | fruit, savory | - | no plant entry | - |
@@ -35,12 +35,12 @@ rerun it after changing the yml or adding pngs.
 | tapioca | tapioca pearls | starchy | - | no plant entry | - |
 | egg | egg | egg | - | no plant entry | - |
 | corn | corn | grain, veg, sweet | - | no plant entry | - |
-| soybean | soybean | bean | yes | yes | pages/friends/gingko.md |
+| soybean | soybean | bean | yes | yes | pages/friends/gingko.md, pages/thoughts/beingseen.md |
 | onion | onion | veg, allium | - | no plant entry | - |
 | tomato | tomato | veg | yes | yes | pages/thoughts/shame.md |
-| tea | tea leaves | tea | yes | yes | - |
-| apple | apple | fruit, sweet | yes | no plant entry | - |
-| rice | rice | grain, starchy | yes | yes | - |
+| tea | tea leaves | tea | yes | yes | pages/chat.md, pages/lists/bubbletea.md |
+| apple | apple | fruit, sweet | yes | yes | pages/places/melissa.md |
+| rice | rice | grain, starchy | yes | yes | pages/anita/anita.md |
 
 ## dishes
 
@@ -52,21 +52,22 @@ rerun it after changing the yml or adding pngs.
 | blueberryjam | blueberry jam | yes | pot: blueberry; pot: blueberry + blueberry; pot: blueberry + any sweet |
 | pepperjam | pepper jam | yes | pot: pepper + any sweet |
 | ricefood | rice | yes | pot: rice; pot: rice + rice |
+| chazuke | chazuke | yes | pot: rice + tea; pot: rice + teafood; pot: ricefood + tea; pot: ricefood + teafood |
 | tofu | tofu | yes | pot: soybean; pot: soybean + soybean |
 | soondubu | soondubu | yes | pot: tofu + pepper |
-| salad | salad | - | pot: any leafy + any veg; pot: any leafy + any fruit |
+| salad | salad | yes | pot: any leafy + any veg; pot: any leafy + any fruit |
 | fruitsalad | fruit salad | yes | pot: any fruit + any fruit |
 | clementinesorbet | clementine sorbet | yes | pot: clementine + ice |
 | blueberrysorbet | blueberry sorbet | yes | pot: blueberry + ice |
 | plumsorbet | plum sorbet | - | pot: plum + ice |
 | sorbet | sorbet | yes | pot: any fruit + ice |
-| jam | jam | - | pot: any fruit + any sweet |
+| jam | jam | yes | pot: any fruit + any sweet |
 | teafood | tea | yes | pot: any tea; pot: any tea + any tea; pot: any tea + any sweet |
 | orangetea | orange tea | yes | pot: any tea + clementine |
 | blueberrytea | blueberry tea | yes | pot: any tea + blueberry |
-| icedtea | iced tea | - | pot: any tea + ice |
+| icedtea | iced tea | yes | pot: any tea + ice |
 | bubbletea | bubble tea | - | pot: any tea + tapioca |
-| porridge | porridge | - | pot: any grain; pot: any grain + any fruit; pot: any grain + any sweet |
+| porridge | porridge | yes | pot: any grain; pot: any grain + any fruit; pot: any grain + any sweet |
 | mushroomsoup | mushroom soup | - | pot: russula + anything |
 | pepperstew | pepper stew | - | pot: pepper + any veg; pot: pepper |
 | boiledegg | boiled egg | - | pot: egg |
@@ -120,6 +121,7 @@ rerun it after changing the yml or adding pngs.
 | clementine jam | soup? (not drawn; today: ???) | catch-all |
 | blueberry jam | soup? (not drawn; today: ???) | catch-all |
 | pepper jam | soup? (not drawn; today: ???) | catch-all |
+| rice | soup? (not drawn; today: ???) | catch-all |
 | tofu | soup? (not drawn; today: ???) | catch-all |
 | jam | soup? (not drawn; today: ???) | catch-all |
 | tea | soup? (not drawn; today: ???) | catch-all |
@@ -133,9 +135,9 @@ rerun it after changing the yml or adding pngs.
 | (nothing) | pepper stew (not drawn; today: ???) | exact |
 | potato | spicy potato soup | exact |
 | pepper | pepper stew (not drawn; today: ???) | tag rule |
-| watercress | pepper stew (not drawn; today: ???) | tag rule |
-| dandelion greens | pepper stew (not drawn; today: ???) | tag rule |
-| bellflower | pepper stew (not drawn; today: ???) | tag rule |
+| watercress | pepper stew (not drawn; today: salad) | tag rule |
+| dandelion greens | pepper stew (not drawn; today: salad) | tag rule |
+| bellflower | pepper stew (not drawn; today: salad) | tag rule |
 | milkweed pod | pepper stew (not drawn; today: ???) | tag rule |
 | clementine | pepper jam | tag rule |
 | blueberry | pepper jam | tag rule |
@@ -150,7 +152,7 @@ rerun it after changing the yml or adding pngs.
 | chrysanthemum | soup? (not drawn; today: ???) | catch-all |
 | lavender | soup? (not drawn; today: ???) | catch-all |
 | honeysuckle | pepper jam | tag rule |
-| mint | salad (not drawn; today: ???) | tag rule |
+| mint | salad | tag rule |
 | foxglove | ??? | catch-all |
 | honey | pepper jam | tag rule |
 | birch sap | pepper jam | tag rule |
@@ -168,6 +170,7 @@ rerun it after changing the yml or adding pngs.
 | clementine jam | pepper jam | tag rule |
 | blueberry jam | pepper jam | tag rule |
 | pepper jam | pepper jam | tag rule |
+| rice | soup? (not drawn; today: ???) | catch-all |
 | tofu | soondubu | exact |
 | jam | pepper jam | tag rule |
 | tea | soup? (not drawn; today: ???) | catch-all |
@@ -180,16 +183,16 @@ rerun it after changing the yml or adding pngs.
 |---|---|---|
 | (nothing) | soup? (not drawn; today: ???) | catch-all |
 | potato | potato soup | tag rule |
-| pepper | pepper stew (not drawn; today: ???) | tag rule |
-| watercress | salad (not drawn; today: ???) | tag rule |
-| dandelion greens | salad (not drawn; today: ???) | tag rule |
-| bellflower | salad (not drawn; today: ???) | tag rule |
-| milkweed pod | salad (not drawn; today: ???) | tag rule |
-| clementine | salad (not drawn; today: ???) | tag rule |
-| blueberry | salad (not drawn; today: ???) | tag rule |
-| plum | salad (not drawn; today: ???) | tag rule |
-| strawberry tree fruit | salad (not drawn; today: ???) | tag rule |
-| olive | salad (not drawn; today: ???) | tag rule |
+| pepper | pepper stew (not drawn; today: salad) | tag rule |
+| watercress | salad | tag rule |
+| dandelion greens | salad | tag rule |
+| bellflower | salad | tag rule |
+| milkweed pod | salad | tag rule |
+| clementine | salad | tag rule |
+| blueberry | salad | tag rule |
+| plum | salad | tag rule |
+| strawberry tree fruit | salad | tag rule |
+| olive | salad | tag rule |
 | pine nut | soup? (not drawn; today: ???) | catch-all |
 | ginkgo nut | soup? (not drawn; today: ???) | catch-all |
 | russula | mushroom soup (not drawn; today: ???) | catch-all |
@@ -198,7 +201,7 @@ rerun it after changing the yml or adding pngs.
 | chrysanthemum | soup? (not drawn; today: ???) | catch-all |
 | lavender | soup? (not drawn; today: ???) | catch-all |
 | honeysuckle | soup? (not drawn; today: ???) | catch-all |
-| mint | salad (not drawn; today: ???) | tag rule |
+| mint | salad | tag rule |
 | foxglove | ??? | catch-all |
 | honey | soup? (not drawn; today: ???) | catch-all |
 | birch sap | soup? (not drawn; today: ???) | catch-all |
@@ -206,16 +209,17 @@ rerun it after changing the yml or adding pngs.
 | wheat | soup? (not drawn; today: ???) | catch-all |
 | tapioca pearls | soup? (not drawn; today: ???) | catch-all |
 | egg | egg drop soup (not drawn; today: ???) | tag rule |
-| corn | salad (not drawn; today: ???) | tag rule |
+| corn | salad | tag rule |
 | soybean | soup? (not drawn; today: ???) | catch-all |
-| onion | salad (not drawn; today: ???) | tag rule |
-| tomato | salad (not drawn; today: ???) | tag rule |
+| onion | salad | tag rule |
+| tomato | salad | tag rule |
 | tea leaves | soup? (not drawn; today: ???) | catch-all |
-| apple | salad (not drawn; today: ???) | tag rule |
+| apple | salad | tag rule |
 | rice | soup? (not drawn; today: ???) | catch-all |
 | clementine jam | soup? (not drawn; today: ???) | catch-all |
 | blueberry jam | soup? (not drawn; today: ???) | catch-all |
 | pepper jam | soup? (not drawn; today: ???) | catch-all |
+| rice | soup? (not drawn; today: ???) | catch-all |
 | tofu | soup? (not drawn; today: ???) | catch-all |
 | jam | soup? (not drawn; today: ???) | catch-all |
 | tea | soup? (not drawn; today: ???) | catch-all |
@@ -228,16 +232,16 @@ rerun it after changing the yml or adding pngs.
 |---|---|---|
 | (nothing) | soup? (not drawn; today: ???) | catch-all |
 | potato | potato soup | tag rule |
-| pepper | pepper stew (not drawn; today: ???) | tag rule |
-| watercress | salad (not drawn; today: ???) | tag rule |
-| dandelion greens | salad (not drawn; today: ???) | tag rule |
-| bellflower | salad (not drawn; today: ???) | tag rule |
-| milkweed pod | salad (not drawn; today: ???) | tag rule |
-| clementine | salad (not drawn; today: ???) | tag rule |
-| blueberry | salad (not drawn; today: ???) | tag rule |
-| plum | salad (not drawn; today: ???) | tag rule |
-| strawberry tree fruit | salad (not drawn; today: ???) | tag rule |
-| olive | salad (not drawn; today: ???) | tag rule |
+| pepper | pepper stew (not drawn; today: salad) | tag rule |
+| watercress | salad | tag rule |
+| dandelion greens | salad | tag rule |
+| bellflower | salad | tag rule |
+| milkweed pod | salad | tag rule |
+| clementine | salad | tag rule |
+| blueberry | salad | tag rule |
+| plum | salad | tag rule |
+| strawberry tree fruit | salad | tag rule |
+| olive | salad | tag rule |
 | pine nut | soup? (not drawn; today: ???) | catch-all |
 | ginkgo nut | soup? (not drawn; today: ???) | catch-all |
 | russula | mushroom soup (not drawn; today: ???) | catch-all |
@@ -246,7 +250,7 @@ rerun it after changing the yml or adding pngs.
 | chrysanthemum | soup? (not drawn; today: ???) | catch-all |
 | lavender | soup? (not drawn; today: ???) | catch-all |
 | honeysuckle | soup? (not drawn; today: ???) | catch-all |
-| mint | salad (not drawn; today: ???) | tag rule |
+| mint | salad | tag rule |
 | foxglove | ??? | catch-all |
 | honey | soup? (not drawn; today: ???) | catch-all |
 | birch sap | soup? (not drawn; today: ???) | catch-all |
@@ -254,16 +258,17 @@ rerun it after changing the yml or adding pngs.
 | wheat | soup? (not drawn; today: ???) | catch-all |
 | tapioca pearls | soup? (not drawn; today: ???) | catch-all |
 | egg | egg drop soup (not drawn; today: ???) | tag rule |
-| corn | salad (not drawn; today: ???) | tag rule |
+| corn | salad | tag rule |
 | soybean | soup? (not drawn; today: ???) | catch-all |
-| onion | salad (not drawn; today: ???) | tag rule |
-| tomato | salad (not drawn; today: ???) | tag rule |
+| onion | salad | tag rule |
+| tomato | salad | tag rule |
 | tea leaves | soup? (not drawn; today: ???) | catch-all |
-| apple | salad (not drawn; today: ???) | tag rule |
+| apple | salad | tag rule |
 | rice | soup? (not drawn; today: ???) | catch-all |
 | clementine jam | soup? (not drawn; today: ???) | catch-all |
 | blueberry jam | soup? (not drawn; today: ???) | catch-all |
 | pepper jam | soup? (not drawn; today: ???) | catch-all |
+| rice | soup? (not drawn; today: ???) | catch-all |
 | tofu | soup? (not drawn; today: ???) | catch-all |
 | jam | soup? (not drawn; today: ???) | catch-all |
 | tea | soup? (not drawn; today: ???) | catch-all |
@@ -276,16 +281,16 @@ rerun it after changing the yml or adding pngs.
 |---|---|---|
 | (nothing) | soup? (not drawn; today: ???) | catch-all |
 | potato | potato soup | tag rule |
-| pepper | pepper stew (not drawn; today: ???) | tag rule |
-| watercress | salad (not drawn; today: ???) | tag rule |
-| dandelion greens | salad (not drawn; today: ???) | tag rule |
-| bellflower | salad (not drawn; today: ???) | tag rule |
-| milkweed pod | salad (not drawn; today: ???) | tag rule |
-| clementine | salad (not drawn; today: ???) | tag rule |
-| blueberry | salad (not drawn; today: ???) | tag rule |
-| plum | salad (not drawn; today: ???) | tag rule |
-| strawberry tree fruit | salad (not drawn; today: ???) | tag rule |
-| olive | salad (not drawn; today: ???) | tag rule |
+| pepper | pepper stew (not drawn; today: salad) | tag rule |
+| watercress | salad | tag rule |
+| dandelion greens | salad | tag rule |
+| bellflower | salad | tag rule |
+| milkweed pod | salad | tag rule |
+| clementine | salad | tag rule |
+| blueberry | salad | tag rule |
+| plum | salad | tag rule |
+| strawberry tree fruit | salad | tag rule |
+| olive | salad | tag rule |
 | pine nut | soup? (not drawn; today: ???) | catch-all |
 | ginkgo nut | soup? (not drawn; today: ???) | catch-all |
 | russula | mushroom soup (not drawn; today: ???) | catch-all |
@@ -294,7 +299,7 @@ rerun it after changing the yml or adding pngs.
 | chrysanthemum | soup? (not drawn; today: ???) | catch-all |
 | lavender | soup? (not drawn; today: ???) | catch-all |
 | honeysuckle | soup? (not drawn; today: ???) | catch-all |
-| mint | salad (not drawn; today: ???) | tag rule |
+| mint | salad | tag rule |
 | foxglove | ??? | catch-all |
 | honey | flower syrup (not drawn; today: ???) | tag rule |
 | birch sap | flower syrup (not drawn; today: ???) | tag rule |
@@ -302,16 +307,17 @@ rerun it after changing the yml or adding pngs.
 | wheat | soup? (not drawn; today: ???) | catch-all |
 | tapioca pearls | soup? (not drawn; today: ???) | catch-all |
 | egg | egg drop soup (not drawn; today: ???) | tag rule |
-| corn | salad (not drawn; today: ???) | tag rule |
+| corn | salad | tag rule |
 | soybean | soup? (not drawn; today: ???) | catch-all |
-| onion | salad (not drawn; today: ???) | tag rule |
-| tomato | salad (not drawn; today: ???) | tag rule |
+| onion | salad | tag rule |
+| tomato | salad | tag rule |
 | tea leaves | soup? (not drawn; today: ???) | catch-all |
-| apple | salad (not drawn; today: ???) | tag rule |
+| apple | salad | tag rule |
 | rice | soup? (not drawn; today: ???) | catch-all |
 | clementine jam | soup? (not drawn; today: ???) | catch-all |
 | blueberry jam | soup? (not drawn; today: ???) | catch-all |
 | pepper jam | soup? (not drawn; today: ???) | catch-all |
+| rice | soup? (not drawn; today: ???) | catch-all |
 | tofu | soup? (not drawn; today: ???) | catch-all |
 | jam | soup? (not drawn; today: ???) | catch-all |
 | tea | soup? (not drawn; today: ???) | catch-all |
@@ -325,9 +331,9 @@ rerun it after changing the yml or adding pngs.
 | (nothing) | soup? (not drawn; today: ???) | catch-all |
 | potato | soup? (not drawn; today: ???) | catch-all |
 | pepper | pepper stew (not drawn; today: ???) | tag rule |
-| watercress | salad (not drawn; today: ???) | tag rule |
-| dandelion greens | salad (not drawn; today: ???) | tag rule |
-| bellflower | salad (not drawn; today: ???) | tag rule |
+| watercress | salad | tag rule |
+| dandelion greens | salad | tag rule |
+| bellflower | salad | tag rule |
 | milkweed pod | soup? (not drawn; today: ???) | catch-all |
 | clementine | soup? (not drawn; today: ???) | catch-all |
 | blueberry | soup? (not drawn; today: ???) | catch-all |
@@ -342,7 +348,7 @@ rerun it after changing the yml or adding pngs.
 | chrysanthemum | soup? (not drawn; today: ???) | catch-all |
 | lavender | soup? (not drawn; today: ???) | catch-all |
 | honeysuckle | soup? (not drawn; today: ???) | catch-all |
-| mint | salad (not drawn; today: ???) | tag rule |
+| mint | salad | tag rule |
 | foxglove | ??? | catch-all |
 | honey | soup? (not drawn; today: ???) | catch-all |
 | birch sap | soup? (not drawn; today: ???) | catch-all |
@@ -360,6 +366,7 @@ rerun it after changing the yml or adding pngs.
 | clementine jam | soup? (not drawn; today: ???) | catch-all |
 | blueberry jam | soup? (not drawn; today: ???) | catch-all |
 | pepper jam | soup? (not drawn; today: ???) | catch-all |
+| rice | soup? (not drawn; today: ???) | catch-all |
 | tofu | soup? (not drawn; today: ???) | catch-all |
 | jam | soup? (not drawn; today: ???) | catch-all |
 | tea | soup? (not drawn; today: ???) | catch-all |
@@ -373,9 +380,9 @@ rerun it after changing the yml or adding pngs.
 | (nothing) | clementine jam | exact |
 | potato | soup? (not drawn; today: ???) | catch-all |
 | pepper | pepper jam | tag rule |
-| watercress | salad (not drawn; today: ???) | tag rule |
-| dandelion greens | salad (not drawn; today: ???) | tag rule |
-| bellflower | salad (not drawn; today: ???) | tag rule |
+| watercress | salad | tag rule |
+| dandelion greens | salad | tag rule |
+| bellflower | salad | tag rule |
 | milkweed pod | soup? (not drawn; today: ???) | catch-all |
 | clementine | clementine jam | exact |
 | blueberry | fruit salad | tag rule |
@@ -390,12 +397,12 @@ rerun it after changing the yml or adding pngs.
 | chrysanthemum | orange tea | tag rule |
 | lavender | ??? | catch-all |
 | honeysuckle | clementine jam | tag rule |
-| mint | salad (not drawn; today: ???) | tag rule |
+| mint | salad | tag rule |
 | foxglove | ??? | catch-all |
 | honey | clementine jam | tag rule |
 | birch sap | clementine jam | tag rule |
 | ice | clementine sorbet | exact |
-| wheat | porridge (not drawn; today: ???) | tag rule |
+| wheat | porridge | tag rule |
 | tapioca pearls | ??? | catch-all |
 | egg | ??? | catch-all |
 | corn | clementine jam | tag rule |
@@ -404,10 +411,11 @@ rerun it after changing the yml or adding pngs.
 | tomato | soup? (not drawn; today: ???) | catch-all |
 | tea leaves | orange tea | tag rule |
 | apple | fruit salad | tag rule |
-| rice | porridge (not drawn; today: ???) | tag rule |
+| rice | porridge | tag rule |
 | clementine jam | clementine jam | tag rule |
 | blueberry jam | clementine jam | tag rule |
 | pepper jam | clementine jam | tag rule |
+| rice | ??? | catch-all |
 | tofu | ??? | catch-all |
 | jam | clementine jam | tag rule |
 | tea | orange tea | tag rule |
@@ -421,9 +429,9 @@ rerun it after changing the yml or adding pngs.
 | (nothing) | blueberry jam | exact |
 | potato | soup? (not drawn; today: ???) | catch-all |
 | pepper | pepper jam | tag rule |
-| watercress | salad (not drawn; today: ???) | tag rule |
-| dandelion greens | salad (not drawn; today: ???) | tag rule |
-| bellflower | salad (not drawn; today: ???) | tag rule |
+| watercress | salad | tag rule |
+| dandelion greens | salad | tag rule |
+| bellflower | salad | tag rule |
 | milkweed pod | soup? (not drawn; today: ???) | catch-all |
 | clementine | fruit salad | tag rule |
 | blueberry | blueberry jam | exact |
@@ -438,12 +446,12 @@ rerun it after changing the yml or adding pngs.
 | chrysanthemum | blueberry tea | tag rule |
 | lavender | ??? | catch-all |
 | honeysuckle | blueberry jam | tag rule |
-| mint | salad (not drawn; today: ???) | tag rule |
+| mint | salad | tag rule |
 | foxglove | ??? | catch-all |
 | honey | blueberry jam | tag rule |
 | birch sap | blueberry jam | tag rule |
 | ice | blueberry sorbet | exact |
-| wheat | porridge (not drawn; today: ???) | tag rule |
+| wheat | porridge | tag rule |
 | tapioca pearls | ??? | catch-all |
 | egg | ??? | catch-all |
 | corn | blueberry jam | tag rule |
@@ -452,10 +460,11 @@ rerun it after changing the yml or adding pngs.
 | tomato | soup? (not drawn; today: ???) | catch-all |
 | tea leaves | blueberry tea | tag rule |
 | apple | fruit salad | tag rule |
-| rice | porridge (not drawn; today: ???) | tag rule |
+| rice | porridge | tag rule |
 | clementine jam | blueberry jam | tag rule |
 | blueberry jam | blueberry jam | tag rule |
 | pepper jam | blueberry jam | tag rule |
+| rice | ??? | catch-all |
 | tofu | ??? | catch-all |
 | jam | blueberry jam | tag rule |
 | tea | blueberry tea | tag rule |
@@ -469,9 +478,9 @@ rerun it after changing the yml or adding pngs.
 | (nothing) | ??? | catch-all |
 | potato | soup? (not drawn; today: ???) | catch-all |
 | pepper | pepper jam | tag rule |
-| watercress | salad (not drawn; today: ???) | tag rule |
-| dandelion greens | salad (not drawn; today: ???) | tag rule |
-| bellflower | salad (not drawn; today: ???) | tag rule |
+| watercress | salad | tag rule |
+| dandelion greens | salad | tag rule |
+| bellflower | salad | tag rule |
 | milkweed pod | soup? (not drawn; today: ???) | catch-all |
 | clementine | fruit salad | tag rule |
 | blueberry | fruit salad | tag rule |
@@ -485,30 +494,31 @@ rerun it after changing the yml or adding pngs.
 | jasmine | tea | tag rule |
 | chrysanthemum | tea | tag rule |
 | lavender | ??? | catch-all |
-| honeysuckle | jam (not drawn; today: ???) | tag rule |
-| mint | salad (not drawn; today: ???) | tag rule |
+| honeysuckle | jam | tag rule |
+| mint | salad | tag rule |
 | foxglove | ??? | catch-all |
-| honey | jam (not drawn; today: ???) | tag rule |
-| birch sap | jam (not drawn; today: ???) | tag rule |
+| honey | jam | tag rule |
+| birch sap | jam | tag rule |
 | ice | plum sorbet (not drawn; today: sorbet) | exact |
-| wheat | porridge (not drawn; today: ???) | tag rule |
+| wheat | porridge | tag rule |
 | tapioca pearls | ??? | catch-all |
 | egg | ??? | catch-all |
-| corn | jam (not drawn; today: ???) | tag rule |
+| corn | jam | tag rule |
 | soybean | soup? (not drawn; today: ???) | catch-all |
 | onion | soup? (not drawn; today: ???) | catch-all |
 | tomato | soup? (not drawn; today: ???) | catch-all |
 | tea leaves | tea | tag rule |
 | apple | fruit salad | tag rule |
-| rice | porridge (not drawn; today: ???) | tag rule |
-| clementine jam | jam (not drawn; today: ???) | tag rule |
-| blueberry jam | jam (not drawn; today: ???) | tag rule |
-| pepper jam | jam (not drawn; today: ???) | tag rule |
+| rice | porridge | tag rule |
+| clementine jam | jam | tag rule |
+| blueberry jam | jam | tag rule |
+| pepper jam | jam | tag rule |
+| rice | ??? | catch-all |
 | tofu | ??? | catch-all |
-| jam | jam (not drawn; today: ???) | tag rule |
+| jam | jam | tag rule |
 | tea | tea | tag rule |
 | iced tea | tea | tag rule |
-| flower syrup | jam (not drawn; today: ???) | tag rule |
+| flower syrup | jam | tag rule |
 
 ### strawberry tree fruit
 
@@ -517,9 +527,9 @@ rerun it after changing the yml or adding pngs.
 | (nothing) | ??? | catch-all |
 | potato | soup? (not drawn; today: ???) | catch-all |
 | pepper | soup? (not drawn; today: ???) | catch-all |
-| watercress | salad (not drawn; today: ???) | tag rule |
-| dandelion greens | salad (not drawn; today: ???) | tag rule |
-| bellflower | salad (not drawn; today: ???) | tag rule |
+| watercress | salad | tag rule |
+| dandelion greens | salad | tag rule |
+| bellflower | salad | tag rule |
 | milkweed pod | soup? (not drawn; today: ???) | catch-all |
 | clementine | fruit salad | tag rule |
 | blueberry | fruit salad | tag rule |
@@ -533,30 +543,31 @@ rerun it after changing the yml or adding pngs.
 | jasmine | ??? | catch-all |
 | chrysanthemum | ??? | catch-all |
 | lavender | ??? | catch-all |
-| honeysuckle | jam (not drawn; today: ???) | tag rule |
-| mint | salad (not drawn; today: ???) | tag rule |
+| honeysuckle | jam | tag rule |
+| mint | salad | tag rule |
 | foxglove | ??? | catch-all |
-| honey | jam (not drawn; today: ???) | tag rule |
-| birch sap | jam (not drawn; today: ???) | tag rule |
+| honey | jam | tag rule |
+| birch sap | jam | tag rule |
 | ice | sorbet | tag rule |
-| wheat | porridge (not drawn; today: ???) | tag rule |
+| wheat | porridge | tag rule |
 | tapioca pearls | ??? | catch-all |
 | egg | ??? | catch-all |
-| corn | jam (not drawn; today: ???) | tag rule |
+| corn | jam | tag rule |
 | soybean | soup? (not drawn; today: ???) | catch-all |
 | onion | soup? (not drawn; today: ???) | catch-all |
 | tomato | soup? (not drawn; today: ???) | catch-all |
 | tea leaves | ??? | catch-all |
 | apple | fruit salad | tag rule |
-| rice | porridge (not drawn; today: ???) | tag rule |
-| clementine jam | jam (not drawn; today: ???) | tag rule |
-| blueberry jam | jam (not drawn; today: ???) | tag rule |
-| pepper jam | jam (not drawn; today: ???) | tag rule |
+| rice | porridge | tag rule |
+| clementine jam | jam | tag rule |
+| blueberry jam | jam | tag rule |
+| pepper jam | jam | tag rule |
+| rice | ??? | catch-all |
 | tofu | ??? | catch-all |
-| jam | jam (not drawn; today: ???) | tag rule |
+| jam | jam | tag rule |
 | tea | ??? | catch-all |
 | iced tea | ??? | catch-all |
-| flower syrup | jam (not drawn; today: ???) | tag rule |
+| flower syrup | jam | tag rule |
 
 ### olive
 
@@ -565,9 +576,9 @@ rerun it after changing the yml or adding pngs.
 | (nothing) | ??? | catch-all |
 | potato | soup? (not drawn; today: ???) | catch-all |
 | pepper | soup? (not drawn; today: ???) | catch-all |
-| watercress | salad (not drawn; today: ???) | tag rule |
-| dandelion greens | salad (not drawn; today: ???) | tag rule |
-| bellflower | salad (not drawn; today: ???) | tag rule |
+| watercress | salad | tag rule |
+| dandelion greens | salad | tag rule |
+| bellflower | salad | tag rule |
 | milkweed pod | soup? (not drawn; today: ???) | catch-all |
 | clementine | fruit salad | tag rule |
 | blueberry | fruit salad | tag rule |
@@ -581,30 +592,31 @@ rerun it after changing the yml or adding pngs.
 | jasmine | ??? | catch-all |
 | chrysanthemum | ??? | catch-all |
 | lavender | ??? | catch-all |
-| honeysuckle | jam (not drawn; today: ???) | tag rule |
-| mint | salad (not drawn; today: ???) | tag rule |
+| honeysuckle | jam | tag rule |
+| mint | salad | tag rule |
 | foxglove | ??? | catch-all |
-| honey | jam (not drawn; today: ???) | tag rule |
-| birch sap | jam (not drawn; today: ???) | tag rule |
+| honey | jam | tag rule |
+| birch sap | jam | tag rule |
 | ice | sorbet | tag rule |
-| wheat | porridge (not drawn; today: ???) | tag rule |
+| wheat | porridge | tag rule |
 | tapioca pearls | ??? | catch-all |
 | egg | ??? | catch-all |
-| corn | jam (not drawn; today: ???) | tag rule |
+| corn | jam | tag rule |
 | soybean | soup? (not drawn; today: ???) | catch-all |
 | onion | soup? (not drawn; today: ???) | catch-all |
 | tomato | soup? (not drawn; today: ???) | catch-all |
 | tea leaves | ??? | catch-all |
 | apple | fruit salad | tag rule |
-| rice | porridge (not drawn; today: ???) | tag rule |
-| clementine jam | jam (not drawn; today: ???) | tag rule |
-| blueberry jam | jam (not drawn; today: ???) | tag rule |
-| pepper jam | jam (not drawn; today: ???) | tag rule |
+| rice | porridge | tag rule |
+| clementine jam | jam | tag rule |
+| blueberry jam | jam | tag rule |
+| pepper jam | jam | tag rule |
+| rice | ??? | catch-all |
 | tofu | ??? | catch-all |
-| jam | jam (not drawn; today: ???) | tag rule |
+| jam | jam | tag rule |
 | tea | ??? | catch-all |
 | iced tea | ??? | catch-all |
-| flower syrup | jam (not drawn; today: ???) | tag rule |
+| flower syrup | jam | tag rule |
 
 ### pine nut
 
@@ -648,6 +660,7 @@ rerun it after changing the yml or adding pngs.
 | clementine jam | candied nuts (not drawn; today: ???) | tag rule |
 | blueberry jam | candied nuts (not drawn; today: ???) | tag rule |
 | pepper jam | candied nuts (not drawn; today: ???) | tag rule |
+| rice | ??? | catch-all |
 | tofu | ??? | catch-all |
 | jam | candied nuts (not drawn; today: ???) | tag rule |
 | tea | ??? | catch-all |
@@ -696,6 +709,7 @@ rerun it after changing the yml or adding pngs.
 | clementine jam | candied nuts (not drawn; today: ???) | tag rule |
 | blueberry jam | candied nuts (not drawn; today: ???) | tag rule |
 | pepper jam | candied nuts (not drawn; today: ???) | tag rule |
+| rice | ??? | catch-all |
 | tofu | ??? | catch-all |
 | jam | candied nuts (not drawn; today: ???) | tag rule |
 | tea | ??? | catch-all |
@@ -744,6 +758,7 @@ rerun it after changing the yml or adding pngs.
 | clementine jam | mushroom soup (not drawn; today: ???) | catch-all |
 | blueberry jam | mushroom soup (not drawn; today: ???) | catch-all |
 | pepper jam | mushroom soup (not drawn; today: ???) | catch-all |
+| rice | mushroom soup (not drawn; today: ???) | catch-all |
 | tofu | mushroom soup (not drawn; today: ???) | catch-all |
 | jam | mushroom soup (not drawn; today: ???) | catch-all |
 | tea | mushroom soup (not drawn; today: ???) | catch-all |
@@ -778,7 +793,7 @@ rerun it after changing the yml or adding pngs.
 | foxglove | ??? | catch-all |
 | honey | tea | tag rule |
 | birch sap | tea | tag rule |
-| ice | iced tea (not drawn; today: ???) | tag rule |
+| ice | iced tea | tag rule |
 | wheat | ??? | catch-all |
 | tapioca pearls | bubble tea (not drawn; today: ???) | tag rule |
 | egg | ??? | catch-all |
@@ -792,6 +807,7 @@ rerun it after changing the yml or adding pngs.
 | clementine jam | tea | tag rule |
 | blueberry jam | tea | tag rule |
 | pepper jam | tea | tag rule |
+| rice | ??? | catch-all |
 | tofu | ??? | catch-all |
 | jam | tea | tag rule |
 | tea | tea | tag rule |
@@ -826,7 +842,7 @@ rerun it after changing the yml or adding pngs.
 | foxglove | ??? | catch-all |
 | honey | tea | tag rule |
 | birch sap | tea | tag rule |
-| ice | iced tea (not drawn; today: ???) | tag rule |
+| ice | iced tea | tag rule |
 | wheat | ??? | catch-all |
 | tapioca pearls | bubble tea (not drawn; today: ???) | tag rule |
 | egg | ??? | catch-all |
@@ -840,6 +856,7 @@ rerun it after changing the yml or adding pngs.
 | clementine jam | tea | tag rule |
 | blueberry jam | tea | tag rule |
 | pepper jam | tea | tag rule |
+| rice | ??? | catch-all |
 | tofu | ??? | catch-all |
 | jam | tea | tag rule |
 | tea | tea | tag rule |
@@ -874,7 +891,7 @@ rerun it after changing the yml or adding pngs.
 | foxglove | ??? | catch-all |
 | honey | tea | tag rule |
 | birch sap | tea | tag rule |
-| ice | iced tea (not drawn; today: ???) | tag rule |
+| ice | iced tea | tag rule |
 | wheat | ??? | catch-all |
 | tapioca pearls | bubble tea (not drawn; today: ???) | tag rule |
 | egg | ??? | catch-all |
@@ -888,6 +905,7 @@ rerun it after changing the yml or adding pngs.
 | clementine jam | tea | tag rule |
 | blueberry jam | tea | tag rule |
 | pepper jam | tea | tag rule |
+| rice | ??? | catch-all |
 | tofu | ??? | catch-all |
 | jam | tea | tag rule |
 | tea | tea | tag rule |
@@ -936,6 +954,7 @@ rerun it after changing the yml or adding pngs.
 | clementine jam | ??? | catch-all |
 | blueberry jam | ??? | catch-all |
 | pepper jam | ??? | catch-all |
+| rice | ??? | catch-all |
 | tofu | ??? | catch-all |
 | jam | ??? | catch-all |
 | tea | ??? | catch-all |
@@ -955,9 +974,9 @@ rerun it after changing the yml or adding pngs.
 | milkweed pod | soup? (not drawn; today: ???) | catch-all |
 | clementine | clementine jam | tag rule |
 | blueberry | blueberry jam | tag rule |
-| plum | jam (not drawn; today: ???) | tag rule |
-| strawberry tree fruit | jam (not drawn; today: ???) | tag rule |
-| olive | jam (not drawn; today: ???) | tag rule |
+| plum | jam | tag rule |
+| strawberry tree fruit | jam | tag rule |
+| olive | jam | tag rule |
 | pine nut | candied nuts (not drawn; today: ???) | tag rule |
 | ginkgo nut | candied nuts (not drawn; today: ???) | tag rule |
 | russula | mushroom soup (not drawn; today: ???) | catch-all |
@@ -971,19 +990,20 @@ rerun it after changing the yml or adding pngs.
 | honey | flower syrup (not drawn; today: ???) | tag rule |
 | birch sap | flower syrup (not drawn; today: ???) | tag rule |
 | ice | ??? | catch-all |
-| wheat | porridge (not drawn; today: ???) | tag rule |
+| wheat | porridge | tag rule |
 | tapioca pearls | ??? | catch-all |
 | egg | ??? | catch-all |
-| corn | porridge (not drawn; today: ???) | tag rule |
+| corn | porridge | tag rule |
 | soybean | soup? (not drawn; today: ???) | catch-all |
 | onion | soup? (not drawn; today: ???) | catch-all |
 | tomato | soup? (not drawn; today: ???) | catch-all |
 | tea leaves | tea | tag rule |
-| apple | jam (not drawn; today: ???) | tag rule |
-| rice | porridge (not drawn; today: ???) | tag rule |
+| apple | jam | tag rule |
+| rice | porridge | tag rule |
 | clementine jam | ??? | catch-all |
 | blueberry jam | ??? | catch-all |
 | pepper jam | ??? | catch-all |
+| rice | ??? | catch-all |
 | tofu | ??? | catch-all |
 | jam | ??? | catch-all |
 | tea | tea | tag rule |
@@ -996,16 +1016,16 @@ rerun it after changing the yml or adding pngs.
 |---|---|---|
 | (nothing) | ??? | catch-all |
 | potato | potato soup | tag rule |
-| pepper | salad (not drawn; today: ???) | tag rule |
-| watercress | salad (not drawn; today: ???) | tag rule |
-| dandelion greens | salad (not drawn; today: ???) | tag rule |
-| bellflower | salad (not drawn; today: ???) | tag rule |
-| milkweed pod | salad (not drawn; today: ???) | tag rule |
-| clementine | salad (not drawn; today: ???) | tag rule |
-| blueberry | salad (not drawn; today: ???) | tag rule |
-| plum | salad (not drawn; today: ???) | tag rule |
-| strawberry tree fruit | salad (not drawn; today: ???) | tag rule |
-| olive | salad (not drawn; today: ???) | tag rule |
+| pepper | salad | tag rule |
+| watercress | salad | tag rule |
+| dandelion greens | salad | tag rule |
+| bellflower | salad | tag rule |
+| milkweed pod | salad | tag rule |
+| clementine | salad | tag rule |
+| blueberry | salad | tag rule |
+| plum | salad | tag rule |
+| strawberry tree fruit | salad | tag rule |
+| olive | salad | tag rule |
 | pine nut | ??? | catch-all |
 | ginkgo nut | ??? | catch-all |
 | russula | mushroom soup (not drawn; today: ???) | catch-all |
@@ -1022,16 +1042,17 @@ rerun it after changing the yml or adding pngs.
 | wheat | ??? | catch-all |
 | tapioca pearls | ??? | catch-all |
 | egg | ??? | catch-all |
-| corn | salad (not drawn; today: ???) | tag rule |
+| corn | salad | tag rule |
 | soybean | soup? (not drawn; today: ???) | catch-all |
-| onion | salad (not drawn; today: ???) | tag rule |
-| tomato | salad (not drawn; today: ???) | tag rule |
+| onion | salad | tag rule |
+| tomato | salad | tag rule |
 | tea leaves | ??? | catch-all |
-| apple | salad (not drawn; today: ???) | tag rule |
+| apple | salad | tag rule |
 | rice | ??? | catch-all |
 | clementine jam | ??? | catch-all |
 | blueberry jam | ??? | catch-all |
 | pepper jam | ??? | catch-all |
+| rice | ??? | catch-all |
 | tofu | ??? | catch-all |
 | jam | ??? | catch-all |
 | tea | ??? | catch-all |
@@ -1080,6 +1101,7 @@ rerun it after changing the yml or adding pngs.
 | clementine jam | ??? | catch-all |
 | blueberry jam | ??? | catch-all |
 | pepper jam | ??? | catch-all |
+| rice | ??? | catch-all |
 | tofu | ??? | catch-all |
 | jam | ??? | catch-all |
 | tea | ??? | catch-all |
@@ -1099,9 +1121,9 @@ rerun it after changing the yml or adding pngs.
 | milkweed pod | soup? (not drawn; today: ???) | catch-all |
 | clementine | clementine jam | tag rule |
 | blueberry | blueberry jam | tag rule |
-| plum | jam (not drawn; today: ???) | tag rule |
-| strawberry tree fruit | jam (not drawn; today: ???) | tag rule |
-| olive | jam (not drawn; today: ???) | tag rule |
+| plum | jam | tag rule |
+| strawberry tree fruit | jam | tag rule |
+| olive | jam | tag rule |
 | pine nut | candied nuts (not drawn; today: ???) | tag rule |
 | ginkgo nut | candied nuts (not drawn; today: ???) | tag rule |
 | russula | mushroom soup (not drawn; today: ???) | catch-all |
@@ -1115,19 +1137,20 @@ rerun it after changing the yml or adding pngs.
 | honey | ??? | catch-all |
 | birch sap | ??? | catch-all |
 | ice | ??? | catch-all |
-| wheat | porridge (not drawn; today: ???) | tag rule |
+| wheat | porridge | tag rule |
 | tapioca pearls | ??? | catch-all |
 | egg | ??? | catch-all |
-| corn | porridge (not drawn; today: ???) | tag rule |
+| corn | porridge | tag rule |
 | soybean | soup? (not drawn; today: ???) | catch-all |
 | onion | soup? (not drawn; today: ???) | catch-all |
 | tomato | soup? (not drawn; today: ???) | catch-all |
 | tea leaves | tea | tag rule |
-| apple | jam (not drawn; today: ???) | tag rule |
-| rice | porridge (not drawn; today: ???) | tag rule |
+| apple | jam | tag rule |
+| rice | porridge | tag rule |
 | clementine jam | ??? | catch-all |
 | blueberry jam | ??? | catch-all |
 | pepper jam | ??? | catch-all |
+| rice | ??? | catch-all |
 | tofu | ??? | catch-all |
 | jam | ??? | catch-all |
 | tea | tea | tag rule |
@@ -1147,9 +1170,9 @@ rerun it after changing the yml or adding pngs.
 | milkweed pod | soup? (not drawn; today: ???) | catch-all |
 | clementine | clementine jam | tag rule |
 | blueberry | blueberry jam | tag rule |
-| plum | jam (not drawn; today: ???) | tag rule |
-| strawberry tree fruit | jam (not drawn; today: ???) | tag rule |
-| olive | jam (not drawn; today: ???) | tag rule |
+| plum | jam | tag rule |
+| strawberry tree fruit | jam | tag rule |
+| olive | jam | tag rule |
 | pine nut | candied nuts (not drawn; today: ???) | tag rule |
 | ginkgo nut | candied nuts (not drawn; today: ???) | tag rule |
 | russula | mushroom soup (not drawn; today: ???) | catch-all |
@@ -1163,19 +1186,20 @@ rerun it after changing the yml or adding pngs.
 | honey | ??? | catch-all |
 | birch sap | ??? | catch-all |
 | ice | ??? | catch-all |
-| wheat | porridge (not drawn; today: ???) | tag rule |
+| wheat | porridge | tag rule |
 | tapioca pearls | ??? | catch-all |
 | egg | ??? | catch-all |
-| corn | porridge (not drawn; today: ???) | tag rule |
+| corn | porridge | tag rule |
 | soybean | soup? (not drawn; today: ???) | catch-all |
 | onion | soup? (not drawn; today: ???) | catch-all |
 | tomato | soup? (not drawn; today: ???) | catch-all |
 | tea leaves | tea | tag rule |
-| apple | jam (not drawn; today: ???) | tag rule |
-| rice | porridge (not drawn; today: ???) | tag rule |
+| apple | jam | tag rule |
+| rice | porridge | tag rule |
 | clementine jam | ??? | catch-all |
 | blueberry jam | ??? | catch-all |
 | pepper jam | ??? | catch-all |
+| rice | ??? | catch-all |
 | tofu | ??? | catch-all |
 | jam | ??? | catch-all |
 | tea | tea | tag rule |
@@ -1201,9 +1225,9 @@ rerun it after changing the yml or adding pngs.
 | pine nut | ??? | catch-all |
 | ginkgo nut | ??? | catch-all |
 | russula | mushroom soup (not drawn; today: ???) | catch-all |
-| linden flower | iced tea (not drawn; today: ???) | tag rule |
-| jasmine | iced tea (not drawn; today: ???) | tag rule |
-| chrysanthemum | iced tea (not drawn; today: ???) | tag rule |
+| linden flower | iced tea | tag rule |
+| jasmine | iced tea | tag rule |
+| chrysanthemum | iced tea | tag rule |
 | lavender | ??? | catch-all |
 | honeysuckle | ??? | catch-all |
 | mint | ??? | catch-all |
@@ -1218,34 +1242,35 @@ rerun it after changing the yml or adding pngs.
 | soybean | soup? (not drawn; today: ???) | catch-all |
 | onion | soup? (not drawn; today: ???) | catch-all |
 | tomato | soup? (not drawn; today: ???) | catch-all |
-| tea leaves | iced tea (not drawn; today: ???) | tag rule |
+| tea leaves | iced tea | tag rule |
 | apple | sorbet | tag rule |
 | rice | ??? | catch-all |
 | clementine jam | ??? | catch-all |
 | blueberry jam | ??? | catch-all |
 | pepper jam | ??? | catch-all |
+| rice | ??? | catch-all |
 | tofu | ??? | catch-all |
 | jam | ??? | catch-all |
-| tea | iced tea (not drawn; today: ???) | tag rule |
-| iced tea | iced tea (not drawn; today: ???) | tag rule |
+| tea | iced tea | tag rule |
+| iced tea | iced tea | tag rule |
 | flower syrup | ??? | catch-all |
 
 ### wheat
 
 | with | makes | rule |
 |---|---|---|
-| (nothing) | porridge (not drawn; today: ???) | tag rule |
+| (nothing) | porridge | tag rule |
 | potato | soup? (not drawn; today: ???) | catch-all |
 | pepper | soup? (not drawn; today: ???) | catch-all |
 | watercress | soup? (not drawn; today: ???) | catch-all |
 | dandelion greens | soup? (not drawn; today: ???) | catch-all |
 | bellflower | soup? (not drawn; today: ???) | catch-all |
 | milkweed pod | soup? (not drawn; today: ???) | catch-all |
-| clementine | porridge (not drawn; today: ???) | tag rule |
-| blueberry | porridge (not drawn; today: ???) | tag rule |
-| plum | porridge (not drawn; today: ???) | tag rule |
-| strawberry tree fruit | porridge (not drawn; today: ???) | tag rule |
-| olive | porridge (not drawn; today: ???) | tag rule |
+| clementine | porridge | tag rule |
+| blueberry | porridge | tag rule |
+| plum | porridge | tag rule |
+| strawberry tree fruit | porridge | tag rule |
+| olive | porridge | tag rule |
 | pine nut | ??? | catch-all |
 | ginkgo nut | ??? | catch-all |
 | russula | mushroom soup (not drawn; today: ???) | catch-all |
@@ -1253,30 +1278,31 @@ rerun it after changing the yml or adding pngs.
 | jasmine | ??? | catch-all |
 | chrysanthemum | ??? | catch-all |
 | lavender | ??? | catch-all |
-| honeysuckle | porridge (not drawn; today: ???) | tag rule |
+| honeysuckle | porridge | tag rule |
 | mint | ??? | catch-all |
 | foxglove | ??? | catch-all |
-| honey | porridge (not drawn; today: ???) | tag rule |
-| birch sap | porridge (not drawn; today: ???) | tag rule |
+| honey | porridge | tag rule |
+| birch sap | porridge | tag rule |
 | ice | ??? | catch-all |
 | wheat | ??? | catch-all |
 | tapioca pearls | ??? | catch-all |
 | egg | ??? | catch-all |
-| corn | porridge (not drawn; today: ???) | tag rule |
+| corn | porridge | tag rule |
 | soybean | soup? (not drawn; today: ???) | catch-all |
 | onion | soup? (not drawn; today: ???) | catch-all |
 | tomato | soup? (not drawn; today: ???) | catch-all |
 | tea leaves | ??? | catch-all |
-| apple | porridge (not drawn; today: ???) | tag rule |
+| apple | porridge | tag rule |
 | rice | ??? | catch-all |
-| clementine jam | porridge (not drawn; today: ???) | tag rule |
-| blueberry jam | porridge (not drawn; today: ???) | tag rule |
-| pepper jam | porridge (not drawn; today: ???) | tag rule |
+| clementine jam | porridge | tag rule |
+| blueberry jam | porridge | tag rule |
+| pepper jam | porridge | tag rule |
+| rice | ??? | catch-all |
 | tofu | ??? | catch-all |
-| jam | porridge (not drawn; today: ???) | tag rule |
+| jam | porridge | tag rule |
 | tea | ??? | catch-all |
 | iced tea | ??? | catch-all |
-| flower syrup | porridge (not drawn; today: ???) | tag rule |
+| flower syrup | porridge | tag rule |
 
 ### tapioca pearls
 
@@ -1320,6 +1346,7 @@ rerun it after changing the yml or adding pngs.
 | clementine jam | ??? | catch-all |
 | blueberry jam | ??? | catch-all |
 | pepper jam | ??? | catch-all |
+| rice | ??? | catch-all |
 | tofu | ??? | catch-all |
 | jam | ??? | catch-all |
 | tea | bubble tea (not drawn; today: ???) | tag rule |
@@ -1368,6 +1395,7 @@ rerun it after changing the yml or adding pngs.
 | clementine jam | ??? | catch-all |
 | blueberry jam | ??? | catch-all |
 | pepper jam | ??? | catch-all |
+| rice | ??? | catch-all |
 | tofu | ??? | catch-all |
 | jam | ??? | catch-all |
 | tea | ??? | catch-all |
@@ -1378,18 +1406,18 @@ rerun it after changing the yml or adding pngs.
 
 | with | makes | rule |
 |---|---|---|
-| (nothing) | porridge (not drawn; today: ???) | tag rule |
+| (nothing) | porridge | tag rule |
 | potato | soup? (not drawn; today: ???) | catch-all |
 | pepper | pepper jam | tag rule |
-| watercress | salad (not drawn; today: ???) | tag rule |
-| dandelion greens | salad (not drawn; today: ???) | tag rule |
-| bellflower | salad (not drawn; today: ???) | tag rule |
+| watercress | salad | tag rule |
+| dandelion greens | salad | tag rule |
+| bellflower | salad | tag rule |
 | milkweed pod | soup? (not drawn; today: ???) | catch-all |
 | clementine | clementine jam | tag rule |
 | blueberry | blueberry jam | tag rule |
-| plum | jam (not drawn; today: ???) | tag rule |
-| strawberry tree fruit | jam (not drawn; today: ???) | tag rule |
-| olive | jam (not drawn; today: ???) | tag rule |
+| plum | jam | tag rule |
+| strawberry tree fruit | jam | tag rule |
+| olive | jam | tag rule |
 | pine nut | candied nuts (not drawn; today: ???) | tag rule |
 | ginkgo nut | candied nuts (not drawn; today: ???) | tag rule |
 | russula | mushroom soup (not drawn; today: ???) | catch-all |
@@ -1397,30 +1425,31 @@ rerun it after changing the yml or adding pngs.
 | jasmine | tea | tag rule |
 | chrysanthemum | tea | tag rule |
 | lavender | soup? (not drawn; today: ???) | catch-all |
-| honeysuckle | porridge (not drawn; today: ???) | tag rule |
-| mint | salad (not drawn; today: ???) | tag rule |
+| honeysuckle | porridge | tag rule |
+| mint | salad | tag rule |
 | foxglove | ??? | catch-all |
-| honey | porridge (not drawn; today: ???) | tag rule |
-| birch sap | porridge (not drawn; today: ???) | tag rule |
+| honey | porridge | tag rule |
+| birch sap | porridge | tag rule |
 | ice | soup? (not drawn; today: ???) | catch-all |
-| wheat | porridge (not drawn; today: ???) | tag rule |
+| wheat | porridge | tag rule |
 | tapioca pearls | soup? (not drawn; today: ???) | catch-all |
 | egg | egg drop soup (not drawn; today: ???) | tag rule |
-| corn | porridge (not drawn; today: ???) | tag rule |
+| corn | porridge | tag rule |
 | soybean | soup? (not drawn; today: ???) | catch-all |
 | onion | soup? (not drawn; today: ???) | catch-all |
 | tomato | soup? (not drawn; today: ???) | catch-all |
 | tea leaves | tea | tag rule |
-| apple | jam (not drawn; today: ???) | tag rule |
-| rice | porridge (not drawn; today: ???) | tag rule |
-| clementine jam | porridge (not drawn; today: ???) | tag rule |
-| blueberry jam | porridge (not drawn; today: ???) | tag rule |
-| pepper jam | porridge (not drawn; today: ???) | tag rule |
+| apple | jam | tag rule |
+| rice | porridge | tag rule |
+| clementine jam | porridge | tag rule |
+| blueberry jam | porridge | tag rule |
+| pepper jam | porridge | tag rule |
+| rice | soup? (not drawn; today: ???) | catch-all |
 | tofu | soup? (not drawn; today: ???) | catch-all |
-| jam | porridge (not drawn; today: ???) | tag rule |
+| jam | porridge | tag rule |
 | tea | tea | tag rule |
 | iced tea | tea | tag rule |
-| flower syrup | porridge (not drawn; today: ???) | tag rule |
+| flower syrup | porridge | tag rule |
 
 ### soybean
 
@@ -1464,6 +1493,7 @@ rerun it after changing the yml or adding pngs.
 | clementine jam | soup? (not drawn; today: ???) | catch-all |
 | blueberry jam | soup? (not drawn; today: ???) | catch-all |
 | pepper jam | soup? (not drawn; today: ???) | catch-all |
+| rice | soup? (not drawn; today: ???) | catch-all |
 | tofu | soup? (not drawn; today: ???) | catch-all |
 | jam | soup? (not drawn; today: ???) | catch-all |
 | tea | soup? (not drawn; today: ???) | catch-all |
@@ -1477,9 +1507,9 @@ rerun it after changing the yml or adding pngs.
 | (nothing) | soup? (not drawn; today: ???) | catch-all |
 | potato | potato soup | tag rule |
 | pepper | pepper stew (not drawn; today: ???) | tag rule |
-| watercress | salad (not drawn; today: ???) | tag rule |
-| dandelion greens | salad (not drawn; today: ???) | tag rule |
-| bellflower | salad (not drawn; today: ???) | tag rule |
+| watercress | salad | tag rule |
+| dandelion greens | salad | tag rule |
+| bellflower | salad | tag rule |
 | milkweed pod | soup? (not drawn; today: ???) | catch-all |
 | clementine | soup? (not drawn; today: ???) | catch-all |
 | blueberry | soup? (not drawn; today: ???) | catch-all |
@@ -1494,7 +1524,7 @@ rerun it after changing the yml or adding pngs.
 | chrysanthemum | soup? (not drawn; today: ???) | catch-all |
 | lavender | soup? (not drawn; today: ???) | catch-all |
 | honeysuckle | soup? (not drawn; today: ???) | catch-all |
-| mint | salad (not drawn; today: ???) | tag rule |
+| mint | salad | tag rule |
 | foxglove | ??? | catch-all |
 | honey | soup? (not drawn; today: ???) | catch-all |
 | birch sap | soup? (not drawn; today: ???) | catch-all |
@@ -1512,6 +1542,7 @@ rerun it after changing the yml or adding pngs.
 | clementine jam | soup? (not drawn; today: ???) | catch-all |
 | blueberry jam | soup? (not drawn; today: ???) | catch-all |
 | pepper jam | soup? (not drawn; today: ???) | catch-all |
+| rice | soup? (not drawn; today: ???) | catch-all |
 | tofu | soup? (not drawn; today: ???) | catch-all |
 | jam | soup? (not drawn; today: ???) | catch-all |
 | tea | soup? (not drawn; today: ???) | catch-all |
@@ -1525,9 +1556,9 @@ rerun it after changing the yml or adding pngs.
 | (nothing) | soup? (not drawn; today: ???) | catch-all |
 | potato | soup? (not drawn; today: ???) | catch-all |
 | pepper | pepper stew (not drawn; today: ???) | tag rule |
-| watercress | salad (not drawn; today: ???) | tag rule |
-| dandelion greens | salad (not drawn; today: ???) | tag rule |
-| bellflower | salad (not drawn; today: ???) | tag rule |
+| watercress | salad | tag rule |
+| dandelion greens | salad | tag rule |
+| bellflower | salad | tag rule |
 | milkweed pod | soup? (not drawn; today: ???) | catch-all |
 | clementine | soup? (not drawn; today: ???) | catch-all |
 | blueberry | soup? (not drawn; today: ???) | catch-all |
@@ -1542,7 +1573,7 @@ rerun it after changing the yml or adding pngs.
 | chrysanthemum | soup? (not drawn; today: ???) | catch-all |
 | lavender | soup? (not drawn; today: ???) | catch-all |
 | honeysuckle | soup? (not drawn; today: ???) | catch-all |
-| mint | salad (not drawn; today: ???) | tag rule |
+| mint | salad | tag rule |
 | foxglove | ??? | catch-all |
 | honey | soup? (not drawn; today: ???) | catch-all |
 | birch sap | soup? (not drawn; today: ???) | catch-all |
@@ -1560,6 +1591,7 @@ rerun it after changing the yml or adding pngs.
 | clementine jam | soup? (not drawn; today: ???) | catch-all |
 | blueberry jam | soup? (not drawn; today: ???) | catch-all |
 | pepper jam | soup? (not drawn; today: ???) | catch-all |
+| rice | soup? (not drawn; today: ???) | catch-all |
 | tofu | soup? (not drawn; today: ???) | catch-all |
 | jam | soup? (not drawn; today: ???) | catch-all |
 | tea | soup? (not drawn; today: ???) | catch-all |
@@ -1594,7 +1626,7 @@ rerun it after changing the yml or adding pngs.
 | foxglove | ??? | catch-all |
 | honey | tea | tag rule |
 | birch sap | tea | tag rule |
-| ice | iced tea (not drawn; today: ???) | tag rule |
+| ice | iced tea | tag rule |
 | wheat | ??? | catch-all |
 | tapioca pearls | bubble tea (not drawn; today: ???) | tag rule |
 | egg | ??? | catch-all |
@@ -1604,10 +1636,11 @@ rerun it after changing the yml or adding pngs.
 | tomato | soup? (not drawn; today: ???) | catch-all |
 | tea leaves | tea | tag rule |
 | apple | tea | tag rule |
-| rice | ??? | catch-all |
+| rice | chazuke | exact |
 | clementine jam | tea | tag rule |
 | blueberry jam | tea | tag rule |
 | pepper jam | tea | tag rule |
+| rice | chazuke | exact |
 | tofu | ??? | catch-all |
 | jam | tea | tag rule |
 | tea | tea | tag rule |
@@ -1621,9 +1654,9 @@ rerun it after changing the yml or adding pngs.
 | (nothing) | ??? | catch-all |
 | potato | soup? (not drawn; today: ???) | catch-all |
 | pepper | pepper jam | tag rule |
-| watercress | salad (not drawn; today: ???) | tag rule |
-| dandelion greens | salad (not drawn; today: ???) | tag rule |
-| bellflower | salad (not drawn; today: ???) | tag rule |
+| watercress | salad | tag rule |
+| dandelion greens | salad | tag rule |
+| bellflower | salad | tag rule |
 | milkweed pod | soup? (not drawn; today: ???) | catch-all |
 | clementine | fruit salad | tag rule |
 | blueberry | fruit salad | tag rule |
@@ -1637,30 +1670,31 @@ rerun it after changing the yml or adding pngs.
 | jasmine | tea | tag rule |
 | chrysanthemum | tea | tag rule |
 | lavender | ??? | catch-all |
-| honeysuckle | jam (not drawn; today: ???) | tag rule |
-| mint | salad (not drawn; today: ???) | tag rule |
+| honeysuckle | jam | tag rule |
+| mint | salad | tag rule |
 | foxglove | ??? | catch-all |
-| honey | jam (not drawn; today: ???) | tag rule |
-| birch sap | jam (not drawn; today: ???) | tag rule |
+| honey | jam | tag rule |
+| birch sap | jam | tag rule |
 | ice | sorbet | tag rule |
-| wheat | porridge (not drawn; today: ???) | tag rule |
+| wheat | porridge | tag rule |
 | tapioca pearls | ??? | catch-all |
 | egg | ??? | catch-all |
-| corn | jam (not drawn; today: ???) | tag rule |
+| corn | jam | tag rule |
 | soybean | soup? (not drawn; today: ???) | catch-all |
 | onion | soup? (not drawn; today: ???) | catch-all |
 | tomato | soup? (not drawn; today: ???) | catch-all |
 | tea leaves | tea | tag rule |
 | apple | fruit salad | tag rule |
-| rice | porridge (not drawn; today: ???) | tag rule |
-| clementine jam | jam (not drawn; today: ???) | tag rule |
-| blueberry jam | jam (not drawn; today: ???) | tag rule |
-| pepper jam | jam (not drawn; today: ???) | tag rule |
+| rice | porridge | tag rule |
+| clementine jam | jam | tag rule |
+| blueberry jam | jam | tag rule |
+| pepper jam | jam | tag rule |
+| rice | ??? | catch-all |
 | tofu | ??? | catch-all |
-| jam | jam (not drawn; today: ???) | tag rule |
+| jam | jam | tag rule |
 | tea | tea | tag rule |
 | iced tea | tea | tag rule |
-| flower syrup | jam (not drawn; today: ???) | tag rule |
+| flower syrup | jam | tag rule |
 
 ### rice
 
@@ -1673,11 +1707,11 @@ rerun it after changing the yml or adding pngs.
 | dandelion greens | soup? (not drawn; today: ???) | catch-all |
 | bellflower | soup? (not drawn; today: ???) | catch-all |
 | milkweed pod | soup? (not drawn; today: ???) | catch-all |
-| clementine | porridge (not drawn; today: ???) | tag rule |
-| blueberry | porridge (not drawn; today: ???) | tag rule |
-| plum | porridge (not drawn; today: ???) | tag rule |
-| strawberry tree fruit | porridge (not drawn; today: ???) | tag rule |
-| olive | porridge (not drawn; today: ???) | tag rule |
+| clementine | porridge | tag rule |
+| blueberry | porridge | tag rule |
+| plum | porridge | tag rule |
+| strawberry tree fruit | porridge | tag rule |
+| olive | porridge | tag rule |
 | pine nut | ??? | catch-all |
 | ginkgo nut | ??? | catch-all |
 | russula | mushroom soup (not drawn; today: ???) | catch-all |
@@ -1685,30 +1719,31 @@ rerun it after changing the yml or adding pngs.
 | jasmine | ??? | catch-all |
 | chrysanthemum | ??? | catch-all |
 | lavender | ??? | catch-all |
-| honeysuckle | porridge (not drawn; today: ???) | tag rule |
+| honeysuckle | porridge | tag rule |
 | mint | ??? | catch-all |
 | foxglove | ??? | catch-all |
-| honey | porridge (not drawn; today: ???) | tag rule |
-| birch sap | porridge (not drawn; today: ???) | tag rule |
+| honey | porridge | tag rule |
+| birch sap | porridge | tag rule |
 | ice | ??? | catch-all |
 | wheat | ??? | catch-all |
 | tapioca pearls | ??? | catch-all |
 | egg | ??? | catch-all |
-| corn | porridge (not drawn; today: ???) | tag rule |
+| corn | porridge | tag rule |
 | soybean | soup? (not drawn; today: ???) | catch-all |
 | onion | soup? (not drawn; today: ???) | catch-all |
 | tomato | soup? (not drawn; today: ???) | catch-all |
-| tea leaves | ??? | catch-all |
-| apple | porridge (not drawn; today: ???) | tag rule |
+| tea leaves | chazuke | exact |
+| apple | porridge | tag rule |
 | rice | rice | exact |
-| clementine jam | porridge (not drawn; today: ???) | tag rule |
-| blueberry jam | porridge (not drawn; today: ???) | tag rule |
-| pepper jam | porridge (not drawn; today: ???) | tag rule |
+| clementine jam | porridge | tag rule |
+| blueberry jam | porridge | tag rule |
+| pepper jam | porridge | tag rule |
+| rice | ??? | catch-all |
 | tofu | ??? | catch-all |
-| jam | porridge (not drawn; today: ???) | tag rule |
-| tea | ??? | catch-all |
+| jam | porridge | tag rule |
+| tea | chazuke | exact |
 | iced tea | ??? | catch-all |
-| flower syrup | porridge (not drawn; today: ???) | tag rule |
+| flower syrup | porridge | tag rule |
 
 ### clementine jam
 
@@ -1723,9 +1758,9 @@ rerun it after changing the yml or adding pngs.
 | milkweed pod | soup? (not drawn; today: ???) | catch-all |
 | clementine | clementine jam | tag rule |
 | blueberry | blueberry jam | tag rule |
-| plum | jam (not drawn; today: ???) | tag rule |
-| strawberry tree fruit | jam (not drawn; today: ???) | tag rule |
-| olive | jam (not drawn; today: ???) | tag rule |
+| plum | jam | tag rule |
+| strawberry tree fruit | jam | tag rule |
+| olive | jam | tag rule |
 | pine nut | candied nuts (not drawn; today: ???) | tag rule |
 | ginkgo nut | candied nuts (not drawn; today: ???) | tag rule |
 | russula | mushroom soup (not drawn; today: ???) | catch-all |
@@ -1739,19 +1774,20 @@ rerun it after changing the yml or adding pngs.
 | honey | ??? | catch-all |
 | birch sap | ??? | catch-all |
 | ice | ??? | catch-all |
-| wheat | porridge (not drawn; today: ???) | tag rule |
+| wheat | porridge | tag rule |
 | tapioca pearls | ??? | catch-all |
 | egg | ??? | catch-all |
-| corn | porridge (not drawn; today: ???) | tag rule |
+| corn | porridge | tag rule |
 | soybean | soup? (not drawn; today: ???) | catch-all |
 | onion | soup? (not drawn; today: ???) | catch-all |
 | tomato | soup? (not drawn; today: ???) | catch-all |
 | tea leaves | tea | tag rule |
-| apple | jam (not drawn; today: ???) | tag rule |
-| rice | porridge (not drawn; today: ???) | tag rule |
+| apple | jam | tag rule |
+| rice | porridge | tag rule |
 | clementine jam | ??? | catch-all |
 | blueberry jam | ??? | catch-all |
 | pepper jam | ??? | catch-all |
+| rice | ??? | catch-all |
 | tofu | ??? | catch-all |
 | jam | ??? | catch-all |
 | tea | tea | tag rule |
@@ -1771,9 +1807,9 @@ rerun it after changing the yml or adding pngs.
 | milkweed pod | soup? (not drawn; today: ???) | catch-all |
 | clementine | clementine jam | tag rule |
 | blueberry | blueberry jam | tag rule |
-| plum | jam (not drawn; today: ???) | tag rule |
-| strawberry tree fruit | jam (not drawn; today: ???) | tag rule |
-| olive | jam (not drawn; today: ???) | tag rule |
+| plum | jam | tag rule |
+| strawberry tree fruit | jam | tag rule |
+| olive | jam | tag rule |
 | pine nut | candied nuts (not drawn; today: ???) | tag rule |
 | ginkgo nut | candied nuts (not drawn; today: ???) | tag rule |
 | russula | mushroom soup (not drawn; today: ???) | catch-all |
@@ -1787,19 +1823,20 @@ rerun it after changing the yml or adding pngs.
 | honey | ??? | catch-all |
 | birch sap | ??? | catch-all |
 | ice | ??? | catch-all |
-| wheat | porridge (not drawn; today: ???) | tag rule |
+| wheat | porridge | tag rule |
 | tapioca pearls | ??? | catch-all |
 | egg | ??? | catch-all |
-| corn | porridge (not drawn; today: ???) | tag rule |
+| corn | porridge | tag rule |
 | soybean | soup? (not drawn; today: ???) | catch-all |
 | onion | soup? (not drawn; today: ???) | catch-all |
 | tomato | soup? (not drawn; today: ???) | catch-all |
 | tea leaves | tea | tag rule |
-| apple | jam (not drawn; today: ???) | tag rule |
-| rice | porridge (not drawn; today: ???) | tag rule |
+| apple | jam | tag rule |
+| rice | porridge | tag rule |
 | clementine jam | ??? | catch-all |
 | blueberry jam | ??? | catch-all |
 | pepper jam | ??? | catch-all |
+| rice | ??? | catch-all |
 | tofu | ??? | catch-all |
 | jam | ??? | catch-all |
 | tea | tea | tag rule |
@@ -1819,9 +1856,9 @@ rerun it after changing the yml or adding pngs.
 | milkweed pod | soup? (not drawn; today: ???) | catch-all |
 | clementine | clementine jam | tag rule |
 | blueberry | blueberry jam | tag rule |
-| plum | jam (not drawn; today: ???) | tag rule |
-| strawberry tree fruit | jam (not drawn; today: ???) | tag rule |
-| olive | jam (not drawn; today: ???) | tag rule |
+| plum | jam | tag rule |
+| strawberry tree fruit | jam | tag rule |
+| olive | jam | tag rule |
 | pine nut | candied nuts (not drawn; today: ???) | tag rule |
 | ginkgo nut | candied nuts (not drawn; today: ???) | tag rule |
 | russula | mushroom soup (not drawn; today: ???) | catch-all |
@@ -1835,23 +1872,73 @@ rerun it after changing the yml or adding pngs.
 | honey | ??? | catch-all |
 | birch sap | ??? | catch-all |
 | ice | ??? | catch-all |
-| wheat | porridge (not drawn; today: ???) | tag rule |
+| wheat | porridge | tag rule |
 | tapioca pearls | ??? | catch-all |
 | egg | ??? | catch-all |
-| corn | porridge (not drawn; today: ???) | tag rule |
+| corn | porridge | tag rule |
 | soybean | soup? (not drawn; today: ???) | catch-all |
 | onion | soup? (not drawn; today: ???) | catch-all |
 | tomato | soup? (not drawn; today: ???) | catch-all |
 | tea leaves | tea | tag rule |
-| apple | jam (not drawn; today: ???) | tag rule |
-| rice | porridge (not drawn; today: ???) | tag rule |
+| apple | jam | tag rule |
+| rice | porridge | tag rule |
 | clementine jam | ??? | catch-all |
 | blueberry jam | ??? | catch-all |
 | pepper jam | ??? | catch-all |
+| rice | ??? | catch-all |
 | tofu | ??? | catch-all |
 | jam | ??? | catch-all |
 | tea | tea | tag rule |
 | iced tea | tea | tag rule |
+| flower syrup | ??? | catch-all |
+
+### rice
+
+| with | makes | rule |
+|---|---|---|
+| (nothing) | ??? | catch-all |
+| potato | soup? (not drawn; today: ???) | catch-all |
+| pepper | soup? (not drawn; today: ???) | catch-all |
+| watercress | soup? (not drawn; today: ???) | catch-all |
+| dandelion greens | soup? (not drawn; today: ???) | catch-all |
+| bellflower | soup? (not drawn; today: ???) | catch-all |
+| milkweed pod | soup? (not drawn; today: ???) | catch-all |
+| clementine | ??? | catch-all |
+| blueberry | ??? | catch-all |
+| plum | ??? | catch-all |
+| strawberry tree fruit | ??? | catch-all |
+| olive | ??? | catch-all |
+| pine nut | ??? | catch-all |
+| ginkgo nut | ??? | catch-all |
+| russula | mushroom soup (not drawn; today: ???) | catch-all |
+| linden flower | ??? | catch-all |
+| jasmine | ??? | catch-all |
+| chrysanthemum | ??? | catch-all |
+| lavender | ??? | catch-all |
+| honeysuckle | ??? | catch-all |
+| mint | ??? | catch-all |
+| foxglove | ??? | catch-all |
+| honey | ??? | catch-all |
+| birch sap | ??? | catch-all |
+| ice | ??? | catch-all |
+| wheat | ??? | catch-all |
+| tapioca pearls | ??? | catch-all |
+| egg | ??? | catch-all |
+| corn | soup? (not drawn; today: ???) | catch-all |
+| soybean | soup? (not drawn; today: ???) | catch-all |
+| onion | soup? (not drawn; today: ???) | catch-all |
+| tomato | soup? (not drawn; today: ???) | catch-all |
+| tea leaves | chazuke | exact |
+| apple | ??? | catch-all |
+| rice | ??? | catch-all |
+| clementine jam | ??? | catch-all |
+| blueberry jam | ??? | catch-all |
+| pepper jam | ??? | catch-all |
+| rice | ??? | catch-all |
+| tofu | ??? | catch-all |
+| jam | ??? | catch-all |
+| tea | chazuke | exact |
+| iced tea | ??? | catch-all |
 | flower syrup | ??? | catch-all |
 
 ### tofu
@@ -1896,6 +1983,7 @@ rerun it after changing the yml or adding pngs.
 | clementine jam | ??? | catch-all |
 | blueberry jam | ??? | catch-all |
 | pepper jam | ??? | catch-all |
+| rice | ??? | catch-all |
 | tofu | ??? | catch-all |
 | jam | ??? | catch-all |
 | tea | ??? | catch-all |
@@ -1915,9 +2003,9 @@ rerun it after changing the yml or adding pngs.
 | milkweed pod | soup? (not drawn; today: ???) | catch-all |
 | clementine | clementine jam | tag rule |
 | blueberry | blueberry jam | tag rule |
-| plum | jam (not drawn; today: ???) | tag rule |
-| strawberry tree fruit | jam (not drawn; today: ???) | tag rule |
-| olive | jam (not drawn; today: ???) | tag rule |
+| plum | jam | tag rule |
+| strawberry tree fruit | jam | tag rule |
+| olive | jam | tag rule |
 | pine nut | candied nuts (not drawn; today: ???) | tag rule |
 | ginkgo nut | candied nuts (not drawn; today: ???) | tag rule |
 | russula | mushroom soup (not drawn; today: ???) | catch-all |
@@ -1931,19 +2019,20 @@ rerun it after changing the yml or adding pngs.
 | honey | ??? | catch-all |
 | birch sap | ??? | catch-all |
 | ice | ??? | catch-all |
-| wheat | porridge (not drawn; today: ???) | tag rule |
+| wheat | porridge | tag rule |
 | tapioca pearls | ??? | catch-all |
 | egg | ??? | catch-all |
-| corn | porridge (not drawn; today: ???) | tag rule |
+| corn | porridge | tag rule |
 | soybean | soup? (not drawn; today: ???) | catch-all |
 | onion | soup? (not drawn; today: ???) | catch-all |
 | tomato | soup? (not drawn; today: ???) | catch-all |
 | tea leaves | tea | tag rule |
-| apple | jam (not drawn; today: ???) | tag rule |
-| rice | porridge (not drawn; today: ???) | tag rule |
+| apple | jam | tag rule |
+| rice | porridge | tag rule |
 | clementine jam | ??? | catch-all |
 | blueberry jam | ??? | catch-all |
 | pepper jam | ??? | catch-all |
+| rice | ??? | catch-all |
 | tofu | ??? | catch-all |
 | jam | ??? | catch-all |
 | tea | tea | tag rule |
@@ -1978,7 +2067,7 @@ rerun it after changing the yml or adding pngs.
 | foxglove | ??? | catch-all |
 | honey | tea | tag rule |
 | birch sap | tea | tag rule |
-| ice | iced tea (not drawn; today: ???) | tag rule |
+| ice | iced tea | tag rule |
 | wheat | ??? | catch-all |
 | tapioca pearls | bubble tea (not drawn; today: ???) | tag rule |
 | egg | ??? | catch-all |
@@ -1988,10 +2077,11 @@ rerun it after changing the yml or adding pngs.
 | tomato | soup? (not drawn; today: ???) | catch-all |
 | tea leaves | tea | tag rule |
 | apple | tea | tag rule |
-| rice | ??? | catch-all |
+| rice | chazuke | exact |
 | clementine jam | tea | tag rule |
 | blueberry jam | tea | tag rule |
 | pepper jam | tea | tag rule |
+| rice | chazuke | exact |
 | tofu | ??? | catch-all |
 | jam | tea | tag rule |
 | tea | tea | tag rule |
@@ -2026,7 +2116,7 @@ rerun it after changing the yml or adding pngs.
 | foxglove | ??? | catch-all |
 | honey | tea | tag rule |
 | birch sap | tea | tag rule |
-| ice | iced tea (not drawn; today: ???) | tag rule |
+| ice | iced tea | tag rule |
 | wheat | ??? | catch-all |
 | tapioca pearls | bubble tea (not drawn; today: ???) | tag rule |
 | egg | ??? | catch-all |
@@ -2040,6 +2130,7 @@ rerun it after changing the yml or adding pngs.
 | clementine jam | tea | tag rule |
 | blueberry jam | tea | tag rule |
 | pepper jam | tea | tag rule |
+| rice | ??? | catch-all |
 | tofu | ??? | catch-all |
 | jam | tea | tag rule |
 | tea | tea | tag rule |
@@ -2059,9 +2150,9 @@ rerun it after changing the yml or adding pngs.
 | milkweed pod | soup? (not drawn; today: ???) | catch-all |
 | clementine | clementine jam | tag rule |
 | blueberry | blueberry jam | tag rule |
-| plum | jam (not drawn; today: ???) | tag rule |
-| strawberry tree fruit | jam (not drawn; today: ???) | tag rule |
-| olive | jam (not drawn; today: ???) | tag rule |
+| plum | jam | tag rule |
+| strawberry tree fruit | jam | tag rule |
+| olive | jam | tag rule |
 | pine nut | candied nuts (not drawn; today: ???) | tag rule |
 | ginkgo nut | candied nuts (not drawn; today: ???) | tag rule |
 | russula | mushroom soup (not drawn; today: ???) | catch-all |
@@ -2075,19 +2166,20 @@ rerun it after changing the yml or adding pngs.
 | honey | ??? | catch-all |
 | birch sap | ??? | catch-all |
 | ice | ??? | catch-all |
-| wheat | porridge (not drawn; today: ???) | tag rule |
+| wheat | porridge | tag rule |
 | tapioca pearls | ??? | catch-all |
 | egg | ??? | catch-all |
-| corn | porridge (not drawn; today: ???) | tag rule |
+| corn | porridge | tag rule |
 | soybean | soup? (not drawn; today: ???) | catch-all |
 | onion | soup? (not drawn; today: ???) | catch-all |
 | tomato | soup? (not drawn; today: ???) | catch-all |
 | tea leaves | tea | tag rule |
-| apple | jam (not drawn; today: ???) | tag rule |
-| rice | porridge (not drawn; today: ???) | tag rule |
+| apple | jam | tag rule |
+| rice | porridge | tag rule |
 | clementine jam | ??? | catch-all |
 | blueberry jam | ??? | catch-all |
 | pepper jam | ??? | catch-all |
+| rice | ??? | catch-all |
 | tofu | ??? | catch-all |
 | jam | ??? | catch-all |
 | tea | tea | tag rule |

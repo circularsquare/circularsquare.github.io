@@ -105,6 +105,7 @@
       found: s.found || {},
       eaten: s.eaten || {},
       flags: s.flags || {},     // harvested, gotDish, ate
+      reported: s.reported || {},   // 'found:id' / 'made:id' -> true, once sent to the server
     };
   }
 
@@ -147,8 +148,45 @@
   // The bar too: it's pushed to the right end of the row, which can leave it
   // half a pixel off and blurry.
   function align() {
+    scatterPlants();
     if (groundRow) alignToDevice(groundRow);
     if (!bar.hidden) alignToDevice(bar);
+  }
+
+  // A number from 0 to 1 that depends only on the text, so a plant's place
+  // is rolled once and is the same on every visit.
+  function roll(text) {
+    let h = 2166136261;
+    for (let i = 0; i < text.length; i++) h = Math.imul(h ^ text.charCodeAt(i), 16777619);
+    h ^= h >>> 13;
+    h = Math.imul(h, 0x5bd1e995);
+    h ^= h >>> 15;
+    return (h >>> 0) / 4294967296;
+  }
+
+  // Plants stand somewhere between the left corner and the middle of the
+  // ground, each at its own place for its page, and clear of the inventory
+  // (whose room is held even while it's hidden, so nothing jumps when it
+  // appears). Stations stay in the corner. A plant's gap is a share of the
+  // free room, so the gaps of a row of plants never add up to more than it.
+  function scatterPlants() {
+    if (!groundRow || !groundRow.isConnected) return;
+    const kids = [...groundRow.children].filter(c => c !== bar && !c.hidden);
+    const plants = kids.filter(c => c.classList.contains('k-plant'));
+    if (!plants.length) return;
+    for (const p of plants) p.style.marginLeft = '';
+    const gap = 12 * PX;
+    const width = groundRow.clientWidth;
+    const used = kids.reduce((sum, c) => sum + c.offsetWidth, 0) + gap * (kids.length - 1);
+    const inventory = 236 * HALF + gap;   // five tiles, the book and their margins
+    const free = Math.max(0, Math.min(width / 2, width - inventory) - used);
+    const count = {};
+    for (const p of plants) {
+      const kind = p.dataset.kind;
+      count[kind] = (count[kind] || 0) + 1;
+      const share = roll(`${location.pathname}|${kind}|${count[kind]}`) * free / plants.length;
+      p.style.marginLeft = snap(share) + 'px';
+    }
   }
 
   // Always shown at the png's own size, one art pixel per png pixel, so a
@@ -235,6 +273,11 @@
     return !!(id && ITEMS[id].eat);
   }
 
+  // "eat" waits for the first dish, except on things listed in eat_from_start
+  // (fruit), which can be eaten raw straight away.
+  const EAT_EARLY = DATA.eat_from_start || [];
+  const canEatNow = id => edible(id) && (state.flags.gotDish || ITEMS[id].tags.some(t => EAT_EARLY.includes(t)));
+
   function renderInv() {
     const wasHidden = bar.hidden;
     if (state.inv.some(Boolean)) barShown = true;
@@ -251,7 +294,7 @@
       if (id) slot.append(itemSprite(id));
       slot.classList.toggle('k-selected', selected === i);
     });
-    if (selected != null && state.flags.gotDish && edible(state.inv[selected])) slots[selected].append(pop);
+    if (selected != null && canEatNow(state.inv[selected])) slots[selected].append(pop);
     dexBtn.hidden = !state.flags.ate;
   }
 
@@ -287,8 +330,9 @@
     state.eaten[id] = (state.eaten[id] || 0) + 1;
     state.flags.ate = true;
     save();
+    reportNew();
     renderInv();
-    sound('chew.mp3', 0.6);
+    sound('chew.mp3', 1.2);
     floatText((DATA.eat_text || {})[it.eat] || '...', slots[i]);
     if (it.effect === 'trip') trip(Date.now());
   }
@@ -614,11 +658,12 @@
     body.append(inside);
     // The pot always looks like it's cooking.
     if (kind === 'pot') {
-      for (let i = 0; i < 3; i++) {
+      const puffs = 5;
+      for (let i = 0; i < puffs; i++) {
         const puff = document.createElement('span');
         puff.className = 'k-steam';
-        puff.style.left = `calc(50% + ${art(i * 5 - 6)})`;
-        puff.style.animationDelay = (i * 0.6) + 's';
+        puff.style.left = `calc(50% + ${art(i * 4 - 9)})`;
+        puff.style.animationDelay = (i * 1.8 / puffs) + 's';
         body.append(puff);
       }
     }
@@ -810,10 +855,11 @@
   // reached the table just looks empty and won't take anything.
   // localStorage kitchenApi points it at a local server for testing,
   // e.g. http://127.0.0.1:8083.
-  const TABLE_API = (() => {
-    try { return (localStorage.getItem('kitchenApi') || 'https://market.anita.garden') + '/kitchen/table'; }
-    catch (e) { return 'https://market.anita.garden/kitchen/table'; }
+  const KITCHEN_API = (() => {
+    try { return (localStorage.getItem('kitchenApi') || 'https://market.anita.garden') + '/kitchen'; }
+    catch (e) { return 'https://market.anita.garden/kitchen'; }
   })();
+  const TABLE_API = KITCHEN_API + '/table';
   let table = null;          // { host, body, onTop, slot }
   let tableDish = null;
   const TABLE_TOP = 15;      // the table top's row in table.png
@@ -1018,6 +1064,7 @@
     // One plant's picture, with its fruits and sway bands on top.
     const pic = document.createElement('span');
     pic.className = 'k-plant-art';
+    if (def.lift) pic.style.top = `calc(${-def.lift} * var(--kpx))`;
     const plant = def.bare ? itemSprite(def.item) : sprite(def.png);
     pic.append(plant);
     host.append(pic);
@@ -1371,6 +1418,51 @@
     renderInv();
   }
 
+  // ── how many people ate each item ─────────────────────────────────────────
+
+  // The server (shonei-server's kitchen.go) keeps the counts. Each browser
+  // reports an item once, the first time it eats it, so a count is people,
+  // not bites. state.reported remembers what was sent; anything eaten before
+  // this existed goes up on the next visit. A failed report is simply tried
+  // again next time. (The server also counts found and made; the dex doesn't
+  // show them, so nothing sends them now.)
+  const SEEN_PER_REPORT = 40;   // the server's cap
+  let reporting = false;
+  function reportNew() {
+    if (reporting) return;
+    const todo = [];
+    for (const kind of ['eaten']) {
+      for (const id in state[kind]) {
+        if (ITEMS[id] && state[kind][id] > 0 && !state.reported[kind + ':' + id]) todo.push([kind, id]);
+      }
+    }
+    if (!todo.length) return;
+    const batch = todo.slice(0, SEEN_PER_REPORT);
+    const body = { eaten: [] };
+    for (const [kind, id] of batch) body[kind].push(id);
+    reporting = true;
+    fetch(KITCHEN_API + '/seen', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    }).then(r => {
+      reporting = false;
+      if (!r.ok) return;
+      for (const [kind, id] of batch) state.reported[kind + ':' + id] = true;
+      save();
+      if (todo.length > batch.length) reportNew();
+    }).catch(() => { reporting = false; });
+  }
+
+  // { eaten: {id: n}, ... }, or null while it hasn't come.
+  let stats = null;
+  function fetchStats() {
+    return fetch(KITCHEN_API + '/stats')
+      .then(r => (r.ok ? r.json() : null))
+      .then(d => { if (d && d.eaten) stats = d; })
+      .catch(() => {});
+  }
+
   // ── dex ───────────────────────────────────────────────────────────────────
 
   const dex = document.createElement('div');
@@ -1412,17 +1504,31 @@
     return grid;
   }
 
+  // What the detail box is showing, so the people count can be added when it
+  // arrives after the box opened.
+  let shown = null;
   function showDetail(detail, id) {
+    shown = { detail, id };
     const it = ITEMS[id];
     const n = count(id);
+    const verb = it.kind === 'dish' ? 'made' : 'found';
     const name = document.createElement('div');
     name.className = 'k-name';
     name.textContent = it.name;
     const line = document.createElement('div');
-    line.textContent = (it.kind === 'dish' ? 'made: ' : 'found: ') + n;
+    line.textContent = verb + ': ' + n;
     if (it.kind === 'dish' && n >= 3) line.append(' ', star());
     const words = document.createElement('div');
     words.append(name, line);
+    // Only for things that can be eaten, or that someone has eaten anyway.
+    if (stats && (edible(id) || stats.eaten[id])) {
+      // This player counts even if their report hasn't got through yet.
+      const people = Math.max(stats.eaten[id] || 0, state.eaten[id] ? 1 : 0);
+      const all = document.createElement('div');
+      all.className = 'k-people';
+      all.textContent = `${people} ${people === 1 ? 'person has' : 'people have'} eaten this`;
+      words.append(all);
+    }
     detail.replaceChildren(itemSprite(id), words);
     detail.hidden = false;
   }
@@ -1448,11 +1554,13 @@
     box.append(close, dexGrid(DEX.dishes, detail), dexGrid(DEX.ingredients, detail), detail);
     dex.replaceChildren(box);
     dex.hidden = false;
+    fetchStats().then(() => { if (shown && !dex.hidden && dex.contains(shown.detail)) showDetail(shown.detail, shown.id); });
   }
 
   function closeDex() {
     dex.hidden = true;
     dex.replaceChildren();
+    shown = null;
   }
 
   document.addEventListener('keydown', e => {
@@ -1526,7 +1634,9 @@
     wrap.className = 'wrapper';
     groundRow = document.createElement('div');
     groundRow.className = 'k-ground-row';
-    hosts.forEach(h => groundRow.append(h));
+    // Stations first, so they stay in the corner whatever the page order.
+    [...hosts].sort((a, b) => a.classList.contains('k-plant') - b.classList.contains('k-plant'))
+      .forEach(h => groundRow.append(h));
     groundRow.append(bar);
     wrap.append(groundRow);
     ground.append(wrap);
@@ -1554,6 +1664,7 @@
     renderFruits();
     renderInv();
     renderStations();
+    reportNew();
     if (placeGround) {
       whenLoaded(groundRow, () => {
         placeGround();
