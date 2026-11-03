@@ -1,11 +1,11 @@
 {
  "task": "T-928",
- "freeze": "C:\\Users\\anita\\projects\\maps\\trainworld\\data\\frozen\\20261102-230529",
- "stamp": "20261102-230529",
- "label": "T-1738 Indonesia",
- "zones": 2238,
+ "freeze": "C:\\Users\\anita\\projects\\maps\\trainworld\\data\\frozen\\20261103-051954",
+ "stamp": "20261103-051954",
+ "label": "20261103-044505",
+ "zones": 2353,
  "tree": "C:\\Users\\anita\\projects\\maps\\.tw-snap",
  "app": "C:\\Users\\anita\\projects\\maps\\.tw-snap\\trainworld\\app",
- "commit": "7e730216",
- "built": "2026-11-02T23:57:30"
+ "commit": "8212d530",
+ "built": "2026-11-03T07:43:37"
 }
