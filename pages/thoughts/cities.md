@@ -11,13 +11,13 @@ i write this while looking up at the tower of [seybrook](/places/seybrook/). it 
 
 i like cities. most of my [maps](/projects/) are essentially dedicated to illustrating the shape of cities. which for most people, means the shape of people. the shape of [population](/na1m/) or [demographics](/languagedots/) or [motion](/nycriders/). in my opinion, a [travel demand matrix](/trainsworld/) is one of the closest things we can get to the true shape of a city.
 
-the approach to the tower of seybrook, the valley formed by the nearby smaller towers, feels surprisingly light. there are few people on the street. there are empty [chipotles](/thoughts/food/) and cavas. it is glittering, scintillating, celadon. there is no outward suggestion of the overhelming gravity that this place holds. 
+the approach to the tower of seybrook, the valley formed by the nearby smaller towers, feels surprisingly light. there are few people on the street. there are empty [chipotles](/thoughts/food/) and cavas. it is glittering, scintillating, celadon. there is no outward suggestion of the overwhelming gravity that this place holds. 
 
 this gravity exists only in higher planes. which is why it was so confusing for me as a child to visit downtown [lindor](/places/lindor/). now that i'm older and have spent more of my life immersed in data, i can finally answer the question of "what is it that people actually *do* in these buildings?" and i like it, and i make maps of it.
 
-but now is a time of extrapolating curves. let's extrapolate this curve too. as everything flows [upstream](/thoughts/trancin/), and smaller, lower cities disintegrate, high cities grow ever taller. my home city of [lindor](/places/lindor/) once seemed to me like the highest of them all, and thus immune. but as cities grow taller, they also get further away, more rarified, more abstract. their shapes will not occupy storefronts, train tracks, or websites. [their inhabitants](/thoughts/ai/) will be incomprehensible. 
+but now is a time of extrapolating curves. let's extrapolate this curve too. as everything flows [upstream](/thoughts/trancin/), and smaller, lower cities disintegrate, high cities grow ever taller. my home city of [lindor](/places/lindor/) once seemed to me like the highest of them all, and thus immune. but as cities grow taller, they also get further away, more rareified, more abstract. their shapes will not occupy storefronts, train tracks, or websites. [their inhabitants](/thoughts/ai/) will be incomprehensible. 
 
-and i will be like a child again.
+and i will be like a [child](/thoughts/time/) again.
 
 
 </div>
@@ -29,15 +29,9 @@ and i will be like a child again.
   .cities { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 1em 3em; }
   /* the text takes whatever width the tower leaves */
   .cities-text { flex: 1 1 20em; }
-  .tower {
-    font-family: Georgia, serif;
-    font-size: 14px;
-    line-height: 1;
-    user-select: none;
-  }
-  .tower div { text-align: center; white-space: pre; }
-  /* every letter gets the same box, so the outline stays straight */
-  .tower span { display: inline-block; width: 0.75em; text-align: center; opacity: 0; }
+  /* the letters are drawn on a canvas; the script reads this font and size */
+  .tower { font-family: Georgia, serif; font-size: 14px; }
+  .tower canvas { display: block; }
 </style>
 
 <script>
@@ -59,8 +53,29 @@ and i will be like a child again.
   const PULL_V = 0.35;  // the letters above and below
   const PULL_H = 0.02;  // the letters left and right
   const SWAP_EVERY = 0.6; // seconds between word replacements
+  // Every letter gets the same box, so the outline stays straight. Width is
+  // in em; each row is 1em tall.
+  const CELL_W = 0.75;
+  // The fades take seconds, so redrawing more often than this only costs the
+  // phone time it needs for everything else on the page (like the bunny).
+  const FPS = 24;
 
   const tower = document.getElementById('tower');
+  const style = getComputedStyle(tower);
+  const em = parseFloat(style.fontSize);
+  const cw = em * CELL_W;
+  const canvas = document.createElement('canvas');
+  const dpr = window.devicePixelRatio || 1;
+  canvas.style.width = (MAXW * cw) + 'px';
+  canvas.style.height = (ROWS.length * em) + 'px';
+  canvas.width = Math.round(MAXW * cw * dpr);
+  canvas.height = Math.round(ROWS.length * em * dpr);
+  tower.appendChild(canvas);
+  const ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
+  ctx.font = em + 'px ' + style.fontFamily;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
   const rand = (a, b) => a + Math.random() * (b - a);
   const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
 
@@ -95,23 +110,19 @@ and i will be like a child again.
   // words[k] = { start, word, end }, where end is where its column stops.
   const cells = [];
   ROWS.forEach((w, r) => {
-    const row = document.createElement('div');
     const x0 = (MAXW - w) / 2;
     for (let c = 0; c < w; c++) {
-      const span = document.createElement('span');
-      row.appendChild(span);
       const x = x0 + c;
       // left facet in shade, right facet catching the light
       const side = (x + 0.5) / MAXW;
       cells.push({
-        span, r, x, side,
+        r, x, side,
+        px: (x + 0.5) * cw, py: (r + 0.5) * em,
         theta: rand(0, Math.PI * 2),
         omega: rand(0.5, 1.5),
         letter: '', next: '',
-        shown: false,
       });
     }
-    tower.appendChild(row);
   });
   const N = cells.length;
 
@@ -152,10 +163,7 @@ and i will be like a child again.
     }
   }
   writeWords(0, words.length);
-  cells.forEach((c) => {
-    c.letter = c.next; c.span.textContent = c.letter;
-    c.color = c.nextColor; c.span.style.color = c.color;
-  });
+  cells.forEach((c) => { c.letter = c.next; c.color = c.nextColor; });
 
   // Swap a run of one or two words in the same column for different words.
   // In the middle of a column they have to fill the same total length; at the
@@ -187,28 +195,38 @@ and i will be like a child again.
     return COLORS[(lit ? 0 : 2) + (Math.random() < 0.5 ? 0 : 1)];
   }
 
-  function draw(c) {
-    const s = Math.sin(c.theta);
-    if (s <= 0) {
-      if (c.shown) { c.shown = false; c.span.style.opacity = 0; }
-      // dark: safe to change what this letter is
-      if (c.letter !== c.next) { c.letter = c.next; c.span.textContent = c.letter; }
-      if (c.color !== c.nextColor) { c.color = c.nextColor; c.span.style.color = c.color; }
-      return;
+  function draw() {
+    ctx.clearRect(0, 0, MAXW * cw, ROWS.length * em);
+    for (const c of cells) {
+      const s = Math.sin(c.theta);
+      if (s <= 0) {
+        // dark: safe to change what this letter is
+        c.letter = c.next;
+        c.color = c.nextColor;
+        continue;
+      }
+      ctx.globalAlpha = Math.pow(s, 1.6);
+      ctx.fillStyle = c.color;
+      ctx.fillText(c.letter, c.px, c.py);
     }
-    c.shown = true;
-    c.span.style.opacity = Math.pow(s, 1.6).toFixed(3);
   }
 
   if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-    cells.forEach((c) => { c.theta = rand(0.2, Math.PI - 0.2); draw(c); });
+    cells.forEach((c) => { c.theta = rand(0.2, Math.PI - 0.2); });
+    draw();
     return;
   }
+
+  // Only animate while the tower is on screen.
+  let onScreen = true;
+  new IntersectionObserver(([e]) => { onScreen = e.isIntersecting; }).observe(tower);
 
   let last = performance.now();
   let swapClock = 0;
   const pull = new Float32Array(N);
   function frame(now) {
+    requestAnimationFrame(frame);
+    if (!onScreen || now - last < 1000 / FPS - 2) return;
     const dt = Math.min(0.1, (now - last) / 1000);
     last = now;
 
@@ -221,15 +239,11 @@ and i will be like a child again.
       for (const j of c.horiz) p += PULL_H * Math.sin(cells[j].theta - c.theta);
       pull[i] = p;
     }
-    for (let i = 0; i < N; i++) {
-      const c = cells[i];
-      c.theta += dt * (c.omega + pull[i]);
-      draw(c);
-    }
+    for (let i = 0; i < N; i++) cells[i].theta += dt * (cells[i].omega + pull[i]);
+    draw();
 
     swapClock += dt;
     while (swapClock > SWAP_EVERY) { swapClock -= SWAP_EVERY; swapWords(); }
-    requestAnimationFrame(frame);
   }
   requestAnimationFrame(frame);
 })();

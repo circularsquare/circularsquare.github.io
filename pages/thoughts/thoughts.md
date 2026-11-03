@@ -7,16 +7,14 @@ permalink: /thoughts/
 assorted word vomit
 
 - [lists](/lists/)
-
 - [temperature](temperature/)
 - [cities](cities/)
-- [achievement](achievement/)
-- [apocalypse](apocalypse/)
 - [time](time/)
 - [mean reversion](meanreversion/)
 - [momentum](momentum/)
-- [internal world](internalworld/)
 - [simulations](fidelity/)
+- [internal world](internalworld/)
+- [apocalypse](apocalypse/)
 - [normalness](normalness/)
 - [fairness](fairness/)
 - [mantras](mantras/)
@@ -25,6 +23,7 @@ assorted word vomit
 - [beauty](beauty/)
 - [reasons](reasons/)
 - [documentation](documentation/)
+- [achievement](achievement/)
 - [roadsides](roadsides/)
 - [words](words/)
 - [food](food/)
