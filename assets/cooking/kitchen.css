@@ -379,6 +379,14 @@
   line-height: 1.2;
   cursor: pointer;
 }
+.k-helpbtn { right: auto; left: var(--kpx); }
+.k-about {
+  max-width: calc(9 * 22 * var(--kpx));
+  font-size: 12px;
+  line-height: 1.4;
+}
+.k-about[hidden], .k-grid[hidden] { display: none; }
+.k-about p { margin: calc(2 * var(--kpx)) 0 0; }
 .k-grid {
   display: flex;
   flex-wrap: wrap;

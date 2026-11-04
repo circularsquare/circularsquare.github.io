@@ -1719,10 +1719,41 @@
     close.setAttribute('aria-label', 'close');
     close.textContent = '×';
     close.addEventListener('click', closeDex);
-    box.append(close, dexGrid(DEX.dishes, detail), dexGrid(DEX.ingredients, detail), detail);
+    // "?" swaps the grids for a few lines on how the game works, and back.
+    const help = document.createElement('button');
+    help.type = 'button';
+    help.className = 'k-close k-helpbtn';
+    help.setAttribute('aria-label', 'help');
+    help.textContent = '?';
+    const about = helpText();
+    about.hidden = true;
+    const grids = [dexGrid(DEX.dishes, detail), dexGrid(DEX.ingredients, detail)];
+    help.addEventListener('click', () => {
+      about.hidden = !about.hidden;
+      for (const g of grids) g.hidden = !about.hidden;
+      detail.hidden = !about.hidden || !shown;
+    });
+    box.append(close, help, about, ...grids, detail);
     dex.replaceChildren(box);
     dex.hidden = false;
     fetchStats().then(() => { if (shown && !dex.hidden && dex.contains(shown.detail)) showDetail(shown.detail, shown.id); });
+  }
+
+  function helpText() {
+    const el = document.createElement('div');
+    el.className = 'k-about';
+    const title = document.createElement('div');
+    title.className = 'k-name';
+    title.textContent = 'cooking!';
+    const find = document.createElement('p');
+    const home = document.createElement('a');
+    home.href = '/';
+    home.textContent = 'home';
+    find.append('find ingredients scattered around anita.garden and cook them at ', home, '.');
+    const shared = document.createElement('p');
+    shared.textContent = 'the table is shared. so if you put something on the table someone else may eat it.';
+    el.append(title, find, shared);
+    return el;
   }
 
   function closeDex() {

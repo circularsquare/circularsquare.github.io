@@ -28,6 +28,7 @@ assorted word vomit
 - [roadsides](roadsides/)
 - [words](words/)
 - [food](food/)
+- [cooking](cooking/)
 - [winter](winter/)
 - [chapters](chapters/)
 - [pain](pain/)
