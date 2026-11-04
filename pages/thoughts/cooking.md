@@ -4,6 +4,8 @@ title: cooking
 permalink: /thoughts/cooking/
 ---
 
-cooking is something that you can do for a friend. naively, it is a favor
+cooking is the preparation of [food](/thoughts/food/) with [heat](/thoughts/temperature/). cooking is a service. in most cases, if you cook for someone, you are doing them a favor.
+
+cooking was the source of conflict between me and [pine](/friends/pine/).
 
 {% include plant.html kind="onion" %}

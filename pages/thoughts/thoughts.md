@@ -7,6 +7,7 @@ permalink: /thoughts/
 assorted word vomit
 
 - [lists](/lists/)
+
 - [temperature](temperature/)
 - [cities](cities/)
 - [time](time/)
@@ -32,6 +33,7 @@ assorted word vomit
 - [pain](pain/)
 - [ai](ai/)
 - [being seen](beingseen/)
+- [bass](bass/)
 - [language](language/)
 
 

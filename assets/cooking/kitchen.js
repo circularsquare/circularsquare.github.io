@@ -1624,22 +1624,26 @@
   dex.hidden = true;
   dex.addEventListener('pointerdown', e => { if (e.target === dex) closeDex(); });
 
+  // Made (a dish) or found (an ingredient): what the star counts.
   function count(id) {
     return ITEMS[id].kind === 'dish' ? state.made[id] || 0 : state.found[id] || 0;
   }
+  // In the dex once it's been made, found or eaten: a dish taken off the
+  // table and eaten counts, though this player never cooked it.
+  const known = id => count(id) > 0 || (state.eaten[id] || 0) > 0;
 
-  // Found ones first, then silhouettes, each group in the yml's order.
+  // Known ones first, then silhouettes, each group in the yml's order.
   function dexGrid(ids, detail) {
     const grid = document.createElement('div');
     grid.className = 'k-grid';
-    const known = ids.filter(id => count(id) > 0);
-    const unknown = ids.filter(id => count(id) === 0);
-    for (const id of known.concat(unknown)) {
+    const seen = ids.filter(known);
+    const unseen = ids.filter(id => !known(id));
+    for (const id of seen.concat(unseen)) {
       const cell = document.createElement('button');
       cell.type = 'button';
       cell.className = 'k-cell';
       cell.append(itemSprite(id));
-      if (count(id) === 0) {
+      if (!known(id)) {
         cell.classList.add('k-unknown');
         cell.disabled = true;
         const q = document.createElement('span');
@@ -1669,11 +1673,21 @@
     const name = document.createElement('div');
     name.className = 'k-name';
     name.textContent = it.name;
-    const line = document.createElement('div');
-    line.textContent = verb + ': ' + n;
-    if (it.kind === 'dish' && n >= 3) line.append(' ', star());
     const words = document.createElement('div');
-    words.append(name, line);
+    words.append(name);
+    // Only the counts this player has: a dish they only ate shows "eaten".
+    const ate = state.eaten[id] || 0;
+    if (n > 0 || !ate) {
+      const line = document.createElement('div');
+      line.textContent = verb + ': ' + n;
+      if (it.kind === 'dish' && n >= 3) line.append(' ', star());
+      words.append(line);
+    }
+    if (ate) {
+      const line = document.createElement('div');
+      line.textContent = 'eaten: ' + ate;
+      words.append(line);
+    }
     // Only for things that can be eaten, or that someone has eaten anyway.
     if (stats && (edible(id) || stats.eaten[id])) {
       // This player counts even if their report hasn't got through yet.
