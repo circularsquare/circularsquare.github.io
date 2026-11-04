@@ -36,3 +36,5 @@ assorted word vomit
 
 
 {: #thought-list}
+
+{% include plant.html kind="apple" %}

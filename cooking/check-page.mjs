@@ -17,7 +17,7 @@ const BASE = 'http://localhost:4000/';
 mkdirSync(DIR, { recursive: true });
 
 spawn('C:/Program Files/Google/Chrome/Application/chrome.exe', [
-  '--headless=new', `--remote-debugging-port=${PORT}`, `--user-data-dir=${join(DIR, 'profile')}`,
+  '--headless=new', '--mute-audio', `--remote-debugging-port=${PORT}`, `--user-data-dir=${join(DIR, 'profile')}`,
   '--window-size=900,700', 'about:blank',
 ]);
 const wait = ms => new Promise(r => setTimeout(r, ms));

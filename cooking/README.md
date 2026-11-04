@@ -4,9 +4,8 @@ The cooking game on anita.garden: plants on pages, a five-slot inventory, a pot
 and a shared table on the home page, a dex. This folder is notes and tools
 only; it isn't published (it's in `exclude:` in both Jekyll configs).
 
-It's off for the public until `kitchen_public: true` in `_config.yml`. To see
-it, visit any page with `?kitchen=on` (kept in localStorage; `?kitchen=off`
-turns it off).
+It's on for everyone (`kitchen_public: true` in `_config.yml`; set it false to
+hide it again, and `?kitchen=on` still turns it on for one browser).
 
 ## where things are
 
@@ -41,7 +40,7 @@ In the checklist, "rule" says how specific the match was: **exact** (a recipe na
 ## how it works, and what to keep true
 
 - **Sprites are found by name.** Item `potato` is `potato.png`, its plant `potatoplant.png`, a station `pot.png`, while cooking `potcovered.png`. A png that doesn't exist switches its entry off; nothing else is needed.
-- **Every png is shown at its own size**, one art pixel per png pixel. Ingredients are drawn 16x16 and dishes 20x20 by habit, but a dish drawn 16x16 just comes out smaller. `size:` in the yml is only the space held while the png loads. The slot pngs (`inventoryslot`, `potslot`, `tableslot`, `infobook`) are drawn at 2x already and sized in half art pixels.
+- **Every png is shown at its own size**, one art pixel per png pixel. Ingredients are drawn 16x16 and dishes 20x20 by habit, but a dish drawn 16x16 just comes out smaller. `size:` in the yml is only the space held while the png loads. The slot pngs (`inventoryslot`, `potslot`, `infobook`) are drawn at 2x already and sized in half art pixels.
 - **Pixel rules.** One art pixel is `--kpx` (an even number of device pixels, set by kitchen.js). Every size and position is a whole number of them. Animations step in whole pixels with `step-end`/`steps()`; only falling items move every frame.
 - **Plants and stations don't stay in the text.** Wherever their include is, kitchen.js moves them into one row standing on the footer's top line (the ground), in page order, with the inventory at the right end. The row goes in once its pngs have loaded, so the page doesn't jump.
 - **Recipes**: top to bottom, first match wins, either order. Recipes whose dish has no png are skipped. `combos.py` copies kitchen.js's matching; if one changes, change the other.

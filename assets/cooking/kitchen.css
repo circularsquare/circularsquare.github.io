@@ -161,20 +161,29 @@
 }
 .k-tile + .k-tile { margin-left: calc(-2 * var(--khalf)); }
 .k-potslot { background-image: url('potslot.png'); }
-.k-tableslot { background-image: url('tableslot.png'); }
 
-/* the shared dish, sitting on the table top */
+/* the shared dish, sitting on the table top. kitchen.js sets bottom from
+   table.png's top row and sinks each dish by the empty rows under it; this
+   is only until the pngs are read. */
 .k-table-dish {
   position: absolute;
   left: 0;
   right: 0;
-  bottom: calc(4 * var(--kpx));
+  bottom: calc(6 * var(--kpx));
   display: flex;
   justify-content: center;
   pointer-events: none;
 }
-.k-table-dish .k-sprite,
-.k-tableslot .k-sprite { pointer-events: auto; cursor: pointer; }
+.k-table-dish .k-sprite { pointer-events: auto; cursor: grab; touch-action: none; }
+/* "eat", over the dish on the table */
+.k-table-dish .k-pop {
+  left: 0;
+  right: 0;
+  width: max-content;
+  margin: 0 auto;
+  line-height: normal;   /* the ground row sets 0 */
+  pointer-events: auto;
+}
 .k-slot .k-sprite { cursor: grab; }
 .k-selected::before {
   content: '';
@@ -223,6 +232,17 @@
 .k-pop button:hover { background: var(--ltan); }
 
 /* ── stations ── */
+/* the room behind the stations: its png, with things standing on its floor */
+.k-room {
+  position: relative;
+  flex: none;
+  line-height: 0;
+}
+.k-room-thing,
+.k-room .k-station.k-room-thing {
+  position: absolute;
+  bottom: var(--k-floor, 0);
+}
 .k-station {
   position: relative;
   line-height: 0;
@@ -235,12 +255,21 @@
   height: var(--kpx);
   background: #d9e3e2;
   opacity: 0;
-  animation: k-steam 1.8s steps(9) infinite;
+  /* kitchen.js gives each puff its own --dur, delay and steps(), and rerolls
+     --rise (whole art pixels, one per step) and --drift (a sideways hop of an
+     art pixel or none, halfway up) every time it goes round */
+  animation-name: k-steam, k-steam-drift;
+  animation-duration: var(--dur, 1.8s);
+  animation-iteration-count: infinite;
 }
-.k-cooking .k-steam { animation-duration: 0.9s; }
+.k-cooking .k-steam { animation-duration: calc(var(--dur, 1.8s) / 2); }
 @keyframes k-steam {
   0% { transform: translateY(0); opacity: 1; }
-  100% { transform: translateY(calc(-9 * var(--kpx))); opacity: 0; }
+  100% { transform: translateY(calc(-1 * var(--rise, 9px))); opacity: 0; }
+}
+@keyframes k-steam-drift {
+  0% { translate: 0 0; }
+  50% { translate: var(--drift, 0px) 0; }
 }
 .k-cooking .k-station-body { animation: k-jiggle 0.3s step-end infinite; }
 @keyframes k-jiggle {
@@ -262,7 +291,8 @@
   to { background-position: calc(-1 * var(--strip)) 0; }
 }
 
-/* the item waiting in the pot: its top half, sitting at the top of the pot */
+/* the item waiting in the pot: the top of its drawing, showing over the rim
+   (kitchen.js places and sizes it) */
 .k-inside {
   position: absolute;
   top: 0;

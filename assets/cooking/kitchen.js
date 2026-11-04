@@ -254,7 +254,21 @@
   dexBtn.className = 'k-dexbtn';   // infobook.png, drawn at 2x like the slots
   dexBtn.setAttribute('aria-label', 'dex');
   dexBtn.addEventListener('click', openDex);
+  // Reaching for the button starts the pngs too, in case they aren't yet.
+  dexBtn.addEventListener('pointerenter', warmDex);
   bar.append(dexBtn);
+
+  // The dex shows every item's png at once, which is a lot of little
+  // requests the first time. Once the button is showing, they're fetched in
+  // the background when the page is idle, so the dex opens whole. Only for
+  // players who have the dex, and once per page.
+  let dexWarm = false;
+  function warmDex() {
+    if (dexWarm) return;
+    dexWarm = true;
+    for (const id of DEX.dishes.concat(DEX.ingredients)) new Image().src = ART + id + '.png';
+  }
+  const whenIdle = f => (window.requestIdleCallback ? window.requestIdleCallback(f) : setTimeout(f, 2000));
 
   const pop = document.createElement('div');
   pop.className = 'k-pop';
@@ -296,6 +310,7 @@
     });
     if (selected != null && canEatNow(state.inv[selected])) slots[selected].append(pop);
     dexBtn.hidden = !state.flags.ate;
+    if (state.flags.ate && !dexWarm) whenIdle(warmDex);
   }
 
   function putInSlot(i, id) {
@@ -324,16 +339,22 @@
 
   function eat(i) {
     const id = state.inv[i];
-    const it = ITEMS[id];
     state.inv[i] = null;
     selected = null;
+    ate(id, slots[i]);
+  }
+
+  // Eating something, from the inventory or off the table. The words rise
+  // over `over`.
+  function ate(id, over) {
+    const it = ITEMS[id];
     state.eaten[id] = (state.eaten[id] || 0) + 1;
     state.flags.ate = true;
     save();
     reportNew();
     renderInv();
     sound('chew.mp3', 1.2);
-    floatText((DATA.eat_text || {})[it.eat] || '...', slots[i]);
+    floatText((DATA.eat_text || {})[it.eat] || '...', over);
     if (it.effect === 'trip') trip(Date.now());
   }
 
@@ -472,11 +493,15 @@
   let pressed = false;   // a press just ended; swallow its click
 
   // Where an item can be picked up from: an inventory slot, a station's slot,
-  // the finished dish floating over a station, or the floor.
+  // the finished dish floating over a station, the table, or the floor.
+  // 'held' is something already taken off the table on the server, on its
+  // way to wherever it was dropped.
   function itemAt(src) {
     if (src.type === 'inv') return state.inv[src.i];
     if (src.type === 'in') return state.st[src.kind].in[src.i];
     if (src.type === 'out') return state.st[src.kind].out;
+    if (src.type === 'table') return tableDish;
+    if (src.type === 'held') return src.id;
     return src.f.id;
   }
 
@@ -484,7 +509,7 @@
     if (src.type === 'inv') state.inv[src.i] = null;
     else if (src.type === 'in') state.st[src.kind].in[src.i] = null;
     else if (src.type === 'out') state.st[src.kind].out = null;
-    else removeFloor(src.f);
+    else if (src.type === 'floor') removeFloor(src.f);
   }
 
   function startPress(e, src, el) {
@@ -523,7 +548,9 @@
     if (!p.ghost) { clickItem(p.src, p.el); return; }
     p.ghost.remove();
     p.el.style.visibility = '';
-    dropAt(p, e.clientX, e.clientY, e.clientX - p.offX, e.clientY - p.offY);
+    const left = e.clientX - p.offX, top = e.clientY - p.offY;
+    if (p.src.type === 'table') dragOffTable(p, e.clientX, e.clientY, left, top);
+    else dropAt(p, e.clientX, e.clientY, left, top);
   });
 
   document.addEventListener('pointercancel', () => {
@@ -546,6 +573,12 @@
       sound('pop.wav', 0.5);
       give(id, r.left, r.top);
       renderStations();
+    } else if (src.type === 'table') {
+      // "eat" over the dish, once eating is open to this player and the
+      // inventory is out to drag it to. Otherwise a click takes it, like
+      // picking a plant, which brings the inventory out.
+      if (!bar.hidden && canEatNow(tableDish)) { tableEatOpen = !tableEatOpen; renderTable(); }
+      else takeFromTable();
     } else {
       const id = itemAt(src);
       take(src);
@@ -554,6 +587,7 @@
     }
   }
 
+  // False when the drop was refused and the item stayed where it came from.
   function dropAt(p, cx, cy, left, top) {
     const target = document.elementFromPoint(cx, cy);
     const slot = target && target.closest('.k-slot');
@@ -568,26 +602,27 @@
         selected = null;
         save();
         renderInv();
-        return;
+        return true;
       }
       if (i < 0 || state.inv[i]) i = state.inv.indexOf(null);
-      if (i < 0) return shake(bar);
+      if (i < 0) { shake(bar); return false; }
       take(p.src);
       putInSlot(i, p.id);
       renderStations();
-      return;
+      return true;
     }
 
     // Let go right on a station or one of its slots: straight in. Anywhere
     // else it falls, and can still fall into a pot on the way down.
     if (st && st._kind === 'table') {
       placeOnTable(p.src);
-      return;
+      return true;
     }
     if (st) {
       const into = target.closest('.k-in');
-      if (!putInStation(st, p.src, into ? +into.dataset.i : null)) shakeSlots(st);
-      return;
+      if (putInStation(st, p.src, into ? +into.dataset.i : null)) return true;
+      shakeSlots(st);
+      return false;
     }
 
     take(p.src);
@@ -595,11 +630,32 @@
     save();
     renderInv();
     renderStations();
+    return true;
+  }
+
+  // The dish on the table is shared, so it's taken on the server first and
+  // only then goes where it was dropped. Let go back on the table: nothing
+  // happens. If the drop is refused (a full inventory, a pot that won't take
+  // it) it lands on the floor there instead, since it's already off the table.
+  function dragOffTable(p, cx, cy, left, top) {
+    const target = document.elementFromPoint(cx, cy);
+    if (target && target.closest('.k-table')) return;
+    const id = p.id;
+    claimTable(id).then(ok => {
+      if (!ok) return;
+      sound('pop.wav', 0.5);
+      const held = Object.assign({}, p, { src: { type: 'held', id } });
+      if (!dropAt(held, cx, cy, left, top)) {
+        dropToFloor(id, left, top);
+        save();
+      }
+    });
   }
 
   // Clicking anywhere that isn't part of the game lets go of the selection
   // and closes an open station.
   document.addEventListener('pointerdown', e => {
+    if (tableEatOpen && !e.target.closest('.k-table-dish')) { tableEatOpen = false; renderTable(); }
     if (e.target.closest('#k-inv, .k-station, .k-floor, #k-dex')) return;
     if (selected != null) { selected = null; renderInv(); }
     closeStation();
@@ -657,13 +713,34 @@
     inside.className = 'k-inside';
     body.append(inside);
     // The pot always looks like it's cooking.
+    // Each puff has its own speed, and every time it goes round it starts
+    // from a new spot, rises a different height and maybe hops a pixel
+    // sideways. Open, it comes off the water; with the lid on, it escapes
+    // at the lid's two corners (art pixels in pot.png / potcovered.png).
     if (kind === 'pot') {
-      const puffs = 5;
-      for (let i = 0; i < puffs; i++) {
+      const between = (a, b) => a + Math.floor(Math.random() * (b - a + 1));
+      const reroll = puff => {
+        const rise = between(6, 11);
+        if (host.classList.contains('k-cooking')) {
+          puff.style.left = art(Math.random() < 0.5 ? between(2, 5) : between(22, 25));
+          puff.style.top = art(3);
+        } else {
+          puff.style.left = art(between(5, 21));
+          puff.style.top = '';
+        }
+        puff.style.setProperty('--rise', art(rise));
+        puff.style.setProperty('--drift', art(between(-1, 1)));
+        puff.style.animationTimingFunction = `steps(${rise}), step-end`;
+      };
+      for (let i = 0; i < 8; i++) {
         const puff = document.createElement('span');
         puff.className = 'k-steam';
-        puff.style.left = `calc(50% + ${art(i * 4 - 9)})`;
-        puff.style.animationDelay = (i * 1.8 / puffs) + 's';
+        const dur = 1.2 + Math.random();
+        puff.style.setProperty('--dur', dur.toFixed(2) + 's');
+        puff.style.animationDelay = -(Math.random() * dur).toFixed(2) + 's';
+        reroll(puff);
+        puff._reroll = () => reroll(puff);
+        puff.addEventListener('animationiteration', e => { if (e.animationName === 'k-steam') reroll(puff); });
         body.append(puff);
       }
     }
@@ -709,6 +786,7 @@
   }
 
   const cooking = kind => (cookingUntil[kind] || 0) > Date.now();
+  const PEEK = 4;   // art rows of a waiting item that show over the rim
 
   function renderStations() {
     for (const s of stationEls) {
@@ -720,19 +798,35 @@
       const waiting = st.in.find(Boolean);
       s.inside.replaceChildren();
       if (waiting) {
+        // The top PEEK rows of what's drawn show above the station's rim:
+        // the box ends at the rim, and the png is moved up by the empty rows
+        // over its drawing, so a dish drawn low in its png sits as deep as
+        // one drawn high. Hidden until the png can be measured.
         const el = itemSprite(waiting);
-        const box = (w, h) => {
-          s.inside.style.left = `calc(50% - ${art(Math.floor(w / 2))})`;
-          s.inside.style.width = art(w);
-          s.inside.style.height = art(Math.floor(h / 2));
+        const rim = STATIONS[s.kind].rim || 8;
+        const place = () => {
+          const e = edges(el) || { top: 0 };
+          const peek = Math.min(PEEK, el.naturalHeight - e.top);
+          s.inside.style.left = `calc(50% - ${art(Math.floor(el.naturalWidth / 2))})`;
+          s.inside.style.width = art(el.naturalWidth);
+          s.inside.style.top = art(rim - peek);
+          s.inside.style.height = art(peek);
+          el.style.marginTop = art(-e.top);
+          s.inside.style.visibility = '';
         };
-        box(ITEMS[waiting].size, ITEMS[waiting].size);
-        // The png's own size, once known, in case it differs from the yml's.
-        if (el.decode) el.decode().then(() => box(el.naturalWidth, el.naturalHeight), () => {});
         s.inside.append(el);
+        if (el.complete && el.naturalWidth) place();
+        else {
+          s.inside.style.visibility = 'hidden';
+          decoded(el).then(() => { if (el.parentNode === s.inside) place(); });
+        }
       }
       const busy = cooking(s.kind);
-      s.host.classList.toggle('k-cooking', busy);
+      if (s.host.classList.contains('k-cooking') !== busy) {
+        s.host.classList.toggle('k-cooking', busy);
+        // Steam moves to the lid's corners (or back) straight away.
+        s.host.querySelectorAll('.k-steam').forEach(p => p._reroll());
+      }
       if (s.covered) {
         s.covered.hidden = !busy;
         s.look.hidden = busy;
@@ -753,17 +847,21 @@
     }
   }
 
+  // The table has no slots to open.
   function openStation(host) {
-    if (openEl === host) return;
+    if (openEl === host || !host.querySelector('.k-panel')) return;
     closeStation();
     openEl = host;
     host.querySelector('.k-panel').hidden = false;
   }
 
   // A refusal shakes the station's slots, opening them first so it shows.
+  // The table, with no slots, shakes itself.
   function shakeSlots(host) {
+    const slots = host.querySelectorAll('.k-panel .k-slot');
+    if (!slots.length) return shake(host.querySelector('.k-station-body'));
     openStation(host);
-    host.querySelectorAll('.k-panel .k-slot').forEach(shake);
+    slots.forEach(shake);
   }
 
   function closeStation() {
@@ -812,10 +910,10 @@
       if (putInStation(s.host, { type: 'floor', f }, null)) return true;
     }
     // The table catches anything it would take, when it lands on the top
-    // (TABLE_TOP art pixels down its png). Anything else falls past.
+    // (tableTop art pixels down its png). Anything else falls past.
     if (table && !tableDish && tableTakes(f.id)) {
       const r = table.body.getBoundingClientRect();
-      const left = r.left + window.scrollX, top = r.top + window.scrollY + TABLE_TOP * PX;
+      const left = r.left + window.scrollX, top = r.top + window.scrollY + tableTop * PX;
       if (cx >= left + PX && cx <= left + r.width - PX && before + size <= top && f.y + size >= top) {
         placeOnTable({ type: 'floor', f });
         return true;
@@ -860,9 +958,10 @@
     catch (e) { return 'https://market.anita.garden/kitchen'; }
   })();
   const TABLE_API = KITCHEN_API + '/table';
-  let table = null;          // { host, body, onTop, slot }
+  let table = null;          // { host, body, onTop, pop }
   let tableDish = null;
-  const TABLE_TOP = 15;      // the table top's row in table.png
+  let tableEatOpen = false;  // "eat" showing over the dish
+  let tableTop = 14;         // the table top's row in table.png, read from the png once it loads
 
   // Anything you could eat, except a bad dish (the ???).
   function tableTakes(id) {
@@ -876,31 +975,38 @@
     host._kind = kind;
     const body = document.createElement('div');
     body.className = 'k-station-body';
-    body.append(sprite(kind));
-    // The dish sitting on the table top.
+    const look = sprite(kind);
+    body.append(look);
+    // The dish sitting on the table top. Click it for "eat", drag it off to
+    // take it.
     const onTop = document.createElement('div');
     onTop.className = 'k-table-dish';
-    // The one slot, floating above while the table is open.
-    const panel = document.createElement('div');
-    panel.className = 'k-panel';
-    panel.hidden = true;
-    const slot = document.createElement('div');
-    slot.className = 'k-tile k-tableslot k-slot';
-    panel.append(slot);
-    host.append(body, onTop, panel);
-    table = { host, body, onTop, slot };
+    const pop = document.createElement('div');
+    pop.className = 'k-pop';
+    const eatIt = document.createElement('button');
+    eatIt.type = 'button';
+    eatIt.textContent = 'eat';
+    eatIt.addEventListener('click', eatFromTable);
+    pop.append(eatIt);
+    host.append(body, onTop);
+    table = { host, body, onTop, pop };
+    // The dish stands on the table's top row, wherever that is in the png.
+    decoded(look).then(() => {
+      const e = edges(look);
+      if (!e) return;
+      tableTop = e.top;
+      onTop.style.bottom = art(look.naturalHeight - e.top);
+    });
 
-    const takeClick = e => { if (!pressed && e.target.closest('.k-sprite')) takeFromTable(); };
-    onTop.addEventListener('click', takeClick);
-    slot.addEventListener('click', takeClick);
+    onTop.addEventListener('pointerdown', e => {
+      const el = e.target.closest('.k-sprite');
+      if (tableDish && el) startPress(e, { type: 'table' }, el);
+    });
     body.addEventListener('click', () => {
-      if (pressed) return;
-      if (selected != null) {
-        placeOnTable({ type: 'inv', i: selected });
-        selected = null;
-        renderInv();
-      } else if (openEl === host) closeStation();
-      else openStation(host);
+      if (pressed || selected == null) return;
+      placeOnTable({ type: 'inv', i: selected });
+      selected = null;
+      renderInv();
     });
 
     fetchTable();
@@ -910,10 +1016,20 @@
 
   function renderTable() {
     if (!table) return;
-    for (const el of [table.onTop, table.slot]) {
-      el.replaceChildren();
-      if (tableDish && ITEMS[tableDish]) el.append(itemSprite(tableDish));
+    table.onTop.replaceChildren();
+    const dish = tableDish && ITEMS[tableDish] ? tableDish : null;
+    if (!dish) tableEatOpen = false;
+    if (dish) {
+      // Sunk by the empty rows under its lowest pixel, so every dish sits
+      // right on the table however it was drawn.
+      const el = itemSprite(dish);
+      table.onTop.append(el);
+      decoded(el).then(() => {
+        const e = edges(el);
+        if (e) el.style.marginBottom = art(-(el.naturalHeight - 1 - e.bottom));
+      });
     }
+    if (tableEatOpen) table.onTop.append(table.pop);
   }
 
   function tableCall(path, body) {
@@ -964,27 +1080,42 @@
     });
   }
 
-  function takeFromTable() {
-    const id = tableDish;
-    if (!id) return;
-    if (state.inv.indexOf(null) < 0) return shake(table.body);
+  // Takes the dish off the table on the server. Gone from the table at once;
+  // back on it, with a shake, if someone else got there first or the server
+  // can't be reached. Resolves to whether it's ours.
+  function claimTable(id) {
     tableDish = null;
     renderTable();
-    tableCall('/take', { dish: id }).then(({ ok, d }) => {
-      if (!ok) {
-        // Someone else got there first.
-        tableDish = d.dish || null;
-        renderTable();
-        return shake(table.body);
-      }
-      const r = table.body.getBoundingClientRect();
-      sound('pop.wav', 0.5);
-      give(id, r.left, r.top);
+    return tableCall('/take', { dish: id }).then(({ ok, d }) => {
+      if (ok) return true;
+      tableDish = d.dish || null;
+      renderTable();
+      shake(table.body);
+      return false;
     }).catch(() => {
       tableDish = id;
       renderTable();
       shake(table.body);
+      return false;
     });
+  }
+
+  function takeFromTable() {
+    const id = tableDish;
+    if (!id) return;
+    if (state.inv.indexOf(null) < 0) return shake(table.body);
+    claimTable(id).then(ok => {
+      if (!ok) return;
+      const r = table.body.getBoundingClientRect();
+      sound('pop.wav', 0.5);
+      give(id, r.left, r.top);
+    });
+  }
+
+  function eatFromTable() {
+    const id = tableDish;
+    if (!id) return;
+    claimTable(id).then(ok => { if (ok) ate(id, table.body); });
   }
 
   // ── sounds ────────────────────────────────────────────────────────────────
@@ -1055,6 +1186,29 @@
         buildPlant(host, def, `${location.pathname}|${kind}|${n}`, c);
       }
     });
+  }
+
+  // The first and last rows of a png with any pixel in them, read once per
+  // png. Null if it can't be read.
+  const edgeCache = {};
+  function edges(img) {
+    if (edgeCache[img.src] !== undefined) return edgeCache[img.src];
+    let found = null;
+    try {
+      const w = img.naturalWidth, h = img.naturalHeight;
+      const c = document.createElement('canvas');
+      c.width = w;
+      c.height = h;
+      const ctx = c.getContext('2d');
+      ctx.drawImage(img, 0, 0);
+      const px = ctx.getImageData(0, 0, w, h).data;
+      const filled = y => { for (let x = 0; x < w; x++) if (px[(y * w + x) * 4 + 3]) return true; return false; };
+      let top = 0, bottom = h - 1;
+      while (top < h && !filled(top)) top++;
+      while (bottom > top && !filled(bottom)) bottom--;
+      if (top < h) found = { top, bottom };
+    } catch (e) {}
+    return (edgeCache[img.src] = found);
   }
 
   const decoded = img => (img.decode ? img.decode() : Promise.resolve()).catch(() => {});
@@ -1621,6 +1775,35 @@
   // they're moved into one row standing on the ground, the top of the footer.
   // The inventory stands at the right end of the same row.
   let groundRow = null;
+  // The room drawn behind the stations (room: in the yml). Stations listed in
+  // its at: stand on its floor (floor: rows up from the bottom), that many
+  // art pixels from its left edge, and decor pngs stand on the floor behind
+  // them. Null when there's no room png, or none of these stations has a
+  // place in it.
+  function buildRoom(stations) {
+    const def = DATA.room;
+    if (!def || !DRAWN.has(def.png)) return null;
+    const placed = stations.filter(h => def.at && def.at[h._kind] != null);
+    if (!placed.length) return null;
+    const room = document.createElement('div');
+    room.className = 'k-room';
+    room.style.setProperty('--k-floor', art(def.floor || 0));
+    room.append(sprite(def.png));
+    for (const d of def.decor || []) {
+      if (!DRAWN.has(d.png)) continue;
+      const el = sprite(d.png);
+      el.classList.add('k-room-thing');
+      el.style.left = art(d.at);
+      room.append(el);
+    }
+    for (const h of placed) {
+      h.classList.add('k-room-thing');
+      h.style.left = art(def.at[h._kind]);
+      room.append(h);
+    }
+    return room;
+  }
+
   function buildGround() {
     const hosts = document.querySelectorAll('.k-plant:not([hidden]), .k-station');
     const footer = document.querySelector('.site-footer');
@@ -1635,8 +1818,11 @@
     groundRow = document.createElement('div');
     groundRow.className = 'k-ground-row';
     // Stations first, so they stay in the corner whatever the page order.
-    [...hosts].sort((a, b) => a.classList.contains('k-plant') - b.classList.contains('k-plant'))
-      .forEach(h => groundRow.append(h));
+    // The ones with a place in the room go into it, and the room goes first.
+    const sorted = [...hosts].sort((a, b) => a.classList.contains('k-plant') - b.classList.contains('k-plant'));
+    const room = buildRoom(sorted.filter(h => h.classList.contains('k-station')));
+    if (room) groundRow.append(room);
+    sorted.forEach(h => { if (!h.parentNode || !h.parentNode.classList || !h.parentNode.classList.contains('k-room')) groundRow.append(h); });
     groundRow.append(bar);
     wrap.append(groundRow);
     ground.append(wrap);

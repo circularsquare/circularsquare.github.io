@@ -173,7 +173,12 @@ ingredients:
   - id: onion
     name: onion
     tags: [veg, allium]
-    page: ""
+    bunnies: false               # onions are bad for them
+    page: /thoughts/roadsides/   # and /thoughts/cooking/
+  - id: pumpkin
+    name: pumpkin
+    tags: [veg, squash]
+    page: /projects/             # for now; and /friends/chrysanthemum/
   - id: tomato
     name: tomato
     tags: [veg]
@@ -187,7 +192,7 @@ ingredients:
     name: apple
     tags: [fruit, sweet]
     eat: good
-    page: /places/melissa/
+    page: /places/melissa/       # and /thoughts/
   - id: rice
     name: rice
     tags: [grain, starchy]
@@ -198,12 +203,30 @@ ingredients:
 #          table; anything else edible can, raw ingredients included.
 # tags:    give a dish tags only if it can itself go back in the pot.
 dishes:
+  # Soups are tagged soup so they can go back in the pot with rice.
   - id: potatosoup
     name: potato soup
     quality: good
+    tags: [soup]
   - id: spicypotatosoup
     name: spicy potato soup
     quality: good
+    tags: [soup]
+  - id: pumpkinsoup
+    name: pumpkin soup
+    quality: good
+    tags: [soup]
+  - id: onionsoup
+    name: onion soup
+    quality: good
+    tags: [soup]
+  - id: riceandsoup
+    name: rice and soup
+    quality: good
+  - id: applejam
+    name: apple jam
+    quality: good
+    tags: [sweet]
   - id: clementinejam
     name: clementine jam
     quality: good
@@ -230,6 +253,7 @@ dishes:
   - id: soondubu
     name: soondubu
     quality: good
+    tags: [soup]
   - id: salad
     name: salad
     quality: good
@@ -275,15 +299,18 @@ dishes:
   - id: mushroomsoup
     name: mushroom soup
     quality: good
+    tags: [soup]
   - id: pepperstew
     name: pepper stew
     quality: good
+    tags: [soup]
   - id: boiledegg
     name: boiled egg
     quality: ok
   - id: eggdropsoup
     name: egg drop soup
     quality: good
+    tags: [soup]
   - id: candiednuts
     name: candied nuts
     quality: good
@@ -291,9 +318,16 @@ dishes:
     name: flower syrup
     quality: ok
     tags: [sweet]
-  - id: soupq
+  - id: soup                    # soup.png
     name: soup?
     quality: ok
+    tags: [soup]
+  - id: somethingcold
+    name: something cold
+    quality: ok
+  - id: pumpkintea
+    name: pumpkin tea
+    quality: good
   - id: potslop                 # the pot's catch-all
     name: "???"
     quality: bad
@@ -364,22 +398,45 @@ plants:
   - id: rice
     stalks: true
     regrow: 5
+  - id: pumpkin
+    spots: [[16, 24], [48, 24]]   # on the ground between the leaves
+    regrow: 5
+  - id: onion
+    pull: true
+    regrow: 5
 
 # ── stations ───────────────────────────────────────────────────────────────
 # size: only for the gray stand-in until the png exists; a drawn station
 #       uses the png's own size.
 # <id>covered.png, if drawn, is shown while cooking (the pot with its lid).
+# rim:  the row of the png where the front rim starts. Whatever is waiting
+#       inside shows its top few rows above it. Default 8.
 # fire: an animated strip drawn over the station. png is the file, at is the
 #       top-left corner of a frame in the station's own pixels, size is one
 #       frame, the frames sit side by side in the png.
 stations:
   - id: pot
     size: [32, 32]
-    fire: {png: fire, at: [6, 11], size: [16, 16], frames: 4, fps: 2}
+    fire: {png: fire, at: [6, 11], size: [16, 16], frames: 8, fps: 4}
+    rim: 8                      # the row the front rim starts on; what's waiting inside is cut off there
   - id: table                   # one thing to eat, shared by everyone (shonei-server)
     table: true
   - id: pan                     # later
     size: [32, 16]
+
+# ── the room ───────────────────────────────────────────────────────────────
+# Drawn behind the stations on a page that has them (the home page). at: how
+# far each station stands from the room's left edge, in art pixels; they all
+# stand on its floor, floor: rows up from the bottom of the png. decor: more
+# pngs standing on the floor, behind the stations. Laid out like the
+# kitchen.png mock-up.
+room:
+  png: kitchenroom
+  floor: 1
+  at: {pot: 9, table: 55}
+  decor:
+    - {png: kitchencushion, at: 41}
+    - {png: kitchencushion, at: 75}
 
 # ── recipes ────────────────────────────────────────────────────────────────
 # Checked top to bottom; the first match wins, so specific ones go first and
@@ -409,6 +466,23 @@ recipes:
   - {at: pot, in: [ricefood, tea], out: chazuke}
   - {at: pot, in: [ricefood, teafood], out: chazuke}
 
+  # rice and soup: rice, raw or cooked, with any soup
+  - {at: pot, in: [rice, any soup], out: riceandsoup}
+  - {at: pot, in: [ricefood, any soup], out: riceandsoup}
+
+  # pumpkin: tea with tea (hobakcha); soup on its own or with onion or
+  # something sweet; porridge with a grain (hobakjuk)
+  - {at: pot, in: [pumpkin, any tea], out: pumpkintea}
+  - {at: pot, in: [pumpkin], out: pumpkinsoup}
+  - {at: pot, in: [pumpkin, pumpkin], out: pumpkinsoup}
+  - {at: pot, in: [pumpkin, any allium], out: pumpkinsoup}
+  - {at: pot, in: [pumpkin, any sweet], out: pumpkinsoup}
+  - {at: pot, in: [pumpkin, any grain], out: porridge}
+
+  # onion soup (onion with potato is potato soup, above)
+  - {at: pot, in: [onion], out: onionsoup}
+  - {at: pot, in: [onion, onion], out: onionsoup}
+
   # tea
   - {at: pot, in: [any tea, ice], out: icedtea}
   - {at: pot, in: [any tea, tapioca], out: bubbletea}
@@ -436,10 +510,19 @@ recipes:
   - {at: pot, in: [clementine, clementine], out: clementinejam}
   - {at: pot, in: [blueberry], out: blueberryjam}
   - {at: pot, in: [blueberry, blueberry], out: blueberryjam}
+  - {at: pot, in: [apple], out: applejam}
+  - {at: pot, in: [apple, apple], out: applejam}
   - {at: pot, in: [any fruit, any fruit], out: fruitsalad}
   - {at: pot, in: [clementine, any sweet], out: clementinejam}
   - {at: pot, in: [blueberry, any sweet], out: blueberryjam}
+  - {at: pot, in: [apple, any sweet], out: applejam}
   - {at: pot, in: [pepper, any sweet], out: pepperjam}
+  # a jam with honey (or anything sweet) is still that jam
+  - {at: pot, in: [clementinejam, any sweet], out: clementinejam}
+  - {at: pot, in: [blueberryjam, any sweet], out: blueberryjam}
+  - {at: pot, in: [applejam, any sweet], out: applejam}
+  - {at: pot, in: [pepperjam, any sweet], out: pepperjam}
+  - {at: pot, in: [jam, any sweet], out: jam}
 
   # sweet things
   - {at: pot, in: [any flower, honey], out: syrup}
@@ -459,9 +542,15 @@ recipes:
   - {at: pot, in: [any grain, any fruit], out: porridge}
   - {at: pot, in: [any grain, any sweet], out: porridge}
 
-  # plausible but unnamed
-  - {at: pot, in: [any veg, anything], out: soupq}
-  - {at: pot, in: [any bean, anything], out: soupq}
+  # plausible but unnamed: whatever isn't named above goes by its most
+  # telling part. Ice first (a cold soup is something cold), then soup, then
+  # grain, then tea.
+  - {at: pot, in: [ice, anything], out: somethingcold}
+  - {at: pot, in: [any veg, anything], out: soup}
+  - {at: pot, in: [any bean, anything], out: soup}
+  - {at: pot, in: [any soup, anything], out: soup}
+  - {at: pot, in: [any grain, anything], out: porridge}
+  - {at: pot, in: [any tea, anything], out: teafood}
 
   # pan, later: same ingredients, different dishes
   # - {at: pan, in: [potato], out: fries}

@@ -22,6 +22,4 @@ talking to chrysanthemum can be overwhelming. i don't necessarily see each littl
 
 <img src="/assets/plants/chrysanthemum.jpg" width="70%">
 
-
-
-
+{% include plant.html kind="pumpkin" %}

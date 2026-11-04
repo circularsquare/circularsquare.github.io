@@ -27,9 +27,9 @@ baseurl: "" # the subpath of your site, e.g. /blog
 url: "https://anita.garden" # the base hostname & protocol for your site, e.g. http://example.com
 github_username: circularsquare
 
-# The cooking game (_data/kitchen.yml). Off until there's enough drawn; until
-# then ?kitchen=on in any page's address turns it on for that browser.
-kitchen_public: false
+# The cooking game (_data/kitchen.yml). On for everyone; set false to hide it
+# again (?kitchen=on in a page's address still turns it on for one browser).
+kitchen_public: true
 
 # Build settings
 theme: minima

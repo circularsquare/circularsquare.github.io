@@ -55,3 +55,4 @@ permalink: /projects/
 
 <iframe src="//incr.easrng.net/badge?key=amanita" style="background: url(//incr.easrng.net/bg.gif)" title="increment badge" width="88" height="31" frameborder="0"></iframe>
 
+{% include plant.html kind="pumpkin" %}

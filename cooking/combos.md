@@ -36,10 +36,11 @@ rerun it after changing the yml or adding pngs.
 | egg | egg | egg | - | no plant entry | - |
 | corn | corn | grain, veg, sweet | - | no plant entry | - |
 | soybean | soybean | bean | yes | yes | pages/friends/gingko.md, pages/thoughts/beingseen.md |
-| onion | onion | veg, allium | - | no plant entry | - |
+| onion | onion | veg, allium | yes | yes | pages/thoughts/cooking.md, pages/thoughts/roadsides.md |
+| pumpkin | pumpkin | veg, squash | yes | yes | pages/friends/chrysanthemum.md, pages/projects/projects.md |
 | tomato | tomato | veg | yes | yes | pages/thoughts/shame.md |
 | tea | tea leaves | tea | yes | yes | pages/chat.md, pages/lists/bubbletea.md |
-| apple | apple | fruit, sweet | yes | yes | pages/places/melissa.md |
+| apple | apple | fruit, sweet | yes | yes | pages/places/melissa.md, pages/thoughts/thoughts.md |
 | rice | rice | grain, starchy | yes | yes | pages/anita/anita.md |
 
 ## dishes
@@ -48,9 +49,13 @@ rerun it after changing the yml or adding pngs.
 |---|---|---|---|
 | potatosoup | potato soup | yes | pot: potato; pot: potato + potato; pot: potato + any allium; pot: potato + any leafy |
 | spicypotatosoup | spicy potato soup | yes | pot: potato + pepper |
-| clementinejam | clementine jam | yes | pot: clementine; pot: clementine + clementine; pot: clementine + any sweet |
-| blueberryjam | blueberry jam | yes | pot: blueberry; pot: blueberry + blueberry; pot: blueberry + any sweet |
-| pepperjam | pepper jam | yes | pot: pepper + any sweet |
+| pumpkinsoup | pumpkin soup | yes | pot: pumpkin; pot: pumpkin + pumpkin; pot: pumpkin + any allium; pot: pumpkin + any sweet |
+| onionsoup | onion soup | yes | pot: onion; pot: onion + onion |
+| riceandsoup | rice and soup | yes | pot: rice + any soup; pot: ricefood + any soup |
+| applejam | apple jam | yes | pot: apple; pot: apple + apple; pot: apple + any sweet; pot: applejam + any sweet |
+| clementinejam | clementine jam | yes | pot: clementine; pot: clementine + clementine; pot: clementine + any sweet; pot: clementinejam + any sweet |
+| blueberryjam | blueberry jam | yes | pot: blueberry; pot: blueberry + blueberry; pot: blueberry + any sweet; pot: blueberryjam + any sweet |
+| pepperjam | pepper jam | yes | pot: pepper + any sweet; pot: pepperjam + any sweet |
 | ricefood | rice | yes | pot: rice; pot: rice + rice |
 | chazuke | chazuke | yes | pot: rice + tea; pot: rice + teafood; pot: ricefood + tea; pot: ricefood + teafood |
 | tofu | tofu | yes | pot: soybean; pot: soybean + soybean |
@@ -61,20 +66,22 @@ rerun it after changing the yml or adding pngs.
 | blueberrysorbet | blueberry sorbet | yes | pot: blueberry + ice |
 | plumsorbet | plum sorbet | - | pot: plum + ice |
 | sorbet | sorbet | yes | pot: any fruit + ice |
-| jam | jam | yes | pot: any fruit + any sweet |
-| teafood | tea | yes | pot: any tea; pot: any tea + any tea; pot: any tea + any sweet |
+| jam | jam | yes | pot: jam + any sweet; pot: any fruit + any sweet |
+| teafood | tea | yes | pot: any tea; pot: any tea + any tea; pot: any tea + any sweet; pot: any tea + anything |
 | orangetea | orange tea | yes | pot: any tea + clementine |
 | blueberrytea | blueberry tea | yes | pot: any tea + blueberry |
 | icedtea | iced tea | yes | pot: any tea + ice |
 | bubbletea | bubble tea | - | pot: any tea + tapioca |
-| porridge | porridge | yes | pot: any grain; pot: any grain + any fruit; pot: any grain + any sweet |
+| porridge | porridge | yes | pot: pumpkin + any grain; pot: any grain; pot: any grain + any fruit; pot: any grain + any sweet; pot: any grain + anything |
 | mushroomsoup | mushroom soup | - | pot: russula + anything |
 | pepperstew | pepper stew | - | pot: pepper + any veg; pot: pepper |
 | boiledegg | boiled egg | - | pot: egg |
 | eggdropsoup | egg drop soup | - | pot: egg + any veg |
 | candiednuts | candied nuts | - | pot: any nut + any sweet |
 | syrup | flower syrup | - | pot: any flower + honey; pot: any flower + birchsap |
-| soupq | soup? | - | pot: any veg + anything; pot: any bean + anything |
+| soup | soup? | yes | pot: any veg + anything; pot: any bean + anything; pot: any soup + anything |
+| somethingcold | something cold | yes | pot: ice + anything |
+| pumpkintea | pumpkin tea | yes | pot: pumpkin + any tea |
 | potslop | ??? | yes | pot: foxglove + anything; pot: anything + anything |
 
 ## pot
@@ -89,99 +96,121 @@ rerun it after changing the yml or adding pngs.
 | watercress | potato soup | tag rule |
 | dandelion greens | potato soup | tag rule |
 | bellflower | potato soup | tag rule |
-| milkweed pod | soup? (not drawn; today: ???) | catch-all |
-| clementine | soup? (not drawn; today: ???) | catch-all |
-| blueberry | soup? (not drawn; today: ???) | catch-all |
-| plum | soup? (not drawn; today: ???) | catch-all |
-| strawberry tree fruit | soup? (not drawn; today: ???) | catch-all |
-| olive | soup? (not drawn; today: ???) | catch-all |
-| pine nut | soup? (not drawn; today: ???) | catch-all |
-| ginkgo nut | soup? (not drawn; today: ???) | catch-all |
-| russula | mushroom soup (not drawn; today: ???) | catch-all |
-| linden flower | soup? (not drawn; today: ???) | catch-all |
-| jasmine | soup? (not drawn; today: ???) | catch-all |
-| chrysanthemum | soup? (not drawn; today: ???) | catch-all |
-| lavender | soup? (not drawn; today: ???) | catch-all |
-| honeysuckle | soup? (not drawn; today: ???) | catch-all |
+| milkweed pod | soup? | catch-all |
+| clementine | soup? | catch-all |
+| blueberry | soup? | catch-all |
+| plum | soup? | catch-all |
+| strawberry tree fruit | soup? | catch-all |
+| olive | soup? | catch-all |
+| pine nut | soup? | catch-all |
+| ginkgo nut | soup? | catch-all |
+| russula | mushroom soup (not drawn; today: soup?) | catch-all |
+| linden flower | soup? | catch-all |
+| jasmine | soup? | catch-all |
+| chrysanthemum | soup? | catch-all |
+| lavender | soup? | catch-all |
+| honeysuckle | soup? | catch-all |
 | mint | potato soup | tag rule |
 | foxglove | ??? | catch-all |
-| honey | soup? (not drawn; today: ???) | catch-all |
-| birch sap | soup? (not drawn; today: ???) | catch-all |
-| ice | soup? (not drawn; today: ???) | catch-all |
-| wheat | soup? (not drawn; today: ???) | catch-all |
-| tapioca pearls | soup? (not drawn; today: ???) | catch-all |
-| egg | egg drop soup (not drawn; today: ???) | tag rule |
-| corn | soup? (not drawn; today: ???) | catch-all |
-| soybean | soup? (not drawn; today: ???) | catch-all |
+| honey | soup? | catch-all |
+| birch sap | soup? | catch-all |
+| ice | something cold | catch-all |
+| wheat | soup? | catch-all |
+| tapioca pearls | soup? | catch-all |
+| egg | egg drop soup (not drawn; today: soup?) | tag rule |
+| corn | soup? | catch-all |
+| soybean | soup? | catch-all |
 | onion | potato soup | tag rule |
-| tomato | soup? (not drawn; today: ???) | catch-all |
-| tea leaves | soup? (not drawn; today: ???) | catch-all |
-| apple | soup? (not drawn; today: ???) | catch-all |
-| rice | soup? (not drawn; today: ???) | catch-all |
-| clementine jam | soup? (not drawn; today: ???) | catch-all |
-| blueberry jam | soup? (not drawn; today: ???) | catch-all |
-| pepper jam | soup? (not drawn; today: ???) | catch-all |
-| rice | soup? (not drawn; today: ???) | catch-all |
-| tofu | soup? (not drawn; today: ???) | catch-all |
-| jam | soup? (not drawn; today: ???) | catch-all |
-| tea | soup? (not drawn; today: ???) | catch-all |
-| iced tea | soup? (not drawn; today: ???) | catch-all |
-| flower syrup | soup? (not drawn; today: ???) | catch-all |
+| pumpkin | soup? | catch-all |
+| tomato | soup? | catch-all |
+| tea leaves | soup? | catch-all |
+| apple | soup? | catch-all |
+| rice | soup? | catch-all |
+| potato soup | soup? | catch-all |
+| spicy potato soup | soup? | catch-all |
+| pumpkin soup | soup? | catch-all |
+| onion soup | soup? | catch-all |
+| apple jam | soup? | catch-all |
+| clementine jam | soup? | catch-all |
+| blueberry jam | soup? | catch-all |
+| pepper jam | soup? | catch-all |
+| rice | soup? | catch-all |
+| tofu | soup? | catch-all |
+| soondubu | soup? | catch-all |
+| jam | soup? | catch-all |
+| tea | soup? | catch-all |
+| iced tea | soup? | catch-all |
+| mushroom soup | soup? | catch-all |
+| pepper stew | soup? | catch-all |
+| egg drop soup | soup? | catch-all |
+| flower syrup | soup? | catch-all |
+| soup? | soup? | catch-all |
 
 ### pepper
 
 | with | makes | rule |
 |---|---|---|
-| (nothing) | pepper stew (not drawn; today: ???) | exact |
+| (nothing) | pepper stew (not drawn; today: soup?) | exact |
 | potato | spicy potato soup | exact |
-| pepper | pepper stew (not drawn; today: ???) | tag rule |
+| pepper | pepper stew (not drawn; today: soup?) | tag rule |
 | watercress | pepper stew (not drawn; today: salad) | tag rule |
 | dandelion greens | pepper stew (not drawn; today: salad) | tag rule |
 | bellflower | pepper stew (not drawn; today: salad) | tag rule |
-| milkweed pod | pepper stew (not drawn; today: ???) | tag rule |
+| milkweed pod | pepper stew (not drawn; today: soup?) | tag rule |
 | clementine | pepper jam | tag rule |
 | blueberry | pepper jam | tag rule |
 | plum | pepper jam | tag rule |
-| strawberry tree fruit | soup? (not drawn; today: ???) | catch-all |
-| olive | soup? (not drawn; today: ???) | catch-all |
-| pine nut | soup? (not drawn; today: ???) | catch-all |
-| ginkgo nut | soup? (not drawn; today: ???) | catch-all |
-| russula | mushroom soup (not drawn; today: ???) | catch-all |
-| linden flower | soup? (not drawn; today: ???) | catch-all |
-| jasmine | soup? (not drawn; today: ???) | catch-all |
-| chrysanthemum | soup? (not drawn; today: ???) | catch-all |
-| lavender | soup? (not drawn; today: ???) | catch-all |
+| strawberry tree fruit | soup? | catch-all |
+| olive | soup? | catch-all |
+| pine nut | soup? | catch-all |
+| ginkgo nut | soup? | catch-all |
+| russula | mushroom soup (not drawn; today: soup?) | catch-all |
+| linden flower | soup? | catch-all |
+| jasmine | soup? | catch-all |
+| chrysanthemum | soup? | catch-all |
+| lavender | soup? | catch-all |
 | honeysuckle | pepper jam | tag rule |
 | mint | salad | tag rule |
 | foxglove | ??? | catch-all |
 | honey | pepper jam | tag rule |
 | birch sap | pepper jam | tag rule |
-| ice | soup? (not drawn; today: ???) | catch-all |
-| wheat | soup? (not drawn; today: ???) | catch-all |
-| tapioca pearls | soup? (not drawn; today: ???) | catch-all |
-| egg | egg drop soup (not drawn; today: ???) | tag rule |
+| ice | something cold | catch-all |
+| wheat | soup? | catch-all |
+| tapioca pearls | soup? | catch-all |
+| egg | egg drop soup (not drawn; today: soup?) | tag rule |
 | corn | pepper jam | tag rule |
-| soybean | soup? (not drawn; today: ???) | catch-all |
-| onion | pepper stew (not drawn; today: ???) | tag rule |
-| tomato | pepper stew (not drawn; today: ???) | tag rule |
-| tea leaves | soup? (not drawn; today: ???) | catch-all |
+| soybean | soup? | catch-all |
+| onion | pepper stew (not drawn; today: soup?) | tag rule |
+| pumpkin | pepper stew (not drawn; today: soup?) | tag rule |
+| tomato | pepper stew (not drawn; today: soup?) | tag rule |
+| tea leaves | soup? | catch-all |
 | apple | pepper jam | tag rule |
-| rice | soup? (not drawn; today: ???) | catch-all |
+| rice | soup? | catch-all |
+| potato soup | soup? | catch-all |
+| spicy potato soup | soup? | catch-all |
+| pumpkin soup | soup? | catch-all |
+| onion soup | soup? | catch-all |
+| apple jam | pepper jam | tag rule |
 | clementine jam | pepper jam | tag rule |
 | blueberry jam | pepper jam | tag rule |
 | pepper jam | pepper jam | tag rule |
-| rice | soup? (not drawn; today: ???) | catch-all |
+| rice | soup? | catch-all |
 | tofu | soondubu | exact |
+| soondubu | soup? | catch-all |
 | jam | pepper jam | tag rule |
-| tea | soup? (not drawn; today: ???) | catch-all |
-| iced tea | soup? (not drawn; today: ???) | catch-all |
+| tea | soup? | catch-all |
+| iced tea | soup? | catch-all |
+| mushroom soup | soup? | catch-all |
+| pepper stew | soup? | catch-all |
+| egg drop soup | soup? | catch-all |
 | flower syrup | pepper jam | tag rule |
+| soup? | soup? | catch-all |
 
 ### watercress
 
 | with | makes | rule |
 |---|---|---|
-| (nothing) | soup? (not drawn; today: ???) | catch-all |
+| (nothing) | soup? | catch-all |
 | potato | potato soup | tag rule |
 | pepper | pepper stew (not drawn; today: salad) | tag rule |
 | watercress | salad | tag rule |
@@ -193,44 +222,55 @@ rerun it after changing the yml or adding pngs.
 | plum | salad | tag rule |
 | strawberry tree fruit | salad | tag rule |
 | olive | salad | tag rule |
-| pine nut | soup? (not drawn; today: ???) | catch-all |
-| ginkgo nut | soup? (not drawn; today: ???) | catch-all |
-| russula | mushroom soup (not drawn; today: ???) | catch-all |
-| linden flower | soup? (not drawn; today: ???) | catch-all |
-| jasmine | soup? (not drawn; today: ???) | catch-all |
-| chrysanthemum | soup? (not drawn; today: ???) | catch-all |
-| lavender | soup? (not drawn; today: ???) | catch-all |
-| honeysuckle | soup? (not drawn; today: ???) | catch-all |
+| pine nut | soup? | catch-all |
+| ginkgo nut | soup? | catch-all |
+| russula | mushroom soup (not drawn; today: soup?) | catch-all |
+| linden flower | soup? | catch-all |
+| jasmine | soup? | catch-all |
+| chrysanthemum | soup? | catch-all |
+| lavender | soup? | catch-all |
+| honeysuckle | soup? | catch-all |
 | mint | salad | tag rule |
 | foxglove | ??? | catch-all |
-| honey | soup? (not drawn; today: ???) | catch-all |
-| birch sap | soup? (not drawn; today: ???) | catch-all |
-| ice | soup? (not drawn; today: ???) | catch-all |
-| wheat | soup? (not drawn; today: ???) | catch-all |
-| tapioca pearls | soup? (not drawn; today: ???) | catch-all |
-| egg | egg drop soup (not drawn; today: ???) | tag rule |
+| honey | soup? | catch-all |
+| birch sap | soup? | catch-all |
+| ice | something cold | catch-all |
+| wheat | soup? | catch-all |
+| tapioca pearls | soup? | catch-all |
+| egg | egg drop soup (not drawn; today: soup?) | tag rule |
 | corn | salad | tag rule |
-| soybean | soup? (not drawn; today: ???) | catch-all |
+| soybean | soup? | catch-all |
 | onion | salad | tag rule |
+| pumpkin | salad | tag rule |
 | tomato | salad | tag rule |
-| tea leaves | soup? (not drawn; today: ???) | catch-all |
+| tea leaves | soup? | catch-all |
 | apple | salad | tag rule |
-| rice | soup? (not drawn; today: ???) | catch-all |
-| clementine jam | soup? (not drawn; today: ???) | catch-all |
-| blueberry jam | soup? (not drawn; today: ???) | catch-all |
-| pepper jam | soup? (not drawn; today: ???) | catch-all |
-| rice | soup? (not drawn; today: ???) | catch-all |
-| tofu | soup? (not drawn; today: ???) | catch-all |
-| jam | soup? (not drawn; today: ???) | catch-all |
-| tea | soup? (not drawn; today: ???) | catch-all |
-| iced tea | soup? (not drawn; today: ???) | catch-all |
-| flower syrup | soup? (not drawn; today: ???) | catch-all |
+| rice | soup? | catch-all |
+| potato soup | soup? | catch-all |
+| spicy potato soup | soup? | catch-all |
+| pumpkin soup | soup? | catch-all |
+| onion soup | soup? | catch-all |
+| apple jam | soup? | catch-all |
+| clementine jam | soup? | catch-all |
+| blueberry jam | soup? | catch-all |
+| pepper jam | soup? | catch-all |
+| rice | soup? | catch-all |
+| tofu | soup? | catch-all |
+| soondubu | soup? | catch-all |
+| jam | soup? | catch-all |
+| tea | soup? | catch-all |
+| iced tea | soup? | catch-all |
+| mushroom soup | soup? | catch-all |
+| pepper stew | soup? | catch-all |
+| egg drop soup | soup? | catch-all |
+| flower syrup | soup? | catch-all |
+| soup? | soup? | catch-all |
 
 ### dandelion greens
 
 | with | makes | rule |
 |---|---|---|
-| (nothing) | soup? (not drawn; today: ???) | catch-all |
+| (nothing) | soup? | catch-all |
 | potato | potato soup | tag rule |
 | pepper | pepper stew (not drawn; today: salad) | tag rule |
 | watercress | salad | tag rule |
@@ -242,44 +282,55 @@ rerun it after changing the yml or adding pngs.
 | plum | salad | tag rule |
 | strawberry tree fruit | salad | tag rule |
 | olive | salad | tag rule |
-| pine nut | soup? (not drawn; today: ???) | catch-all |
-| ginkgo nut | soup? (not drawn; today: ???) | catch-all |
-| russula | mushroom soup (not drawn; today: ???) | catch-all |
-| linden flower | soup? (not drawn; today: ???) | catch-all |
-| jasmine | soup? (not drawn; today: ???) | catch-all |
-| chrysanthemum | soup? (not drawn; today: ???) | catch-all |
-| lavender | soup? (not drawn; today: ???) | catch-all |
-| honeysuckle | soup? (not drawn; today: ???) | catch-all |
+| pine nut | soup? | catch-all |
+| ginkgo nut | soup? | catch-all |
+| russula | mushroom soup (not drawn; today: soup?) | catch-all |
+| linden flower | soup? | catch-all |
+| jasmine | soup? | catch-all |
+| chrysanthemum | soup? | catch-all |
+| lavender | soup? | catch-all |
+| honeysuckle | soup? | catch-all |
 | mint | salad | tag rule |
 | foxglove | ??? | catch-all |
-| honey | soup? (not drawn; today: ???) | catch-all |
-| birch sap | soup? (not drawn; today: ???) | catch-all |
-| ice | soup? (not drawn; today: ???) | catch-all |
-| wheat | soup? (not drawn; today: ???) | catch-all |
-| tapioca pearls | soup? (not drawn; today: ???) | catch-all |
-| egg | egg drop soup (not drawn; today: ???) | tag rule |
+| honey | soup? | catch-all |
+| birch sap | soup? | catch-all |
+| ice | something cold | catch-all |
+| wheat | soup? | catch-all |
+| tapioca pearls | soup? | catch-all |
+| egg | egg drop soup (not drawn; today: soup?) | tag rule |
 | corn | salad | tag rule |
-| soybean | soup? (not drawn; today: ???) | catch-all |
+| soybean | soup? | catch-all |
 | onion | salad | tag rule |
+| pumpkin | salad | tag rule |
 | tomato | salad | tag rule |
-| tea leaves | soup? (not drawn; today: ???) | catch-all |
+| tea leaves | soup? | catch-all |
 | apple | salad | tag rule |
-| rice | soup? (not drawn; today: ???) | catch-all |
-| clementine jam | soup? (not drawn; today: ???) | catch-all |
-| blueberry jam | soup? (not drawn; today: ???) | catch-all |
-| pepper jam | soup? (not drawn; today: ???) | catch-all |
-| rice | soup? (not drawn; today: ???) | catch-all |
-| tofu | soup? (not drawn; today: ???) | catch-all |
-| jam | soup? (not drawn; today: ???) | catch-all |
-| tea | soup? (not drawn; today: ???) | catch-all |
-| iced tea | soup? (not drawn; today: ???) | catch-all |
-| flower syrup | soup? (not drawn; today: ???) | catch-all |
+| rice | soup? | catch-all |
+| potato soup | soup? | catch-all |
+| spicy potato soup | soup? | catch-all |
+| pumpkin soup | soup? | catch-all |
+| onion soup | soup? | catch-all |
+| apple jam | soup? | catch-all |
+| clementine jam | soup? | catch-all |
+| blueberry jam | soup? | catch-all |
+| pepper jam | soup? | catch-all |
+| rice | soup? | catch-all |
+| tofu | soup? | catch-all |
+| soondubu | soup? | catch-all |
+| jam | soup? | catch-all |
+| tea | soup? | catch-all |
+| iced tea | soup? | catch-all |
+| mushroom soup | soup? | catch-all |
+| pepper stew | soup? | catch-all |
+| egg drop soup | soup? | catch-all |
+| flower syrup | soup? | catch-all |
+| soup? | soup? | catch-all |
 
 ### bellflower
 
 | with | makes | rule |
 |---|---|---|
-| (nothing) | soup? (not drawn; today: ???) | catch-all |
+| (nothing) | soup? | catch-all |
 | potato | potato soup | tag rule |
 | pepper | pepper stew (not drawn; today: salad) | tag rule |
 | watercress | salad | tag rule |
@@ -291,99 +342,121 @@ rerun it after changing the yml or adding pngs.
 | plum | salad | tag rule |
 | strawberry tree fruit | salad | tag rule |
 | olive | salad | tag rule |
-| pine nut | soup? (not drawn; today: ???) | catch-all |
-| ginkgo nut | soup? (not drawn; today: ???) | catch-all |
-| russula | mushroom soup (not drawn; today: ???) | catch-all |
-| linden flower | soup? (not drawn; today: ???) | catch-all |
-| jasmine | soup? (not drawn; today: ???) | catch-all |
-| chrysanthemum | soup? (not drawn; today: ???) | catch-all |
-| lavender | soup? (not drawn; today: ???) | catch-all |
-| honeysuckle | soup? (not drawn; today: ???) | catch-all |
+| pine nut | soup? | catch-all |
+| ginkgo nut | soup? | catch-all |
+| russula | mushroom soup (not drawn; today: soup?) | catch-all |
+| linden flower | soup? | catch-all |
+| jasmine | soup? | catch-all |
+| chrysanthemum | soup? | catch-all |
+| lavender | soup? | catch-all |
+| honeysuckle | soup? | catch-all |
 | mint | salad | tag rule |
 | foxglove | ??? | catch-all |
-| honey | flower syrup (not drawn; today: ???) | tag rule |
-| birch sap | flower syrup (not drawn; today: ???) | tag rule |
-| ice | soup? (not drawn; today: ???) | catch-all |
-| wheat | soup? (not drawn; today: ???) | catch-all |
-| tapioca pearls | soup? (not drawn; today: ???) | catch-all |
-| egg | egg drop soup (not drawn; today: ???) | tag rule |
+| honey | flower syrup (not drawn; today: soup?) | tag rule |
+| birch sap | flower syrup (not drawn; today: soup?) | tag rule |
+| ice | something cold | catch-all |
+| wheat | soup? | catch-all |
+| tapioca pearls | soup? | catch-all |
+| egg | egg drop soup (not drawn; today: soup?) | tag rule |
 | corn | salad | tag rule |
-| soybean | soup? (not drawn; today: ???) | catch-all |
+| soybean | soup? | catch-all |
 | onion | salad | tag rule |
+| pumpkin | salad | tag rule |
 | tomato | salad | tag rule |
-| tea leaves | soup? (not drawn; today: ???) | catch-all |
+| tea leaves | soup? | catch-all |
 | apple | salad | tag rule |
-| rice | soup? (not drawn; today: ???) | catch-all |
-| clementine jam | soup? (not drawn; today: ???) | catch-all |
-| blueberry jam | soup? (not drawn; today: ???) | catch-all |
-| pepper jam | soup? (not drawn; today: ???) | catch-all |
-| rice | soup? (not drawn; today: ???) | catch-all |
-| tofu | soup? (not drawn; today: ???) | catch-all |
-| jam | soup? (not drawn; today: ???) | catch-all |
-| tea | soup? (not drawn; today: ???) | catch-all |
-| iced tea | soup? (not drawn; today: ???) | catch-all |
-| flower syrup | soup? (not drawn; today: ???) | catch-all |
+| rice | soup? | catch-all |
+| potato soup | soup? | catch-all |
+| spicy potato soup | soup? | catch-all |
+| pumpkin soup | soup? | catch-all |
+| onion soup | soup? | catch-all |
+| apple jam | soup? | catch-all |
+| clementine jam | soup? | catch-all |
+| blueberry jam | soup? | catch-all |
+| pepper jam | soup? | catch-all |
+| rice | soup? | catch-all |
+| tofu | soup? | catch-all |
+| soondubu | soup? | catch-all |
+| jam | soup? | catch-all |
+| tea | soup? | catch-all |
+| iced tea | soup? | catch-all |
+| mushroom soup | soup? | catch-all |
+| pepper stew | soup? | catch-all |
+| egg drop soup | soup? | catch-all |
+| flower syrup | soup? | catch-all |
+| soup? | soup? | catch-all |
 
 ### milkweed pod
 
 | with | makes | rule |
 |---|---|---|
-| (nothing) | soup? (not drawn; today: ???) | catch-all |
-| potato | soup? (not drawn; today: ???) | catch-all |
-| pepper | pepper stew (not drawn; today: ???) | tag rule |
+| (nothing) | soup? | catch-all |
+| potato | soup? | catch-all |
+| pepper | pepper stew (not drawn; today: soup?) | tag rule |
 | watercress | salad | tag rule |
 | dandelion greens | salad | tag rule |
 | bellflower | salad | tag rule |
-| milkweed pod | soup? (not drawn; today: ???) | catch-all |
-| clementine | soup? (not drawn; today: ???) | catch-all |
-| blueberry | soup? (not drawn; today: ???) | catch-all |
-| plum | soup? (not drawn; today: ???) | catch-all |
-| strawberry tree fruit | soup? (not drawn; today: ???) | catch-all |
-| olive | soup? (not drawn; today: ???) | catch-all |
-| pine nut | soup? (not drawn; today: ???) | catch-all |
-| ginkgo nut | soup? (not drawn; today: ???) | catch-all |
-| russula | mushroom soup (not drawn; today: ???) | catch-all |
-| linden flower | soup? (not drawn; today: ???) | catch-all |
-| jasmine | soup? (not drawn; today: ???) | catch-all |
-| chrysanthemum | soup? (not drawn; today: ???) | catch-all |
-| lavender | soup? (not drawn; today: ???) | catch-all |
-| honeysuckle | soup? (not drawn; today: ???) | catch-all |
+| milkweed pod | soup? | catch-all |
+| clementine | soup? | catch-all |
+| blueberry | soup? | catch-all |
+| plum | soup? | catch-all |
+| strawberry tree fruit | soup? | catch-all |
+| olive | soup? | catch-all |
+| pine nut | soup? | catch-all |
+| ginkgo nut | soup? | catch-all |
+| russula | mushroom soup (not drawn; today: soup?) | catch-all |
+| linden flower | soup? | catch-all |
+| jasmine | soup? | catch-all |
+| chrysanthemum | soup? | catch-all |
+| lavender | soup? | catch-all |
+| honeysuckle | soup? | catch-all |
 | mint | salad | tag rule |
 | foxglove | ??? | catch-all |
-| honey | soup? (not drawn; today: ???) | catch-all |
-| birch sap | soup? (not drawn; today: ???) | catch-all |
-| ice | soup? (not drawn; today: ???) | catch-all |
-| wheat | soup? (not drawn; today: ???) | catch-all |
-| tapioca pearls | soup? (not drawn; today: ???) | catch-all |
-| egg | egg drop soup (not drawn; today: ???) | tag rule |
-| corn | soup? (not drawn; today: ???) | catch-all |
-| soybean | soup? (not drawn; today: ???) | catch-all |
-| onion | soup? (not drawn; today: ???) | catch-all |
-| tomato | soup? (not drawn; today: ???) | catch-all |
-| tea leaves | soup? (not drawn; today: ???) | catch-all |
-| apple | soup? (not drawn; today: ???) | catch-all |
-| rice | soup? (not drawn; today: ???) | catch-all |
-| clementine jam | soup? (not drawn; today: ???) | catch-all |
-| blueberry jam | soup? (not drawn; today: ???) | catch-all |
-| pepper jam | soup? (not drawn; today: ???) | catch-all |
-| rice | soup? (not drawn; today: ???) | catch-all |
-| tofu | soup? (not drawn; today: ???) | catch-all |
-| jam | soup? (not drawn; today: ???) | catch-all |
-| tea | soup? (not drawn; today: ???) | catch-all |
-| iced tea | soup? (not drawn; today: ???) | catch-all |
-| flower syrup | soup? (not drawn; today: ???) | catch-all |
+| honey | soup? | catch-all |
+| birch sap | soup? | catch-all |
+| ice | something cold | catch-all |
+| wheat | soup? | catch-all |
+| tapioca pearls | soup? | catch-all |
+| egg | egg drop soup (not drawn; today: soup?) | tag rule |
+| corn | soup? | catch-all |
+| soybean | soup? | catch-all |
+| onion | soup? | catch-all |
+| pumpkin | soup? | catch-all |
+| tomato | soup? | catch-all |
+| tea leaves | soup? | catch-all |
+| apple | soup? | catch-all |
+| rice | soup? | catch-all |
+| potato soup | soup? | catch-all |
+| spicy potato soup | soup? | catch-all |
+| pumpkin soup | soup? | catch-all |
+| onion soup | soup? | catch-all |
+| apple jam | soup? | catch-all |
+| clementine jam | soup? | catch-all |
+| blueberry jam | soup? | catch-all |
+| pepper jam | soup? | catch-all |
+| rice | soup? | catch-all |
+| tofu | soup? | catch-all |
+| soondubu | soup? | catch-all |
+| jam | soup? | catch-all |
+| tea | soup? | catch-all |
+| iced tea | soup? | catch-all |
+| mushroom soup | soup? | catch-all |
+| pepper stew | soup? | catch-all |
+| egg drop soup | soup? | catch-all |
+| flower syrup | soup? | catch-all |
+| soup? | soup? | catch-all |
 
 ### clementine
 
 | with | makes | rule |
 |---|---|---|
 | (nothing) | clementine jam | exact |
-| potato | soup? (not drawn; today: ???) | catch-all |
+| potato | soup? | catch-all |
 | pepper | pepper jam | tag rule |
 | watercress | salad | tag rule |
 | dandelion greens | salad | tag rule |
 | bellflower | salad | tag rule |
-| milkweed pod | soup? (not drawn; today: ???) | catch-all |
+| milkweed pod | soup? | catch-all |
 | clementine | clementine jam | exact |
 | blueberry | fruit salad | tag rule |
 | plum | fruit salad | tag rule |
@@ -406,33 +479,44 @@ rerun it after changing the yml or adding pngs.
 | tapioca pearls | ??? | catch-all |
 | egg | ??? | catch-all |
 | corn | clementine jam | tag rule |
-| soybean | soup? (not drawn; today: ???) | catch-all |
-| onion | soup? (not drawn; today: ???) | catch-all |
-| tomato | soup? (not drawn; today: ???) | catch-all |
+| soybean | soup? | catch-all |
+| onion | soup? | catch-all |
+| pumpkin | pumpkin soup | tag rule |
+| tomato | soup? | catch-all |
 | tea leaves | orange tea | tag rule |
 | apple | fruit salad | tag rule |
 | rice | porridge | tag rule |
+| potato soup | soup? | catch-all |
+| spicy potato soup | soup? | catch-all |
+| pumpkin soup | soup? | catch-all |
+| onion soup | soup? | catch-all |
+| apple jam | clementine jam | tag rule |
 | clementine jam | clementine jam | tag rule |
 | blueberry jam | clementine jam | tag rule |
 | pepper jam | clementine jam | tag rule |
 | rice | ??? | catch-all |
 | tofu | ??? | catch-all |
+| soondubu | soup? | catch-all |
 | jam | clementine jam | tag rule |
 | tea | orange tea | tag rule |
 | iced tea | orange tea | tag rule |
+| mushroom soup | soup? | catch-all |
+| pepper stew | soup? | catch-all |
+| egg drop soup | soup? | catch-all |
 | flower syrup | clementine jam | tag rule |
+| soup? | soup? | catch-all |
 
 ### blueberry
 
 | with | makes | rule |
 |---|---|---|
 | (nothing) | blueberry jam | exact |
-| potato | soup? (not drawn; today: ???) | catch-all |
+| potato | soup? | catch-all |
 | pepper | pepper jam | tag rule |
 | watercress | salad | tag rule |
 | dandelion greens | salad | tag rule |
 | bellflower | salad | tag rule |
-| milkweed pod | soup? (not drawn; today: ???) | catch-all |
+| milkweed pod | soup? | catch-all |
 | clementine | fruit salad | tag rule |
 | blueberry | blueberry jam | exact |
 | plum | fruit salad | tag rule |
@@ -455,33 +539,44 @@ rerun it after changing the yml or adding pngs.
 | tapioca pearls | ??? | catch-all |
 | egg | ??? | catch-all |
 | corn | blueberry jam | tag rule |
-| soybean | soup? (not drawn; today: ???) | catch-all |
-| onion | soup? (not drawn; today: ???) | catch-all |
-| tomato | soup? (not drawn; today: ???) | catch-all |
+| soybean | soup? | catch-all |
+| onion | soup? | catch-all |
+| pumpkin | pumpkin soup | tag rule |
+| tomato | soup? | catch-all |
 | tea leaves | blueberry tea | tag rule |
 | apple | fruit salad | tag rule |
 | rice | porridge | tag rule |
+| potato soup | soup? | catch-all |
+| spicy potato soup | soup? | catch-all |
+| pumpkin soup | soup? | catch-all |
+| onion soup | soup? | catch-all |
+| apple jam | blueberry jam | tag rule |
 | clementine jam | blueberry jam | tag rule |
 | blueberry jam | blueberry jam | tag rule |
 | pepper jam | blueberry jam | tag rule |
 | rice | ??? | catch-all |
 | tofu | ??? | catch-all |
+| soondubu | soup? | catch-all |
 | jam | blueberry jam | tag rule |
 | tea | blueberry tea | tag rule |
 | iced tea | blueberry tea | tag rule |
+| mushroom soup | soup? | catch-all |
+| pepper stew | soup? | catch-all |
+| egg drop soup | soup? | catch-all |
 | flower syrup | blueberry jam | tag rule |
+| soup? | soup? | catch-all |
 
 ### plum
 
 | with | makes | rule |
 |---|---|---|
 | (nothing) | ??? | catch-all |
-| potato | soup? (not drawn; today: ???) | catch-all |
+| potato | soup? | catch-all |
 | pepper | pepper jam | tag rule |
 | watercress | salad | tag rule |
 | dandelion greens | salad | tag rule |
 | bellflower | salad | tag rule |
-| milkweed pod | soup? (not drawn; today: ???) | catch-all |
+| milkweed pod | soup? | catch-all |
 | clementine | fruit salad | tag rule |
 | blueberry | fruit salad | tag rule |
 | plum | fruit salad | tag rule |
@@ -504,33 +599,44 @@ rerun it after changing the yml or adding pngs.
 | tapioca pearls | ??? | catch-all |
 | egg | ??? | catch-all |
 | corn | jam | tag rule |
-| soybean | soup? (not drawn; today: ???) | catch-all |
-| onion | soup? (not drawn; today: ???) | catch-all |
-| tomato | soup? (not drawn; today: ???) | catch-all |
+| soybean | soup? | catch-all |
+| onion | soup? | catch-all |
+| pumpkin | pumpkin soup | tag rule |
+| tomato | soup? | catch-all |
 | tea leaves | tea | tag rule |
 | apple | fruit salad | tag rule |
 | rice | porridge | tag rule |
-| clementine jam | jam | tag rule |
-| blueberry jam | jam | tag rule |
-| pepper jam | jam | tag rule |
+| potato soup | soup? | catch-all |
+| spicy potato soup | soup? | catch-all |
+| pumpkin soup | soup? | catch-all |
+| onion soup | soup? | catch-all |
+| apple jam | apple jam | tag rule |
+| clementine jam | clementine jam | tag rule |
+| blueberry jam | blueberry jam | tag rule |
+| pepper jam | pepper jam | tag rule |
 | rice | ??? | catch-all |
 | tofu | ??? | catch-all |
+| soondubu | soup? | catch-all |
 | jam | jam | tag rule |
 | tea | tea | tag rule |
 | iced tea | tea | tag rule |
+| mushroom soup | soup? | catch-all |
+| pepper stew | soup? | catch-all |
+| egg drop soup | soup? | catch-all |
 | flower syrup | jam | tag rule |
+| soup? | soup? | catch-all |
 
 ### strawberry tree fruit
 
 | with | makes | rule |
 |---|---|---|
 | (nothing) | ??? | catch-all |
-| potato | soup? (not drawn; today: ???) | catch-all |
-| pepper | soup? (not drawn; today: ???) | catch-all |
+| potato | soup? | catch-all |
+| pepper | soup? | catch-all |
 | watercress | salad | tag rule |
 | dandelion greens | salad | tag rule |
 | bellflower | salad | tag rule |
-| milkweed pod | soup? (not drawn; today: ???) | catch-all |
+| milkweed pod | soup? | catch-all |
 | clementine | fruit salad | tag rule |
 | blueberry | fruit salad | tag rule |
 | plum | fruit salad | tag rule |
@@ -539,9 +645,9 @@ rerun it after changing the yml or adding pngs.
 | pine nut | ??? | catch-all |
 | ginkgo nut | ??? | catch-all |
 | russula | mushroom soup (not drawn; today: ???) | catch-all |
-| linden flower | ??? | catch-all |
-| jasmine | ??? | catch-all |
-| chrysanthemum | ??? | catch-all |
+| linden flower | tea | catch-all |
+| jasmine | tea | catch-all |
+| chrysanthemum | tea | catch-all |
 | lavender | ??? | catch-all |
 | honeysuckle | jam | tag rule |
 | mint | salad | tag rule |
@@ -553,33 +659,44 @@ rerun it after changing the yml or adding pngs.
 | tapioca pearls | ??? | catch-all |
 | egg | ??? | catch-all |
 | corn | jam | tag rule |
-| soybean | soup? (not drawn; today: ???) | catch-all |
-| onion | soup? (not drawn; today: ???) | catch-all |
-| tomato | soup? (not drawn; today: ???) | catch-all |
-| tea leaves | ??? | catch-all |
+| soybean | soup? | catch-all |
+| onion | soup? | catch-all |
+| pumpkin | soup? | catch-all |
+| tomato | soup? | catch-all |
+| tea leaves | tea | catch-all |
 | apple | fruit salad | tag rule |
 | rice | porridge | tag rule |
+| potato soup | soup? | catch-all |
+| spicy potato soup | soup? | catch-all |
+| pumpkin soup | soup? | catch-all |
+| onion soup | soup? | catch-all |
+| apple jam | jam | tag rule |
 | clementine jam | jam | tag rule |
 | blueberry jam | jam | tag rule |
 | pepper jam | jam | tag rule |
 | rice | ??? | catch-all |
 | tofu | ??? | catch-all |
+| soondubu | soup? | catch-all |
 | jam | jam | tag rule |
-| tea | ??? | catch-all |
-| iced tea | ??? | catch-all |
+| tea | tea | catch-all |
+| iced tea | tea | catch-all |
+| mushroom soup | soup? | catch-all |
+| pepper stew | soup? | catch-all |
+| egg drop soup | soup? | catch-all |
 | flower syrup | jam | tag rule |
+| soup? | soup? | catch-all |
 
 ### olive
 
 | with | makes | rule |
 |---|---|---|
 | (nothing) | ??? | catch-all |
-| potato | soup? (not drawn; today: ???) | catch-all |
-| pepper | soup? (not drawn; today: ???) | catch-all |
+| potato | soup? | catch-all |
+| pepper | soup? | catch-all |
 | watercress | salad | tag rule |
 | dandelion greens | salad | tag rule |
 | bellflower | salad | tag rule |
-| milkweed pod | soup? (not drawn; today: ???) | catch-all |
+| milkweed pod | soup? | catch-all |
 | clementine | fruit salad | tag rule |
 | blueberry | fruit salad | tag rule |
 | plum | fruit salad | tag rule |
@@ -588,9 +705,9 @@ rerun it after changing the yml or adding pngs.
 | pine nut | ??? | catch-all |
 | ginkgo nut | ??? | catch-all |
 | russula | mushroom soup (not drawn; today: ???) | catch-all |
-| linden flower | ??? | catch-all |
-| jasmine | ??? | catch-all |
-| chrysanthemum | ??? | catch-all |
+| linden flower | tea | catch-all |
+| jasmine | tea | catch-all |
+| chrysanthemum | tea | catch-all |
 | lavender | ??? | catch-all |
 | honeysuckle | jam | tag rule |
 | mint | salad | tag rule |
@@ -602,33 +719,44 @@ rerun it after changing the yml or adding pngs.
 | tapioca pearls | ??? | catch-all |
 | egg | ??? | catch-all |
 | corn | jam | tag rule |
-| soybean | soup? (not drawn; today: ???) | catch-all |
-| onion | soup? (not drawn; today: ???) | catch-all |
-| tomato | soup? (not drawn; today: ???) | catch-all |
-| tea leaves | ??? | catch-all |
+| soybean | soup? | catch-all |
+| onion | soup? | catch-all |
+| pumpkin | soup? | catch-all |
+| tomato | soup? | catch-all |
+| tea leaves | tea | catch-all |
 | apple | fruit salad | tag rule |
 | rice | porridge | tag rule |
+| potato soup | soup? | catch-all |
+| spicy potato soup | soup? | catch-all |
+| pumpkin soup | soup? | catch-all |
+| onion soup | soup? | catch-all |
+| apple jam | jam | tag rule |
 | clementine jam | jam | tag rule |
 | blueberry jam | jam | tag rule |
 | pepper jam | jam | tag rule |
 | rice | ??? | catch-all |
 | tofu | ??? | catch-all |
+| soondubu | soup? | catch-all |
 | jam | jam | tag rule |
-| tea | ??? | catch-all |
-| iced tea | ??? | catch-all |
+| tea | tea | catch-all |
+| iced tea | tea | catch-all |
+| mushroom soup | soup? | catch-all |
+| pepper stew | soup? | catch-all |
+| egg drop soup | soup? | catch-all |
 | flower syrup | jam | tag rule |
+| soup? | soup? | catch-all |
 
 ### pine nut
 
 | with | makes | rule |
 |---|---|---|
 | (nothing) | ??? | catch-all |
-| potato | soup? (not drawn; today: ???) | catch-all |
-| pepper | soup? (not drawn; today: ???) | catch-all |
-| watercress | soup? (not drawn; today: ???) | catch-all |
-| dandelion greens | soup? (not drawn; today: ???) | catch-all |
-| bellflower | soup? (not drawn; today: ???) | catch-all |
-| milkweed pod | soup? (not drawn; today: ???) | catch-all |
+| potato | soup? | catch-all |
+| pepper | soup? | catch-all |
+| watercress | soup? | catch-all |
+| dandelion greens | soup? | catch-all |
+| bellflower | soup? | catch-all |
+| milkweed pod | soup? | catch-all |
 | clementine | candied nuts (not drawn; today: ???) | tag rule |
 | blueberry | candied nuts (not drawn; today: ???) | tag rule |
 | plum | candied nuts (not drawn; today: ???) | tag rule |
@@ -637,47 +765,58 @@ rerun it after changing the yml or adding pngs.
 | pine nut | ??? | catch-all |
 | ginkgo nut | ??? | catch-all |
 | russula | mushroom soup (not drawn; today: ???) | catch-all |
-| linden flower | ??? | catch-all |
-| jasmine | ??? | catch-all |
-| chrysanthemum | ??? | catch-all |
+| linden flower | tea | catch-all |
+| jasmine | tea | catch-all |
+| chrysanthemum | tea | catch-all |
 | lavender | ??? | catch-all |
 | honeysuckle | candied nuts (not drawn; today: ???) | tag rule |
 | mint | ??? | catch-all |
 | foxglove | ??? | catch-all |
 | honey | candied nuts (not drawn; today: ???) | tag rule |
 | birch sap | candied nuts (not drawn; today: ???) | tag rule |
-| ice | ??? | catch-all |
-| wheat | ??? | catch-all |
+| ice | something cold | catch-all |
+| wheat | porridge | catch-all |
 | tapioca pearls | ??? | catch-all |
 | egg | ??? | catch-all |
-| corn | candied nuts (not drawn; today: ???) | tag rule |
-| soybean | soup? (not drawn; today: ???) | catch-all |
-| onion | soup? (not drawn; today: ???) | catch-all |
-| tomato | soup? (not drawn; today: ???) | catch-all |
-| tea leaves | ??? | catch-all |
+| corn | candied nuts (not drawn; today: soup?) | tag rule |
+| soybean | soup? | catch-all |
+| onion | soup? | catch-all |
+| pumpkin | soup? | catch-all |
+| tomato | soup? | catch-all |
+| tea leaves | tea | catch-all |
 | apple | candied nuts (not drawn; today: ???) | tag rule |
-| rice | ??? | catch-all |
+| rice | porridge | catch-all |
+| potato soup | soup? | catch-all |
+| spicy potato soup | soup? | catch-all |
+| pumpkin soup | soup? | catch-all |
+| onion soup | soup? | catch-all |
+| apple jam | candied nuts (not drawn; today: ???) | tag rule |
 | clementine jam | candied nuts (not drawn; today: ???) | tag rule |
 | blueberry jam | candied nuts (not drawn; today: ???) | tag rule |
 | pepper jam | candied nuts (not drawn; today: ???) | tag rule |
 | rice | ??? | catch-all |
 | tofu | ??? | catch-all |
+| soondubu | soup? | catch-all |
 | jam | candied nuts (not drawn; today: ???) | tag rule |
-| tea | ??? | catch-all |
-| iced tea | ??? | catch-all |
+| tea | tea | catch-all |
+| iced tea | tea | catch-all |
+| mushroom soup | soup? | catch-all |
+| pepper stew | soup? | catch-all |
+| egg drop soup | soup? | catch-all |
 | flower syrup | candied nuts (not drawn; today: ???) | tag rule |
+| soup? | soup? | catch-all |
 
 ### ginkgo nut
 
 | with | makes | rule |
 |---|---|---|
 | (nothing) | ??? | catch-all |
-| potato | soup? (not drawn; today: ???) | catch-all |
-| pepper | soup? (not drawn; today: ???) | catch-all |
-| watercress | soup? (not drawn; today: ???) | catch-all |
-| dandelion greens | soup? (not drawn; today: ???) | catch-all |
-| bellflower | soup? (not drawn; today: ???) | catch-all |
-| milkweed pod | soup? (not drawn; today: ???) | catch-all |
+| potato | soup? | catch-all |
+| pepper | soup? | catch-all |
+| watercress | soup? | catch-all |
+| dandelion greens | soup? | catch-all |
+| bellflower | soup? | catch-all |
+| milkweed pod | soup? | catch-all |
 | clementine | candied nuts (not drawn; today: ???) | tag rule |
 | blueberry | candied nuts (not drawn; today: ???) | tag rule |
 | plum | candied nuts (not drawn; today: ???) | tag rule |
@@ -686,47 +825,58 @@ rerun it after changing the yml or adding pngs.
 | pine nut | ??? | catch-all |
 | ginkgo nut | ??? | catch-all |
 | russula | mushroom soup (not drawn; today: ???) | catch-all |
-| linden flower | ??? | catch-all |
-| jasmine | ??? | catch-all |
-| chrysanthemum | ??? | catch-all |
+| linden flower | tea | catch-all |
+| jasmine | tea | catch-all |
+| chrysanthemum | tea | catch-all |
 | lavender | ??? | catch-all |
 | honeysuckle | candied nuts (not drawn; today: ???) | tag rule |
 | mint | ??? | catch-all |
 | foxglove | ??? | catch-all |
 | honey | candied nuts (not drawn; today: ???) | tag rule |
 | birch sap | candied nuts (not drawn; today: ???) | tag rule |
-| ice | ??? | catch-all |
-| wheat | ??? | catch-all |
+| ice | something cold | catch-all |
+| wheat | porridge | catch-all |
 | tapioca pearls | ??? | catch-all |
 | egg | ??? | catch-all |
-| corn | candied nuts (not drawn; today: ???) | tag rule |
-| soybean | soup? (not drawn; today: ???) | catch-all |
-| onion | soup? (not drawn; today: ???) | catch-all |
-| tomato | soup? (not drawn; today: ???) | catch-all |
-| tea leaves | ??? | catch-all |
+| corn | candied nuts (not drawn; today: soup?) | tag rule |
+| soybean | soup? | catch-all |
+| onion | soup? | catch-all |
+| pumpkin | soup? | catch-all |
+| tomato | soup? | catch-all |
+| tea leaves | tea | catch-all |
 | apple | candied nuts (not drawn; today: ???) | tag rule |
-| rice | ??? | catch-all |
+| rice | porridge | catch-all |
+| potato soup | soup? | catch-all |
+| spicy potato soup | soup? | catch-all |
+| pumpkin soup | soup? | catch-all |
+| onion soup | soup? | catch-all |
+| apple jam | candied nuts (not drawn; today: ???) | tag rule |
 | clementine jam | candied nuts (not drawn; today: ???) | tag rule |
 | blueberry jam | candied nuts (not drawn; today: ???) | tag rule |
 | pepper jam | candied nuts (not drawn; today: ???) | tag rule |
 | rice | ??? | catch-all |
 | tofu | ??? | catch-all |
+| soondubu | soup? | catch-all |
 | jam | candied nuts (not drawn; today: ???) | tag rule |
-| tea | ??? | catch-all |
-| iced tea | ??? | catch-all |
+| tea | tea | catch-all |
+| iced tea | tea | catch-all |
+| mushroom soup | soup? | catch-all |
+| pepper stew | soup? | catch-all |
+| egg drop soup | soup? | catch-all |
 | flower syrup | candied nuts (not drawn; today: ???) | tag rule |
+| soup? | soup? | catch-all |
 
 ### russula
 
 | with | makes | rule |
 |---|---|---|
 | (nothing) | mushroom soup (not drawn; today: ???) | catch-all |
-| potato | mushroom soup (not drawn; today: ???) | catch-all |
-| pepper | mushroom soup (not drawn; today: ???) | catch-all |
-| watercress | mushroom soup (not drawn; today: ???) | catch-all |
-| dandelion greens | mushroom soup (not drawn; today: ???) | catch-all |
-| bellflower | mushroom soup (not drawn; today: ???) | catch-all |
-| milkweed pod | mushroom soup (not drawn; today: ???) | catch-all |
+| potato | mushroom soup (not drawn; today: soup?) | catch-all |
+| pepper | mushroom soup (not drawn; today: soup?) | catch-all |
+| watercress | mushroom soup (not drawn; today: soup?) | catch-all |
+| dandelion greens | mushroom soup (not drawn; today: soup?) | catch-all |
+| bellflower | mushroom soup (not drawn; today: soup?) | catch-all |
+| milkweed pod | mushroom soup (not drawn; today: soup?) | catch-all |
 | clementine | mushroom soup (not drawn; today: ???) | catch-all |
 | blueberry | mushroom soup (not drawn; today: ???) | catch-all |
 | plum | mushroom soup (not drawn; today: ???) | catch-all |
@@ -735,194 +885,238 @@ rerun it after changing the yml or adding pngs.
 | pine nut | mushroom soup (not drawn; today: ???) | catch-all |
 | ginkgo nut | mushroom soup (not drawn; today: ???) | catch-all |
 | russula | mushroom soup (not drawn; today: ???) | catch-all |
-| linden flower | mushroom soup (not drawn; today: ???) | catch-all |
-| jasmine | mushroom soup (not drawn; today: ???) | catch-all |
-| chrysanthemum | mushroom soup (not drawn; today: ???) | catch-all |
+| linden flower | mushroom soup (not drawn; today: tea) | catch-all |
+| jasmine | mushroom soup (not drawn; today: tea) | catch-all |
+| chrysanthemum | mushroom soup (not drawn; today: tea) | catch-all |
 | lavender | mushroom soup (not drawn; today: ???) | catch-all |
 | honeysuckle | mushroom soup (not drawn; today: ???) | catch-all |
 | mint | mushroom soup (not drawn; today: ???) | catch-all |
 | foxglove | ??? | catch-all |
 | honey | mushroom soup (not drawn; today: ???) | catch-all |
 | birch sap | mushroom soup (not drawn; today: ???) | catch-all |
-| ice | mushroom soup (not drawn; today: ???) | catch-all |
-| wheat | mushroom soup (not drawn; today: ???) | catch-all |
+| ice | mushroom soup (not drawn; today: something cold) | catch-all |
+| wheat | mushroom soup (not drawn; today: porridge) | catch-all |
 | tapioca pearls | mushroom soup (not drawn; today: ???) | catch-all |
 | egg | mushroom soup (not drawn; today: ???) | catch-all |
-| corn | mushroom soup (not drawn; today: ???) | catch-all |
-| soybean | mushroom soup (not drawn; today: ???) | catch-all |
-| onion | mushroom soup (not drawn; today: ???) | catch-all |
-| tomato | mushroom soup (not drawn; today: ???) | catch-all |
-| tea leaves | mushroom soup (not drawn; today: ???) | catch-all |
+| corn | mushroom soup (not drawn; today: soup?) | catch-all |
+| soybean | mushroom soup (not drawn; today: soup?) | catch-all |
+| onion | mushroom soup (not drawn; today: soup?) | catch-all |
+| pumpkin | mushroom soup (not drawn; today: soup?) | catch-all |
+| tomato | mushroom soup (not drawn; today: soup?) | catch-all |
+| tea leaves | mushroom soup (not drawn; today: tea) | catch-all |
 | apple | mushroom soup (not drawn; today: ???) | catch-all |
-| rice | mushroom soup (not drawn; today: ???) | catch-all |
+| rice | mushroom soup (not drawn; today: porridge) | catch-all |
+| potato soup | mushroom soup (not drawn; today: soup?) | catch-all |
+| spicy potato soup | mushroom soup (not drawn; today: soup?) | catch-all |
+| pumpkin soup | mushroom soup (not drawn; today: soup?) | catch-all |
+| onion soup | mushroom soup (not drawn; today: soup?) | catch-all |
+| apple jam | mushroom soup (not drawn; today: ???) | catch-all |
 | clementine jam | mushroom soup (not drawn; today: ???) | catch-all |
 | blueberry jam | mushroom soup (not drawn; today: ???) | catch-all |
 | pepper jam | mushroom soup (not drawn; today: ???) | catch-all |
 | rice | mushroom soup (not drawn; today: ???) | catch-all |
 | tofu | mushroom soup (not drawn; today: ???) | catch-all |
+| soondubu | mushroom soup (not drawn; today: soup?) | catch-all |
 | jam | mushroom soup (not drawn; today: ???) | catch-all |
-| tea | mushroom soup (not drawn; today: ???) | catch-all |
-| iced tea | mushroom soup (not drawn; today: ???) | catch-all |
+| tea | mushroom soup (not drawn; today: tea) | catch-all |
+| iced tea | mushroom soup (not drawn; today: tea) | catch-all |
+| mushroom soup | mushroom soup (not drawn; today: soup?) | catch-all |
+| pepper stew | mushroom soup (not drawn; today: soup?) | catch-all |
+| egg drop soup | mushroom soup (not drawn; today: soup?) | catch-all |
 | flower syrup | mushroom soup (not drawn; today: ???) | catch-all |
+| soup? | mushroom soup (not drawn; today: soup?) | catch-all |
 
 ### linden flower
 
 | with | makes | rule |
 |---|---|---|
 | (nothing) | tea | tag rule |
-| potato | soup? (not drawn; today: ???) | catch-all |
-| pepper | soup? (not drawn; today: ???) | catch-all |
-| watercress | soup? (not drawn; today: ???) | catch-all |
-| dandelion greens | soup? (not drawn; today: ???) | catch-all |
-| bellflower | soup? (not drawn; today: ???) | catch-all |
-| milkweed pod | soup? (not drawn; today: ???) | catch-all |
+| potato | soup? | catch-all |
+| pepper | soup? | catch-all |
+| watercress | soup? | catch-all |
+| dandelion greens | soup? | catch-all |
+| bellflower | soup? | catch-all |
+| milkweed pod | soup? | catch-all |
 | clementine | orange tea | tag rule |
 | blueberry | blueberry tea | tag rule |
 | plum | tea | tag rule |
-| strawberry tree fruit | ??? | catch-all |
-| olive | ??? | catch-all |
-| pine nut | ??? | catch-all |
-| ginkgo nut | ??? | catch-all |
-| russula | mushroom soup (not drawn; today: ???) | catch-all |
+| strawberry tree fruit | tea | catch-all |
+| olive | tea | catch-all |
+| pine nut | tea | catch-all |
+| ginkgo nut | tea | catch-all |
+| russula | mushroom soup (not drawn; today: tea) | catch-all |
 | linden flower | tea | tag rule |
 | jasmine | tea | tag rule |
 | chrysanthemum | tea | tag rule |
-| lavender | ??? | catch-all |
+| lavender | tea | catch-all |
 | honeysuckle | tea | tag rule |
-| mint | ??? | catch-all |
+| mint | tea | catch-all |
 | foxglove | ??? | catch-all |
 | honey | tea | tag rule |
 | birch sap | tea | tag rule |
 | ice | iced tea | tag rule |
-| wheat | ??? | catch-all |
-| tapioca pearls | bubble tea (not drawn; today: ???) | tag rule |
-| egg | ??? | catch-all |
+| wheat | porridge | catch-all |
+| tapioca pearls | bubble tea (not drawn; today: tea) | tag rule |
+| egg | tea | catch-all |
 | corn | tea | tag rule |
-| soybean | soup? (not drawn; today: ???) | catch-all |
-| onion | soup? (not drawn; today: ???) | catch-all |
-| tomato | soup? (not drawn; today: ???) | catch-all |
+| soybean | soup? | catch-all |
+| onion | soup? | catch-all |
+| pumpkin | pumpkin tea | tag rule |
+| tomato | soup? | catch-all |
 | tea leaves | tea | tag rule |
 | apple | tea | tag rule |
-| rice | ??? | catch-all |
+| rice | porridge | catch-all |
+| potato soup | soup? | catch-all |
+| spicy potato soup | soup? | catch-all |
+| pumpkin soup | soup? | catch-all |
+| onion soup | soup? | catch-all |
+| apple jam | tea | tag rule |
 | clementine jam | tea | tag rule |
 | blueberry jam | tea | tag rule |
 | pepper jam | tea | tag rule |
-| rice | ??? | catch-all |
-| tofu | ??? | catch-all |
+| rice | tea | catch-all |
+| tofu | tea | catch-all |
+| soondubu | soup? | catch-all |
 | jam | tea | tag rule |
 | tea | tea | tag rule |
 | iced tea | tea | tag rule |
+| mushroom soup | soup? | catch-all |
+| pepper stew | soup? | catch-all |
+| egg drop soup | soup? | catch-all |
 | flower syrup | tea | tag rule |
+| soup? | soup? | catch-all |
 
 ### jasmine
 
 | with | makes | rule |
 |---|---|---|
 | (nothing) | tea | tag rule |
-| potato | soup? (not drawn; today: ???) | catch-all |
-| pepper | soup? (not drawn; today: ???) | catch-all |
-| watercress | soup? (not drawn; today: ???) | catch-all |
-| dandelion greens | soup? (not drawn; today: ???) | catch-all |
-| bellflower | soup? (not drawn; today: ???) | catch-all |
-| milkweed pod | soup? (not drawn; today: ???) | catch-all |
+| potato | soup? | catch-all |
+| pepper | soup? | catch-all |
+| watercress | soup? | catch-all |
+| dandelion greens | soup? | catch-all |
+| bellflower | soup? | catch-all |
+| milkweed pod | soup? | catch-all |
 | clementine | orange tea | tag rule |
 | blueberry | blueberry tea | tag rule |
 | plum | tea | tag rule |
-| strawberry tree fruit | ??? | catch-all |
-| olive | ??? | catch-all |
-| pine nut | ??? | catch-all |
-| ginkgo nut | ??? | catch-all |
-| russula | mushroom soup (not drawn; today: ???) | catch-all |
+| strawberry tree fruit | tea | catch-all |
+| olive | tea | catch-all |
+| pine nut | tea | catch-all |
+| ginkgo nut | tea | catch-all |
+| russula | mushroom soup (not drawn; today: tea) | catch-all |
 | linden flower | tea | tag rule |
 | jasmine | tea | tag rule |
 | chrysanthemum | tea | tag rule |
-| lavender | ??? | catch-all |
+| lavender | tea | catch-all |
 | honeysuckle | tea | tag rule |
-| mint | ??? | catch-all |
+| mint | tea | catch-all |
 | foxglove | ??? | catch-all |
 | honey | tea | tag rule |
 | birch sap | tea | tag rule |
 | ice | iced tea | tag rule |
-| wheat | ??? | catch-all |
-| tapioca pearls | bubble tea (not drawn; today: ???) | tag rule |
-| egg | ??? | catch-all |
+| wheat | porridge | catch-all |
+| tapioca pearls | bubble tea (not drawn; today: tea) | tag rule |
+| egg | tea | catch-all |
 | corn | tea | tag rule |
-| soybean | soup? (not drawn; today: ???) | catch-all |
-| onion | soup? (not drawn; today: ???) | catch-all |
-| tomato | soup? (not drawn; today: ???) | catch-all |
+| soybean | soup? | catch-all |
+| onion | soup? | catch-all |
+| pumpkin | pumpkin tea | tag rule |
+| tomato | soup? | catch-all |
 | tea leaves | tea | tag rule |
 | apple | tea | tag rule |
-| rice | ??? | catch-all |
+| rice | porridge | catch-all |
+| potato soup | soup? | catch-all |
+| spicy potato soup | soup? | catch-all |
+| pumpkin soup | soup? | catch-all |
+| onion soup | soup? | catch-all |
+| apple jam | tea | tag rule |
 | clementine jam | tea | tag rule |
 | blueberry jam | tea | tag rule |
 | pepper jam | tea | tag rule |
-| rice | ??? | catch-all |
-| tofu | ??? | catch-all |
+| rice | tea | catch-all |
+| tofu | tea | catch-all |
+| soondubu | soup? | catch-all |
 | jam | tea | tag rule |
 | tea | tea | tag rule |
 | iced tea | tea | tag rule |
+| mushroom soup | soup? | catch-all |
+| pepper stew | soup? | catch-all |
+| egg drop soup | soup? | catch-all |
 | flower syrup | tea | tag rule |
+| soup? | soup? | catch-all |
 
 ### chrysanthemum
 
 | with | makes | rule |
 |---|---|---|
 | (nothing) | tea | tag rule |
-| potato | soup? (not drawn; today: ???) | catch-all |
-| pepper | soup? (not drawn; today: ???) | catch-all |
-| watercress | soup? (not drawn; today: ???) | catch-all |
-| dandelion greens | soup? (not drawn; today: ???) | catch-all |
-| bellflower | soup? (not drawn; today: ???) | catch-all |
-| milkweed pod | soup? (not drawn; today: ???) | catch-all |
+| potato | soup? | catch-all |
+| pepper | soup? | catch-all |
+| watercress | soup? | catch-all |
+| dandelion greens | soup? | catch-all |
+| bellflower | soup? | catch-all |
+| milkweed pod | soup? | catch-all |
 | clementine | orange tea | tag rule |
 | blueberry | blueberry tea | tag rule |
 | plum | tea | tag rule |
-| strawberry tree fruit | ??? | catch-all |
-| olive | ??? | catch-all |
-| pine nut | ??? | catch-all |
-| ginkgo nut | ??? | catch-all |
-| russula | mushroom soup (not drawn; today: ???) | catch-all |
+| strawberry tree fruit | tea | catch-all |
+| olive | tea | catch-all |
+| pine nut | tea | catch-all |
+| ginkgo nut | tea | catch-all |
+| russula | mushroom soup (not drawn; today: tea) | catch-all |
 | linden flower | tea | tag rule |
 | jasmine | tea | tag rule |
 | chrysanthemum | tea | tag rule |
-| lavender | ??? | catch-all |
+| lavender | tea | catch-all |
 | honeysuckle | tea | tag rule |
-| mint | ??? | catch-all |
+| mint | tea | catch-all |
 | foxglove | ??? | catch-all |
 | honey | tea | tag rule |
 | birch sap | tea | tag rule |
 | ice | iced tea | tag rule |
-| wheat | ??? | catch-all |
-| tapioca pearls | bubble tea (not drawn; today: ???) | tag rule |
-| egg | ??? | catch-all |
+| wheat | porridge | catch-all |
+| tapioca pearls | bubble tea (not drawn; today: tea) | tag rule |
+| egg | tea | catch-all |
 | corn | tea | tag rule |
-| soybean | soup? (not drawn; today: ???) | catch-all |
-| onion | soup? (not drawn; today: ???) | catch-all |
-| tomato | soup? (not drawn; today: ???) | catch-all |
+| soybean | soup? | catch-all |
+| onion | soup? | catch-all |
+| pumpkin | pumpkin tea | tag rule |
+| tomato | soup? | catch-all |
 | tea leaves | tea | tag rule |
 | apple | tea | tag rule |
-| rice | ??? | catch-all |
+| rice | porridge | catch-all |
+| potato soup | soup? | catch-all |
+| spicy potato soup | soup? | catch-all |
+| pumpkin soup | soup? | catch-all |
+| onion soup | soup? | catch-all |
+| apple jam | tea | tag rule |
 | clementine jam | tea | tag rule |
 | blueberry jam | tea | tag rule |
 | pepper jam | tea | tag rule |
-| rice | ??? | catch-all |
-| tofu | ??? | catch-all |
+| rice | tea | catch-all |
+| tofu | tea | catch-all |
+| soondubu | soup? | catch-all |
 | jam | tea | tag rule |
 | tea | tea | tag rule |
 | iced tea | tea | tag rule |
+| mushroom soup | soup? | catch-all |
+| pepper stew | soup? | catch-all |
+| egg drop soup | soup? | catch-all |
 | flower syrup | tea | tag rule |
+| soup? | soup? | catch-all |
 
 ### lavender
 
 | with | makes | rule |
 |---|---|---|
 | (nothing) | ??? | catch-all |
-| potato | soup? (not drawn; today: ???) | catch-all |
-| pepper | soup? (not drawn; today: ???) | catch-all |
-| watercress | soup? (not drawn; today: ???) | catch-all |
-| dandelion greens | soup? (not drawn; today: ???) | catch-all |
-| bellflower | soup? (not drawn; today: ???) | catch-all |
-| milkweed pod | soup? (not drawn; today: ???) | catch-all |
+| potato | soup? | catch-all |
+| pepper | soup? | catch-all |
+| watercress | soup? | catch-all |
+| dandelion greens | soup? | catch-all |
+| bellflower | soup? | catch-all |
+| milkweed pod | soup? | catch-all |
 | clementine | ??? | catch-all |
 | blueberry | ??? | catch-all |
 | plum | ??? | catch-all |
@@ -931,47 +1125,58 @@ rerun it after changing the yml or adding pngs.
 | pine nut | ??? | catch-all |
 | ginkgo nut | ??? | catch-all |
 | russula | mushroom soup (not drawn; today: ???) | catch-all |
-| linden flower | ??? | catch-all |
-| jasmine | ??? | catch-all |
-| chrysanthemum | ??? | catch-all |
+| linden flower | tea | catch-all |
+| jasmine | tea | catch-all |
+| chrysanthemum | tea | catch-all |
 | lavender | ??? | catch-all |
 | honeysuckle | ??? | catch-all |
 | mint | ??? | catch-all |
 | foxglove | ??? | catch-all |
 | honey | flower syrup (not drawn; today: ???) | tag rule |
 | birch sap | flower syrup (not drawn; today: ???) | tag rule |
-| ice | ??? | catch-all |
-| wheat | ??? | catch-all |
+| ice | something cold | catch-all |
+| wheat | porridge | catch-all |
 | tapioca pearls | ??? | catch-all |
 | egg | ??? | catch-all |
-| corn | soup? (not drawn; today: ???) | catch-all |
-| soybean | soup? (not drawn; today: ???) | catch-all |
-| onion | soup? (not drawn; today: ???) | catch-all |
-| tomato | soup? (not drawn; today: ???) | catch-all |
-| tea leaves | ??? | catch-all |
+| corn | soup? | catch-all |
+| soybean | soup? | catch-all |
+| onion | soup? | catch-all |
+| pumpkin | soup? | catch-all |
+| tomato | soup? | catch-all |
+| tea leaves | tea | catch-all |
 | apple | ??? | catch-all |
-| rice | ??? | catch-all |
+| rice | porridge | catch-all |
+| potato soup | soup? | catch-all |
+| spicy potato soup | soup? | catch-all |
+| pumpkin soup | soup? | catch-all |
+| onion soup | soup? | catch-all |
+| apple jam | ??? | catch-all |
 | clementine jam | ??? | catch-all |
 | blueberry jam | ??? | catch-all |
 | pepper jam | ??? | catch-all |
 | rice | ??? | catch-all |
 | tofu | ??? | catch-all |
+| soondubu | soup? | catch-all |
 | jam | ??? | catch-all |
-| tea | ??? | catch-all |
-| iced tea | ??? | catch-all |
+| tea | tea | catch-all |
+| iced tea | tea | catch-all |
+| mushroom soup | soup? | catch-all |
+| pepper stew | soup? | catch-all |
+| egg drop soup | soup? | catch-all |
 | flower syrup | ??? | catch-all |
+| soup? | soup? | catch-all |
 
 ### honeysuckle
 
 | with | makes | rule |
 |---|---|---|
 | (nothing) | ??? | catch-all |
-| potato | soup? (not drawn; today: ???) | catch-all |
+| potato | soup? | catch-all |
 | pepper | pepper jam | tag rule |
-| watercress | soup? (not drawn; today: ???) | catch-all |
-| dandelion greens | soup? (not drawn; today: ???) | catch-all |
-| bellflower | soup? (not drawn; today: ???) | catch-all |
-| milkweed pod | soup? (not drawn; today: ???) | catch-all |
+| watercress | soup? | catch-all |
+| dandelion greens | soup? | catch-all |
+| bellflower | soup? | catch-all |
+| milkweed pod | soup? | catch-all |
 | clementine | clementine jam | tag rule |
 | blueberry | blueberry jam | tag rule |
 | plum | jam | tag rule |
@@ -989,26 +1194,37 @@ rerun it after changing the yml or adding pngs.
 | foxglove | ??? | catch-all |
 | honey | flower syrup (not drawn; today: ???) | tag rule |
 | birch sap | flower syrup (not drawn; today: ???) | tag rule |
-| ice | ??? | catch-all |
+| ice | something cold | catch-all |
 | wheat | porridge | tag rule |
 | tapioca pearls | ??? | catch-all |
 | egg | ??? | catch-all |
 | corn | porridge | tag rule |
-| soybean | soup? (not drawn; today: ???) | catch-all |
-| onion | soup? (not drawn; today: ???) | catch-all |
-| tomato | soup? (not drawn; today: ???) | catch-all |
+| soybean | soup? | catch-all |
+| onion | soup? | catch-all |
+| pumpkin | pumpkin soup | tag rule |
+| tomato | soup? | catch-all |
 | tea leaves | tea | tag rule |
-| apple | jam | tag rule |
+| apple | apple jam | tag rule |
 | rice | porridge | tag rule |
-| clementine jam | ??? | catch-all |
-| blueberry jam | ??? | catch-all |
-| pepper jam | ??? | catch-all |
+| potato soup | soup? | catch-all |
+| spicy potato soup | soup? | catch-all |
+| pumpkin soup | soup? | catch-all |
+| onion soup | soup? | catch-all |
+| apple jam | apple jam | tag rule |
+| clementine jam | clementine jam | tag rule |
+| blueberry jam | blueberry jam | tag rule |
+| pepper jam | pepper jam | tag rule |
 | rice | ??? | catch-all |
 | tofu | ??? | catch-all |
-| jam | ??? | catch-all |
+| soondubu | soup? | catch-all |
+| jam | jam | tag rule |
 | tea | tea | tag rule |
 | iced tea | tea | tag rule |
+| mushroom soup | soup? | catch-all |
+| pepper stew | soup? | catch-all |
+| egg drop soup | soup? | catch-all |
 | flower syrup | ??? | catch-all |
+| soup? | soup? | catch-all |
 
 ### mint
 
@@ -1029,35 +1245,46 @@ rerun it after changing the yml or adding pngs.
 | pine nut | ??? | catch-all |
 | ginkgo nut | ??? | catch-all |
 | russula | mushroom soup (not drawn; today: ???) | catch-all |
-| linden flower | ??? | catch-all |
-| jasmine | ??? | catch-all |
-| chrysanthemum | ??? | catch-all |
+| linden flower | tea | catch-all |
+| jasmine | tea | catch-all |
+| chrysanthemum | tea | catch-all |
 | lavender | ??? | catch-all |
 | honeysuckle | ??? | catch-all |
 | mint | ??? | catch-all |
 | foxglove | ??? | catch-all |
 | honey | ??? | catch-all |
 | birch sap | ??? | catch-all |
-| ice | ??? | catch-all |
-| wheat | ??? | catch-all |
+| ice | something cold | catch-all |
+| wheat | porridge | catch-all |
 | tapioca pearls | ??? | catch-all |
 | egg | ??? | catch-all |
 | corn | salad | tag rule |
-| soybean | soup? (not drawn; today: ???) | catch-all |
+| soybean | soup? | catch-all |
 | onion | salad | tag rule |
+| pumpkin | salad | tag rule |
 | tomato | salad | tag rule |
-| tea leaves | ??? | catch-all |
+| tea leaves | tea | catch-all |
 | apple | salad | tag rule |
-| rice | ??? | catch-all |
+| rice | porridge | catch-all |
+| potato soup | soup? | catch-all |
+| spicy potato soup | soup? | catch-all |
+| pumpkin soup | soup? | catch-all |
+| onion soup | soup? | catch-all |
+| apple jam | ??? | catch-all |
 | clementine jam | ??? | catch-all |
 | blueberry jam | ??? | catch-all |
 | pepper jam | ??? | catch-all |
 | rice | ??? | catch-all |
 | tofu | ??? | catch-all |
+| soondubu | soup? | catch-all |
 | jam | ??? | catch-all |
-| tea | ??? | catch-all |
-| iced tea | ??? | catch-all |
+| tea | tea | catch-all |
+| iced tea | tea | catch-all |
+| mushroom soup | soup? | catch-all |
+| pepper stew | soup? | catch-all |
+| egg drop soup | soup? | catch-all |
 | flower syrup | ??? | catch-all |
+| soup? | soup? | catch-all |
 
 ### foxglove
 
@@ -1094,31 +1321,42 @@ rerun it after changing the yml or adding pngs.
 | corn | ??? | catch-all |
 | soybean | ??? | catch-all |
 | onion | ??? | catch-all |
+| pumpkin | ??? | catch-all |
 | tomato | ??? | catch-all |
 | tea leaves | ??? | catch-all |
 | apple | ??? | catch-all |
 | rice | ??? | catch-all |
+| potato soup | ??? | catch-all |
+| spicy potato soup | ??? | catch-all |
+| pumpkin soup | ??? | catch-all |
+| onion soup | ??? | catch-all |
+| apple jam | ??? | catch-all |
 | clementine jam | ??? | catch-all |
 | blueberry jam | ??? | catch-all |
 | pepper jam | ??? | catch-all |
 | rice | ??? | catch-all |
 | tofu | ??? | catch-all |
+| soondubu | ??? | catch-all |
 | jam | ??? | catch-all |
 | tea | ??? | catch-all |
 | iced tea | ??? | catch-all |
+| mushroom soup | ??? | catch-all |
+| pepper stew | ??? | catch-all |
+| egg drop soup | ??? | catch-all |
 | flower syrup | ??? | catch-all |
+| soup? | ??? | catch-all |
 
 ### honey
 
 | with | makes | rule |
 |---|---|---|
 | (nothing) | ??? | catch-all |
-| potato | soup? (not drawn; today: ???) | catch-all |
+| potato | soup? | catch-all |
 | pepper | pepper jam | tag rule |
-| watercress | soup? (not drawn; today: ???) | catch-all |
-| dandelion greens | soup? (not drawn; today: ???) | catch-all |
-| bellflower | flower syrup (not drawn; today: ???) | tag rule |
-| milkweed pod | soup? (not drawn; today: ???) | catch-all |
+| watercress | soup? | catch-all |
+| dandelion greens | soup? | catch-all |
+| bellflower | flower syrup (not drawn; today: soup?) | tag rule |
+| milkweed pod | soup? | catch-all |
 | clementine | clementine jam | tag rule |
 | blueberry | blueberry jam | tag rule |
 | plum | jam | tag rule |
@@ -1136,38 +1374,49 @@ rerun it after changing the yml or adding pngs.
 | foxglove | ??? | catch-all |
 | honey | ??? | catch-all |
 | birch sap | ??? | catch-all |
-| ice | ??? | catch-all |
+| ice | something cold | catch-all |
 | wheat | porridge | tag rule |
 | tapioca pearls | ??? | catch-all |
 | egg | ??? | catch-all |
 | corn | porridge | tag rule |
-| soybean | soup? (not drawn; today: ???) | catch-all |
-| onion | soup? (not drawn; today: ???) | catch-all |
-| tomato | soup? (not drawn; today: ???) | catch-all |
+| soybean | soup? | catch-all |
+| onion | soup? | catch-all |
+| pumpkin | pumpkin soup | tag rule |
+| tomato | soup? | catch-all |
 | tea leaves | tea | tag rule |
-| apple | jam | tag rule |
+| apple | apple jam | tag rule |
 | rice | porridge | tag rule |
-| clementine jam | ??? | catch-all |
-| blueberry jam | ??? | catch-all |
-| pepper jam | ??? | catch-all |
+| potato soup | soup? | catch-all |
+| spicy potato soup | soup? | catch-all |
+| pumpkin soup | soup? | catch-all |
+| onion soup | soup? | catch-all |
+| apple jam | apple jam | tag rule |
+| clementine jam | clementine jam | tag rule |
+| blueberry jam | blueberry jam | tag rule |
+| pepper jam | pepper jam | tag rule |
 | rice | ??? | catch-all |
 | tofu | ??? | catch-all |
-| jam | ??? | catch-all |
+| soondubu | soup? | catch-all |
+| jam | jam | tag rule |
 | tea | tea | tag rule |
 | iced tea | tea | tag rule |
+| mushroom soup | soup? | catch-all |
+| pepper stew | soup? | catch-all |
+| egg drop soup | soup? | catch-all |
 | flower syrup | ??? | catch-all |
+| soup? | soup? | catch-all |
 
 ### birch sap
 
 | with | makes | rule |
 |---|---|---|
 | (nothing) | ??? | catch-all |
-| potato | soup? (not drawn; today: ???) | catch-all |
+| potato | soup? | catch-all |
 | pepper | pepper jam | tag rule |
-| watercress | soup? (not drawn; today: ???) | catch-all |
-| dandelion greens | soup? (not drawn; today: ???) | catch-all |
-| bellflower | flower syrup (not drawn; today: ???) | tag rule |
-| milkweed pod | soup? (not drawn; today: ???) | catch-all |
+| watercress | soup? | catch-all |
+| dandelion greens | soup? | catch-all |
+| bellflower | flower syrup (not drawn; today: soup?) | tag rule |
+| milkweed pod | soup? | catch-all |
 | clementine | clementine jam | tag rule |
 | blueberry | blueberry jam | tag rule |
 | plum | jam | tag rule |
@@ -1185,136 +1434,169 @@ rerun it after changing the yml or adding pngs.
 | foxglove | ??? | catch-all |
 | honey | ??? | catch-all |
 | birch sap | ??? | catch-all |
-| ice | ??? | catch-all |
+| ice | something cold | catch-all |
 | wheat | porridge | tag rule |
 | tapioca pearls | ??? | catch-all |
 | egg | ??? | catch-all |
 | corn | porridge | tag rule |
-| soybean | soup? (not drawn; today: ???) | catch-all |
-| onion | soup? (not drawn; today: ???) | catch-all |
-| tomato | soup? (not drawn; today: ???) | catch-all |
+| soybean | soup? | catch-all |
+| onion | soup? | catch-all |
+| pumpkin | pumpkin soup | tag rule |
+| tomato | soup? | catch-all |
 | tea leaves | tea | tag rule |
-| apple | jam | tag rule |
+| apple | apple jam | tag rule |
 | rice | porridge | tag rule |
-| clementine jam | ??? | catch-all |
-| blueberry jam | ??? | catch-all |
-| pepper jam | ??? | catch-all |
+| potato soup | soup? | catch-all |
+| spicy potato soup | soup? | catch-all |
+| pumpkin soup | soup? | catch-all |
+| onion soup | soup? | catch-all |
+| apple jam | apple jam | tag rule |
+| clementine jam | clementine jam | tag rule |
+| blueberry jam | blueberry jam | tag rule |
+| pepper jam | pepper jam | tag rule |
 | rice | ??? | catch-all |
 | tofu | ??? | catch-all |
-| jam | ??? | catch-all |
+| soondubu | soup? | catch-all |
+| jam | jam | tag rule |
 | tea | tea | tag rule |
 | iced tea | tea | tag rule |
+| mushroom soup | soup? | catch-all |
+| pepper stew | soup? | catch-all |
+| egg drop soup | soup? | catch-all |
 | flower syrup | ??? | catch-all |
+| soup? | soup? | catch-all |
 
 ### ice
 
 | with | makes | rule |
 |---|---|---|
-| (nothing) | ??? | catch-all |
-| potato | soup? (not drawn; today: ???) | catch-all |
-| pepper | soup? (not drawn; today: ???) | catch-all |
-| watercress | soup? (not drawn; today: ???) | catch-all |
-| dandelion greens | soup? (not drawn; today: ???) | catch-all |
-| bellflower | soup? (not drawn; today: ???) | catch-all |
-| milkweed pod | soup? (not drawn; today: ???) | catch-all |
+| (nothing) | something cold | catch-all |
+| potato | something cold | catch-all |
+| pepper | something cold | catch-all |
+| watercress | something cold | catch-all |
+| dandelion greens | something cold | catch-all |
+| bellflower | something cold | catch-all |
+| milkweed pod | something cold | catch-all |
 | clementine | clementine sorbet | exact |
 | blueberry | blueberry sorbet | exact |
 | plum | plum sorbet (not drawn; today: sorbet) | exact |
 | strawberry tree fruit | sorbet | tag rule |
 | olive | sorbet | tag rule |
-| pine nut | ??? | catch-all |
-| ginkgo nut | ??? | catch-all |
-| russula | mushroom soup (not drawn; today: ???) | catch-all |
+| pine nut | something cold | catch-all |
+| ginkgo nut | something cold | catch-all |
+| russula | mushroom soup (not drawn; today: something cold) | catch-all |
 | linden flower | iced tea | tag rule |
 | jasmine | iced tea | tag rule |
 | chrysanthemum | iced tea | tag rule |
-| lavender | ??? | catch-all |
-| honeysuckle | ??? | catch-all |
-| mint | ??? | catch-all |
+| lavender | something cold | catch-all |
+| honeysuckle | something cold | catch-all |
+| mint | something cold | catch-all |
 | foxglove | ??? | catch-all |
-| honey | ??? | catch-all |
-| birch sap | ??? | catch-all |
-| ice | ??? | catch-all |
-| wheat | ??? | catch-all |
-| tapioca pearls | ??? | catch-all |
-| egg | ??? | catch-all |
-| corn | soup? (not drawn; today: ???) | catch-all |
-| soybean | soup? (not drawn; today: ???) | catch-all |
-| onion | soup? (not drawn; today: ???) | catch-all |
-| tomato | soup? (not drawn; today: ???) | catch-all |
+| honey | something cold | catch-all |
+| birch sap | something cold | catch-all |
+| ice | something cold | catch-all |
+| wheat | something cold | catch-all |
+| tapioca pearls | something cold | catch-all |
+| egg | something cold | catch-all |
+| corn | something cold | catch-all |
+| soybean | something cold | catch-all |
+| onion | something cold | catch-all |
+| pumpkin | something cold | catch-all |
+| tomato | something cold | catch-all |
 | tea leaves | iced tea | tag rule |
 | apple | sorbet | tag rule |
-| rice | ??? | catch-all |
-| clementine jam | ??? | catch-all |
-| blueberry jam | ??? | catch-all |
-| pepper jam | ??? | catch-all |
-| rice | ??? | catch-all |
-| tofu | ??? | catch-all |
-| jam | ??? | catch-all |
+| rice | something cold | catch-all |
+| potato soup | something cold | catch-all |
+| spicy potato soup | something cold | catch-all |
+| pumpkin soup | something cold | catch-all |
+| onion soup | something cold | catch-all |
+| apple jam | something cold | catch-all |
+| clementine jam | something cold | catch-all |
+| blueberry jam | something cold | catch-all |
+| pepper jam | something cold | catch-all |
+| rice | something cold | catch-all |
+| tofu | something cold | catch-all |
+| soondubu | something cold | catch-all |
+| jam | something cold | catch-all |
 | tea | iced tea | tag rule |
 | iced tea | iced tea | tag rule |
-| flower syrup | ??? | catch-all |
+| mushroom soup | something cold | catch-all |
+| pepper stew | something cold | catch-all |
+| egg drop soup | something cold | catch-all |
+| flower syrup | something cold | catch-all |
+| soup? | something cold | catch-all |
 
 ### wheat
 
 | with | makes | rule |
 |---|---|---|
 | (nothing) | porridge | tag rule |
-| potato | soup? (not drawn; today: ???) | catch-all |
-| pepper | soup? (not drawn; today: ???) | catch-all |
-| watercress | soup? (not drawn; today: ???) | catch-all |
-| dandelion greens | soup? (not drawn; today: ???) | catch-all |
-| bellflower | soup? (not drawn; today: ???) | catch-all |
-| milkweed pod | soup? (not drawn; today: ???) | catch-all |
+| potato | soup? | catch-all |
+| pepper | soup? | catch-all |
+| watercress | soup? | catch-all |
+| dandelion greens | soup? | catch-all |
+| bellflower | soup? | catch-all |
+| milkweed pod | soup? | catch-all |
 | clementine | porridge | tag rule |
 | blueberry | porridge | tag rule |
 | plum | porridge | tag rule |
 | strawberry tree fruit | porridge | tag rule |
 | olive | porridge | tag rule |
-| pine nut | ??? | catch-all |
-| ginkgo nut | ??? | catch-all |
-| russula | mushroom soup (not drawn; today: ???) | catch-all |
-| linden flower | ??? | catch-all |
-| jasmine | ??? | catch-all |
-| chrysanthemum | ??? | catch-all |
-| lavender | ??? | catch-all |
+| pine nut | porridge | catch-all |
+| ginkgo nut | porridge | catch-all |
+| russula | mushroom soup (not drawn; today: porridge) | catch-all |
+| linden flower | porridge | catch-all |
+| jasmine | porridge | catch-all |
+| chrysanthemum | porridge | catch-all |
+| lavender | porridge | catch-all |
 | honeysuckle | porridge | tag rule |
-| mint | ??? | catch-all |
+| mint | porridge | catch-all |
 | foxglove | ??? | catch-all |
 | honey | porridge | tag rule |
 | birch sap | porridge | tag rule |
-| ice | ??? | catch-all |
-| wheat | ??? | catch-all |
-| tapioca pearls | ??? | catch-all |
-| egg | ??? | catch-all |
+| ice | something cold | catch-all |
+| wheat | porridge | catch-all |
+| tapioca pearls | porridge | catch-all |
+| egg | porridge | catch-all |
 | corn | porridge | tag rule |
-| soybean | soup? (not drawn; today: ???) | catch-all |
-| onion | soup? (not drawn; today: ???) | catch-all |
-| tomato | soup? (not drawn; today: ???) | catch-all |
-| tea leaves | ??? | catch-all |
+| soybean | soup? | catch-all |
+| onion | soup? | catch-all |
+| pumpkin | porridge | tag rule |
+| tomato | soup? | catch-all |
+| tea leaves | porridge | catch-all |
 | apple | porridge | tag rule |
-| rice | ??? | catch-all |
+| rice | porridge | catch-all |
+| potato soup | soup? | catch-all |
+| spicy potato soup | soup? | catch-all |
+| pumpkin soup | soup? | catch-all |
+| onion soup | soup? | catch-all |
+| apple jam | porridge | tag rule |
 | clementine jam | porridge | tag rule |
 | blueberry jam | porridge | tag rule |
 | pepper jam | porridge | tag rule |
-| rice | ??? | catch-all |
-| tofu | ??? | catch-all |
+| rice | porridge | catch-all |
+| tofu | porridge | catch-all |
+| soondubu | soup? | catch-all |
 | jam | porridge | tag rule |
-| tea | ??? | catch-all |
-| iced tea | ??? | catch-all |
+| tea | porridge | catch-all |
+| iced tea | porridge | catch-all |
+| mushroom soup | soup? | catch-all |
+| pepper stew | soup? | catch-all |
+| egg drop soup | soup? | catch-all |
 | flower syrup | porridge | tag rule |
+| soup? | soup? | catch-all |
 
 ### tapioca pearls
 
 | with | makes | rule |
 |---|---|---|
 | (nothing) | ??? | catch-all |
-| potato | soup? (not drawn; today: ???) | catch-all |
-| pepper | soup? (not drawn; today: ???) | catch-all |
-| watercress | soup? (not drawn; today: ???) | catch-all |
-| dandelion greens | soup? (not drawn; today: ???) | catch-all |
-| bellflower | soup? (not drawn; today: ???) | catch-all |
-| milkweed pod | soup? (not drawn; today: ???) | catch-all |
+| potato | soup? | catch-all |
+| pepper | soup? | catch-all |
+| watercress | soup? | catch-all |
+| dandelion greens | soup? | catch-all |
+| bellflower | soup? | catch-all |
+| milkweed pod | soup? | catch-all |
 | clementine | ??? | catch-all |
 | blueberry | ??? | catch-all |
 | plum | ??? | catch-all |
@@ -1323,47 +1605,58 @@ rerun it after changing the yml or adding pngs.
 | pine nut | ??? | catch-all |
 | ginkgo nut | ??? | catch-all |
 | russula | mushroom soup (not drawn; today: ???) | catch-all |
-| linden flower | bubble tea (not drawn; today: ???) | tag rule |
-| jasmine | bubble tea (not drawn; today: ???) | tag rule |
-| chrysanthemum | bubble tea (not drawn; today: ???) | tag rule |
+| linden flower | bubble tea (not drawn; today: tea) | tag rule |
+| jasmine | bubble tea (not drawn; today: tea) | tag rule |
+| chrysanthemum | bubble tea (not drawn; today: tea) | tag rule |
 | lavender | ??? | catch-all |
 | honeysuckle | ??? | catch-all |
 | mint | ??? | catch-all |
 | foxglove | ??? | catch-all |
 | honey | ??? | catch-all |
 | birch sap | ??? | catch-all |
-| ice | ??? | catch-all |
-| wheat | ??? | catch-all |
+| ice | something cold | catch-all |
+| wheat | porridge | catch-all |
 | tapioca pearls | ??? | catch-all |
 | egg | ??? | catch-all |
-| corn | soup? (not drawn; today: ???) | catch-all |
-| soybean | soup? (not drawn; today: ???) | catch-all |
-| onion | soup? (not drawn; today: ???) | catch-all |
-| tomato | soup? (not drawn; today: ???) | catch-all |
-| tea leaves | bubble tea (not drawn; today: ???) | tag rule |
+| corn | soup? | catch-all |
+| soybean | soup? | catch-all |
+| onion | soup? | catch-all |
+| pumpkin | soup? | catch-all |
+| tomato | soup? | catch-all |
+| tea leaves | bubble tea (not drawn; today: tea) | tag rule |
 | apple | ??? | catch-all |
-| rice | ??? | catch-all |
+| rice | porridge | catch-all |
+| potato soup | soup? | catch-all |
+| spicy potato soup | soup? | catch-all |
+| pumpkin soup | soup? | catch-all |
+| onion soup | soup? | catch-all |
+| apple jam | ??? | catch-all |
 | clementine jam | ??? | catch-all |
 | blueberry jam | ??? | catch-all |
 | pepper jam | ??? | catch-all |
 | rice | ??? | catch-all |
 | tofu | ??? | catch-all |
+| soondubu | soup? | catch-all |
 | jam | ??? | catch-all |
-| tea | bubble tea (not drawn; today: ???) | tag rule |
-| iced tea | bubble tea (not drawn; today: ???) | tag rule |
+| tea | bubble tea (not drawn; today: tea) | tag rule |
+| iced tea | bubble tea (not drawn; today: tea) | tag rule |
+| mushroom soup | soup? | catch-all |
+| pepper stew | soup? | catch-all |
+| egg drop soup | soup? | catch-all |
 | flower syrup | ??? | catch-all |
+| soup? | soup? | catch-all |
 
 ### egg
 
 | with | makes | rule |
 |---|---|---|
 | (nothing) | boiled egg (not drawn; today: ???) | exact |
-| potato | egg drop soup (not drawn; today: ???) | tag rule |
-| pepper | egg drop soup (not drawn; today: ???) | tag rule |
-| watercress | egg drop soup (not drawn; today: ???) | tag rule |
-| dandelion greens | egg drop soup (not drawn; today: ???) | tag rule |
-| bellflower | egg drop soup (not drawn; today: ???) | tag rule |
-| milkweed pod | egg drop soup (not drawn; today: ???) | tag rule |
+| potato | egg drop soup (not drawn; today: soup?) | tag rule |
+| pepper | egg drop soup (not drawn; today: soup?) | tag rule |
+| watercress | egg drop soup (not drawn; today: soup?) | tag rule |
+| dandelion greens | egg drop soup (not drawn; today: soup?) | tag rule |
+| bellflower | egg drop soup (not drawn; today: soup?) | tag rule |
+| milkweed pod | egg drop soup (not drawn; today: soup?) | tag rule |
 | clementine | ??? | catch-all |
 | blueberry | ??? | catch-all |
 | plum | ??? | catch-all |
@@ -1372,292 +1665,418 @@ rerun it after changing the yml or adding pngs.
 | pine nut | ??? | catch-all |
 | ginkgo nut | ??? | catch-all |
 | russula | mushroom soup (not drawn; today: ???) | catch-all |
-| linden flower | ??? | catch-all |
-| jasmine | ??? | catch-all |
-| chrysanthemum | ??? | catch-all |
+| linden flower | tea | catch-all |
+| jasmine | tea | catch-all |
+| chrysanthemum | tea | catch-all |
 | lavender | ??? | catch-all |
 | honeysuckle | ??? | catch-all |
 | mint | ??? | catch-all |
 | foxglove | ??? | catch-all |
 | honey | ??? | catch-all |
 | birch sap | ??? | catch-all |
-| ice | ??? | catch-all |
-| wheat | ??? | catch-all |
+| ice | something cold | catch-all |
+| wheat | porridge | catch-all |
 | tapioca pearls | ??? | catch-all |
 | egg | ??? | catch-all |
-| corn | egg drop soup (not drawn; today: ???) | tag rule |
-| soybean | soup? (not drawn; today: ???) | catch-all |
-| onion | egg drop soup (not drawn; today: ???) | tag rule |
-| tomato | egg drop soup (not drawn; today: ???) | tag rule |
-| tea leaves | ??? | catch-all |
+| corn | egg drop soup (not drawn; today: soup?) | tag rule |
+| soybean | soup? | catch-all |
+| onion | egg drop soup (not drawn; today: soup?) | tag rule |
+| pumpkin | egg drop soup (not drawn; today: soup?) | tag rule |
+| tomato | egg drop soup (not drawn; today: soup?) | tag rule |
+| tea leaves | tea | catch-all |
 | apple | ??? | catch-all |
-| rice | ??? | catch-all |
+| rice | porridge | catch-all |
+| potato soup | soup? | catch-all |
+| spicy potato soup | soup? | catch-all |
+| pumpkin soup | soup? | catch-all |
+| onion soup | soup? | catch-all |
+| apple jam | ??? | catch-all |
 | clementine jam | ??? | catch-all |
 | blueberry jam | ??? | catch-all |
 | pepper jam | ??? | catch-all |
 | rice | ??? | catch-all |
 | tofu | ??? | catch-all |
+| soondubu | soup? | catch-all |
 | jam | ??? | catch-all |
-| tea | ??? | catch-all |
-| iced tea | ??? | catch-all |
+| tea | tea | catch-all |
+| iced tea | tea | catch-all |
+| mushroom soup | soup? | catch-all |
+| pepper stew | soup? | catch-all |
+| egg drop soup | soup? | catch-all |
 | flower syrup | ??? | catch-all |
+| soup? | soup? | catch-all |
 
 ### corn
 
 | with | makes | rule |
 |---|---|---|
 | (nothing) | porridge | tag rule |
-| potato | soup? (not drawn; today: ???) | catch-all |
+| potato | soup? | catch-all |
 | pepper | pepper jam | tag rule |
 | watercress | salad | tag rule |
 | dandelion greens | salad | tag rule |
 | bellflower | salad | tag rule |
-| milkweed pod | soup? (not drawn; today: ???) | catch-all |
+| milkweed pod | soup? | catch-all |
 | clementine | clementine jam | tag rule |
 | blueberry | blueberry jam | tag rule |
 | plum | jam | tag rule |
 | strawberry tree fruit | jam | tag rule |
 | olive | jam | tag rule |
-| pine nut | candied nuts (not drawn; today: ???) | tag rule |
-| ginkgo nut | candied nuts (not drawn; today: ???) | tag rule |
-| russula | mushroom soup (not drawn; today: ???) | catch-all |
+| pine nut | candied nuts (not drawn; today: soup?) | tag rule |
+| ginkgo nut | candied nuts (not drawn; today: soup?) | tag rule |
+| russula | mushroom soup (not drawn; today: soup?) | catch-all |
 | linden flower | tea | tag rule |
 | jasmine | tea | tag rule |
 | chrysanthemum | tea | tag rule |
-| lavender | soup? (not drawn; today: ???) | catch-all |
+| lavender | soup? | catch-all |
 | honeysuckle | porridge | tag rule |
 | mint | salad | tag rule |
 | foxglove | ??? | catch-all |
 | honey | porridge | tag rule |
 | birch sap | porridge | tag rule |
-| ice | soup? (not drawn; today: ???) | catch-all |
+| ice | something cold | catch-all |
 | wheat | porridge | tag rule |
-| tapioca pearls | soup? (not drawn; today: ???) | catch-all |
-| egg | egg drop soup (not drawn; today: ???) | tag rule |
+| tapioca pearls | soup? | catch-all |
+| egg | egg drop soup (not drawn; today: soup?) | tag rule |
 | corn | porridge | tag rule |
-| soybean | soup? (not drawn; today: ???) | catch-all |
-| onion | soup? (not drawn; today: ???) | catch-all |
-| tomato | soup? (not drawn; today: ???) | catch-all |
+| soybean | soup? | catch-all |
+| onion | soup? | catch-all |
+| pumpkin | pumpkin soup | tag rule |
+| tomato | soup? | catch-all |
 | tea leaves | tea | tag rule |
-| apple | jam | tag rule |
+| apple | apple jam | tag rule |
 | rice | porridge | tag rule |
-| clementine jam | porridge | tag rule |
-| blueberry jam | porridge | tag rule |
-| pepper jam | porridge | tag rule |
-| rice | soup? (not drawn; today: ???) | catch-all |
-| tofu | soup? (not drawn; today: ???) | catch-all |
-| jam | porridge | tag rule |
+| potato soup | soup? | catch-all |
+| spicy potato soup | soup? | catch-all |
+| pumpkin soup | soup? | catch-all |
+| onion soup | soup? | catch-all |
+| apple jam | apple jam | tag rule |
+| clementine jam | clementine jam | tag rule |
+| blueberry jam | blueberry jam | tag rule |
+| pepper jam | pepper jam | tag rule |
+| rice | soup? | catch-all |
+| tofu | soup? | catch-all |
+| soondubu | soup? | catch-all |
+| jam | jam | tag rule |
 | tea | tea | tag rule |
 | iced tea | tea | tag rule |
+| mushroom soup | soup? | catch-all |
+| pepper stew | soup? | catch-all |
+| egg drop soup | soup? | catch-all |
 | flower syrup | porridge | tag rule |
+| soup? | soup? | catch-all |
 
 ### soybean
 
 | with | makes | rule |
 |---|---|---|
 | (nothing) | tofu | exact |
-| potato | soup? (not drawn; today: ???) | catch-all |
-| pepper | soup? (not drawn; today: ???) | catch-all |
-| watercress | soup? (not drawn; today: ???) | catch-all |
-| dandelion greens | soup? (not drawn; today: ???) | catch-all |
-| bellflower | soup? (not drawn; today: ???) | catch-all |
-| milkweed pod | soup? (not drawn; today: ???) | catch-all |
-| clementine | soup? (not drawn; today: ???) | catch-all |
-| blueberry | soup? (not drawn; today: ???) | catch-all |
-| plum | soup? (not drawn; today: ???) | catch-all |
-| strawberry tree fruit | soup? (not drawn; today: ???) | catch-all |
-| olive | soup? (not drawn; today: ???) | catch-all |
-| pine nut | soup? (not drawn; today: ???) | catch-all |
-| ginkgo nut | soup? (not drawn; today: ???) | catch-all |
-| russula | mushroom soup (not drawn; today: ???) | catch-all |
-| linden flower | soup? (not drawn; today: ???) | catch-all |
-| jasmine | soup? (not drawn; today: ???) | catch-all |
-| chrysanthemum | soup? (not drawn; today: ???) | catch-all |
-| lavender | soup? (not drawn; today: ???) | catch-all |
-| honeysuckle | soup? (not drawn; today: ???) | catch-all |
-| mint | soup? (not drawn; today: ???) | catch-all |
+| potato | soup? | catch-all |
+| pepper | soup? | catch-all |
+| watercress | soup? | catch-all |
+| dandelion greens | soup? | catch-all |
+| bellflower | soup? | catch-all |
+| milkweed pod | soup? | catch-all |
+| clementine | soup? | catch-all |
+| blueberry | soup? | catch-all |
+| plum | soup? | catch-all |
+| strawberry tree fruit | soup? | catch-all |
+| olive | soup? | catch-all |
+| pine nut | soup? | catch-all |
+| ginkgo nut | soup? | catch-all |
+| russula | mushroom soup (not drawn; today: soup?) | catch-all |
+| linden flower | soup? | catch-all |
+| jasmine | soup? | catch-all |
+| chrysanthemum | soup? | catch-all |
+| lavender | soup? | catch-all |
+| honeysuckle | soup? | catch-all |
+| mint | soup? | catch-all |
 | foxglove | ??? | catch-all |
-| honey | soup? (not drawn; today: ???) | catch-all |
-| birch sap | soup? (not drawn; today: ???) | catch-all |
-| ice | soup? (not drawn; today: ???) | catch-all |
-| wheat | soup? (not drawn; today: ???) | catch-all |
-| tapioca pearls | soup? (not drawn; today: ???) | catch-all |
-| egg | soup? (not drawn; today: ???) | catch-all |
-| corn | soup? (not drawn; today: ???) | catch-all |
+| honey | soup? | catch-all |
+| birch sap | soup? | catch-all |
+| ice | something cold | catch-all |
+| wheat | soup? | catch-all |
+| tapioca pearls | soup? | catch-all |
+| egg | soup? | catch-all |
+| corn | soup? | catch-all |
 | soybean | tofu | exact |
-| onion | soup? (not drawn; today: ???) | catch-all |
-| tomato | soup? (not drawn; today: ???) | catch-all |
-| tea leaves | soup? (not drawn; today: ???) | catch-all |
-| apple | soup? (not drawn; today: ???) | catch-all |
-| rice | soup? (not drawn; today: ???) | catch-all |
-| clementine jam | soup? (not drawn; today: ???) | catch-all |
-| blueberry jam | soup? (not drawn; today: ???) | catch-all |
-| pepper jam | soup? (not drawn; today: ???) | catch-all |
-| rice | soup? (not drawn; today: ???) | catch-all |
-| tofu | soup? (not drawn; today: ???) | catch-all |
-| jam | soup? (not drawn; today: ???) | catch-all |
-| tea | soup? (not drawn; today: ???) | catch-all |
-| iced tea | soup? (not drawn; today: ???) | catch-all |
-| flower syrup | soup? (not drawn; today: ???) | catch-all |
+| onion | soup? | catch-all |
+| pumpkin | soup? | catch-all |
+| tomato | soup? | catch-all |
+| tea leaves | soup? | catch-all |
+| apple | soup? | catch-all |
+| rice | soup? | catch-all |
+| potato soup | soup? | catch-all |
+| spicy potato soup | soup? | catch-all |
+| pumpkin soup | soup? | catch-all |
+| onion soup | soup? | catch-all |
+| apple jam | soup? | catch-all |
+| clementine jam | soup? | catch-all |
+| blueberry jam | soup? | catch-all |
+| pepper jam | soup? | catch-all |
+| rice | soup? | catch-all |
+| tofu | soup? | catch-all |
+| soondubu | soup? | catch-all |
+| jam | soup? | catch-all |
+| tea | soup? | catch-all |
+| iced tea | soup? | catch-all |
+| mushroom soup | soup? | catch-all |
+| pepper stew | soup? | catch-all |
+| egg drop soup | soup? | catch-all |
+| flower syrup | soup? | catch-all |
+| soup? | soup? | catch-all |
 
 ### onion
 
 | with | makes | rule |
 |---|---|---|
-| (nothing) | soup? (not drawn; today: ???) | catch-all |
+| (nothing) | onion soup | exact |
 | potato | potato soup | tag rule |
-| pepper | pepper stew (not drawn; today: ???) | tag rule |
+| pepper | pepper stew (not drawn; today: soup?) | tag rule |
 | watercress | salad | tag rule |
 | dandelion greens | salad | tag rule |
 | bellflower | salad | tag rule |
-| milkweed pod | soup? (not drawn; today: ???) | catch-all |
-| clementine | soup? (not drawn; today: ???) | catch-all |
-| blueberry | soup? (not drawn; today: ???) | catch-all |
-| plum | soup? (not drawn; today: ???) | catch-all |
-| strawberry tree fruit | soup? (not drawn; today: ???) | catch-all |
-| olive | soup? (not drawn; today: ???) | catch-all |
-| pine nut | soup? (not drawn; today: ???) | catch-all |
-| ginkgo nut | soup? (not drawn; today: ???) | catch-all |
-| russula | mushroom soup (not drawn; today: ???) | catch-all |
-| linden flower | soup? (not drawn; today: ???) | catch-all |
-| jasmine | soup? (not drawn; today: ???) | catch-all |
-| chrysanthemum | soup? (not drawn; today: ???) | catch-all |
-| lavender | soup? (not drawn; today: ???) | catch-all |
-| honeysuckle | soup? (not drawn; today: ???) | catch-all |
+| milkweed pod | soup? | catch-all |
+| clementine | soup? | catch-all |
+| blueberry | soup? | catch-all |
+| plum | soup? | catch-all |
+| strawberry tree fruit | soup? | catch-all |
+| olive | soup? | catch-all |
+| pine nut | soup? | catch-all |
+| ginkgo nut | soup? | catch-all |
+| russula | mushroom soup (not drawn; today: soup?) | catch-all |
+| linden flower | soup? | catch-all |
+| jasmine | soup? | catch-all |
+| chrysanthemum | soup? | catch-all |
+| lavender | soup? | catch-all |
+| honeysuckle | soup? | catch-all |
 | mint | salad | tag rule |
 | foxglove | ??? | catch-all |
-| honey | soup? (not drawn; today: ???) | catch-all |
-| birch sap | soup? (not drawn; today: ???) | catch-all |
-| ice | soup? (not drawn; today: ???) | catch-all |
-| wheat | soup? (not drawn; today: ???) | catch-all |
-| tapioca pearls | soup? (not drawn; today: ???) | catch-all |
-| egg | egg drop soup (not drawn; today: ???) | tag rule |
-| corn | soup? (not drawn; today: ???) | catch-all |
-| soybean | soup? (not drawn; today: ???) | catch-all |
-| onion | soup? (not drawn; today: ???) | catch-all |
-| tomato | soup? (not drawn; today: ???) | catch-all |
-| tea leaves | soup? (not drawn; today: ???) | catch-all |
-| apple | soup? (not drawn; today: ???) | catch-all |
-| rice | soup? (not drawn; today: ???) | catch-all |
-| clementine jam | soup? (not drawn; today: ???) | catch-all |
-| blueberry jam | soup? (not drawn; today: ???) | catch-all |
-| pepper jam | soup? (not drawn; today: ???) | catch-all |
-| rice | soup? (not drawn; today: ???) | catch-all |
-| tofu | soup? (not drawn; today: ???) | catch-all |
-| jam | soup? (not drawn; today: ???) | catch-all |
-| tea | soup? (not drawn; today: ???) | catch-all |
-| iced tea | soup? (not drawn; today: ???) | catch-all |
-| flower syrup | soup? (not drawn; today: ???) | catch-all |
+| honey | soup? | catch-all |
+| birch sap | soup? | catch-all |
+| ice | something cold | catch-all |
+| wheat | soup? | catch-all |
+| tapioca pearls | soup? | catch-all |
+| egg | egg drop soup (not drawn; today: soup?) | tag rule |
+| corn | soup? | catch-all |
+| soybean | soup? | catch-all |
+| onion | onion soup | exact |
+| pumpkin | pumpkin soup | tag rule |
+| tomato | soup? | catch-all |
+| tea leaves | soup? | catch-all |
+| apple | soup? | catch-all |
+| rice | soup? | catch-all |
+| potato soup | soup? | catch-all |
+| spicy potato soup | soup? | catch-all |
+| pumpkin soup | soup? | catch-all |
+| onion soup | soup? | catch-all |
+| apple jam | soup? | catch-all |
+| clementine jam | soup? | catch-all |
+| blueberry jam | soup? | catch-all |
+| pepper jam | soup? | catch-all |
+| rice | soup? | catch-all |
+| tofu | soup? | catch-all |
+| soondubu | soup? | catch-all |
+| jam | soup? | catch-all |
+| tea | soup? | catch-all |
+| iced tea | soup? | catch-all |
+| mushroom soup | soup? | catch-all |
+| pepper stew | soup? | catch-all |
+| egg drop soup | soup? | catch-all |
+| flower syrup | soup? | catch-all |
+| soup? | soup? | catch-all |
+
+### pumpkin
+
+| with | makes | rule |
+|---|---|---|
+| (nothing) | pumpkin soup | exact |
+| potato | soup? | catch-all |
+| pepper | pepper stew (not drawn; today: soup?) | tag rule |
+| watercress | salad | tag rule |
+| dandelion greens | salad | tag rule |
+| bellflower | salad | tag rule |
+| milkweed pod | soup? | catch-all |
+| clementine | pumpkin soup | tag rule |
+| blueberry | pumpkin soup | tag rule |
+| plum | pumpkin soup | tag rule |
+| strawberry tree fruit | soup? | catch-all |
+| olive | soup? | catch-all |
+| pine nut | soup? | catch-all |
+| ginkgo nut | soup? | catch-all |
+| russula | mushroom soup (not drawn; today: soup?) | catch-all |
+| linden flower | pumpkin tea | tag rule |
+| jasmine | pumpkin tea | tag rule |
+| chrysanthemum | pumpkin tea | tag rule |
+| lavender | soup? | catch-all |
+| honeysuckle | pumpkin soup | tag rule |
+| mint | salad | tag rule |
+| foxglove | ??? | catch-all |
+| honey | pumpkin soup | tag rule |
+| birch sap | pumpkin soup | tag rule |
+| ice | something cold | catch-all |
+| wheat | porridge | tag rule |
+| tapioca pearls | soup? | catch-all |
+| egg | egg drop soup (not drawn; today: soup?) | tag rule |
+| corn | pumpkin soup | tag rule |
+| soybean | soup? | catch-all |
+| onion | pumpkin soup | tag rule |
+| pumpkin | pumpkin soup | exact |
+| tomato | soup? | catch-all |
+| tea leaves | pumpkin tea | tag rule |
+| apple | pumpkin soup | tag rule |
+| rice | porridge | tag rule |
+| potato soup | soup? | catch-all |
+| spicy potato soup | soup? | catch-all |
+| pumpkin soup | soup? | catch-all |
+| onion soup | soup? | catch-all |
+| apple jam | pumpkin soup | tag rule |
+| clementine jam | pumpkin soup | tag rule |
+| blueberry jam | pumpkin soup | tag rule |
+| pepper jam | pumpkin soup | tag rule |
+| rice | soup? | catch-all |
+| tofu | soup? | catch-all |
+| soondubu | soup? | catch-all |
+| jam | pumpkin soup | tag rule |
+| tea | pumpkin tea | tag rule |
+| iced tea | pumpkin tea | tag rule |
+| mushroom soup | soup? | catch-all |
+| pepper stew | soup? | catch-all |
+| egg drop soup | soup? | catch-all |
+| flower syrup | pumpkin soup | tag rule |
+| soup? | soup? | catch-all |
 
 ### tomato
 
 | with | makes | rule |
 |---|---|---|
-| (nothing) | soup? (not drawn; today: ???) | catch-all |
-| potato | soup? (not drawn; today: ???) | catch-all |
-| pepper | pepper stew (not drawn; today: ???) | tag rule |
+| (nothing) | soup? | catch-all |
+| potato | soup? | catch-all |
+| pepper | pepper stew (not drawn; today: soup?) | tag rule |
 | watercress | salad | tag rule |
 | dandelion greens | salad | tag rule |
 | bellflower | salad | tag rule |
-| milkweed pod | soup? (not drawn; today: ???) | catch-all |
-| clementine | soup? (not drawn; today: ???) | catch-all |
-| blueberry | soup? (not drawn; today: ???) | catch-all |
-| plum | soup? (not drawn; today: ???) | catch-all |
-| strawberry tree fruit | soup? (not drawn; today: ???) | catch-all |
-| olive | soup? (not drawn; today: ???) | catch-all |
-| pine nut | soup? (not drawn; today: ???) | catch-all |
-| ginkgo nut | soup? (not drawn; today: ???) | catch-all |
-| russula | mushroom soup (not drawn; today: ???) | catch-all |
-| linden flower | soup? (not drawn; today: ???) | catch-all |
-| jasmine | soup? (not drawn; today: ???) | catch-all |
-| chrysanthemum | soup? (not drawn; today: ???) | catch-all |
-| lavender | soup? (not drawn; today: ???) | catch-all |
-| honeysuckle | soup? (not drawn; today: ???) | catch-all |
+| milkweed pod | soup? | catch-all |
+| clementine | soup? | catch-all |
+| blueberry | soup? | catch-all |
+| plum | soup? | catch-all |
+| strawberry tree fruit | soup? | catch-all |
+| olive | soup? | catch-all |
+| pine nut | soup? | catch-all |
+| ginkgo nut | soup? | catch-all |
+| russula | mushroom soup (not drawn; today: soup?) | catch-all |
+| linden flower | soup? | catch-all |
+| jasmine | soup? | catch-all |
+| chrysanthemum | soup? | catch-all |
+| lavender | soup? | catch-all |
+| honeysuckle | soup? | catch-all |
 | mint | salad | tag rule |
 | foxglove | ??? | catch-all |
-| honey | soup? (not drawn; today: ???) | catch-all |
-| birch sap | soup? (not drawn; today: ???) | catch-all |
-| ice | soup? (not drawn; today: ???) | catch-all |
-| wheat | soup? (not drawn; today: ???) | catch-all |
-| tapioca pearls | soup? (not drawn; today: ???) | catch-all |
-| egg | egg drop soup (not drawn; today: ???) | tag rule |
-| corn | soup? (not drawn; today: ???) | catch-all |
-| soybean | soup? (not drawn; today: ???) | catch-all |
-| onion | soup? (not drawn; today: ???) | catch-all |
-| tomato | soup? (not drawn; today: ???) | catch-all |
-| tea leaves | soup? (not drawn; today: ???) | catch-all |
-| apple | soup? (not drawn; today: ???) | catch-all |
-| rice | soup? (not drawn; today: ???) | catch-all |
-| clementine jam | soup? (not drawn; today: ???) | catch-all |
-| blueberry jam | soup? (not drawn; today: ???) | catch-all |
-| pepper jam | soup? (not drawn; today: ???) | catch-all |
-| rice | soup? (not drawn; today: ???) | catch-all |
-| tofu | soup? (not drawn; today: ???) | catch-all |
-| jam | soup? (not drawn; today: ???) | catch-all |
-| tea | soup? (not drawn; today: ???) | catch-all |
-| iced tea | soup? (not drawn; today: ???) | catch-all |
-| flower syrup | soup? (not drawn; today: ???) | catch-all |
+| honey | soup? | catch-all |
+| birch sap | soup? | catch-all |
+| ice | something cold | catch-all |
+| wheat | soup? | catch-all |
+| tapioca pearls | soup? | catch-all |
+| egg | egg drop soup (not drawn; today: soup?) | tag rule |
+| corn | soup? | catch-all |
+| soybean | soup? | catch-all |
+| onion | soup? | catch-all |
+| pumpkin | soup? | catch-all |
+| tomato | soup? | catch-all |
+| tea leaves | soup? | catch-all |
+| apple | soup? | catch-all |
+| rice | soup? | catch-all |
+| potato soup | soup? | catch-all |
+| spicy potato soup | soup? | catch-all |
+| pumpkin soup | soup? | catch-all |
+| onion soup | soup? | catch-all |
+| apple jam | soup? | catch-all |
+| clementine jam | soup? | catch-all |
+| blueberry jam | soup? | catch-all |
+| pepper jam | soup? | catch-all |
+| rice | soup? | catch-all |
+| tofu | soup? | catch-all |
+| soondubu | soup? | catch-all |
+| jam | soup? | catch-all |
+| tea | soup? | catch-all |
+| iced tea | soup? | catch-all |
+| mushroom soup | soup? | catch-all |
+| pepper stew | soup? | catch-all |
+| egg drop soup | soup? | catch-all |
+| flower syrup | soup? | catch-all |
+| soup? | soup? | catch-all |
 
 ### tea leaves
 
 | with | makes | rule |
 |---|---|---|
 | (nothing) | tea | tag rule |
-| potato | soup? (not drawn; today: ???) | catch-all |
-| pepper | soup? (not drawn; today: ???) | catch-all |
-| watercress | soup? (not drawn; today: ???) | catch-all |
-| dandelion greens | soup? (not drawn; today: ???) | catch-all |
-| bellflower | soup? (not drawn; today: ???) | catch-all |
-| milkweed pod | soup? (not drawn; today: ???) | catch-all |
+| potato | soup? | catch-all |
+| pepper | soup? | catch-all |
+| watercress | soup? | catch-all |
+| dandelion greens | soup? | catch-all |
+| bellflower | soup? | catch-all |
+| milkweed pod | soup? | catch-all |
 | clementine | orange tea | tag rule |
 | blueberry | blueberry tea | tag rule |
 | plum | tea | tag rule |
-| strawberry tree fruit | ??? | catch-all |
-| olive | ??? | catch-all |
-| pine nut | ??? | catch-all |
-| ginkgo nut | ??? | catch-all |
-| russula | mushroom soup (not drawn; today: ???) | catch-all |
+| strawberry tree fruit | tea | catch-all |
+| olive | tea | catch-all |
+| pine nut | tea | catch-all |
+| ginkgo nut | tea | catch-all |
+| russula | mushroom soup (not drawn; today: tea) | catch-all |
 | linden flower | tea | tag rule |
 | jasmine | tea | tag rule |
 | chrysanthemum | tea | tag rule |
-| lavender | ??? | catch-all |
+| lavender | tea | catch-all |
 | honeysuckle | tea | tag rule |
-| mint | ??? | catch-all |
+| mint | tea | catch-all |
 | foxglove | ??? | catch-all |
 | honey | tea | tag rule |
 | birch sap | tea | tag rule |
 | ice | iced tea | tag rule |
-| wheat | ??? | catch-all |
-| tapioca pearls | bubble tea (not drawn; today: ???) | tag rule |
-| egg | ??? | catch-all |
+| wheat | porridge | catch-all |
+| tapioca pearls | bubble tea (not drawn; today: tea) | tag rule |
+| egg | tea | catch-all |
 | corn | tea | tag rule |
-| soybean | soup? (not drawn; today: ???) | catch-all |
-| onion | soup? (not drawn; today: ???) | catch-all |
-| tomato | soup? (not drawn; today: ???) | catch-all |
+| soybean | soup? | catch-all |
+| onion | soup? | catch-all |
+| pumpkin | pumpkin tea | tag rule |
+| tomato | soup? | catch-all |
 | tea leaves | tea | tag rule |
 | apple | tea | tag rule |
 | rice | chazuke | exact |
+| potato soup | soup? | catch-all |
+| spicy potato soup | soup? | catch-all |
+| pumpkin soup | soup? | catch-all |
+| onion soup | soup? | catch-all |
+| apple jam | tea | tag rule |
 | clementine jam | tea | tag rule |
 | blueberry jam | tea | tag rule |
 | pepper jam | tea | tag rule |
 | rice | chazuke | exact |
-| tofu | ??? | catch-all |
+| tofu | tea | catch-all |
+| soondubu | soup? | catch-all |
 | jam | tea | tag rule |
 | tea | tea | tag rule |
 | iced tea | tea | tag rule |
+| mushroom soup | soup? | catch-all |
+| pepper stew | soup? | catch-all |
+| egg drop soup | soup? | catch-all |
 | flower syrup | tea | tag rule |
+| soup? | soup? | catch-all |
 
 ### apple
 
 | with | makes | rule |
 |---|---|---|
-| (nothing) | ??? | catch-all |
-| potato | soup? (not drawn; today: ???) | catch-all |
+| (nothing) | apple jam | exact |
+| potato | soup? | catch-all |
 | pepper | pepper jam | tag rule |
 | watercress | salad | tag rule |
 | dandelion greens | salad | tag rule |
 | bellflower | salad | tag rule |
-| milkweed pod | soup? (not drawn; today: ???) | catch-all |
+| milkweed pod | soup? | catch-all |
 | clementine | fruit salad | tag rule |
 | blueberry | fruit salad | tag rule |
 | plum | fruit salad | tag rule |
@@ -1670,95 +2089,417 @@ rerun it after changing the yml or adding pngs.
 | jasmine | tea | tag rule |
 | chrysanthemum | tea | tag rule |
 | lavender | ??? | catch-all |
-| honeysuckle | jam | tag rule |
+| honeysuckle | apple jam | tag rule |
 | mint | salad | tag rule |
 | foxglove | ??? | catch-all |
-| honey | jam | tag rule |
-| birch sap | jam | tag rule |
+| honey | apple jam | tag rule |
+| birch sap | apple jam | tag rule |
 | ice | sorbet | tag rule |
 | wheat | porridge | tag rule |
 | tapioca pearls | ??? | catch-all |
 | egg | ??? | catch-all |
-| corn | jam | tag rule |
-| soybean | soup? (not drawn; today: ???) | catch-all |
-| onion | soup? (not drawn; today: ???) | catch-all |
-| tomato | soup? (not drawn; today: ???) | catch-all |
+| corn | apple jam | tag rule |
+| soybean | soup? | catch-all |
+| onion | soup? | catch-all |
+| pumpkin | pumpkin soup | tag rule |
+| tomato | soup? | catch-all |
 | tea leaves | tea | tag rule |
-| apple | fruit salad | tag rule |
+| apple | apple jam | exact |
 | rice | porridge | tag rule |
-| clementine jam | jam | tag rule |
-| blueberry jam | jam | tag rule |
-| pepper jam | jam | tag rule |
+| potato soup | soup? | catch-all |
+| spicy potato soup | soup? | catch-all |
+| pumpkin soup | soup? | catch-all |
+| onion soup | soup? | catch-all |
+| apple jam | apple jam | tag rule |
+| clementine jam | apple jam | tag rule |
+| blueberry jam | apple jam | tag rule |
+| pepper jam | apple jam | tag rule |
 | rice | ??? | catch-all |
 | tofu | ??? | catch-all |
-| jam | jam | tag rule |
+| soondubu | soup? | catch-all |
+| jam | apple jam | tag rule |
 | tea | tea | tag rule |
 | iced tea | tea | tag rule |
-| flower syrup | jam | tag rule |
+| mushroom soup | soup? | catch-all |
+| pepper stew | soup? | catch-all |
+| egg drop soup | soup? | catch-all |
+| flower syrup | apple jam | tag rule |
+| soup? | soup? | catch-all |
 
 ### rice
 
 | with | makes | rule |
 |---|---|---|
 | (nothing) | rice | exact |
-| potato | soup? (not drawn; today: ???) | catch-all |
-| pepper | soup? (not drawn; today: ???) | catch-all |
-| watercress | soup? (not drawn; today: ???) | catch-all |
-| dandelion greens | soup? (not drawn; today: ???) | catch-all |
-| bellflower | soup? (not drawn; today: ???) | catch-all |
-| milkweed pod | soup? (not drawn; today: ???) | catch-all |
+| potato | soup? | catch-all |
+| pepper | soup? | catch-all |
+| watercress | soup? | catch-all |
+| dandelion greens | soup? | catch-all |
+| bellflower | soup? | catch-all |
+| milkweed pod | soup? | catch-all |
 | clementine | porridge | tag rule |
 | blueberry | porridge | tag rule |
 | plum | porridge | tag rule |
 | strawberry tree fruit | porridge | tag rule |
 | olive | porridge | tag rule |
-| pine nut | ??? | catch-all |
-| ginkgo nut | ??? | catch-all |
-| russula | mushroom soup (not drawn; today: ???) | catch-all |
-| linden flower | ??? | catch-all |
-| jasmine | ??? | catch-all |
-| chrysanthemum | ??? | catch-all |
-| lavender | ??? | catch-all |
+| pine nut | porridge | catch-all |
+| ginkgo nut | porridge | catch-all |
+| russula | mushroom soup (not drawn; today: porridge) | catch-all |
+| linden flower | porridge | catch-all |
+| jasmine | porridge | catch-all |
+| chrysanthemum | porridge | catch-all |
+| lavender | porridge | catch-all |
 | honeysuckle | porridge | tag rule |
-| mint | ??? | catch-all |
+| mint | porridge | catch-all |
 | foxglove | ??? | catch-all |
 | honey | porridge | tag rule |
 | birch sap | porridge | tag rule |
-| ice | ??? | catch-all |
-| wheat | ??? | catch-all |
-| tapioca pearls | ??? | catch-all |
-| egg | ??? | catch-all |
+| ice | something cold | catch-all |
+| wheat | porridge | catch-all |
+| tapioca pearls | porridge | catch-all |
+| egg | porridge | catch-all |
 | corn | porridge | tag rule |
-| soybean | soup? (not drawn; today: ???) | catch-all |
-| onion | soup? (not drawn; today: ???) | catch-all |
-| tomato | soup? (not drawn; today: ???) | catch-all |
+| soybean | soup? | catch-all |
+| onion | soup? | catch-all |
+| pumpkin | porridge | tag rule |
+| tomato | soup? | catch-all |
 | tea leaves | chazuke | exact |
 | apple | porridge | tag rule |
 | rice | rice | exact |
+| potato soup | rice and soup | tag rule |
+| spicy potato soup | rice and soup | tag rule |
+| pumpkin soup | rice and soup | tag rule |
+| onion soup | rice and soup | tag rule |
+| apple jam | porridge | tag rule |
 | clementine jam | porridge | tag rule |
 | blueberry jam | porridge | tag rule |
 | pepper jam | porridge | tag rule |
-| rice | ??? | catch-all |
-| tofu | ??? | catch-all |
+| rice | porridge | catch-all |
+| tofu | porridge | catch-all |
+| soondubu | rice and soup | tag rule |
 | jam | porridge | tag rule |
 | tea | chazuke | exact |
-| iced tea | ??? | catch-all |
+| iced tea | porridge | catch-all |
+| mushroom soup | rice and soup | tag rule |
+| pepper stew | rice and soup | tag rule |
+| egg drop soup | rice and soup | tag rule |
 | flower syrup | porridge | tag rule |
+| soup? | rice and soup | tag rule |
+
+### potato soup
+
+| with | makes | rule |
+|---|---|---|
+| (nothing) | soup? | catch-all |
+| potato | soup? | catch-all |
+| pepper | soup? | catch-all |
+| watercress | soup? | catch-all |
+| dandelion greens | soup? | catch-all |
+| bellflower | soup? | catch-all |
+| milkweed pod | soup? | catch-all |
+| clementine | soup? | catch-all |
+| blueberry | soup? | catch-all |
+| plum | soup? | catch-all |
+| strawberry tree fruit | soup? | catch-all |
+| olive | soup? | catch-all |
+| pine nut | soup? | catch-all |
+| ginkgo nut | soup? | catch-all |
+| russula | mushroom soup (not drawn; today: soup?) | catch-all |
+| linden flower | soup? | catch-all |
+| jasmine | soup? | catch-all |
+| chrysanthemum | soup? | catch-all |
+| lavender | soup? | catch-all |
+| honeysuckle | soup? | catch-all |
+| mint | soup? | catch-all |
+| foxglove | ??? | catch-all |
+| honey | soup? | catch-all |
+| birch sap | soup? | catch-all |
+| ice | something cold | catch-all |
+| wheat | soup? | catch-all |
+| tapioca pearls | soup? | catch-all |
+| egg | soup? | catch-all |
+| corn | soup? | catch-all |
+| soybean | soup? | catch-all |
+| onion | soup? | catch-all |
+| pumpkin | soup? | catch-all |
+| tomato | soup? | catch-all |
+| tea leaves | soup? | catch-all |
+| apple | soup? | catch-all |
+| rice | rice and soup | tag rule |
+| potato soup | soup? | catch-all |
+| spicy potato soup | soup? | catch-all |
+| pumpkin soup | soup? | catch-all |
+| onion soup | soup? | catch-all |
+| apple jam | soup? | catch-all |
+| clementine jam | soup? | catch-all |
+| blueberry jam | soup? | catch-all |
+| pepper jam | soup? | catch-all |
+| rice | rice and soup | tag rule |
+| tofu | soup? | catch-all |
+| soondubu | soup? | catch-all |
+| jam | soup? | catch-all |
+| tea | soup? | catch-all |
+| iced tea | soup? | catch-all |
+| mushroom soup | soup? | catch-all |
+| pepper stew | soup? | catch-all |
+| egg drop soup | soup? | catch-all |
+| flower syrup | soup? | catch-all |
+| soup? | soup? | catch-all |
+
+### spicy potato soup
+
+| with | makes | rule |
+|---|---|---|
+| (nothing) | soup? | catch-all |
+| potato | soup? | catch-all |
+| pepper | soup? | catch-all |
+| watercress | soup? | catch-all |
+| dandelion greens | soup? | catch-all |
+| bellflower | soup? | catch-all |
+| milkweed pod | soup? | catch-all |
+| clementine | soup? | catch-all |
+| blueberry | soup? | catch-all |
+| plum | soup? | catch-all |
+| strawberry tree fruit | soup? | catch-all |
+| olive | soup? | catch-all |
+| pine nut | soup? | catch-all |
+| ginkgo nut | soup? | catch-all |
+| russula | mushroom soup (not drawn; today: soup?) | catch-all |
+| linden flower | soup? | catch-all |
+| jasmine | soup? | catch-all |
+| chrysanthemum | soup? | catch-all |
+| lavender | soup? | catch-all |
+| honeysuckle | soup? | catch-all |
+| mint | soup? | catch-all |
+| foxglove | ??? | catch-all |
+| honey | soup? | catch-all |
+| birch sap | soup? | catch-all |
+| ice | something cold | catch-all |
+| wheat | soup? | catch-all |
+| tapioca pearls | soup? | catch-all |
+| egg | soup? | catch-all |
+| corn | soup? | catch-all |
+| soybean | soup? | catch-all |
+| onion | soup? | catch-all |
+| pumpkin | soup? | catch-all |
+| tomato | soup? | catch-all |
+| tea leaves | soup? | catch-all |
+| apple | soup? | catch-all |
+| rice | rice and soup | tag rule |
+| potato soup | soup? | catch-all |
+| spicy potato soup | soup? | catch-all |
+| pumpkin soup | soup? | catch-all |
+| onion soup | soup? | catch-all |
+| apple jam | soup? | catch-all |
+| clementine jam | soup? | catch-all |
+| blueberry jam | soup? | catch-all |
+| pepper jam | soup? | catch-all |
+| rice | rice and soup | tag rule |
+| tofu | soup? | catch-all |
+| soondubu | soup? | catch-all |
+| jam | soup? | catch-all |
+| tea | soup? | catch-all |
+| iced tea | soup? | catch-all |
+| mushroom soup | soup? | catch-all |
+| pepper stew | soup? | catch-all |
+| egg drop soup | soup? | catch-all |
+| flower syrup | soup? | catch-all |
+| soup? | soup? | catch-all |
+
+### pumpkin soup
+
+| with | makes | rule |
+|---|---|---|
+| (nothing) | soup? | catch-all |
+| potato | soup? | catch-all |
+| pepper | soup? | catch-all |
+| watercress | soup? | catch-all |
+| dandelion greens | soup? | catch-all |
+| bellflower | soup? | catch-all |
+| milkweed pod | soup? | catch-all |
+| clementine | soup? | catch-all |
+| blueberry | soup? | catch-all |
+| plum | soup? | catch-all |
+| strawberry tree fruit | soup? | catch-all |
+| olive | soup? | catch-all |
+| pine nut | soup? | catch-all |
+| ginkgo nut | soup? | catch-all |
+| russula | mushroom soup (not drawn; today: soup?) | catch-all |
+| linden flower | soup? | catch-all |
+| jasmine | soup? | catch-all |
+| chrysanthemum | soup? | catch-all |
+| lavender | soup? | catch-all |
+| honeysuckle | soup? | catch-all |
+| mint | soup? | catch-all |
+| foxglove | ??? | catch-all |
+| honey | soup? | catch-all |
+| birch sap | soup? | catch-all |
+| ice | something cold | catch-all |
+| wheat | soup? | catch-all |
+| tapioca pearls | soup? | catch-all |
+| egg | soup? | catch-all |
+| corn | soup? | catch-all |
+| soybean | soup? | catch-all |
+| onion | soup? | catch-all |
+| pumpkin | soup? | catch-all |
+| tomato | soup? | catch-all |
+| tea leaves | soup? | catch-all |
+| apple | soup? | catch-all |
+| rice | rice and soup | tag rule |
+| potato soup | soup? | catch-all |
+| spicy potato soup | soup? | catch-all |
+| pumpkin soup | soup? | catch-all |
+| onion soup | soup? | catch-all |
+| apple jam | soup? | catch-all |
+| clementine jam | soup? | catch-all |
+| blueberry jam | soup? | catch-all |
+| pepper jam | soup? | catch-all |
+| rice | rice and soup | tag rule |
+| tofu | soup? | catch-all |
+| soondubu | soup? | catch-all |
+| jam | soup? | catch-all |
+| tea | soup? | catch-all |
+| iced tea | soup? | catch-all |
+| mushroom soup | soup? | catch-all |
+| pepper stew | soup? | catch-all |
+| egg drop soup | soup? | catch-all |
+| flower syrup | soup? | catch-all |
+| soup? | soup? | catch-all |
+
+### onion soup
+
+| with | makes | rule |
+|---|---|---|
+| (nothing) | soup? | catch-all |
+| potato | soup? | catch-all |
+| pepper | soup? | catch-all |
+| watercress | soup? | catch-all |
+| dandelion greens | soup? | catch-all |
+| bellflower | soup? | catch-all |
+| milkweed pod | soup? | catch-all |
+| clementine | soup? | catch-all |
+| blueberry | soup? | catch-all |
+| plum | soup? | catch-all |
+| strawberry tree fruit | soup? | catch-all |
+| olive | soup? | catch-all |
+| pine nut | soup? | catch-all |
+| ginkgo nut | soup? | catch-all |
+| russula | mushroom soup (not drawn; today: soup?) | catch-all |
+| linden flower | soup? | catch-all |
+| jasmine | soup? | catch-all |
+| chrysanthemum | soup? | catch-all |
+| lavender | soup? | catch-all |
+| honeysuckle | soup? | catch-all |
+| mint | soup? | catch-all |
+| foxglove | ??? | catch-all |
+| honey | soup? | catch-all |
+| birch sap | soup? | catch-all |
+| ice | something cold | catch-all |
+| wheat | soup? | catch-all |
+| tapioca pearls | soup? | catch-all |
+| egg | soup? | catch-all |
+| corn | soup? | catch-all |
+| soybean | soup? | catch-all |
+| onion | soup? | catch-all |
+| pumpkin | soup? | catch-all |
+| tomato | soup? | catch-all |
+| tea leaves | soup? | catch-all |
+| apple | soup? | catch-all |
+| rice | rice and soup | tag rule |
+| potato soup | soup? | catch-all |
+| spicy potato soup | soup? | catch-all |
+| pumpkin soup | soup? | catch-all |
+| onion soup | soup? | catch-all |
+| apple jam | soup? | catch-all |
+| clementine jam | soup? | catch-all |
+| blueberry jam | soup? | catch-all |
+| pepper jam | soup? | catch-all |
+| rice | rice and soup | tag rule |
+| tofu | soup? | catch-all |
+| soondubu | soup? | catch-all |
+| jam | soup? | catch-all |
+| tea | soup? | catch-all |
+| iced tea | soup? | catch-all |
+| mushroom soup | soup? | catch-all |
+| pepper stew | soup? | catch-all |
+| egg drop soup | soup? | catch-all |
+| flower syrup | soup? | catch-all |
+| soup? | soup? | catch-all |
+
+### apple jam
+
+| with | makes | rule |
+|---|---|---|
+| (nothing) | ??? | catch-all |
+| potato | soup? | catch-all |
+| pepper | pepper jam | tag rule |
+| watercress | soup? | catch-all |
+| dandelion greens | soup? | catch-all |
+| bellflower | soup? | catch-all |
+| milkweed pod | soup? | catch-all |
+| clementine | clementine jam | tag rule |
+| blueberry | blueberry jam | tag rule |
+| plum | apple jam | tag rule |
+| strawberry tree fruit | jam | tag rule |
+| olive | jam | tag rule |
+| pine nut | candied nuts (not drawn; today: ???) | tag rule |
+| ginkgo nut | candied nuts (not drawn; today: ???) | tag rule |
+| russula | mushroom soup (not drawn; today: ???) | catch-all |
+| linden flower | tea | tag rule |
+| jasmine | tea | tag rule |
+| chrysanthemum | tea | tag rule |
+| lavender | ??? | catch-all |
+| honeysuckle | apple jam | tag rule |
+| mint | ??? | catch-all |
+| foxglove | ??? | catch-all |
+| honey | apple jam | tag rule |
+| birch sap | apple jam | tag rule |
+| ice | something cold | catch-all |
+| wheat | porridge | tag rule |
+| tapioca pearls | ??? | catch-all |
+| egg | ??? | catch-all |
+| corn | apple jam | tag rule |
+| soybean | soup? | catch-all |
+| onion | soup? | catch-all |
+| pumpkin | pumpkin soup | tag rule |
+| tomato | soup? | catch-all |
+| tea leaves | tea | tag rule |
+| apple | apple jam | tag rule |
+| rice | porridge | tag rule |
+| potato soup | soup? | catch-all |
+| spicy potato soup | soup? | catch-all |
+| pumpkin soup | soup? | catch-all |
+| onion soup | soup? | catch-all |
+| apple jam | apple jam | tag rule |
+| clementine jam | clementine jam | tag rule |
+| blueberry jam | blueberry jam | tag rule |
+| pepper jam | apple jam | tag rule |
+| rice | ??? | catch-all |
+| tofu | ??? | catch-all |
+| soondubu | soup? | catch-all |
+| jam | apple jam | tag rule |
+| tea | tea | tag rule |
+| iced tea | tea | tag rule |
+| mushroom soup | soup? | catch-all |
+| pepper stew | soup? | catch-all |
+| egg drop soup | soup? | catch-all |
+| flower syrup | apple jam | tag rule |
+| soup? | soup? | catch-all |
 
 ### clementine jam
 
 | with | makes | rule |
 |---|---|---|
 | (nothing) | ??? | catch-all |
-| potato | soup? (not drawn; today: ???) | catch-all |
+| potato | soup? | catch-all |
 | pepper | pepper jam | tag rule |
-| watercress | soup? (not drawn; today: ???) | catch-all |
-| dandelion greens | soup? (not drawn; today: ???) | catch-all |
-| bellflower | soup? (not drawn; today: ???) | catch-all |
-| milkweed pod | soup? (not drawn; today: ???) | catch-all |
+| watercress | soup? | catch-all |
+| dandelion greens | soup? | catch-all |
+| bellflower | soup? | catch-all |
+| milkweed pod | soup? | catch-all |
 | clementine | clementine jam | tag rule |
 | blueberry | blueberry jam | tag rule |
-| plum | jam | tag rule |
+| plum | clementine jam | tag rule |
 | strawberry tree fruit | jam | tag rule |
 | olive | jam | tag rule |
 | pine nut | candied nuts (not drawn; today: ???) | tag rule |
@@ -1768,46 +2509,57 @@ rerun it after changing the yml or adding pngs.
 | jasmine | tea | tag rule |
 | chrysanthemum | tea | tag rule |
 | lavender | ??? | catch-all |
-| honeysuckle | ??? | catch-all |
+| honeysuckle | clementine jam | tag rule |
 | mint | ??? | catch-all |
 | foxglove | ??? | catch-all |
-| honey | ??? | catch-all |
-| birch sap | ??? | catch-all |
-| ice | ??? | catch-all |
+| honey | clementine jam | tag rule |
+| birch sap | clementine jam | tag rule |
+| ice | something cold | catch-all |
 | wheat | porridge | tag rule |
 | tapioca pearls | ??? | catch-all |
 | egg | ??? | catch-all |
-| corn | porridge | tag rule |
-| soybean | soup? (not drawn; today: ???) | catch-all |
-| onion | soup? (not drawn; today: ???) | catch-all |
-| tomato | soup? (not drawn; today: ???) | catch-all |
+| corn | clementine jam | tag rule |
+| soybean | soup? | catch-all |
+| onion | soup? | catch-all |
+| pumpkin | pumpkin soup | tag rule |
+| tomato | soup? | catch-all |
 | tea leaves | tea | tag rule |
-| apple | jam | tag rule |
+| apple | apple jam | tag rule |
 | rice | porridge | tag rule |
-| clementine jam | ??? | catch-all |
-| blueberry jam | ??? | catch-all |
-| pepper jam | ??? | catch-all |
+| potato soup | soup? | catch-all |
+| spicy potato soup | soup? | catch-all |
+| pumpkin soup | soup? | catch-all |
+| onion soup | soup? | catch-all |
+| apple jam | clementine jam | tag rule |
+| clementine jam | clementine jam | tag rule |
+| blueberry jam | clementine jam | tag rule |
+| pepper jam | clementine jam | tag rule |
 | rice | ??? | catch-all |
 | tofu | ??? | catch-all |
-| jam | ??? | catch-all |
+| soondubu | soup? | catch-all |
+| jam | clementine jam | tag rule |
 | tea | tea | tag rule |
 | iced tea | tea | tag rule |
-| flower syrup | ??? | catch-all |
+| mushroom soup | soup? | catch-all |
+| pepper stew | soup? | catch-all |
+| egg drop soup | soup? | catch-all |
+| flower syrup | clementine jam | tag rule |
+| soup? | soup? | catch-all |
 
 ### blueberry jam
 
 | with | makes | rule |
 |---|---|---|
 | (nothing) | ??? | catch-all |
-| potato | soup? (not drawn; today: ???) | catch-all |
+| potato | soup? | catch-all |
 | pepper | pepper jam | tag rule |
-| watercress | soup? (not drawn; today: ???) | catch-all |
-| dandelion greens | soup? (not drawn; today: ???) | catch-all |
-| bellflower | soup? (not drawn; today: ???) | catch-all |
-| milkweed pod | soup? (not drawn; today: ???) | catch-all |
+| watercress | soup? | catch-all |
+| dandelion greens | soup? | catch-all |
+| bellflower | soup? | catch-all |
+| milkweed pod | soup? | catch-all |
 | clementine | clementine jam | tag rule |
 | blueberry | blueberry jam | tag rule |
-| plum | jam | tag rule |
+| plum | blueberry jam | tag rule |
 | strawberry tree fruit | jam | tag rule |
 | olive | jam | tag rule |
 | pine nut | candied nuts (not drawn; today: ???) | tag rule |
@@ -1817,46 +2569,57 @@ rerun it after changing the yml or adding pngs.
 | jasmine | tea | tag rule |
 | chrysanthemum | tea | tag rule |
 | lavender | ??? | catch-all |
-| honeysuckle | ??? | catch-all |
+| honeysuckle | blueberry jam | tag rule |
 | mint | ??? | catch-all |
 | foxglove | ??? | catch-all |
-| honey | ??? | catch-all |
-| birch sap | ??? | catch-all |
-| ice | ??? | catch-all |
+| honey | blueberry jam | tag rule |
+| birch sap | blueberry jam | tag rule |
+| ice | something cold | catch-all |
 | wheat | porridge | tag rule |
 | tapioca pearls | ??? | catch-all |
 | egg | ??? | catch-all |
-| corn | porridge | tag rule |
-| soybean | soup? (not drawn; today: ???) | catch-all |
-| onion | soup? (not drawn; today: ???) | catch-all |
-| tomato | soup? (not drawn; today: ???) | catch-all |
+| corn | blueberry jam | tag rule |
+| soybean | soup? | catch-all |
+| onion | soup? | catch-all |
+| pumpkin | pumpkin soup | tag rule |
+| tomato | soup? | catch-all |
 | tea leaves | tea | tag rule |
-| apple | jam | tag rule |
+| apple | apple jam | tag rule |
 | rice | porridge | tag rule |
-| clementine jam | ??? | catch-all |
-| blueberry jam | ??? | catch-all |
-| pepper jam | ??? | catch-all |
+| potato soup | soup? | catch-all |
+| spicy potato soup | soup? | catch-all |
+| pumpkin soup | soup? | catch-all |
+| onion soup | soup? | catch-all |
+| apple jam | blueberry jam | tag rule |
+| clementine jam | clementine jam | tag rule |
+| blueberry jam | blueberry jam | tag rule |
+| pepper jam | blueberry jam | tag rule |
 | rice | ??? | catch-all |
 | tofu | ??? | catch-all |
-| jam | ??? | catch-all |
+| soondubu | soup? | catch-all |
+| jam | blueberry jam | tag rule |
 | tea | tea | tag rule |
 | iced tea | tea | tag rule |
-| flower syrup | ??? | catch-all |
+| mushroom soup | soup? | catch-all |
+| pepper stew | soup? | catch-all |
+| egg drop soup | soup? | catch-all |
+| flower syrup | blueberry jam | tag rule |
+| soup? | soup? | catch-all |
 
 ### pepper jam
 
 | with | makes | rule |
 |---|---|---|
 | (nothing) | ??? | catch-all |
-| potato | soup? (not drawn; today: ???) | catch-all |
+| potato | soup? | catch-all |
 | pepper | pepper jam | tag rule |
-| watercress | soup? (not drawn; today: ???) | catch-all |
-| dandelion greens | soup? (not drawn; today: ???) | catch-all |
-| bellflower | soup? (not drawn; today: ???) | catch-all |
-| milkweed pod | soup? (not drawn; today: ???) | catch-all |
+| watercress | soup? | catch-all |
+| dandelion greens | soup? | catch-all |
+| bellflower | soup? | catch-all |
+| milkweed pod | soup? | catch-all |
 | clementine | clementine jam | tag rule |
 | blueberry | blueberry jam | tag rule |
-| plum | jam | tag rule |
+| plum | pepper jam | tag rule |
 | strawberry tree fruit | jam | tag rule |
 | olive | jam | tag rule |
 | pine nut | candied nuts (not drawn; today: ???) | tag rule |
@@ -1866,43 +2629,54 @@ rerun it after changing the yml or adding pngs.
 | jasmine | tea | tag rule |
 | chrysanthemum | tea | tag rule |
 | lavender | ??? | catch-all |
-| honeysuckle | ??? | catch-all |
+| honeysuckle | pepper jam | tag rule |
 | mint | ??? | catch-all |
 | foxglove | ??? | catch-all |
-| honey | ??? | catch-all |
-| birch sap | ??? | catch-all |
-| ice | ??? | catch-all |
+| honey | pepper jam | tag rule |
+| birch sap | pepper jam | tag rule |
+| ice | something cold | catch-all |
 | wheat | porridge | tag rule |
 | tapioca pearls | ??? | catch-all |
 | egg | ??? | catch-all |
-| corn | porridge | tag rule |
-| soybean | soup? (not drawn; today: ???) | catch-all |
-| onion | soup? (not drawn; today: ???) | catch-all |
-| tomato | soup? (not drawn; today: ???) | catch-all |
+| corn | pepper jam | tag rule |
+| soybean | soup? | catch-all |
+| onion | soup? | catch-all |
+| pumpkin | pumpkin soup | tag rule |
+| tomato | soup? | catch-all |
 | tea leaves | tea | tag rule |
-| apple | jam | tag rule |
+| apple | apple jam | tag rule |
 | rice | porridge | tag rule |
-| clementine jam | ??? | catch-all |
-| blueberry jam | ??? | catch-all |
-| pepper jam | ??? | catch-all |
+| potato soup | soup? | catch-all |
+| spicy potato soup | soup? | catch-all |
+| pumpkin soup | soup? | catch-all |
+| onion soup | soup? | catch-all |
+| apple jam | apple jam | tag rule |
+| clementine jam | clementine jam | tag rule |
+| blueberry jam | blueberry jam | tag rule |
+| pepper jam | pepper jam | tag rule |
 | rice | ??? | catch-all |
 | tofu | ??? | catch-all |
-| jam | ??? | catch-all |
+| soondubu | soup? | catch-all |
+| jam | pepper jam | tag rule |
 | tea | tea | tag rule |
 | iced tea | tea | tag rule |
-| flower syrup | ??? | catch-all |
+| mushroom soup | soup? | catch-all |
+| pepper stew | soup? | catch-all |
+| egg drop soup | soup? | catch-all |
+| flower syrup | pepper jam | tag rule |
+| soup? | soup? | catch-all |
 
 ### rice
 
 | with | makes | rule |
 |---|---|---|
 | (nothing) | ??? | catch-all |
-| potato | soup? (not drawn; today: ???) | catch-all |
-| pepper | soup? (not drawn; today: ???) | catch-all |
-| watercress | soup? (not drawn; today: ???) | catch-all |
-| dandelion greens | soup? (not drawn; today: ???) | catch-all |
-| bellflower | soup? (not drawn; today: ???) | catch-all |
-| milkweed pod | soup? (not drawn; today: ???) | catch-all |
+| potato | soup? | catch-all |
+| pepper | soup? | catch-all |
+| watercress | soup? | catch-all |
+| dandelion greens | soup? | catch-all |
+| bellflower | soup? | catch-all |
+| milkweed pod | soup? | catch-all |
 | clementine | ??? | catch-all |
 | blueberry | ??? | catch-all |
 | plum | ??? | catch-all |
@@ -1911,47 +2685,58 @@ rerun it after changing the yml or adding pngs.
 | pine nut | ??? | catch-all |
 | ginkgo nut | ??? | catch-all |
 | russula | mushroom soup (not drawn; today: ???) | catch-all |
-| linden flower | ??? | catch-all |
-| jasmine | ??? | catch-all |
-| chrysanthemum | ??? | catch-all |
+| linden flower | tea | catch-all |
+| jasmine | tea | catch-all |
+| chrysanthemum | tea | catch-all |
 | lavender | ??? | catch-all |
 | honeysuckle | ??? | catch-all |
 | mint | ??? | catch-all |
 | foxglove | ??? | catch-all |
 | honey | ??? | catch-all |
 | birch sap | ??? | catch-all |
-| ice | ??? | catch-all |
-| wheat | ??? | catch-all |
+| ice | something cold | catch-all |
+| wheat | porridge | catch-all |
 | tapioca pearls | ??? | catch-all |
 | egg | ??? | catch-all |
-| corn | soup? (not drawn; today: ???) | catch-all |
-| soybean | soup? (not drawn; today: ???) | catch-all |
-| onion | soup? (not drawn; today: ???) | catch-all |
-| tomato | soup? (not drawn; today: ???) | catch-all |
+| corn | soup? | catch-all |
+| soybean | soup? | catch-all |
+| onion | soup? | catch-all |
+| pumpkin | soup? | catch-all |
+| tomato | soup? | catch-all |
 | tea leaves | chazuke | exact |
 | apple | ??? | catch-all |
-| rice | ??? | catch-all |
+| rice | porridge | catch-all |
+| potato soup | rice and soup | tag rule |
+| spicy potato soup | rice and soup | tag rule |
+| pumpkin soup | rice and soup | tag rule |
+| onion soup | rice and soup | tag rule |
+| apple jam | ??? | catch-all |
 | clementine jam | ??? | catch-all |
 | blueberry jam | ??? | catch-all |
 | pepper jam | ??? | catch-all |
 | rice | ??? | catch-all |
 | tofu | ??? | catch-all |
+| soondubu | rice and soup | tag rule |
 | jam | ??? | catch-all |
 | tea | chazuke | exact |
-| iced tea | ??? | catch-all |
+| iced tea | tea | catch-all |
+| mushroom soup | rice and soup | tag rule |
+| pepper stew | rice and soup | tag rule |
+| egg drop soup | rice and soup | tag rule |
 | flower syrup | ??? | catch-all |
+| soup? | rice and soup | tag rule |
 
 ### tofu
 
 | with | makes | rule |
 |---|---|---|
 | (nothing) | ??? | catch-all |
-| potato | soup? (not drawn; today: ???) | catch-all |
+| potato | soup? | catch-all |
 | pepper | soondubu | exact |
-| watercress | soup? (not drawn; today: ???) | catch-all |
-| dandelion greens | soup? (not drawn; today: ???) | catch-all |
-| bellflower | soup? (not drawn; today: ???) | catch-all |
-| milkweed pod | soup? (not drawn; today: ???) | catch-all |
+| watercress | soup? | catch-all |
+| dandelion greens | soup? | catch-all |
+| bellflower | soup? | catch-all |
+| milkweed pod | soup? | catch-all |
 | clementine | ??? | catch-all |
 | blueberry | ??? | catch-all |
 | plum | ??? | catch-all |
@@ -1960,47 +2745,118 @@ rerun it after changing the yml or adding pngs.
 | pine nut | ??? | catch-all |
 | ginkgo nut | ??? | catch-all |
 | russula | mushroom soup (not drawn; today: ???) | catch-all |
-| linden flower | ??? | catch-all |
-| jasmine | ??? | catch-all |
-| chrysanthemum | ??? | catch-all |
+| linden flower | tea | catch-all |
+| jasmine | tea | catch-all |
+| chrysanthemum | tea | catch-all |
 | lavender | ??? | catch-all |
 | honeysuckle | ??? | catch-all |
 | mint | ??? | catch-all |
 | foxglove | ??? | catch-all |
 | honey | ??? | catch-all |
 | birch sap | ??? | catch-all |
-| ice | ??? | catch-all |
-| wheat | ??? | catch-all |
+| ice | something cold | catch-all |
+| wheat | porridge | catch-all |
 | tapioca pearls | ??? | catch-all |
 | egg | ??? | catch-all |
-| corn | soup? (not drawn; today: ???) | catch-all |
-| soybean | soup? (not drawn; today: ???) | catch-all |
-| onion | soup? (not drawn; today: ???) | catch-all |
-| tomato | soup? (not drawn; today: ???) | catch-all |
-| tea leaves | ??? | catch-all |
+| corn | soup? | catch-all |
+| soybean | soup? | catch-all |
+| onion | soup? | catch-all |
+| pumpkin | soup? | catch-all |
+| tomato | soup? | catch-all |
+| tea leaves | tea | catch-all |
 | apple | ??? | catch-all |
-| rice | ??? | catch-all |
+| rice | porridge | catch-all |
+| potato soup | soup? | catch-all |
+| spicy potato soup | soup? | catch-all |
+| pumpkin soup | soup? | catch-all |
+| onion soup | soup? | catch-all |
+| apple jam | ??? | catch-all |
 | clementine jam | ??? | catch-all |
 | blueberry jam | ??? | catch-all |
 | pepper jam | ??? | catch-all |
 | rice | ??? | catch-all |
 | tofu | ??? | catch-all |
+| soondubu | soup? | catch-all |
 | jam | ??? | catch-all |
-| tea | ??? | catch-all |
-| iced tea | ??? | catch-all |
+| tea | tea | catch-all |
+| iced tea | tea | catch-all |
+| mushroom soup | soup? | catch-all |
+| pepper stew | soup? | catch-all |
+| egg drop soup | soup? | catch-all |
 | flower syrup | ??? | catch-all |
+| soup? | soup? | catch-all |
+
+### soondubu
+
+| with | makes | rule |
+|---|---|---|
+| (nothing) | soup? | catch-all |
+| potato | soup? | catch-all |
+| pepper | soup? | catch-all |
+| watercress | soup? | catch-all |
+| dandelion greens | soup? | catch-all |
+| bellflower | soup? | catch-all |
+| milkweed pod | soup? | catch-all |
+| clementine | soup? | catch-all |
+| blueberry | soup? | catch-all |
+| plum | soup? | catch-all |
+| strawberry tree fruit | soup? | catch-all |
+| olive | soup? | catch-all |
+| pine nut | soup? | catch-all |
+| ginkgo nut | soup? | catch-all |
+| russula | mushroom soup (not drawn; today: soup?) | catch-all |
+| linden flower | soup? | catch-all |
+| jasmine | soup? | catch-all |
+| chrysanthemum | soup? | catch-all |
+| lavender | soup? | catch-all |
+| honeysuckle | soup? | catch-all |
+| mint | soup? | catch-all |
+| foxglove | ??? | catch-all |
+| honey | soup? | catch-all |
+| birch sap | soup? | catch-all |
+| ice | something cold | catch-all |
+| wheat | soup? | catch-all |
+| tapioca pearls | soup? | catch-all |
+| egg | soup? | catch-all |
+| corn | soup? | catch-all |
+| soybean | soup? | catch-all |
+| onion | soup? | catch-all |
+| pumpkin | soup? | catch-all |
+| tomato | soup? | catch-all |
+| tea leaves | soup? | catch-all |
+| apple | soup? | catch-all |
+| rice | rice and soup | tag rule |
+| potato soup | soup? | catch-all |
+| spicy potato soup | soup? | catch-all |
+| pumpkin soup | soup? | catch-all |
+| onion soup | soup? | catch-all |
+| apple jam | soup? | catch-all |
+| clementine jam | soup? | catch-all |
+| blueberry jam | soup? | catch-all |
+| pepper jam | soup? | catch-all |
+| rice | rice and soup | tag rule |
+| tofu | soup? | catch-all |
+| soondubu | soup? | catch-all |
+| jam | soup? | catch-all |
+| tea | soup? | catch-all |
+| iced tea | soup? | catch-all |
+| mushroom soup | soup? | catch-all |
+| pepper stew | soup? | catch-all |
+| egg drop soup | soup? | catch-all |
+| flower syrup | soup? | catch-all |
+| soup? | soup? | catch-all |
 
 ### jam
 
 | with | makes | rule |
 |---|---|---|
 | (nothing) | ??? | catch-all |
-| potato | soup? (not drawn; today: ???) | catch-all |
+| potato | soup? | catch-all |
 | pepper | pepper jam | tag rule |
-| watercress | soup? (not drawn; today: ???) | catch-all |
-| dandelion greens | soup? (not drawn; today: ???) | catch-all |
-| bellflower | soup? (not drawn; today: ???) | catch-all |
-| milkweed pod | soup? (not drawn; today: ???) | catch-all |
+| watercress | soup? | catch-all |
+| dandelion greens | soup? | catch-all |
+| bellflower | soup? | catch-all |
+| milkweed pod | soup? | catch-all |
 | clementine | clementine jam | tag rule |
 | blueberry | blueberry jam | tag rule |
 | plum | jam | tag rule |
@@ -2013,141 +2869,354 @@ rerun it after changing the yml or adding pngs.
 | jasmine | tea | tag rule |
 | chrysanthemum | tea | tag rule |
 | lavender | ??? | catch-all |
-| honeysuckle | ??? | catch-all |
+| honeysuckle | jam | tag rule |
 | mint | ??? | catch-all |
 | foxglove | ??? | catch-all |
-| honey | ??? | catch-all |
-| birch sap | ??? | catch-all |
-| ice | ??? | catch-all |
+| honey | jam | tag rule |
+| birch sap | jam | tag rule |
+| ice | something cold | catch-all |
 | wheat | porridge | tag rule |
 | tapioca pearls | ??? | catch-all |
 | egg | ??? | catch-all |
-| corn | porridge | tag rule |
-| soybean | soup? (not drawn; today: ???) | catch-all |
-| onion | soup? (not drawn; today: ???) | catch-all |
-| tomato | soup? (not drawn; today: ???) | catch-all |
+| corn | jam | tag rule |
+| soybean | soup? | catch-all |
+| onion | soup? | catch-all |
+| pumpkin | pumpkin soup | tag rule |
+| tomato | soup? | catch-all |
 | tea leaves | tea | tag rule |
-| apple | jam | tag rule |
+| apple | apple jam | tag rule |
 | rice | porridge | tag rule |
-| clementine jam | ??? | catch-all |
-| blueberry jam | ??? | catch-all |
-| pepper jam | ??? | catch-all |
+| potato soup | soup? | catch-all |
+| spicy potato soup | soup? | catch-all |
+| pumpkin soup | soup? | catch-all |
+| onion soup | soup? | catch-all |
+| apple jam | apple jam | tag rule |
+| clementine jam | clementine jam | tag rule |
+| blueberry jam | blueberry jam | tag rule |
+| pepper jam | pepper jam | tag rule |
 | rice | ??? | catch-all |
 | tofu | ??? | catch-all |
-| jam | ??? | catch-all |
+| soondubu | soup? | catch-all |
+| jam | jam | tag rule |
 | tea | tea | tag rule |
 | iced tea | tea | tag rule |
-| flower syrup | ??? | catch-all |
+| mushroom soup | soup? | catch-all |
+| pepper stew | soup? | catch-all |
+| egg drop soup | soup? | catch-all |
+| flower syrup | jam | tag rule |
+| soup? | soup? | catch-all |
 
 ### tea
 
 | with | makes | rule |
 |---|---|---|
 | (nothing) | tea | tag rule |
-| potato | soup? (not drawn; today: ???) | catch-all |
-| pepper | soup? (not drawn; today: ???) | catch-all |
-| watercress | soup? (not drawn; today: ???) | catch-all |
-| dandelion greens | soup? (not drawn; today: ???) | catch-all |
-| bellflower | soup? (not drawn; today: ???) | catch-all |
-| milkweed pod | soup? (not drawn; today: ???) | catch-all |
+| potato | soup? | catch-all |
+| pepper | soup? | catch-all |
+| watercress | soup? | catch-all |
+| dandelion greens | soup? | catch-all |
+| bellflower | soup? | catch-all |
+| milkweed pod | soup? | catch-all |
 | clementine | orange tea | tag rule |
 | blueberry | blueberry tea | tag rule |
 | plum | tea | tag rule |
-| strawberry tree fruit | ??? | catch-all |
-| olive | ??? | catch-all |
-| pine nut | ??? | catch-all |
-| ginkgo nut | ??? | catch-all |
-| russula | mushroom soup (not drawn; today: ???) | catch-all |
+| strawberry tree fruit | tea | catch-all |
+| olive | tea | catch-all |
+| pine nut | tea | catch-all |
+| ginkgo nut | tea | catch-all |
+| russula | mushroom soup (not drawn; today: tea) | catch-all |
 | linden flower | tea | tag rule |
 | jasmine | tea | tag rule |
 | chrysanthemum | tea | tag rule |
-| lavender | ??? | catch-all |
+| lavender | tea | catch-all |
 | honeysuckle | tea | tag rule |
-| mint | ??? | catch-all |
+| mint | tea | catch-all |
 | foxglove | ??? | catch-all |
 | honey | tea | tag rule |
 | birch sap | tea | tag rule |
 | ice | iced tea | tag rule |
-| wheat | ??? | catch-all |
-| tapioca pearls | bubble tea (not drawn; today: ???) | tag rule |
-| egg | ??? | catch-all |
+| wheat | porridge | catch-all |
+| tapioca pearls | bubble tea (not drawn; today: tea) | tag rule |
+| egg | tea | catch-all |
 | corn | tea | tag rule |
-| soybean | soup? (not drawn; today: ???) | catch-all |
-| onion | soup? (not drawn; today: ???) | catch-all |
-| tomato | soup? (not drawn; today: ???) | catch-all |
+| soybean | soup? | catch-all |
+| onion | soup? | catch-all |
+| pumpkin | pumpkin tea | tag rule |
+| tomato | soup? | catch-all |
 | tea leaves | tea | tag rule |
 | apple | tea | tag rule |
 | rice | chazuke | exact |
+| potato soup | soup? | catch-all |
+| spicy potato soup | soup? | catch-all |
+| pumpkin soup | soup? | catch-all |
+| onion soup | soup? | catch-all |
+| apple jam | tea | tag rule |
 | clementine jam | tea | tag rule |
 | blueberry jam | tea | tag rule |
 | pepper jam | tea | tag rule |
 | rice | chazuke | exact |
-| tofu | ??? | catch-all |
+| tofu | tea | catch-all |
+| soondubu | soup? | catch-all |
 | jam | tea | tag rule |
 | tea | tea | tag rule |
 | iced tea | tea | tag rule |
+| mushroom soup | soup? | catch-all |
+| pepper stew | soup? | catch-all |
+| egg drop soup | soup? | catch-all |
 | flower syrup | tea | tag rule |
+| soup? | soup? | catch-all |
 
 ### iced tea
 
 | with | makes | rule |
 |---|---|---|
 | (nothing) | tea | tag rule |
-| potato | soup? (not drawn; today: ???) | catch-all |
-| pepper | soup? (not drawn; today: ???) | catch-all |
-| watercress | soup? (not drawn; today: ???) | catch-all |
-| dandelion greens | soup? (not drawn; today: ???) | catch-all |
-| bellflower | soup? (not drawn; today: ???) | catch-all |
-| milkweed pod | soup? (not drawn; today: ???) | catch-all |
+| potato | soup? | catch-all |
+| pepper | soup? | catch-all |
+| watercress | soup? | catch-all |
+| dandelion greens | soup? | catch-all |
+| bellflower | soup? | catch-all |
+| milkweed pod | soup? | catch-all |
 | clementine | orange tea | tag rule |
 | blueberry | blueberry tea | tag rule |
 | plum | tea | tag rule |
-| strawberry tree fruit | ??? | catch-all |
-| olive | ??? | catch-all |
-| pine nut | ??? | catch-all |
-| ginkgo nut | ??? | catch-all |
-| russula | mushroom soup (not drawn; today: ???) | catch-all |
+| strawberry tree fruit | tea | catch-all |
+| olive | tea | catch-all |
+| pine nut | tea | catch-all |
+| ginkgo nut | tea | catch-all |
+| russula | mushroom soup (not drawn; today: tea) | catch-all |
 | linden flower | tea | tag rule |
 | jasmine | tea | tag rule |
 | chrysanthemum | tea | tag rule |
-| lavender | ??? | catch-all |
+| lavender | tea | catch-all |
 | honeysuckle | tea | tag rule |
-| mint | ??? | catch-all |
+| mint | tea | catch-all |
 | foxglove | ??? | catch-all |
 | honey | tea | tag rule |
 | birch sap | tea | tag rule |
 | ice | iced tea | tag rule |
-| wheat | ??? | catch-all |
-| tapioca pearls | bubble tea (not drawn; today: ???) | tag rule |
-| egg | ??? | catch-all |
+| wheat | porridge | catch-all |
+| tapioca pearls | bubble tea (not drawn; today: tea) | tag rule |
+| egg | tea | catch-all |
 | corn | tea | tag rule |
-| soybean | soup? (not drawn; today: ???) | catch-all |
-| onion | soup? (not drawn; today: ???) | catch-all |
-| tomato | soup? (not drawn; today: ???) | catch-all |
+| soybean | soup? | catch-all |
+| onion | soup? | catch-all |
+| pumpkin | pumpkin tea | tag rule |
+| tomato | soup? | catch-all |
 | tea leaves | tea | tag rule |
 | apple | tea | tag rule |
-| rice | ??? | catch-all |
+| rice | porridge | catch-all |
+| potato soup | soup? | catch-all |
+| spicy potato soup | soup? | catch-all |
+| pumpkin soup | soup? | catch-all |
+| onion soup | soup? | catch-all |
+| apple jam | tea | tag rule |
 | clementine jam | tea | tag rule |
 | blueberry jam | tea | tag rule |
 | pepper jam | tea | tag rule |
-| rice | ??? | catch-all |
-| tofu | ??? | catch-all |
+| rice | tea | catch-all |
+| tofu | tea | catch-all |
+| soondubu | soup? | catch-all |
 | jam | tea | tag rule |
 | tea | tea | tag rule |
 | iced tea | tea | tag rule |
+| mushroom soup | soup? | catch-all |
+| pepper stew | soup? | catch-all |
+| egg drop soup | soup? | catch-all |
 | flower syrup | tea | tag rule |
+| soup? | soup? | catch-all |
+
+### mushroom soup
+
+| with | makes | rule |
+|---|---|---|
+| (nothing) | soup? | catch-all |
+| potato | soup? | catch-all |
+| pepper | soup? | catch-all |
+| watercress | soup? | catch-all |
+| dandelion greens | soup? | catch-all |
+| bellflower | soup? | catch-all |
+| milkweed pod | soup? | catch-all |
+| clementine | soup? | catch-all |
+| blueberry | soup? | catch-all |
+| plum | soup? | catch-all |
+| strawberry tree fruit | soup? | catch-all |
+| olive | soup? | catch-all |
+| pine nut | soup? | catch-all |
+| ginkgo nut | soup? | catch-all |
+| russula | mushroom soup (not drawn; today: soup?) | catch-all |
+| linden flower | soup? | catch-all |
+| jasmine | soup? | catch-all |
+| chrysanthemum | soup? | catch-all |
+| lavender | soup? | catch-all |
+| honeysuckle | soup? | catch-all |
+| mint | soup? | catch-all |
+| foxglove | ??? | catch-all |
+| honey | soup? | catch-all |
+| birch sap | soup? | catch-all |
+| ice | something cold | catch-all |
+| wheat | soup? | catch-all |
+| tapioca pearls | soup? | catch-all |
+| egg | soup? | catch-all |
+| corn | soup? | catch-all |
+| soybean | soup? | catch-all |
+| onion | soup? | catch-all |
+| pumpkin | soup? | catch-all |
+| tomato | soup? | catch-all |
+| tea leaves | soup? | catch-all |
+| apple | soup? | catch-all |
+| rice | rice and soup | tag rule |
+| potato soup | soup? | catch-all |
+| spicy potato soup | soup? | catch-all |
+| pumpkin soup | soup? | catch-all |
+| onion soup | soup? | catch-all |
+| apple jam | soup? | catch-all |
+| clementine jam | soup? | catch-all |
+| blueberry jam | soup? | catch-all |
+| pepper jam | soup? | catch-all |
+| rice | rice and soup | tag rule |
+| tofu | soup? | catch-all |
+| soondubu | soup? | catch-all |
+| jam | soup? | catch-all |
+| tea | soup? | catch-all |
+| iced tea | soup? | catch-all |
+| mushroom soup | soup? | catch-all |
+| pepper stew | soup? | catch-all |
+| egg drop soup | soup? | catch-all |
+| flower syrup | soup? | catch-all |
+| soup? | soup? | catch-all |
+
+### pepper stew
+
+| with | makes | rule |
+|---|---|---|
+| (nothing) | soup? | catch-all |
+| potato | soup? | catch-all |
+| pepper | soup? | catch-all |
+| watercress | soup? | catch-all |
+| dandelion greens | soup? | catch-all |
+| bellflower | soup? | catch-all |
+| milkweed pod | soup? | catch-all |
+| clementine | soup? | catch-all |
+| blueberry | soup? | catch-all |
+| plum | soup? | catch-all |
+| strawberry tree fruit | soup? | catch-all |
+| olive | soup? | catch-all |
+| pine nut | soup? | catch-all |
+| ginkgo nut | soup? | catch-all |
+| russula | mushroom soup (not drawn; today: soup?) | catch-all |
+| linden flower | soup? | catch-all |
+| jasmine | soup? | catch-all |
+| chrysanthemum | soup? | catch-all |
+| lavender | soup? | catch-all |
+| honeysuckle | soup? | catch-all |
+| mint | soup? | catch-all |
+| foxglove | ??? | catch-all |
+| honey | soup? | catch-all |
+| birch sap | soup? | catch-all |
+| ice | something cold | catch-all |
+| wheat | soup? | catch-all |
+| tapioca pearls | soup? | catch-all |
+| egg | soup? | catch-all |
+| corn | soup? | catch-all |
+| soybean | soup? | catch-all |
+| onion | soup? | catch-all |
+| pumpkin | soup? | catch-all |
+| tomato | soup? | catch-all |
+| tea leaves | soup? | catch-all |
+| apple | soup? | catch-all |
+| rice | rice and soup | tag rule |
+| potato soup | soup? | catch-all |
+| spicy potato soup | soup? | catch-all |
+| pumpkin soup | soup? | catch-all |
+| onion soup | soup? | catch-all |
+| apple jam | soup? | catch-all |
+| clementine jam | soup? | catch-all |
+| blueberry jam | soup? | catch-all |
+| pepper jam | soup? | catch-all |
+| rice | rice and soup | tag rule |
+| tofu | soup? | catch-all |
+| soondubu | soup? | catch-all |
+| jam | soup? | catch-all |
+| tea | soup? | catch-all |
+| iced tea | soup? | catch-all |
+| mushroom soup | soup? | catch-all |
+| pepper stew | soup? | catch-all |
+| egg drop soup | soup? | catch-all |
+| flower syrup | soup? | catch-all |
+| soup? | soup? | catch-all |
+
+### egg drop soup
+
+| with | makes | rule |
+|---|---|---|
+| (nothing) | soup? | catch-all |
+| potato | soup? | catch-all |
+| pepper | soup? | catch-all |
+| watercress | soup? | catch-all |
+| dandelion greens | soup? | catch-all |
+| bellflower | soup? | catch-all |
+| milkweed pod | soup? | catch-all |
+| clementine | soup? | catch-all |
+| blueberry | soup? | catch-all |
+| plum | soup? | catch-all |
+| strawberry tree fruit | soup? | catch-all |
+| olive | soup? | catch-all |
+| pine nut | soup? | catch-all |
+| ginkgo nut | soup? | catch-all |
+| russula | mushroom soup (not drawn; today: soup?) | catch-all |
+| linden flower | soup? | catch-all |
+| jasmine | soup? | catch-all |
+| chrysanthemum | soup? | catch-all |
+| lavender | soup? | catch-all |
+| honeysuckle | soup? | catch-all |
+| mint | soup? | catch-all |
+| foxglove | ??? | catch-all |
+| honey | soup? | catch-all |
+| birch sap | soup? | catch-all |
+| ice | something cold | catch-all |
+| wheat | soup? | catch-all |
+| tapioca pearls | soup? | catch-all |
+| egg | soup? | catch-all |
+| corn | soup? | catch-all |
+| soybean | soup? | catch-all |
+| onion | soup? | catch-all |
+| pumpkin | soup? | catch-all |
+| tomato | soup? | catch-all |
+| tea leaves | soup? | catch-all |
+| apple | soup? | catch-all |
+| rice | rice and soup | tag rule |
+| potato soup | soup? | catch-all |
+| spicy potato soup | soup? | catch-all |
+| pumpkin soup | soup? | catch-all |
+| onion soup | soup? | catch-all |
+| apple jam | soup? | catch-all |
+| clementine jam | soup? | catch-all |
+| blueberry jam | soup? | catch-all |
+| pepper jam | soup? | catch-all |
+| rice | rice and soup | tag rule |
+| tofu | soup? | catch-all |
+| soondubu | soup? | catch-all |
+| jam | soup? | catch-all |
+| tea | soup? | catch-all |
+| iced tea | soup? | catch-all |
+| mushroom soup | soup? | catch-all |
+| pepper stew | soup? | catch-all |
+| egg drop soup | soup? | catch-all |
+| flower syrup | soup? | catch-all |
+| soup? | soup? | catch-all |
 
 ### flower syrup
 
 | with | makes | rule |
 |---|---|---|
 | (nothing) | ??? | catch-all |
-| potato | soup? (not drawn; today: ???) | catch-all |
+| potato | soup? | catch-all |
 | pepper | pepper jam | tag rule |
-| watercress | soup? (not drawn; today: ???) | catch-all |
-| dandelion greens | soup? (not drawn; today: ???) | catch-all |
-| bellflower | soup? (not drawn; today: ???) | catch-all |
-| milkweed pod | soup? (not drawn; today: ???) | catch-all |
+| watercress | soup? | catch-all |
+| dandelion greens | soup? | catch-all |
+| bellflower | soup? | catch-all |
+| milkweed pod | soup? | catch-all |
 | clementine | clementine jam | tag rule |
 | blueberry | blueberry jam | tag rule |
 | plum | jam | tag rule |
@@ -2165,24 +3234,95 @@ rerun it after changing the yml or adding pngs.
 | foxglove | ??? | catch-all |
 | honey | ??? | catch-all |
 | birch sap | ??? | catch-all |
-| ice | ??? | catch-all |
+| ice | something cold | catch-all |
 | wheat | porridge | tag rule |
 | tapioca pearls | ??? | catch-all |
 | egg | ??? | catch-all |
 | corn | porridge | tag rule |
-| soybean | soup? (not drawn; today: ???) | catch-all |
-| onion | soup? (not drawn; today: ???) | catch-all |
-| tomato | soup? (not drawn; today: ???) | catch-all |
+| soybean | soup? | catch-all |
+| onion | soup? | catch-all |
+| pumpkin | pumpkin soup | tag rule |
+| tomato | soup? | catch-all |
 | tea leaves | tea | tag rule |
-| apple | jam | tag rule |
+| apple | apple jam | tag rule |
 | rice | porridge | tag rule |
-| clementine jam | ??? | catch-all |
-| blueberry jam | ??? | catch-all |
-| pepper jam | ??? | catch-all |
+| potato soup | soup? | catch-all |
+| spicy potato soup | soup? | catch-all |
+| pumpkin soup | soup? | catch-all |
+| onion soup | soup? | catch-all |
+| apple jam | apple jam | tag rule |
+| clementine jam | clementine jam | tag rule |
+| blueberry jam | blueberry jam | tag rule |
+| pepper jam | pepper jam | tag rule |
 | rice | ??? | catch-all |
 | tofu | ??? | catch-all |
-| jam | ??? | catch-all |
+| soondubu | soup? | catch-all |
+| jam | jam | tag rule |
 | tea | tea | tag rule |
 | iced tea | tea | tag rule |
+| mushroom soup | soup? | catch-all |
+| pepper stew | soup? | catch-all |
+| egg drop soup | soup? | catch-all |
 | flower syrup | ??? | catch-all |
+| soup? | soup? | catch-all |
+
+### soup?
+
+| with | makes | rule |
+|---|---|---|
+| (nothing) | soup? | catch-all |
+| potato | soup? | catch-all |
+| pepper | soup? | catch-all |
+| watercress | soup? | catch-all |
+| dandelion greens | soup? | catch-all |
+| bellflower | soup? | catch-all |
+| milkweed pod | soup? | catch-all |
+| clementine | soup? | catch-all |
+| blueberry | soup? | catch-all |
+| plum | soup? | catch-all |
+| strawberry tree fruit | soup? | catch-all |
+| olive | soup? | catch-all |
+| pine nut | soup? | catch-all |
+| ginkgo nut | soup? | catch-all |
+| russula | mushroom soup (not drawn; today: soup?) | catch-all |
+| linden flower | soup? | catch-all |
+| jasmine | soup? | catch-all |
+| chrysanthemum | soup? | catch-all |
+| lavender | soup? | catch-all |
+| honeysuckle | soup? | catch-all |
+| mint | soup? | catch-all |
+| foxglove | ??? | catch-all |
+| honey | soup? | catch-all |
+| birch sap | soup? | catch-all |
+| ice | something cold | catch-all |
+| wheat | soup? | catch-all |
+| tapioca pearls | soup? | catch-all |
+| egg | soup? | catch-all |
+| corn | soup? | catch-all |
+| soybean | soup? | catch-all |
+| onion | soup? | catch-all |
+| pumpkin | soup? | catch-all |
+| tomato | soup? | catch-all |
+| tea leaves | soup? | catch-all |
+| apple | soup? | catch-all |
+| rice | rice and soup | tag rule |
+| potato soup | soup? | catch-all |
+| spicy potato soup | soup? | catch-all |
+| pumpkin soup | soup? | catch-all |
+| onion soup | soup? | catch-all |
+| apple jam | soup? | catch-all |
+| clementine jam | soup? | catch-all |
+| blueberry jam | soup? | catch-all |
+| pepper jam | soup? | catch-all |
+| rice | rice and soup | tag rule |
+| tofu | soup? | catch-all |
+| soondubu | soup? | catch-all |
+| jam | soup? | catch-all |
+| tea | soup? | catch-all |
+| iced tea | soup? | catch-all |
+| mushroom soup | soup? | catch-all |
+| pepper stew | soup? | catch-all |
+| egg drop soup | soup? | catch-all |
+| flower syrup | soup? | catch-all |
+| soup? | soup? | catch-all |
 

@@ -15,7 +15,7 @@ the approach to the tower of seybrook, the valley formed by the nearby smaller t
 
 this gravity exists only in higher planes. which is why it was so confusing for me as a child to visit downtown [lindor](/places/lindor/). now that i'm older and have spent more of my life immersed in data, i can finally answer the question of "what is it that people actually *do* in these buildings?" and i like it, and i make maps of it.
 
-but now is a time of extrapolating curves. let's extrapolate this curve too. as everything flows [upstream](/thoughts/trancin/), and smaller, lower cities disintegrate, high cities grow ever taller. my home city of [lindor](/places/lindor/) once seemed to me like the highest of them all, and thus immune. but as cities grow taller, they also get further away, more rareified, more abstract. their shapes will not occupy storefronts, train tracks, or websites. [their inhabitants](/thoughts/ai/) will be incomprehensible. 
+but now is a time of extrapolating curves. let's extrapolate this curve too. as everything flows [upstream](/thoughts/trancin/), and smaller, lower cities disintegrate, high cities grow ever taller. my home city of [lindor](/places/lindor/) once seemed to me like the highest of them all, and thus immune. but as cities grow taller, they also get further away, more rarefied, more abstract. their shapes will not occupy storefronts, train tracks, or websites. [their inhabitants](/thoughts/ai/) will be incomprehensible. 
 
 and i will be like a [child](/thoughts/time/) again.
 

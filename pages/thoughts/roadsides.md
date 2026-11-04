@@ -12,3 +12,4 @@ it's comforting.
 
 i love being in the presence of these big structures because it makes me feel small. being big is a lot of pressure. your details are on display for smaller creatures like ants or [bunnies](/anita/bunnies/) to notice, even if you don't notice yourself. but if you are small, there is no pressure. sitting inside a bridge, atop a mountain, lost in a city, no one will see you. certainly, no one will be able to make out your [features](/thoughts/passing/). your body becomes of no consequence.
 
+{% include plant.html kind="onion" %}
