@@ -200,6 +200,12 @@ body { background: #0a0a0a; color: #eee; font-family: 'Nunito', sans-serif; over
 }
 #ridership-toggle-btn.active,
 #static-toggle-btn.active { border-color: #6889a8; color: #6889a8; }
+#static-toggle-btn {
+    width: auto;
+    padding: 0 10px;
+    font-size: 13px;
+    font-family: inherit;
+}
 #speed-expand-btn,
 #static-settings-btn {
     font-size: 13px;
@@ -415,27 +421,10 @@ body { background: #0a0a0a; color: #eee; font-family: 'Nunito', sans-serif; over
     text-shadow: 0 1px 3px #000;
     pointer-events: none;
 }
-#ridership-tooltip {
-    position: fixed;
-    z-index: 10000;
-    background: rgba(10,10,10,0.9);
-    color: #eee;
-    padding: 6px 10px;
-    border-radius: 4px;
-    font-size: 13px;
-    font-family: 'Nunito', sans-serif;
-    border: 1px solid #444;
-    pointer-events: none;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    white-space: nowrap;
+.ridership-row { cursor: pointer; }
+@media (hover: hover) {
+    .ridership-row:hover .bar-num { color: #eee; }
 }
-#ridership-tooltip.hidden { display: none; }
-#ridership-tooltip .route-icon {
-    font-size: 11px;
-}
-.ridership-row { cursor: default; }
 #ridership-panel {
     background: rgba(10,10,10,0.85);
     border: 1px solid #333;
@@ -452,8 +441,6 @@ body { background: #0a0a0a; color: #eee; font-family: 'Nunito', sans-serif; over
 .ridership-title {
     font-size: 11px;
     font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
     color: #888;
     margin-bottom: 8px;
 }
@@ -479,14 +466,7 @@ body { background: #0a0a0a; color: #eee; font-family: 'Nunito', sans-serif; over
     border-radius: 2px;
     overflow: hidden;
 }
-.bar-cumulative {
-    position: absolute;
-    top: 0;
-    left: 0;
-    height: 100%;
-    width: 0;
-}
-.bar-current {
+.bar-fill {
     position: absolute;
     top: 0;
     left: 0;
@@ -736,8 +716,8 @@ body { background: #0a0a0a; color: #eee; font-family: 'Nunito', sans-serif; over
         <input type="range" id="time-slider" min="300" max="1500" value="420" step="1">
         <div id="time-label">7:00am</div>
         <div id="train-count"></div>
-        <button id="static-toggle-btn" title="Daily totals (static mode)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="3" y1="14" x2="14" y2="3"/><line x1="7" y1="18" x2="18" y2="7"/><line x1="11" y1="22" x2="22" y2="11"/></svg></button>
-        <button id="ridership-toggle-btn" title="Ridership by line"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="4" width="12" height="3" rx="1"/><rect x="3" y="11" width="18" height="3" rx="1"/><rect x="3" y="18" width="8" height="3" rx="1"/></svg></button>
+        <button id="ridership-toggle-btn" title="Riders by line" style="display:none;"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="4" width="12" height="3" rx="1"/><rect x="3" y="11" width="18" height="3" rx="1"/><rect x="3" y="18" width="8" height="3" rx="1"/></svg></button>
+        <button id="static-toggle-btn">totals</button>
     </div>
     <div id="settings-panel" class="hidden">
         <div class="settings-row" id="speed-slider-row">
@@ -764,12 +744,18 @@ body { background: #0a0a0a; color: #eee; font-family: 'Nunito', sans-serif; over
     </div>
     <div id="ridership-panel" class="hidden"></div>
 </div>
-<div id="ridership-tooltip" class="hidden"></div>
 <div id="drill-panel" class="hidden"></div>
 <div id="drill-tooltip" class="hidden"></div>
 
 <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
 <script>
+// Arabic, Hebrew and other right-to-left place names need MapLibre's RTL text
+// plugin, or they are drawn letter by letter, unjoined and in reverse (a
+// languagedots viewer's report, 2026-10-08). Lazy: fetched only once such a
+// label is on screen.
+if (maplibregl.getRTLTextPluginStatus() === 'unavailable')
+    maplibregl.setRTLTextPlugin('https://unpkg.com/@mapbox/mapbox-gl-rtl-text@0.2.3/mapbox-gl-rtl-text.min.js', true)
+        .catch(() => {});
 const map = new maplibregl.Map({
     container: 'map',
     style: 'https://tiles.openfreemap.org/styles/dark',
@@ -777,6 +763,25 @@ const map = new maplibregl.Map({
     zoom: 10.6,
     minZoom: 9,
     attributionControl: true,
+});
+
+// The basemap's tiles give Türkiye an English name of just "T" (2026-10-08;
+// OpenFreeMap's data, `name_en`), and the style shows `name_en` first. Every
+// label that reads `name_en` falls back to the local Latin name when the
+// English one is under 3 letters.
+function guardEnglishName(id) {
+    const f = map.getLayoutProperty(id, 'text-field');
+    if (!f || !JSON.stringify(f).includes('"name_en"')) return;
+    const fix = e => Array.isArray(e)
+        ? (e.length === 2 && e[0] === 'get' && e[1] === 'name_en'
+            ? ['case', ['>=', ['length', ['to-string', ['coalesce', ['get', 'name_en'], '']]], 3],
+               ['get', 'name_en'], ['coalesce', ['get', 'name:latin'], ['get', 'name']]]
+            : e.map(fix))
+        : e;
+    map.setLayoutProperty(id, 'text-field', fix(f));
+}
+map.once('load', () => {
+    for (const l of map.getStyle().layers) if (l.type === 'symbol') guardEnglishName(l.id);
 });
 
 // TfL line palette (NUMBAT line codes -> official TfL hex)
@@ -918,13 +923,11 @@ let trainDrawOrder = null; // per-train random draw order
 
 const BASE_ROUTE = {};
 const RIDERSHIP_ROUTES = ['BAK','CEN','DIS','HAM','JUB','MET','NOR','PIC','VIC','WAC','DLR','EZL','NLL','ELL','WEL','GOB','URL','WAG'];
-let cumulativeByRoute = {}; // route -> { times: Float32Array, cums: Float32Array }
+let dailyByRoute = {}; // route -> boardings over the whole service day
 let maxDailyRiders = 0;
-const ridershipRows = {}; // route -> { cumBar, curBar, num, row }
-let latestCurrentByRoute = {};
-let hoveredRidershipRoute = null;
-let ridershipPanelEl = null;
-let ridershipPanelOpen = false;
+// The by-line panel shows only in totals mode, open by default; once
+// collapsed it stays collapsed until reopened.
+let ridershipPanelCollapsed = false;
 
 function preprocessData() {
     // pre-compute start/end times and sort trains for efficient scanning
@@ -959,16 +962,13 @@ function preprocessData() {
 }
 
 function computeRidership() {
-    // For each route, build a cumulative boardings timeline.
-    // Boardings at station i are approximated as max(0, riders[i] - riders[i-1])
-    // from the train timeline. This undercounts when alightings and boardings
-    // happen simultaneously, but suffices for a relative per-line visual.
-    const eventsByRoute = {};
-    for (const r of RIDERSHIP_ROUTES) eventsByRoute[r] = [];
+    // Boardings per route over the whole service day, from the train timelines.
+    const totals = {};
+    for (const r of RIDERSHIP_ROUTES) totals[r] = 0;
 
     for (const train of data.trains) {
         const route = BASE_ROUTE[train.route] || train.route;
-        if (!(route in eventsByRoute)) continue;
+        if (!(route in totals)) continue;
         const tl = train.timeline;
         let prev = 0;
         for (let i = 0; i < tl.length; i++) {
@@ -978,65 +978,25 @@ function computeRidership() {
             // exact boardings if build.py emitted them (entry[4]), else fall back
             // to net-delta estimate (undercounts simultaneous board+alight)
             const boardings = entry.length >= 5 ? entry[4] : Math.max(0, riders - prev);
-            // Cumulative resets at the service-day boundary (5am), so skip any
-            // overnight boardings before then. Without this the day starts at
-            // a non-zero count and the bars never visibly start fresh.
-            if (boardings > 0 && entry[0] >= DAY_START) {
-                eventsByRoute[route].push([entry[0], boardings]);
-            }
+            // the service day starts at 5am; earlier boardings belong to the night before
+            if (boardings > 0 && entry[0] >= DAY_START) totals[route] += boardings;
             prev = riders;
         }
     }
 
-    maxDailyRiders = 0;
-    cumulativeByRoute = {};
-    for (const route of RIDERSHIP_ROUTES) {
-        const events = eventsByRoute[route];
-        events.sort((a, b) => a[0] - b[0]);
-        const times = new Float32Array(events.length);
-        const cums = new Float32Array(events.length);
-        let sum = 0;
-        for (let i = 0; i < events.length; i++) {
-            sum += events[i][1];
-            times[i] = events[i][0];
-            cums[i] = sum;
-        }
-        cumulativeByRoute[route] = { times, cums };
-        if (sum > maxDailyRiders) maxDailyRiders = sum;
-    }
-}
-
-function cumulativeAt(route, time) {
-    const d = cumulativeByRoute[route];
-    if (!d || d.times.length === 0) return 0;
-    let lo = 0, hi = d.times.length - 1, idx = -1;
-    while (lo <= hi) {
-        const mid = (lo + hi) >> 1;
-        if (d.times[mid] <= time) { idx = mid; lo = mid + 1; }
-        else hi = mid - 1;
-    }
-    if (idx < 0) {
-        const t1 = d.times[0], c1 = d.cums[0];
-        const t0 = Math.max(0, t1 - 60);
-        if (time <= t0) return 0;
-        return c1 * (time - t0) / (t1 - t0);
-    }
-    if (idx >= d.times.length - 1) return d.cums[idx];
-    const t0 = d.times[idx], t1 = d.times[idx + 1];
-    if (t1 <= t0) return d.cums[idx + 1];
-    const f = (time - t0) / (t1 - t0);
-    return d.cums[idx] + f * (d.cums[idx + 1] - d.cums[idx]);
+    dailyByRoute = totals;
+    maxDailyRiders = Math.max(0, ...Object.values(totals));
 }
 
 function buildRidershipPanel() {
     const panel = document.getElementById('ridership-panel');
-    ridershipPanelEl = panel;
     panel.innerHTML = '';
     const title = document.createElement('div');
     title.className = 'ridership-title';
-    title.textContent = 'simulation ridership by line';
+    title.textContent = 'riders by line';
     panel.appendChild(title);
     for (const route of RIDERSHIP_ROUTES) {
+        const total = dailyByRoute[route] || 0;
         const row = document.createElement('div');
         row.className = 'ridership-row';
 
@@ -1046,64 +1006,32 @@ function buildRidershipPanel() {
 
         const barCont = document.createElement('div');
         barCont.className = 'bar-container';
-        const color = ROUTE_COLORS[route] || '#999';
-        const cumBar = document.createElement('div');
-        cumBar.className = 'bar-cumulative';
-        cumBar.style.background = hexToRgba(color, 0.6);
-        const curBar = document.createElement('div');
-        curBar.className = 'bar-current';
-        curBar.style.background = color;
-        barCont.appendChild(cumBar);
-        barCont.appendChild(curBar);
+        const bar = document.createElement('div');
+        bar.className = 'bar-fill';
+        bar.style.background = ROUTE_COLORS[route] || '#999';
+        bar.style.width = (maxDailyRiders ? total / maxDailyRiders * 100 : 0) + '%';
+        barCont.appendChild(bar);
         row.appendChild(barCont);
 
         const num = document.createElement('div');
         num.className = 'bar-num';
+        num.textContent = Math.round(total).toLocaleString();
         row.appendChild(num);
 
-        row.addEventListener('mouseenter', () => {
-            hoveredRidershipRoute = route;
-            const tip = document.getElementById('ridership-tooltip');
-            const rect = row.getBoundingClientRect();
-            tip.style.top = (rect.top + rect.height / 2) + 'px';
-            tip.style.right = (window.innerWidth - rect.left + 8) + 'px';
-            tip.style.left = 'auto';
-            tip.style.transform = 'translateY(-50%)';
-            updateRidershipTooltip();
-            tip.classList.remove('hidden');
-        });
-        row.addEventListener('mouseleave', () => {
-            if (hoveredRidershipRoute === route) {
-                hoveredRidershipRoute = null;
-                document.getElementById('ridership-tooltip').classList.add('hidden');
-            }
+        row.addEventListener('click', () => {
+            if (staticData && staticData.segments.some(s => s.route === route)) openLineDrill(route);
         });
 
         panel.appendChild(row);
-        ridershipRows[route] = { cumBar, curBar, num, row };
     }
 }
 
-function updateRidershipTooltip() {
-    if (!hoveredRidershipRoute) return;
-    const tip = document.getElementById('ridership-tooltip');
-    const cur = Math.round(latestCurrentByRoute[hoveredRidershipRoute] || 0);
-    tip.innerHTML = `<span>${cur.toLocaleString()} riders on the</span>${routeIconHTML(hoveredRidershipRoute)}`;
-}
-
-function updateRidershipPanel(currentByRoute) {
-    latestCurrentByRoute = currentByRoute;
-    if (!ridershipPanelOpen || !maxDailyRiders) return;
-    for (const route of RIDERSHIP_ROUTES) {
-        const r = ridershipRows[route];
-        if (!r) continue;
-        const cum = cumulativeAt(route, simTime);
-        const cur = currentByRoute[route] || 0;
-        r.cumBar.style.width = (cum / maxDailyRiders * 100) + '%';
-        r.curBar.style.width = (cur / maxDailyRiders * 100) + '%';
-        r.num.textContent = Math.round(cum).toLocaleString();
-    }
-    if (hoveredRidershipRoute) updateRidershipTooltip();
+// The by-line button and panel belong to totals mode.
+function syncRidershipPanel() {
+    const open = staticMode && !ridershipPanelCollapsed;
+    ridershipToggleBtn.style.display = staticMode ? '' : 'none';
+    ridershipToggleBtn.classList.toggle('active', open);
+    document.getElementById('ridership-panel').classList.toggle('hidden', !open);
 }
 
 
@@ -1303,7 +1231,9 @@ function tick(now) {
     if ((moving || dirty) && now - lastRenderWall >= RENDER_INTERVAL) {
         lastRenderWall = now;
         dirty = false;
-        updateTimeLabel();
+        // in static mode the slider drives staticHourIdx and updateStaticTimeLabel
+        // owns the label; otherwise the rAF loop would clobber it every frame
+        if (!staticMode) updateTimeLabel();
         renderTrains();
     }
 
@@ -1445,12 +1375,6 @@ function darkenHex(hex, factor) {
     const b = Math.round(parseInt(hex.slice(5, 7), 16) * factor);
     return `#${r.toString(16).padStart(2,'0')}${g.toString(16).padStart(2,'0')}${b.toString(16).padStart(2,'0')}`;
 }
-function hexToRgba(hex, a) {
-    const r = parseInt(hex.slice(1, 3), 16);
-    const g = parseInt(hex.slice(3, 5), 16);
-    const b = parseInt(hex.slice(5, 7), 16);
-    return `rgba(${r},${g},${b},${a})`;
-}
 function lightenHex(hex, factor) {
     const r = parseInt(hex.slice(1, 3), 16);
     const g = parseInt(hex.slice(3, 5), 16);
@@ -1487,8 +1411,6 @@ function renderTrains() {
     const features = [];
     let activeCount = 0;
     let totalRiders = 0;
-    const currentByRoute = ridershipPanelOpen ? {} : null;
-    if (currentByRoute) for (const r of RIDERSHIP_ROUTES) currentByRoute[r] = 0;
     // zoom in 4x (2 zoom levels) → bubbles 2x bigger on screen
     const zoomScale = Math.pow(2, (map.getZoom() - BASE_ZOOM) / 2);
 
@@ -1620,11 +1542,6 @@ function renderTrains() {
 
         activeCount++;
         totalRiders += riders;
-        if (currentByRoute) {
-            const baseR = BASE_ROUTE[train.route] || train.route;
-            if (baseR in currentByRoute) currentByRoute[baseR] += riders;
-        }
-
         const radius = bubbleRadius(riders) * zoomScale * dotScale;
         const ridersRound = Math.round(riders);
         trainPositions.set(ti, [lon, lat, ridersRound]);
@@ -1708,7 +1625,6 @@ function renderTrains() {
     document.getElementById('train-count').innerHTML =
         `${activeCount} trains<br>${Math.round(totalRiders).toLocaleString()} riders`;
 
-    if (currentByRoute) updateRidershipPanel(currentByRoute);
     refreshTooltips();
 }
 
@@ -1807,6 +1723,7 @@ async function setStaticMode(on) {
 
     staticMode = on;
     staticToggleBtn.classList.toggle('active', on);
+    syncRidershipPanel();
 
     // The animated dots live on the overlay, which draws nothing in static
     // mode; drawOverlay() below clears whatever was on it.
@@ -3054,10 +2971,8 @@ document.getElementById('toggle-walks-cb').addEventListener('change', (e) => {
 const ridershipToggleBtn = document.getElementById('ridership-toggle-btn');
 ridershipToggleBtn.addEventListener('mousedown', (e) => e.preventDefault());
 ridershipToggleBtn.addEventListener('click', () => {
-    const panel = document.getElementById('ridership-panel');
-    panel.classList.toggle('hidden');
-    ridershipPanelOpen = !panel.classList.contains('hidden');
-    ridershipToggleBtn.classList.toggle('active', ridershipPanelOpen);
+    ridershipPanelCollapsed = !ridershipPanelCollapsed;
+    syncRidershipPanel();
 });
 
 const SPEED_STOPS = [0, 1/60, 0.05, 0.1, 0.2, 0.3, 0.5, 0.7, 1, 1.5, 2, 3, 5, 7, 10, 15, 20, 30, 50];
