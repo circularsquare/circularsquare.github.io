@@ -27,7 +27,7 @@ permalink: /maps/
         - <a href="/nycarea/" data-thumb="/assets/thumbs/maps/nycarea.jpg">+ regional rail stations</a> ([uncompressed version](/assets/maps/nycarea.png))
     - <a href="/nystreets/" data-thumb="/assets/thumbs/nystreets.jpg">nyc street trips heat map</a>
     - <a href="/bus/" data-thumb="/assets/thumbs/bus.jpg">nyc bus lines by ridership</a>
-- (if you'd like to support my map making, you can donate [here](https://ko-fi.com/anitamaps)!)<br><br>
+- (if you'd like to support my map making, you can [buy a print](/shop/) or donate [here](https://ko-fi.com/anitamaps)!)<br><br>
 
 
 

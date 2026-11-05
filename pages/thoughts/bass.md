@@ -4,7 +4,7 @@ title: bass
 permalink: /thoughts/bass/
 ---
 
-i like to sing. [unfortunately](/thoughts/reasons/) i have a bass voice.
+i like to [sing](/audio/). [unfortunately](/thoughts/reasons/) i have a bass voice.
 
 in college, i did a cappella. i enjoyed this quite a bit, because in a cappella, bass is not actually a human role. it can be more accurately described as "base". the goal of a base is to sound as much like a table as possible. so that the others can stand on it and be heard better.
 
@@ -12,5 +12,5 @@ so i sang base, which i liked. in college, i found it difficult to rely on anyon
 
 i have also sung base with some of my more chaotic friends. it feels like i am accessing something that others wouldn't be able to. i feel special. we click. i am a flexible base. 
 
-at the end of the day, a base is not [beautiful](/thoughts/beauty/).
+at the end of the day, a base alone is not [beautiful](/thoughts/beauty/).
 

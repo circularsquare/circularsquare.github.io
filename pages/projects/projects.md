@@ -38,7 +38,7 @@ permalink: /projects/
     - <a href="bread" data-thumb="/assets/thumbs/breads.png">bread</a>
     - [music i like](/music/)
     - [site map](site/)
-    - (if you'd like to support my map making, you can donate [here](https://ko-fi.com/anitamaps)!)<br>
+    - (if you'd like to support my map making, you can [buy a print](/shop/) or donate [here](https://ko-fi.com/anitamaps)!)<br>
 
 #### games
 - [trains world](/trainsworld/) (new!)

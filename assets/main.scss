@@ -506,11 +506,8 @@ table {border-spacing: 30px;}
 #shop-interest {
   max-width: 520px;
   label { display: block; margin: 6px 0; }
-  select, input[type=email] { display: block; font: inherit; margin-top: 2px; max-width: 100%; }
-  input[type=email] { width: 300px; }
-  fieldset { border: 0; padding: 0; margin: 8px 0; }
-  legend { padding: 0; }
-  .interest-map { margin: 2px 0; }
+  select, input[type=email], textarea { display: block; font: inherit; margin-top: 2px; max-width: 100%; }
+  input[type=email], textarea { width: 300px; box-sizing: border-box; }
   button { font: inherit; }
   #interest-status { margin-left: 8px; }
 }

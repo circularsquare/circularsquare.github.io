@@ -948,7 +948,7 @@
 
   // One thing to eat, shared by every visitor through the server
   // (shonei-server's kitchen.go). Leave something for the next person, or take
-  // what's there. It goes stale after 6 hours, on the server's side. Anything
+  // what's there. It goes stale after 12 hours, on the server's side. Anything
   // edible goes on it except a bad dish (the ???). If the server can't be
   // reached the table just looks empty and won't take anything.
   // localStorage kitchenApi points it at a local server for testing,

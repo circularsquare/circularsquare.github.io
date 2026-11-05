@@ -4,10 +4,7 @@ title: shop
 permalink: /shop/
 ---
 
-these are prints of my maps! made to order by lumaprints on semi-gloss fine art paper. the full size files are free to download as well, if you'd rather print one yourself. 
-
-
-the store is not currently open but will be on november 5th for shipping only within the USA. prints are $40-50, with 10$ off each additional map after the first one.
+these are prints of my maps! made to order by lumaprints on semi-gloss fine art paper. the full size files are free to download as well, if you'd rather print one yourself. i ship within US only.
 
 <div class="shop-grid">
 {%- for p in site.data.shop %}
@@ -34,28 +31,23 @@ the store is not currently open but will be on november 5th for shipping only wi
 ### shipping and returns
 
 - prices include shipping.
-- extra maps added at checkout are $10 off each, since they ship in the same tube.
+- every map after the first map (added at checkout) is $10 off each, since they ship in the same tube.
 - shipping to US usually arrives in less than two weeks.
 - if a print arrives damaged or misprinted and you email me a photo within 30 days, i can send a replacement.
 - you can send questions to [{{ site.email }}](mailto:{{ site.email }}).
 
-### outside the us?
+### something else?
 
 <div id="shop-interest" class="box">
   <p>if you'd like to order print maps and are not in the US, please let me know here!</p>
   <form id="interest-form">
     <label>country <select id="interest-country" required><option value="">pick one</option></select></label>
     <label>email (optional) <input id="interest-email" type="email" maxlength="200"></label>
-    <fieldset>
-      <legend>maps you'd want (optional)</legend>
-      {%- for p in site.data.shop %}
-      <label class="interest-map"><input type="checkbox" value="{{ p.slug }}"> {{ p.title }}</label>
-      {%- endfor %}
-    </fieldset>
+    <label>maps you'd want (optional) <textarea id="interest-wants" rows="2" maxlength="500"></textarea></label>
     <button type="submit">interested</button>
     <span id="interest-status" role="status"></span>
   </form>
-  <p id="interest-done" hidden>thanks, noted.</p>
+  <p id="interest-done" hidden>thanks!</p>
 </div>
 
 <script>
@@ -106,7 +98,7 @@ the store is not currently open but will be on november 5th for shipping only wi
     const body = {
       country: select.value,
       email: document.getElementById('interest-email').value.trim(),
-      maps: [...form.querySelectorAll('.interest-map input:checked')].map(i => i.value),
+      wants: document.getElementById('interest-wants').value.trim(),
     };
     status.textContent = 'sending...';
     try {
