@@ -31,7 +31,7 @@ these are prints of my maps! made to order by lumaprints on semi-gloss fine art 
 ### shipping and returns
 
 - prices include shipping.
-- every map after the first map (added at checkout) is $10 off each, since they ship in the same tube.
+- every map after the first map (added at checkout) is $10 off each because they ship in the same tube.
 - shipping to US usually arrives in less than two weeks.
 - if a print arrives damaged or misprinted and you email me a photo within 30 days, i can send a replacement.
 - you can send questions to [{{ site.email }}](mailto:{{ site.email }}).
@@ -53,14 +53,15 @@ these are prints of my maps! made to order by lumaprints on semi-gloss fine art 
 <script>
 (function () {
   const ENDPOINT = 'https://market.anita.garden/shop/interest';
-  const DONE_KEY = 'shopInterestSent';
   const form = document.getElementById('interest-form');
   const select = document.getElementById('interest-country');
   const status = document.getElementById('interest-status');
   const done = document.getElementById('interest-done');
 
   function showDone() { form.hidden = true; done.hidden = false; }
-  try { if (localStorage.getItem(DONE_KEY)) showDone(); } catch (e) {}
+  // Earlier visits set this to keep the form hidden for good. Clear it so a
+  // reload always shows the form again.
+  try { localStorage.removeItem('shopInterestSent'); } catch (e) {}
 
   // Guess the visitor's country from their timezone, then their browser
   // language. No IP lookup. A US guess is left blank: this form is for
@@ -109,7 +110,6 @@ these are prints of my maps! made to order by lumaprints on semi-gloss fine art 
       });
       const d = await r.json().catch(() => ({}));
       if (!r.ok) throw new Error(d.error || 'that did not go through, try again in a bit');
-      try { localStorage.setItem(DONE_KEY, '1'); } catch (e) {}
       showDone();
     } catch (err) {
       status.textContent = err.message === 'Failed to fetch'
