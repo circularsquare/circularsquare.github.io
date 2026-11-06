@@ -617,6 +617,184 @@ const CITY_ALIASES={
   'choybalsan':                'choibalsan',
   'dalanzadgad':               'dalandzadgad',
   'nalaikh':                   'nalayh',
+  // ── Player requests: Geneva, Cluj, and the same kinds of names ──
+  // GeoNames has since moved many cities to the English name (Geneva, Padua,
+  // Dunkirk) or a new spelling (Ukrainian y/i); the data still has the old one.
+  // The rest are English names from alternateNamesV2 picked by hand, and short
+  // forms people use (Cluj, Udon, Southend). Names that already belong to a
+  // smaller city (Geneva, Illinois) are in CITY_ALSO.
+  'cluj':                        'clujnapoca',
+  'ubon':                        'ubonratchathani',
+  'udon':                        'udonthani',
+  'southend':                    'southendonsea',
+  'komsomolsk':                  'komsomolskonamur',
+  'hafar':                       'hafaralbatin',
+  'makiyivka':                   'makiivka',
+  'qods':                        'shahreqods',
+  'puer':                        'simao',
+  'kropyvnytskyi':               'kropyvnytskyy',
+  'bogura':                      'bogra',
+  'travinh':                     'thanhphotravinh',
+  'slovyansk':                   'sloviansk',
+  'siverskodonetsk':             'sievierodonetsk',
+  'kamyanetspodilskyi':          'kamianetspodilskyi',
+  'yenakiyeve':                  'yenakiieve',
+  'dunkirk':                     'dunkerque',
+  'izmayil':                     'izmail',
+  'kostyantynivka':              'kostiantynivka',
+  'rhodes':                      'rodos',
+  'zvyahel':                     'zviahel',
+  'vaukavysk':                   'volkovysk',
+  'izyum':                       'izium',
+  'bryanka':                     'brianka',
+  'dzhankoy':                    'dzhankoi',
+  'aghdam':                      'agdam',
+  'chuhuyiv':                    'chuhuiv',
+  'avdiyivka':                   'avdiivka',
+  'shamkhir':                    'shamkhor',
+  'boyarka':                     'boiarka',
+  'bakhchysaray':                'bakhchysarai',
+  'kupyansk':                    'kupiansk',
+  'balakliya':                   'balakliia',
+  'kozyatyn':                    'koziatyn',
+  'dokuchayevsk':                'dokuchaievsk',
+  'gazakh':                      'qazax',
+  'shusha':                      'susa',
+  'tartar':                      'terter',
+  'khansar':                     'khvansar',
+  'koneurgenc':                  'koneurgench',
+  'rostovveliky':                'rostov',
+  'adama':                       'nazret',
+  'ajloun':                      'ajlun',
+  'akre':                        'acre',
+  'akyab':                       'sittwe',
+  'alarish':                     'arish',
+  'amara':                       'alamarah',
+  'apodaca':                     'ciudadapodaca',
+  'artemivsk':                   'bakhmut',
+  'ashqelon':                    'ashkelon',
+  'axum':                        'aksum',
+  'azaz':                        'izaz',
+  'bahraich':                    'bahraigh',
+  'beersheva':                   'beersheba',
+  'bizerta':                     'bizerte',
+  'bojnourd':                    'bojnurd',
+  'borga':                       'porvoo',
+  'borisov':                     'barysaw',
+  'bushire':                     'bushehr',
+  'bandarbushehr':               'bushehr',
+  'cannanore':                   'kannur',
+  'chalcis':                     'chalkida',
+  'chandrapur':                  'chanda',
+  'chervonohrad':                'sheptytskyi',
+  'chikkamagaluru':              'chikmagalur',
+  'daltonganj':                  'medininagar',
+  'darjeeling':                  'darjiling',
+  'daytona':                     'daytonabeach',
+  'debreberhan':                 'debrebirhan',
+  'deirelbalah':                 'dayralbalah',
+  'diegosuarez':                 'antsiranana',
+  'djerba':                      'houmtsouk',
+  'dolgoprudny':                 'dolgoprudnyy',
+  'donostia':                    'donostiasansebastian',
+  'douma':                       'duma',
+  'dumdum':                      'damdam',
+  'egorievsk':                   'yegoryevsk',
+  'elat':                        'eilat',
+  'elaaiun':                     'laayoune',
+  'englishbazar':                'malda',
+  'eupatoria':                   'yevpatoriya',
+  'yevpatoria':                  'yevpatoriya',
+  'faizabad':                    'fyzabad',
+  'fallujah':                    'alfallujah',
+  'jazan':                       'jizan',
+  'gizan':                       'jizan',
+  'gjakova':                     'gjakove',
+  'guaymas':                     'heroicaguaymas',
+  'haderah':                     'hadera',
+  'hadeyra':                     'hadera',
+  'hamelin':                     'hameln',
+  'henzada':                     'hinthada',
+  'herzliyah':                   'herzliya',
+  'herzliyya':                   'herzliya',
+  'illichivsk':                  'chornomorsk',
+  'jableh':                      'jablah',
+  'kadiivka':                    'kadiyivka',
+  'kafrsaba':                    'kfarsaba',
+  'kefarsaba':                   'kfarsaba',
+  'kampongsaom':                 'sihanoukville',
+  'kawthaung':                   'kawthoung',
+  'kiryatata':                   'qiryatata',
+  'qiryatgat':                   'kiryatgat',
+  'kirovakan':                   'vanadzor',
+  'leninakan':                   'gyumri',
+  'kumayri':                     'gyumri',
+  'mitrovica':                   'mitrovice',
+  'kosovskamitrovica':           'mitrovice',
+  'kotte':                       'srijayewardenepurakotte',
+  'krasnoarmiysk':               'pokrovsk',
+  'larissa':                     'larisa',
+  'larnaka':                     'larnaca',
+  'lasanod':                     'laascaanood',
+  'leamingtonspa':               'royalleamingtonspa',
+  'loubomo':                     'dolisie',
+  'lushunkou':                   'lushun',
+  'mahikeng':                    'mafikeng',
+  'makhanda':                    'grahamstown',
+  'mamoutzou':                   'mamoudzou',
+  'marburg':                     'marburganderlahn',
+  'mogador':                     'essaouira',
+  'mukacheve':                   'mukachevo',
+  'nahariya':                    'nahariyya',
+  'nelspruit':                   'mbombela',
+  'novgorod':                    'velikiynovgorod',
+  'novyurengoy':                 'novyyurengoy',
+  'osmanabad':                   'dharashiv',
+  'ozyorsk':                     'ozersk',
+  'palime':                      'kpalime',
+  'patrai':                      'patra',
+  'petergof':                    'peterhof',
+  'polatsk':                     'polotsk',
+  'prome':                       'pyay',
+  'puertolimon':                 'limon',
+  'raananah':                    'raanana',
+  'rousse':                      'ruse',
+  'ruhengeri':                   'musanze',
+  'sebastopol':                  'sevastopol',
+  'sienna':                      'siena',
+  'sukhumi':                     'sokhumi',
+  'stgallen':                    'sanktgallen',
+  'saintgallen':                 'sanktgallen',
+  'sweida':                      'assuwayda',
+  'suwayda':                     'assuwayda',
+  'thalassery':                  'tellicherry',
+  'tighina':                     'bender',
+  'tsarskoyeselo':               'pushkin',
+  'tunbridgewells':              'royaltunbridgewells',
+  'umtata':                      'mthatha',
+  'uzhgorod':                    'uzhhorod',
+  'vasco':                       'vascodagama',
+  'velikotarnovo':               'velikoturnovo',
+  'villacisneros':               'dakhla',
+  'zakho':                       'zaxo',
+  'zihuatanejo':                 'ixtapazihuatanejo',
+  'salihorsk':                   'soligorsk',
+  'svyetlahorsk':                'svetlogorsk',
+  'maladzyechna':                'maladziecna',
+  'navapolatsk':                 'novopolotsk',
+  'zhodzina':                    'horadzhodzina',
+  'ghimbi':                      'gimbi',
+  'irgalem':                     'yirgaalem',
+  'jirja':                       'girga',
+  'karaikudi':                   'karaikkudi',
+  'khartsyzsk':                  'khartsyzk',
+  'kiselyovsk':                  'kiselevsk',
+  'mineralnyyevody':             'mineralnyevody',
+  'oleksandriia':                'oleksandriya',
+  'pavlovskyposad':              'pavlovskiyposad',
+  'sosnovybor':                  'sosnovyybor',
+  'vyshnyvolochyok':             'vyshniyvolochek',
+  'stakhanov':                   'kadiyivka',
 
   // ── Generated from GeoNames alternateNamesV2 (isolanguage="en") ──
   // Same source the city list comes from, joined by geonames id. English-tagged
@@ -1029,6 +1207,14 @@ const CITY_ALSO={
   'aksu':                       'aqsu',             // two Kazakh towns; Aqsu, China is 536k
   'tokmak':                     'tokmok',           // Tokmak, Ukraine is 30k
   'petropavlovsk':              'petropavl',        // with Petropavlovsk-Kamchatsky, via CITY_ALIASES
+  'geneva':                      'geneve',
+  'brunswick':                   'braunschweig',
+  'hanover':                     'hannover',
+  'matamoros':                   'heroicamatamoros',
+  'nara':                        'narashi',
+  'sudbury':                     'greatersudbury',
+  'lazarocardenas':              'ciudadlazarocardenas',
+  'padua':                       'padova',
 };
 
 // Letters the data's alphabets write as one where English writes two: Uzbek x
@@ -1159,30 +1345,51 @@ const COUNTRY_AREA={
 };
 
 // Continent games, in dropdown order. Countries go by Natural Earth's continent
-// (citycircles/continents.json), but Cyprus is Europe, Russia is Europe west
-// of the Urals (60°E) and Turkey is Europe in Thrace. Indonesia is all Asia and
-// Papua New Guinea all Oceania. build_popgrid_cc.py makes the same calls.
+// (citycircles/continents.json, so Cyprus is Asia), but Russia is Europe west
+// of the Urals and Turkey is Europe in Thrace. Indonesia is all Asia and Papua
+// New Guinea all Oceania. build_popgrid_cc.py and build_regions.py make the
+// same calls.
 const CONTINENTS=[
-  {id:'northamerica',code:'na',name:'North America'},
-  {id:'southamerica',code:'sa',name:'South America'},
   {id:'europe',code:'eu',name:'Europe'},
   {id:'asia',code:'as',name:'Asia'},
   {id:'africa',code:'af',name:'Africa'},
   {id:'oceania',code:'oc',name:'Oceania'},
+  {id:'northamerica',code:'na',name:'North America'},
+  {id:'southamerica',code:'sa',name:'South America'},
 ];
 const CONTINENT_CCS={
   af:'AO BF BI BJ BW CD CF CG CI CM CV DJ DZ EG EH ER ET GA GH GM GN GQ GW KE KM LR LS LY MA MG ML MR MU MW MZ NA NE NG RE RW SC SD SH SL SN SO SS ST SZ TD TF TG TN TZ UG YT ZA ZM ZW',
-  as:'AE AF AM AZ BD BH BN BT CN GE HK ID IL IN IO IQ IR JO JP KG KH KP KR KW KZ LA LB LK MM MN MO MV MY NP OM PH PK PS QA SA SG SY TH TJ TL TM TR TW UZ VN XD YE',
-  eu:'AD AL AT AX BA BE BG BY CH CY CZ DE DK EE ES FI FO FR GB GG GI GR HR HU IE IM IS IT JE LI LT LU LV MC MD ME MK MT NL NO PL PT RO RS RU SE SI SJ SK SM UA VA XK',
+  as:'AE AF AM AZ BD BH BN BT CN CY GE HK ID IL IN IO IQ IR JO JP KG KH KP KR KW KZ LA LB LK MM MN MO MV MY NP OM PH PK PS QA SA SG SY TH TJ TL TM TR TW UZ VN XD YE',
+  eu:'AD AL AT AX BA BE BG BY CH CZ DE DK EE ES FI FO FR GB GG GI GR HR HU IE IM IS IT JE LI LT LU LV MC MD ME MK MT NL NO PL PT RO RS RU SE SI SJ SK SM UA VA XK',
   na:'AG AI AW BB BL BM BQ BS BZ CA CR CU CW DM DO GD GL GP GT HN HT JM KN KY LC MF MQ MS MX NI PA PM PR SV SX TC TT US VC VG VI',
   oc:'AS AU CC CK CX FJ FM GU HM KI MH MP NC NF NR NU NZ PF PG PN PW SB TK TO TV VU WF WS',
   sa:'AR BO BR CL CO EC FK GF GY PE PY SR UY VE',
 };
 const CONTINENT_OF={};
 for(const [k,v] of Object.entries(CONTINENT_CCS)) for(const cc of v.split(' ')) CONTINENT_OF[cc]=k;
+// Same polygons as citycircles/regions_common.py, which says how they were drawn.
+// Russia west of the Urals: down the Kara Sea, along the crest of the Ural
+// Mountains to the Ural River, then down the river to Orsk and Kazakhstan.
+const EUROPEAN_RUSSIA=[[0,90],[68.5,90],[69.5,77],[63,71],[65,69.2],[66,68.4],[65.6,67.6],
+  [64.9,66.7],[63,66],[61,65.6],[59.9,65],[59.3,64],[59.3,62.5],[59,61],[59.4,60],[59,58.5],
+  [60,56.9],[59.9,56],[59.85,55.1],[59.5,54.6],[59.3,54],[59.05,53.4],[59,52.5],[58.8,51.8],
+  [58.6,51.2],[58.6,40],[0,40]];
+// Turkey's European part: west of a line down the middle of the Bosporus, the
+// Sea of Marmara and the Dardanelles.
+const THRACE=[[25,39.8],[26.19,40.03],[26.3,40.09],[26.392,40.152],[26.5,40.25],[26.62,40.33],
+  [26.7,40.39],[26.78,40.46],[27.5,40.72],[28.5,40.88],[28.997,41],[29.03,41.05],[29.06,41.1],
+  [29.07,41.15],[29.1,41.2],[29.13,41.23],[29.3,41.6],[28,42.6],[25,42.6]];
+function inPolygon(ring,x,y){
+  let inside=false;
+  for(let i=0,j=ring.length-1;i<ring.length;j=i++){
+    const [xi,yi]=ring[i],[xj,yj]=ring[j];
+    if((yi>y)!==(yj>y)&&x<(xj-xi)*(y-yi)/(yj-yi)+xi) inside=!inside;
+  }
+  return inside;
+}
 function continentOf(c){
-  if(c.cc==='RU') return c.lng>0&&c.lng<60?'eu':'as';
-  if(c.cc==='TR') return c.lat>40.4&&c.lng<29?'eu':'as';
+  if(c.cc==='RU') return inPolygon(EUROPEAN_RUSSIA,c.lng,c.lat)?'eu':'as';
+  if(c.cc==='TR') return inPolygon(THRACE,c.lng,c.lat)?'eu':'as';
   return CONTINENT_OF[c.cc]||'';
 }
 const continentById=id=>CONTINENTS.find(x=>x.id===id);
@@ -1204,6 +1411,8 @@ function curMinPop(){return isLegacy()?minPop:10000;}
 // are ±0.1°, ±0.25° and ±0.5°, leaving out any wider than half the spread of
 // the country's cities that way. A country's nearest choices are 20, 50 and
 // 100 cities, each kept only up to a quarter of the country's cities (20 always).
+// A continent's are the world's, each kept only up to a third of its cities,
+// which only trims Oceania (165 cities: 20 and 50).
 const WORLD_RADIUS={opts:[100,200,500,1000],def:500};
 const WORLD_BAND={opts:[10,20,50,100],def:50};
 function isCountry(){return !!country&&!continentById(country);}
@@ -1226,7 +1435,8 @@ function fillChoices(){
   document.getElementById('radius-select').innerHTML=r.opts.map(v=>`<option value="${v}">${v} km</option>`).join('');
   document.getElementById('radius-select').value=String(r.def);
   radKm=r.def;
-  const nOpts=isCountry()?[20,50,100].filter(v=>v===20||4*v<=totalCities()):[20,50,100,200];
+  const nOpts=isCountry()?[20,50,100].filter(v=>v===20||4*v<=totalCities())
+    :[20,50,100,200].filter(v=>!country||v===20||3*v<=totalCities());
   document.getElementById('nearest-select').innerHTML=nOpts.map(v=>`<option value="${v}">${v} cities</option>`).join('');
   nearN=20;
   const b={lat:bandChoices('lat'),lng:bandChoices('lng')};
@@ -1254,7 +1464,9 @@ function areaBounds(){
 function fillCountries(){
   const sel=document.getElementById('country-select');
   for(const c of CONTINENTS) sel.insertAdjacentHTML('beforeend',`<option value="${c.id}">${c.name}</option>`);
-  sel.insertAdjacentHTML('beforeend','<option disabled>──────────</option>');
+  // A thin rule between continents and countries (browsers that don't draw an
+  // <hr> in a dropdown just leave no gap).
+  sel.appendChild(document.createElement('hr'));
   Object.keys(COUNTRY_AREA).sort((a,b)=>countryName(a).localeCompare(countryName(b)))
     .forEach(cc=>sel.insertAdjacentHTML('beforeend',`<option value="${cc}">${countryName(cc)}</option>`));
 }
@@ -1326,8 +1538,22 @@ function buildMap(style){
   map.addControl(new maplibregl.AttributionControl({compact:true,customAttribution:'© OpenStreetMap'}),'bottom-right');
 
   map.on('load',()=>{
+    map.addSource('region',{type:'geojson',data:EMPTY_FC});
     map.addSource('guesses',{type:'geojson',data:EMPTY_FC});
     map.addSource('cities',{type:'geojson',data:EMPTY_FC});
+
+    // A country or continent game lightly shades the land outside the area.
+    // The shade goes above the basemap's land cover, and a second copy of its
+    // water layer goes above the shade, so water looks the same everywhere and
+    // the shade's edge only shows along land borders. One mask polygon, so no
+    // overlaps stack up their opacity.
+    const under=map.getLayer('waterway')?'waterway':undefined;
+    map.addLayer({
+      id:'region-mask', type:'fill', source:'region',
+      paint:{'fill-color':'#3a411e','fill-opacity':0.06},
+    },under);
+    const water=map.getStyle().layers.find(l=>l.id==='water');
+    if(water) map.addLayer({...water,id:'water-over-region'},under);
 
     // Guess circles go under the dots, matching the old pane order where the
     // circle layer group sat below every city tier.
@@ -1377,6 +1603,7 @@ function buildMap(style){
     }
 
     mapReady=true;
+    if(country) showGameArea();  // a country game restored before the map was up
     syncGuessCircles();
     syncCityDots();
   });
@@ -1888,7 +2115,22 @@ function newGame(){
   if(mapReady) showGameArea();
 }
 
+// The area's mask (build_regions.py), one small file per area, fetched when
+// its game is first picked.
+const regionCache=new Map();
+function syncRegion(){
+  if(!mapReady) return;
+  const want=country, src=map.getSource('region');
+  if(!want){src.setData(EMPTY_FC);return;}
+  if(!regionCache.has(want)){
+    regionCache.set(want,fetch(`/assets/games/regions/${want.toLowerCase()}.json`)
+      .then(r=>r.ok?r.json():EMPTY_FC).catch(()=>EMPTY_FC));
+  }
+  regionCache.get(want).then(fc=>{if(country===want) src.setData(fc);});
+}
+
 function showGameArea(){
+  syncRegion();
   if(!country){map.easeTo({center:[10,20],zoom:2});return;}
   const [w,s,e,n]=areaBounds();
   map.fitBounds([[w,s],[e,n]],{padding:40,maxZoom:8,duration:700});
