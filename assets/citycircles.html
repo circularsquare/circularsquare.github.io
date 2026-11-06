@@ -31,7 +31,7 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:Georgia
 #config-section{padding:6px 18px 11px;border-bottom:1px solid var(--border);display:flex;flex-direction:column;gap:9px}
 .config-row{display:flex;align-items:center;justify-content:space-between;gap:8px}
 .config-row label{font-size:var(--fs-sm);color:var(--muted);white-space:nowrap}
-.config-row select{background:var(--surface2);border:1px solid var(--border);color:var(--text);font-family:Georgia,serif;font-size:var(--fs-sm);border-radius:var(--radius);padding:3px 7px;cursor:pointer;outline:none}
+.config-row select{background:var(--surface2);border:1px solid var(--border);color:var(--text);font-family:Georgia,serif;font-size:var(--fs-sm);border-radius:var(--radius);padding:3px 7px;cursor:pointer;outline:none;max-width:150px}
 .city-tip{pointer-events:none}
 .city-tip .maplibregl-popup-content{font-family:Georgia,serif;font-size:var(--fs-sm);background:#ffffff;border:1px solid var(--border2);color:var(--text);border-radius:2px;padding:3px 8px;box-shadow:0 1px 4px rgba(0,0,0,.1);white-space:nowrap}
 .city-tip .maplibregl-popup-tip{display:none}
@@ -152,18 +152,23 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:Georgia
    the viewport tag stops that, and the map handles its own pinch zoom anyway. */
 @media (max-width:640px){
   #app{grid-template-columns:1fr;grid-template-rows:auto 1fr}
-  #sidebar{display:grid;grid-template-columns:auto minmax(0,1fr);grid-template-areas:"head actions" "mode config" "sum sum" "input input" "found stats";
+  #sidebar{display:grid;grid-template-columns:auto minmax(0,1fr);grid-template-areas:"head actions" "mode mode" "config config" "sum sum" "input input" "found stats";
     border-right:none;border-bottom:1px solid var(--border);overflow:visible;position:relative;z-index:600}
   #header{grid-area:head;padding:10px 0 8px 16px;border-top-width:3px;border-bottom:none}
   #header h1{font-size:15px;white-space:nowrap}
   #actions{grid-area:actions;padding:7px 16px 6px 8px;border-top:3px solid var(--border2);justify-content:flex-end;flex-wrap:wrap;gap:5px}
   #actions .btn{flex:0 0 auto;padding:5px 7px}
-  #mode-section{grid-area:mode;padding:2px 0 8px 16px}
+  #mode-section{grid-area:mode;padding:2px 16px 6px}
   #mode-section .slabel{display:none}
   .mode-tab{padding:5px 8px;white-space:nowrap}
-  #config-section{grid-area:config;flex-direction:row;flex-wrap:wrap;justify-content:flex-end;align-items:center;gap:6px 10px;padding:2px 16px 8px 8px;border-bottom:none}
+  /* Settings get the full width under the mode tabs, so they fit on one line. */
+  #config-section{grid-area:config;flex-direction:row;flex-wrap:wrap;justify-content:flex-start;align-items:center;gap:6px 8px;padding:0 16px 8px;border-bottom:none}
   .config-row{gap:5px}
   .config-row .long{display:none}
+  /* The dropdowns say what they are ("Algeria", "20 cities", "500 km"), so
+     their labels go, which keeps the settings to two lines. */
+  #config-section .config-row>label:not([for="chain-check"]){display:none}
+  .config-row select{max-width:140px;padding:3px 3px}
   #sidebar.playing:not(.settings-open) #mode-section,#sidebar.playing:not(.settings-open) #config-section{display:none}
   #sidebar.playing #settings-summary{display:block;grid-area:sum;padding:0 16px 8px;background:none;border:none;text-align:left;font-family:Georgia,serif;font-size:var(--fs-sm);color:var(--muted);cursor:pointer}
   #input-section{grid-area:input;padding:0 16px 8px;border-bottom:none}
@@ -199,28 +204,27 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:Georgia
       <div class="mode-tabs" id="mode-tabs-wrap">
         <button class="mode-tab active" data-mode="radius" onclick="setMode('radius')">radius</button>
         <button class="mode-tab" data-mode="nearest" onclick="setMode('nearest')">nearest n</button>
+        <button class="mode-tab" data-mode="band" onclick="setMode('band')">band</button>
       </div>
     </div>
     <div id="config-section">
+      <div class="config-row">
+        <label for="country-select">country</label>
+        <select id="country-select" onchange="onCountryChange()"><option value="">all countries</option></select>
+      </div>
       <div class="config-row" id="radius-row">
         <label>radius<span class="long"> per guess</span></label>
-        <select id="radius-select" onchange="onRadiusChange()">
-          <option value="100">100 km</option>
-          <option value="200">200 km</option>
-          <option value="500" selected>500 km</option>
-          <option value="1000">1000 km</option>
-        </select>
+        <select id="radius-select" onchange="onRadiusChange()"></select>
+      </div>
+      <div class="config-row" id="band-row" style="display:none">
+        <label>band<span class="long"> per guess</span></label>
+        <select id="band-select" onchange="onBandChange()"></select>
       </div>
       <div class="config-row" id="nearest-row" style="display:none">
         <label>cities<span class="long"> per guess</span></label>
-        <select id="nearest-select" onchange="onNearestChange()">
-          <option value="20" selected>20 cities</option>
-          <option value="50">50 cities</option>
-          <option value="100">100 cities</option>
-          <option value="200">200 cities</option>
-        </select>
+        <select id="nearest-select" onchange="onNearestChange()"></select>
       </div>
-      <div class="config-row">
+      <div class="config-row" id="pop-row">
         <label>min pop<span class="long">ulation</span></label>
         <select id="pop-select" onchange="onPopChange()">
           <option value="10000">10k+</option>
@@ -228,7 +232,7 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:Georgia
           <option value="100000">100k+</option>
         </select>
       </div>
-      <div class="config-row" title="every city you type has to be inside one of your circles. you get one free start in the americas and one everywhere else">
+      <div class="config-row" id="chain-row">
         <label for="chain-check">chain<span class="long"> mode</span></label>
         <input type="checkbox" id="chain-check" onchange="onChainChange()"/>
       </div>
@@ -453,6 +457,166 @@ const CITY_ALIASES={
   'boosaaso':                  'bosaso',
   'burco':                     'burao',
   'garowe':                    'garoowe',
+  // ── Player requests: Urgench and Aksu, and their neighbours ──
+  // The data spells Central Asia in the local Latin alphabets (Urganch, Tirmiz)
+  // and Xinjiang and Tibet in Uyghur or pinyin (Aqsu, Rikaze), where English
+  // usually has Russian-era or older spellings. Single letters that English
+  // writes as two (Uzbek x = kh) are handled by TRANSLIT below; these are the
+  // rest. Aksu itself is in CITY_ALSO, since two Kazakh towns already have it.
+  'urgench':                   'urganch',
+  'termez':                    'tirmiz',
+  'navoi':                     'navoiy',
+  'jizak':                     'jizzax',
+  'dzhizak':                   'jizzax',
+  'almalyk':                   'olmaliq',
+  'gulistan':                  'guliston',
+  'bekabad':                   'bekobod',
+  'kattakurgan':               'kattaqorgonshahri',
+  'denau':                     'denov',
+  'shakhrisabz':               'shahrisabz',
+  'kungrad':                   'qunghirot',
+  'khodjeyli':                 'xojaylishahri',
+  'khojeyli':                  'xojaylishahri',
+  'kagan':                     'kogonshahri',
+  'gijduvan':                  'gijduvonshahri',
+  'akhangaran':                'ohangaron',
+  'kuvasay':                   'quvasoy',
+  'kasansay':                  'kosonsoy',
+  'nurata':                    'nurota',
+  'turtkul':                   'novyyturtkul',
+  'beruni':                    'beruniy',
+  'toshkent':                  'tashkent',
+  'samarqand':                 'samarkand',
+  'buxoro':                    'bukhara',
+  'fargona':                   'fergana',
+  'uchkurgan':                 'uchqurghonshahri',
+  'chartak':                   'chortoq',
+  'shakhrikhan':               'shahrixon',
+  'kulyab':                    'kulob',
+  'khodjent':                  'khujand',
+  'khojand':                   'khujand',
+  'khodzhent':                 'khujand',
+  'leninabad':                 'khujand',
+  'kurgantyube':               'bokhtar',
+  'qurghonteppa':              'bokhtar',
+  'kurganteppa':               'bokhtar',
+  'uratyube':                  'istaravshan',
+  'penjikent':                 'panjakent',
+  'panjikent':                 'panjakent',
+  'khorog':                    'khorugh',
+  'kanibadam':                 'konibodom',
+  'kayrakkum':                 'qayroqqum',
+  'chkalovsk':                 'buston',
+  'tursunzade':                'tursunzoda',
+  'regar':                     'tursunzoda',
+  'dashowuz':                  'dasoguz',
+  'dashhowuz':                 'dasoguz',
+  'tashauz':                   'dasoguz',
+  'turkmenbashi':              'turkmenbasy',
+  'krasnovodsk':               'turkmenbasy',
+  'chardzhou':                 'turkmenabat',
+  'chardjou':                  'turkmenabat',
+  'bayramali':                 'bayramaly',
+  'nebitdag':                  'balkanabat',
+  'merv':                      'mary',
+  'geoktepe':                  'gokdepe',
+  'kunyaurgench':              'koneurgench',
+  'atamyrat':                  'kerki',
+  'frunze':                    'bishkek',
+  'przhevalsk':                'karakol',
+  'jalalabat':                 'jalalabad',
+  'dzhalalabad':               'jalalabad',
+  'ozgon':                     'uzgen',
+  'balykchi':                  'balykchy',
+  'rybachye':                  'balykchy',
+  'kyzylkiya':                 'kyzylkyya',
+  'tashkomur':                 'tashkumyr',
+  'sulukta':                   'suluktu',
+  'oskemen':                   'ustkamenogorsk',
+  'uralsk':                    'oral',
+  'chimkent':                  'shymkent',
+  'dzhambul':                  'taraz',
+  'zhambyl':                   'taraz',
+  'guryev':                    'atyrau',
+  'shevchenko':                'aktau',
+  'aqtau':                     'aktau',
+  'aqtobe':                    'aktobe',
+  'dzhezkazgan':               'zhezqazghan',
+  'zhezkazgan':                'zhezqazghan',
+  'jezkazgan':                 'zhezqazghan',
+  'balkhash':                  'balqash',
+  'kapchagay':                 'konayev',
+  'kapshagay':                 'konayev',
+  'qonaev':                    'konayev',
+  'baykonur':                  'baikonur',
+  'kokchetav':                 'kokshetau',
+  'turkistan':                 'turkestan',
+  'qyzylorda':                 'kyzylorda',
+  'taldykurgan':               'taldykorgan',
+  'sarkand':                   'sarqant',
+  'satbayev':                  'satpayev',
+  'novyyuzen':                 'zhanaozen',
+  'kulsary':                   'qulsary',
+  'akesu':                     'aqsu',
+  'kashi':                     'kashgar',
+  'kaxgar':                    'kashgar',
+  'khotan':                    'gujangbagh',
+  'hetian':                    'gujangbagh',
+  'kuerle':                    'korla',
+  'kulja':                     'ghulja',
+  'gulja':                     'ghulja',
+  'kumul':                     'hami',
+  'atush':                     'artux',
+  'atushi':                    'artux',
+  'yarkand':                   'shache',
+  'yarkant':                   'shache',
+  'chuguchak':                 'tacheng',
+  'qoqek':                     'tacheng',
+  'bortala':                   'bole',
+  'tulufan':                   'turpan',
+  'wulumuqi':                  'urumqi',
+  'shigatse':                  'rikaze',
+  'xigaze':                    'rikaze',
+  'chamdo':                    'qamdo',
+  'nakchu':                    'nagqu',
+  'zhongdian':                 'shangrila',
+  'gyalthang':                 'shangrila',
+  'tsetang':                   'lhoka',
+  'zedang':                    'lhoka',
+  'shannan':                   'lhoka',
+  'sumgait':                   'sumqayit',
+  'sumgayit':                  'sumqayit',
+  'gyandzha':                  'ganja',
+  'ganca':                     'ganja',
+  'lenkoran':                  'lankaran',
+  'nakhichevan':               'naxcivan',
+  'shaki':                     'sheki',
+  'mingechaur':                'mingachevir',
+  'yevlax':                    'yevlakh',
+  'agjabadi':                  'agdzhabedy',
+  'aghjabadi':                 'agdzhabedy',
+  'zakatala':                  'zaqatala',
+  'guba':                      'quba',
+  'shamkir':                   'shamkhor',
+  'samaxi':                    'shamakhi',
+  'ismailli':                  'ismayilli',
+  'fuzuli':                    'fizuli',
+  'hajigabul':                 'haciqabul',
+  'celilabad':                 'jalilabad',
+  'xirdalan':                  'khirdalan',
+  'darkhan':                   'darhan',
+  'hovd':                      'khovd',
+  'ulgii':                     'olgii',
+  'olgiy':                     'olgii',
+  'bayankhongor':              'bayanhongor',
+  'arvaikheer':                'arvayheer',
+  'sukhbaatar':                'suhbaatar',
+  'ondorkhaan':                'undurkhaan',
+  'undurkhan':                 'undurkhaan',
+  'murun':                     'moron',
+  'choybalsan':                'choibalsan',
+  'dalanzadgad':               'dalandzadgad',
+  'nalaikh':                   'nalayh',
 
   // ── Generated from GeoNames alternateNamesV2 (isolanguage="en") ──
   // Same source the city list comes from, joined by geonames id. English-tagged
@@ -862,6 +1026,19 @@ const CITY_ALSO={
   'santacruz':                  'santacruzdelasierra',
   'parral':                     'hidalgodelparral',
   'caxias':                     'caxiasdosul',
+  'aksu':                       'aqsu',             // two Kazakh towns; Aqsu, China is 536k
+  'tokmak':                     'tokmok',           // Tokmak, Ukraine is 30k
+  'petropavlovsk':              'petropavl',        // with Petropavlovsk-Kamchatsky, via CITY_ALIASES
+};
+
+// Letters the data's alphabets write as one where English writes two: Uzbek x
+// is "kh" (Xiva, Khiva) and q mostly "k"; Turkmen and Azerbaijani ş and ç are
+// "sh" and "ch", Azerbaijani ə mostly "a". Every combination of a name's rules
+// is accepted, each only where it is not already some city's name.
+const TRANSLIT={
+  UZ:[['x','kh'],['q','k']],
+  TM:[['ş','sh'],['ç','ch'],['ž','zh']],
+  AZ:[['ş','sh'],['ç','ch'],['x','kh'],['ə','a']],
 };
 
 // Patterns where the end (or start) of a name only says which one is meant,
@@ -879,6 +1056,7 @@ const NAME_QUALIFIERS=[
   {re:/^(.+?)(?:\s+upon\s+|-upon-|-on-|\s+on\s+)(?!the[\s-])/, cc:ccSet('GB IE RU CA')},
   {re:/^(.+?)-(?:sur|en|sous|lès|les|le|la)-/, cc:ccSet('FR BE CH LU')},
   {re:/^(?:Velikiy|Veliky|Velikiye)\s+(.+)$/},
+  {re:/^(.+?)\s+(?:Shahri|Shaharchasi)$/, cc:ccSet('UZ')},
   {re:/^(?:Al|Ar|As|Ash|Az|Ad|An|At|El)[\s-](.+)$/,
    cc:ccSet('EG SA IQ SY JO LB YE OM AE QA KW BH LY TN DZ MA SD SO MR PS')},
 ];
@@ -899,6 +1077,17 @@ function loadCities(){
     const entries=cityNameMap.get(canonical);
     if(entries&&!cityNameMap.has(alias)) cityNameMap.set(alias,entries);
   }
+  CITIES.forEach((c,i)=>{
+    const rules=TRANSLIT[c.cc];
+    if(!rules) return;
+    const low=c.name.toLowerCase();
+    let forms=[low];
+    for(const [from,to] of rules) if(low.includes(from)) forms=forms.flatMap(f=>[f,f.split(from).join(to)]);
+    for(const f of forms.slice(1)){
+      const k=norm(f);
+      if(!cityNameMap.has(k)) cityNameMap.set(k,[{c,i}]);
+    }
+  });
   // Main parts of qualified names, biggest city first wins a shared one.
   const mainParts=new Map();
   CITIES.forEach((c,i)=>{
@@ -922,6 +1111,8 @@ function loadCities(){
   }
 }
 
+
+function lngGap(a,b){const d=Math.abs(a-b)%360;return d>180?360-d:d;}
 
 function hav(la1,lo1,la2,lo2){
   const R=6371,r=Math.PI/180,dL=(la2-la1)*r,dG=(lo2-lo1)*r;
@@ -953,8 +1144,120 @@ function formatPop(pop){
 
 // ── State ──
 let mode='radius', radKm=500, nearN=20, minPop=50000;
+let country='';  // ISO code of a country game, a CONTINENTS id, or '' for the whole world
+let bandAxis='lat', bandHalf=50;  // band mode; the half-width is in hundredths of a degree
 let chain=false;  // chain mode: guesses must be inside a circle, bar two free starts
 let chainStarts=new Set();  // regions ('am' / 'rest') whose free start is used
+
+// Countries offered as country games: more than 100 cities of 10k+. Area in
+// thousands of km², Natural Earth 10m admin-0 map units (metropolitan France).
+const COUNTRY_AREA={
+  AR:2783,BD:137,BE:31,BR:8473,CA:9946,CD:2325,CI:321,CL:737,CN:9375,CO:1135,CU:110,DE:358,DZ:2309,
+  EG:1001,ES:507,ET:1127,FR:548,GB:244,ID:1880,IN:3151,IR:1623,IT:301,JP:374,KE:586,KR:97,MA:592,
+  MG:593,MM:663,MX:1958,MY:328,NG:908,NL:37,PE:1290,PH:293,PK:873,PL:313,PT:91,RO:236,RU:16980,TH:514,
+  TN:157,TR:780,TZ:942,UA:572,UG:242,US:9464,UZ:448,VE:913,VN:329,ZA:1220,
+};
+
+// Continent games, in dropdown order. Countries go by Natural Earth's continent
+// (citycircles/continents.json), but Cyprus is Europe, Russia is Europe west
+// of the Urals (60°E) and Turkey is Europe in Thrace. Indonesia is all Asia and
+// Papua New Guinea all Oceania. build_popgrid_cc.py makes the same calls.
+const CONTINENTS=[
+  {id:'northamerica',code:'na',name:'North America'},
+  {id:'southamerica',code:'sa',name:'South America'},
+  {id:'europe',code:'eu',name:'Europe'},
+  {id:'asia',code:'as',name:'Asia'},
+  {id:'africa',code:'af',name:'Africa'},
+  {id:'oceania',code:'oc',name:'Oceania'},
+];
+const CONTINENT_CCS={
+  af:'AO BF BI BJ BW CD CF CG CI CM CV DJ DZ EG EH ER ET GA GH GM GN GQ GW KE KM LR LS LY MA MG ML MR MU MW MZ NA NE NG RE RW SC SD SH SL SN SO SS ST SZ TD TF TG TN TZ UG YT ZA ZM ZW',
+  as:'AE AF AM AZ BD BH BN BT CN GE HK ID IL IN IO IQ IR JO JP KG KH KP KR KW KZ LA LB LK MM MN MO MV MY NP OM PH PK PS QA SA SG SY TH TJ TL TM TR TW UZ VN XD YE',
+  eu:'AD AL AT AX BA BE BG BY CH CY CZ DE DK EE ES FI FO FR GB GG GI GR HR HU IE IM IS IT JE LI LT LU LV MC MD ME MK MT NL NO PL PT RO RS RU SE SI SJ SK SM UA VA XK',
+  na:'AG AI AW BB BL BM BQ BS BZ CA CR CU CW DM DO GD GL GP GT HN HT JM KN KY LC MF MQ MS MX NI PA PM PR SV SX TC TT US VC VG VI',
+  oc:'AS AU CC CK CX FJ FM GU HM KI MH MP NC NF NR NU NZ PF PG PN PW SB TK TO TV VU WF WS',
+  sa:'AR BO BR CL CO EC FK GF GY PE PY SR UY VE',
+};
+const CONTINENT_OF={};
+for(const [k,v] of Object.entries(CONTINENT_CCS)) for(const cc of v.split(' ')) CONTINENT_OF[cc]=k;
+function continentOf(c){
+  if(c.cc==='RU') return c.lng>0&&c.lng<60?'eu':'as';
+  if(c.cc==='TR') return c.lat>40.4&&c.lng<29?'eu':'as';
+  return CONTINENT_OF[c.cc]||'';
+}
+const continentById=id=>CONTINENTS.find(x=>x.id===id);
+function areaName(a){return continentById(a)?.name||countryName(a);}
+function inArea(c){
+  if(!country) return true;
+  const ct=continentById(country);
+  return ct?continentOf(c)===ct.code:c.cc===country;
+}
+
+// The original world radius and nearest games keep their population choice
+// (and so their boards); every newer game counts cities of 10k and up.
+function isLegacy(){return !country&&mode!=='band';}
+function curMinPop(){return isLegacy()?minPop:10000;}
+
+// Choices per guess. The world and the continents share one set. A country
+// gets 30, 100 and 250 km circles (never under 20 km, about one city across),
+// leaving out any where one circle would cover over half the country; bands
+// are ±0.1°, ±0.25° and ±0.5°, leaving out any wider than half the spread of
+// the country's cities that way. A country's nearest choices are 20, 50 and
+// 100 cities, each kept only up to a quarter of the country's cities (20 always).
+const WORLD_RADIUS={opts:[100,200,500,1000],def:500};
+const WORLD_BAND={opts:[10,20,50,100],def:50};
+function isCountry(){return !!country&&!continentById(country);}
+function radiusChoices(){
+  if(!isCountry()) return WORLD_RADIUS;
+  const opts=[30,100,250].filter(r=>r===30||Math.PI*r*r<=COUNTRY_AREA[country]*1000/2);
+  return {opts,def:opts.includes(100)?100:30};
+}
+function bandChoices(axis){
+  if(!isCountry()) return WORLD_BAND;
+  const [w,s,e,n]=areaBounds(), spread=axis==='lat'?n-s:e-w;
+  const opts=[10,25,50].filter(h=>h===10||2*h/100<=spread/2);
+  return {opts,def:opts.includes(25)?25:10};
+}
+function bandText(axis,half){return `${axis==='lat'?'latitude':'longitude'} ±${half/100}°`;}
+
+// Refills the per-guess lists for the current area and picks each one's default.
+function fillChoices(){
+  const r=radiusChoices();
+  document.getElementById('radius-select').innerHTML=r.opts.map(v=>`<option value="${v}">${v} km</option>`).join('');
+  document.getElementById('radius-select').value=String(r.def);
+  radKm=r.def;
+  const nOpts=isCountry()?[20,50,100].filter(v=>v===20||4*v<=totalCities()):[20,50,100,200];
+  document.getElementById('nearest-select').innerHTML=nOpts.map(v=>`<option value="${v}">${v} cities</option>`).join('');
+  nearN=20;
+  const b={lat:bandChoices('lat'),lng:bandChoices('lng')};
+  document.getElementById('band-select').innerHTML=['lat','lng'].map(a=>
+    b[a].opts.map(v=>`<option value="${a}:${v}">${bandText(a,v)}</option>`).join('')).join('');
+  bandHalf=b[bandAxis].def;
+  document.getElementById('band-select').value=`${bandAxis}:${bandHalf}`;
+}
+
+// The middle 96% of the area's cities each way, as [west, south, east, north],
+// so a few far islands (Hawaii, the Canaries) don't stretch it. Longitudes are
+// unwrapped around the median, so it can run past 180 (Russia, Oceania).
+let _bounds=null, _boundsKey=null;
+function areaBounds(){
+  if(_boundsKey===country) return _bounds;
+  const pts=filteredIndices().map(({c})=>c);
+  const mid=pts.map(c=>c.lng).sort((a,b)=>a-b)[pts.length>>1];
+  const lats=pts.map(c=>c.lat).sort((a,b)=>a-b);
+  const lngs=pts.map(c=>c.lng+(c.lng-mid>180?-360:mid-c.lng>180?360:0)).sort((a,b)=>a-b);
+  const q=(a,f)=>a[Math.min(a.length-1,Math.floor(f*a.length))];
+  _boundsKey=country;
+  return _bounds=[q(lngs,0.02),q(lats,0.02),q(lngs,0.98),q(lats,0.98)];
+}
+
+function fillCountries(){
+  const sel=document.getElementById('country-select');
+  for(const c of CONTINENTS) sel.insertAdjacentHTML('beforeend',`<option value="${c.id}">${c.name}</option>`);
+  sel.insertAdjacentHTML('beforeend','<option disabled>──────────</option>');
+  Object.keys(COUNTRY_AREA).sort((a,b)=>countryName(a).localeCompare(countryName(b)))
+    .forEach(cc=>sel.insertAdjacentHTML('beforeend',`<option value="${cc}">${countryName(cc)}</option>`));
+}
 
 // Country codes counted as the Americas for chain mode's two free starts.
 const AMERICAS=new Set(('US CA MX GT BZ SV HN NI CR PA CU JM HT DO PR BS TC KY BM '+
@@ -1116,6 +1419,16 @@ function guessCirclesFC(){
   const features=[];
   const feat=(geometry)=>({type:'Feature',properties:{},geometry});
   for(const gc of guessCircles){
+    if(gc.band){
+      // A band is straight on this map either way: parallels and meridians are
+      // both straight lines in Mercator, so its four corners are enough.
+      const edges=gc.band==='lat'
+        ?[gc.lat-gc.half,gc.lat+gc.half].map(v=>Math.max(-85,Math.min(85,v))).map(v=>[[-180,v],[180,v]])
+        :[gc.lng-gc.half,gc.lng+gc.half].map(v=>[[v,-85],[v,85]]);
+      for(const e of edges) features.push(feat({type:'LineString',coordinates:e}));
+      features.push(feat({type:'Polygon',coordinates:[[...edges[0],edges[1][1],edges[1][0],edges[0][0]]]}));
+      continue;
+    }
     const poleEnclosed=gc.radiusKm>=(90+gc.lat)*111.32||gc.radiusKm>=(90-gc.lat)*111.32;
     // Arc points, [lng, lat] for GeoJSON. Used for the outline in both cases,
     // and for the fill in the normal case.
@@ -1222,9 +1535,11 @@ function clearDotHover(){
 
 // ── Game helpers ──
 function filteredIndices(){
-  if(_filteredMinPop===minPop && _filteredCache) return _filteredCache;
-  _filteredCache=CITIES.map((c,i)=>({c,i})).filter(({c})=>c.pop>=minPop);
-  _filteredMinPop=minPop;
+  const key=curMinPop()+'|'+country;
+  if(_filteredMinPop===key && _filteredCache) return _filteredCache;
+  const mp=curMinPop();
+  _filteredCache=CITIES.map((c,i)=>({c,i})).filter(({c})=>c.pop>=mp&&inArea(c));
+  _filteredMinPop=key;
   return _filteredCache;
 }
 function totalCities(){return filteredIndices().length;}
@@ -1237,8 +1552,10 @@ function formatPopLarge(n){
 }
 // ── People inside the circles ──
 // popgrid.bin (build_popgrid.py in the citycircles folder) is GHS-POP 2025 on
-// a 0.25° grid. A cell counts once its centre is inside any circle, so
-// overlapping circles never count anyone twice. Summing the cities instead
+// a 0.25° grid. Each cell is split into 8×8 squares, and a square counts once
+// its middle is inside any circle or band, so overlaps never count anyone
+// twice. Testing whole cells by their centre missed most small circles and
+// thin bands (country games go down to a few km). Summing the cities instead
 // counted only city proper populations, and GeoNames double counts some
 // (New York City and Manhattan are both in it).
 let POPGRID=null, popCovered=null, popCount=0, popCircles=0;
@@ -1251,31 +1568,94 @@ fetch('/assets/games/popgrid.bin').then(r=>r.ok?r.arrayBuffer():null).then(buf=>
   upStats();
 }).catch(()=>{});
 
+// popgrid_cc.bin (build_popgrid_cc.py) gives each cell a country and a
+// continent, so those games count only the people inside them. Fetched with
+// the first such game.
+const POPCC_CONTINENTS=['af','as','eu','na','oc','sa'];
+let POPCC=null, popccLoading=false;
+function loadPopCC(){
+  if(POPCC||popccLoading) return;
+  popccLoading=true;
+  fetch('/assets/games/popgrid_cc.bin').then(r=>r.ok?r.arrayBuffer():null).then(buf=>{
+    if(!buf) return;
+    const b=new Uint8Array(buf), k=b[0], codes={}, n=(b.length-1-2*k)/2;
+    for(let j=0;j<k;j++) codes[String.fromCharCode(b[1+2*j],b[2+2*j])]=j+1;
+    POPCC={codes,cell:b.subarray(1+2*k,1+2*k+n),cont:b.subarray(1+2*k+n)};
+    popCovered=null;
+    upStats();
+  }).catch(()=>{}).finally(()=>{popccLoading=false;});
+}
+
 function coveredPop(){
   if(!POPGRID) return null;
-  if(!popCovered||popCircles>guessCircles.length){
-    popCovered=new Uint8Array(POPGRID.pop.length); popCount=0; popCircles=0;
+  let ccOnly=0, cells=null;
+  if(country){
+    if(!POPCC){loadPopCC();return null;}
+    const ct=continentById(country);
+    cells=ct?POPCC.cont:POPCC.cell;
+    ccOnly=(ct?POPCC_CONTINENTS.indexOf(ct.code)+1:POPCC.codes[country])||-1;
   }
-  const {pop,rowStart,col}=POPGRID, S=0.25, rad=Math.PI/180;
+  // Two 32-bit words per cell: which of its 64 squares are counted.
+  if(!popCovered||popCircles>guessCircles.length){
+    popCovered=new Uint32Array(POPGRID.pop.length*2); popCount=0; popCircles=0;
+  }
+  const {pop,rowStart,col}=POPGRID, S=0.25, Q=S/8, FULL=0xFFFFFFFF;
   for(;popCircles<guessCircles.length;popCircles++){
-    const gc=guessCircles[popCircles];
-    const dLat=gc.radiusKm/111.19+S;
-    const r0=Math.max(0,Math.floor((90-gc.lat-dLat)/S));
-    const r1=Math.min(719,Math.floor((90-gc.lat+dLat)/S));
-    const sinA=Math.sin(gc.lat*rad), cosA=Math.cos(gc.lat*rad);
-    const cosR=Math.cos(gc.radiusKm/6371), lng0=gc.lng*rad;
+    const gc=guessCircles[popCircles], t=shapeTest(gc);
+    const reach=gc.band==='lng'?180:gc.band==='lat'?gc.half+S:gc.radiusKm/111.19+S;
+    const r0=Math.max(0,Math.floor((90-gc.lat-reach)/S));
+    const r1=Math.min(719,Math.floor((90-gc.lat+reach)/S));
     for(let row=r0;row<=r1;row++){
-      const lat=(90-(row+0.5)*S)*rad, sl=Math.sin(lat), cl=Math.cos(lat);
+      const lat=90-(row+0.5)*S;
       for(let k=rowStart[row];k<rowStart[row+1];k++){
-        if(popCovered[k]) continue;
-        // Spherical law of cosines: inside when the angle to the centre is
-        // under the radius. No wrapping needed at the antimeridian.
-        const lng=(-180+(col[k]+0.5)*S)*rad;
-        if(sinA*sl+cosA*cl*Math.cos(lng-lng0)>=cosR){popCovered[k]=1;popCount+=pop[k];}
+        const m0=popCovered[2*k], m1=popCovered[2*k+1];
+        if(m0===FULL&&m1===FULL) continue;
+        if(ccOnly&&cells[k]!==ccOnly) continue;
+        const lng=-180+(col[k]+0.5)*S, c=t.cell(lat,lng);
+        if(c===0) continue;
+        let n0=FULL, n1=FULL;
+        if(c===2){
+          n0=0; n1=0;
+          for(let b=0;b<64;b++){
+            if(!t.pt(lat+S/2-((b>>3)+0.5)*Q, lng-S/2+((b&7)+0.5)*Q)) continue;
+            if(b<32) n0|=1<<b; else n1|=1<<(b-32);
+          }
+        }
+        const added=bits32((n0&~m0)>>>0)+bits32((n1&~m1)>>>0);
+        if(!added) continue;
+        popCovered[2*k]=m0|n0; popCovered[2*k+1]=m1|n1;
+        popCount+=pop[k]*added/64;
       }
     }
   }
-  return popCount;
+  return Math.round(popCount);
+}
+
+function bits32(x){
+  x-=(x>>>1)&0x55555555;
+  x=(x&0x33333333)+((x>>>2)&0x33333333);
+  return Math.imul((x+(x>>>4))&0x0F0F0F0F,0x01010101)>>>24;
+}
+
+// One circle or band as two tests: cell(lat, lng) of a cell's middle is 1 when
+// the whole cell is inside, 0 when none of it is, 2 when its squares need
+// checking one by one with pt(lat, lng).
+function shapeTest(gc){
+  const rad=Math.PI/180, H=0.125;
+  const edge=(d,r,h)=>d+h<=r?1:d-h>r?0:2;
+  if(gc.band==='lat') return {
+    cell:(lat)=>edge(Math.abs(lat-gc.lat),gc.half,H),
+    pt:(lat)=>Math.abs(lat-gc.lat)<=gc.half};
+  if(gc.band==='lng') return {
+    cell:(lat,lng)=>edge(lngGap(lng,gc.lng),gc.half,H),
+    pt:(lat,lng)=>lngGap(lng,gc.lng)<=gc.half};
+  // Spherical law of cosines: the angle from the centre, in radians. No
+  // wrapping needed at the antimeridian.
+  const sinA=Math.sin(gc.lat*rad), cosA=Math.cos(gc.lat*rad), R=gc.radiusKm/6371, lng0=gc.lng*rad;
+  const ang=(lat,lng)=>Math.acos(Math.max(-1,Math.min(1,
+    sinA*Math.sin(lat*rad)+cosA*Math.cos(lat*rad)*Math.cos(lng*rad-lng0))));
+  const HD=0.177*rad;  // half a cell's diagonal, at most
+  return {cell:(lat,lng)=>edge(ang(lat,lng),R,HD), pt:(lat,lng)=>ang(lat,lng)<=R};
 }
 
 function upStats(){
@@ -1418,6 +1798,16 @@ function processGuessOrigin(idx){
                        hav(seed.lat,seed.lng-360,c.lat,c.lng));
       if(d<=radKm) revealCity(i);
     }
+  } else if(mode==='band'){
+    const h=bandHalf/100;
+    if(drawCircle){
+      guessCircles.push({band:bandAxis,lat:seed.lat,lng:seed.lng,half:h});
+      syncGuessCircles();
+    }
+    for(const {c,i} of filteredIndices()){
+      const d=bandAxis==='lat'?Math.abs(c.lat-seed.lat):lngGap(c.lng,seed.lng);
+      if(d<=h+1e-9) revealCity(i);
+    }
   } else {
     const fi=filteredIndices();
     const withDist=fi.map(({c,i})=>({c,i,d:Math.min(
@@ -1495,7 +1885,13 @@ function newGame(){
   hideGuessMsg();
   upStats();
   saveState();
-  if(mapReady) map.easeTo({center:[10,20],zoom:2});
+  if(mapReady) showGameArea();
+}
+
+function showGameArea(){
+  if(!country){map.easeTo({center:[10,20],zoom:2});return;}
+  const [w,s,e,n]=areaBounds();
+  map.fitBounds([[w,s],[e,n]],{padding:40,maxZoom:8,duration:700});
 }
 
 function giveUp(){
@@ -1531,7 +1927,13 @@ function syncModeUI(){
   document.querySelectorAll('.mode-tab').forEach(t=>t.classList.toggle('active',t.dataset.mode===mode));
   document.getElementById('radius-row').style.display=mode==='radius'?'flex':'none';
   document.getElementById('nearest-row').style.display=mode==='nearest'?'flex':'none';
+  document.getElementById('band-row').style.display=mode==='band'?'flex':'none';
+  document.getElementById('pop-row').style.display=isLegacy()?'flex':'none';
+  // A country is all one side of the Atlantic, so it has one free start.
+  document.getElementById('chain-row').title=`every city you type has to be inside one of your ${mode==='band'?'bands':'circles'}. `
+    +(country?'you get one free start':'you get one free start in the americas and one everywhere else');
 }
+const LOCKABLE=['country-select','radius-select','nearest-select','band-select','pop-select','chain-check'];
 // Phones only (the CSS ignores these classes on desktop): once a game starts
 // the locked settings fold into a one-line summary that can be tapped open.
 function toggleSettings(){
@@ -1545,19 +1947,13 @@ function syncSettingsSummary(){
 function lockControls(){
   document.getElementById('sidebar').classList.add('playing');
   syncSettingsSummary();
-  document.getElementById('radius-select').disabled=true;
-  document.getElementById('nearest-select').disabled=true;
-  document.getElementById('pop-select').disabled=true;
-  document.getElementById('chain-check').disabled=true;
+  for(const id of LOCKABLE) document.getElementById(id).disabled=true;
   document.getElementById('mode-tabs-wrap').style.pointerEvents='none';
   document.getElementById('mode-tabs-wrap').style.opacity='0.45';
 }
 function unlockControls(){
   document.getElementById('sidebar').classList.remove('playing','settings-open');
-  document.getElementById('radius-select').disabled=false;
-  document.getElementById('nearest-select').disabled=false;
-  document.getElementById('pop-select').disabled=false;
-  document.getElementById('chain-check').disabled=false;
+  for(const id of LOCKABLE) document.getElementById(id).disabled=false;
   document.getElementById('mode-tabs-wrap').style.pointerEvents='';
   document.getElementById('mode-tabs-wrap').style.opacity='';
 }
@@ -1581,6 +1977,17 @@ function onPopChange(){
   _filteredCache=null;
   newGame();
 }
+function onBandChange(){
+  if(guessCount>0)return;
+  const [a,h]=document.getElementById('band-select').value.split(':');
+  bandAxis=a; bandHalf=+h;
+}
+function onCountryChange(){
+  country=document.getElementById('country-select').value;
+  fillChoices();
+  syncModeUI();
+  newGame();
+}
 
 // ── Input ──
 document.getElementById('city-input').addEventListener('keydown',e=>{
@@ -1601,7 +2008,7 @@ function submitGuess(){
     inp.value='';
     inp.classList.add('shake');
     inp.addEventListener('animationend',()=>inp.classList.remove('shake'),{once:true});
-    if(res==='outside') showGuessMsg('not inside your circles');
+    if(res==='outside') showGuessMsg(mode==='band'?'not inside your bands':'not inside your circles');
   }
   // Keep the keyboard up on phones for the next guess.
   if(!inp.disabled) inp.focus();
@@ -1632,18 +2039,19 @@ document.addEventListener('click',e=>{
 });
 
 // ── Saved progress ──
-// The game in progress and the settings are kept in this browser, so leaving
-// for the about page (or closing the tab) doesn't lose a run. Only the guess
-// origins are stored; replaying them in order rebuilds everything else. A
-// finished game is not kept, so coming back after a finish starts fresh.
+// A game in progress is kept in this browser, with the settings it was started
+// with, so leaving for the about page (or closing the tab) doesn't lose a run.
+// Settings alone are not kept: with no game going, a fresh load starts on the
+// defaults (Anita, 2026-11-06). Only the guess origins are stored; replaying
+// them in order rebuilds everything else.
 const SAVE_KEY='citycircles-save';
 
 function saveState(){
   try{
+    if(gameFinished||!guessCount){localStorage.removeItem(SAVE_KEY);return;}
     localStorage.setItem(SAVE_KEY,JSON.stringify({
-      n:CITIES.length, mode, radKm, nearN, minPop, chain,
-      guesses:gameFinished?[]:[...guessedSet],
-      guessCount:gameFinished?0:guessCount,
+      n:CITIES.length, mode, radKm, nearN, minPop, chain, country, bandAxis, bandHalf,
+      guesses:[...guessedSet], guessCount,
     }));
   }catch(e){}
 }
@@ -1660,18 +2068,24 @@ function restoreState(){
   try{s=JSON.parse(localStorage.getItem(SAVE_KEY));}catch(e){}
   // A different city count means the data file changed and the saved indices
   // no longer point at the same cities.
-  if(!s||s.n!==CITIES.length){newGame();return;}
-  mode=s.mode==='nearest'?'nearest':'radius';
+  const guesses=(s&&s.n===CITIES.length?s.guesses||[]:[]).filter(i=>Number.isInteger(i)&&i>=0&&i<CITIES.length);
+  if(!guesses.length){fillChoices();syncModeUI();newGame();return;}
+  mode=['nearest','band'].includes(s.mode)?s.mode:'radius';
+  country=COUNTRY_AREA[s.country]||continentById(s.country)?s.country:'';
+  document.getElementById('country-select').value=country;
+  bandAxis=s.bandAxis==='lng'?'lng':'lat';
+  fillChoices();
   radKm=restoreSelect('radius-select',s.radKm);
   nearN=restoreSelect('nearest-select',s.nearN);
   minPop=restoreSelect('pop-select',s.minPop);
+  const bandOpt=`${bandAxis}:${s.bandHalf}`;
+  const bandSel=document.getElementById('band-select');
+  if([...bandSel.options].some(o=>o.value===bandOpt)){bandSel.value=bandOpt;bandHalf=+s.bandHalf;}
   chain=s.chain===true;
   document.getElementById('chain-check').checked=chain;
   _filteredCache=null;
   syncModeUI();
   newGame();
-  const guesses=(s.guesses||[]).filter(i=>Number.isInteger(i)&&i>=0&&i<CITIES.length);
-  if(!guesses.length) return;
   for(const i of guesses){
     // A chain guess that wasn't already inside a circle was a free start.
     if(chain&&!revealedSet.has(i)) chainStarts.add(regionOf(CITIES[i]));
@@ -1697,7 +2111,7 @@ document.addEventListener('keydown',e=>{
 // to resize every marker by hand; the dot layer's radius expression covers zoom
 // and the source is viewport-independent, so panning costs nothing to maintain.
 startMap();
-loadCities();restoreState();
+loadCities();fillCountries();restoreState();
 
 // ── Leaderboard ──
 // Backed by shonei-server (circles.go). This replaced a jsonbin.io bin whose
@@ -1706,15 +2120,21 @@ loadCities();restoreState();
 // names, and keeps an append-only log of every submission.
 const LB_BASE='https://market.anita.garden/circles';
 
-// Chain games get their own boards (the server accepts the _chain suffix).
+// Country and chain games get their own boards (the server accepts a
+// two-letter country suffix and then _chain).
 function lbKey(){
-  const base=mode==='radius'?`radius_${radKm}_${minPop}`:`nearest_${nearN}_${minPop}`;
+  const mp=curMinPop();
+  let base=mode==='radius'?`radius_${radKm}_${mp}`:mode==='nearest'?`nearest_${nearN}_${mp}`:`${bandAxis}_${bandHalf}_${mp}`;
+  if(country) base+='_'+country.toLowerCase();  // a continent's id is already lower case
   return chain?base+'_chain':base;
 }
 
 function lbLabel(){
-  const pop=minPop>=1e6?(minPop/1e6)+'m+':minPop>=1e3?(minPop/1e3)+'k+':minPop+'+';
-  const base=mode==='radius'?`radius · ${radKm} km · pop ${pop}`:`nearest ${nearN} · pop ${pop}`;
+  const mp=curMinPop();
+  const pop=mp>=1e6?(mp/1e6)+'m+':mp>=1e3?(mp/1e3)+'k+':mp+'+';
+  let base=mode==='radius'?`radius · ${radKm} km`:mode==='nearest'?`nearest ${nearN}`:bandText(bandAxis,bandHalf);
+  base+=` · pop ${pop}`;
+  if(country) base=areaName(country)+' · '+base;
   return chain?base+' · chain':base;
 }
 
