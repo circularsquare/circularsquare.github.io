@@ -1346,8 +1346,8 @@ const COUNTRY_AREA={
 
 // Continent games, in dropdown order. Countries go by Natural Earth's continent
 // (citycircles/continents.json, so Cyprus is Asia), but Russia is Europe west
-// of the Urals and Turkey is Europe in Thrace. Indonesia is all Asia and Papua
-// New Guinea all Oceania. build_popgrid_cc.py and build_regions.py make the
+// of the Urals, Turkey is Europe in Thrace and Hawaii is Oceania. Indonesia is
+// all Asia and Papua New Guinea all Oceania. build_popgrid_cc.py and build_regions.py make the
 // same calls.
 const CONTINENTS=[
   {id:'europe',code:'eu',name:'Europe'},
@@ -1390,6 +1390,7 @@ function inPolygon(ring,x,y){
 function continentOf(c){
   if(c.cc==='RU') return inPolygon(EUROPEAN_RUSSIA,c.lng,c.lat)?'eu':'as';
   if(c.cc==='TR') return inPolygon(THRACE,c.lng,c.lat)?'eu':'as';
+  if(c.cc==='US') return c.lng<-154&&c.lat>18&&c.lat<29.5?'oc':'na';  // Hawaii (HAWAII there)
   return CONTINENT_OF[c.cc]||'';
 }
 const continentById=id=>CONTINENTS.find(x=>x.id===id);
@@ -1412,7 +1413,7 @@ function curMinPop(){return isLegacy()?minPop:10000;}
 // the country's cities that way. A country's nearest choices are 20, 50 and
 // 100 cities, each kept only up to a quarter of the country's cities (20 always).
 // A continent's are the world's, each kept only up to a third of its cities,
-// which only trims Oceania (165 cities: 20 and 50).
+// which only trims Oceania (188 cities with Hawaii: 20 and 50).
 const WORLD_RADIUS={opts:[100,200,500,1000],def:500};
 const WORLD_BAND={opts:[10,20,50,100],def:50};
 function isCountry(){return !!country&&!continentById(country);}
