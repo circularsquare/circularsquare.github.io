@@ -186,6 +186,32 @@ a:active {
 .post-header { margin-bottom: $spacing-unit - 5px; }
 // minima gives every heading 15px below; ### and #### sit closer to what they head
 .page-content h3, .page-content h4 { margin-bottom: 5px; }
+// lists sit 8px closer to the paragraph above and to what follows (minima gives 15px each);
+// nested lists keep minima's 0
+.page-content p + ul, .page-content p + ol { margin-top: -8px; }
+.page-content ul, .page-content ol { margin-bottom: $spacing-unit / 2 - 8px; }
+.page-content li > ul, .page-content li > ol { margin-bottom: 0; }
+// an image the text wraps round: ![alt](/path.png){: .side}. Full width on phones.
+// A ### heading starts below any such image, so it never runs into the next section.
+// max-width, not width, so a narrow screenshot keeps its own size instead of being blown up
+.page-content img.side { float: right; max-width: 50%; margin: 0 0 10px 15px; }
+// {: .side .small} is a narrower one; {: .side .below} stacks under the side image before it
+.page-content img.side.small { max-width: 28%; }
+.page-content img.side.thin { max-width: 22%; }
+// {: .narrow} is an ordinary image in the text column at most 55% wide
+.page-content img.narrow { max-width: 55%; }
+.page-content img.side.below { clear: right; }
+// {: .half} on two images in one paragraph puts them side by side
+.page-content img.half { display: inline-block; width: 49%; vertical-align: top; }
+.page-content h3 { clear: both; }
+// travel modes in text, the trainsworld colours darkened to read on the green background
+.mode-car { color: #c62828; }
+.mode-train { color: #1f5fbf; }
+.mode-walk { color: #1b7a34; }
+@include media-query($on-palm) {
+  .page-content img.side, .page-content img.side.small, .page-content img.side.thin { float: none; max-width: 100%; margin: 0; }
+  .page-content img.narrow { max-width: 100%; }
+}
 .post-title {
   @include relative-font-size(2.625 * 0.9);
   @include media-query($on-laptop) {
