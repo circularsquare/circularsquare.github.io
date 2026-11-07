@@ -70,3 +70,6 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+        with:
+          # 30 min (default 10): syncing timed out three times on 2026-11-07
+          timeout: 1800000
