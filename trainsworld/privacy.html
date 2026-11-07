@@ -22,7 +22,7 @@
 <body>
 <main>
 <h1>trainsworld privacy</h1>
-<p class="muted">Last updated 29 October 2026</p>
+<p class="muted">Last updated 6 November 2026</p>
 
 <p>trainsworld is a railway building game that runs in your browser. It is a hobby project
 run by one person, Anita. This page describes what it stores about you.</p>
@@ -40,6 +40,13 @@ new one), the city the game started in, whether it is a sandbox game, and the ve
 game. The server adds this up into totals per day: how many games were played, for how many
 minutes, from which starting city and on which version. It does not keep your IP address. The id
 is kept as a hash until the end of that day (UTC) and then dropped, so only the totals stay.</p>
+<p>The note also holds a second random id, kept in this browser's storage so it stays the same
+between visits. Anita uses it to count how many different people play and how long each one
+plays in total. The server keeps it as a hash, with the first and last day it was seen and the
+number of days, games and minutes. It is never linked to your account. If it is not seen for 13
+months, the server forgets it.</p>
+<p>To send no play counts at all from this browser, open the game once with <code>?notrack</code>
+at the end of its address.</p>
 <p>If you are signed in, your minutes are also added up per day under your account. Deleting
 your account removes them.</p>
 
@@ -96,7 +103,8 @@ you across other sites.</p>
 
 <h2>How long things are kept</h2>
 <p>Games, scores and account details stay until you delete them. Play count totals stay; the
-ids behind them go at the end of each day. Feedback reports stay until Anita deletes them; write
+ids behind them go at the end of each day. A browser's play totals go 13 months after it was
+last seen. Feedback reports stay until Anita deletes them; write
 to her if you want yours removed. The server's whole disk is backed up once per day and each
 backup is kept for 7 days, so a deleted game or account can stay in the backups for up to 7
 days after you delete it.</p>
