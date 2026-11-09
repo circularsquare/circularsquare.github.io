@@ -130,7 +130,7 @@ also, money runs at 100x speed. in one in game day, you make what you would make
 
 ### acknowledgement
 
-trains world is inspired by games like [nimby rails](https://store.steampowered.com/app/1134710/NIMBY_Rails/) and [subway builder](https://www.subwaybuilder.com/). 
+trains world is inspired by games like [nimby rails](https://store.steampowered.com/app/1134710/NIMBY_Rails/), [subway builder](https://www.subwaybuilder.com/), and [metrodreamin'](https://metrodreamin.com/edit/MGdSOE9DT1Rhd2I4ZTJrTmZRWlBSMEhnYXVzMnw0). 
 
 this game is made by claudes and anita.
 
