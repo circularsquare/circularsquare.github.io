@@ -22,7 +22,7 @@
 <body>
 <main>
 <h1>trainsworld privacy</h1>
-<p class="muted">Last updated 6 November 2026</p>
+<p class="muted">Last updated 9 November 2026</p>
 
 <p>trainsworld is a railway building game that runs in your browser. It is a hobby project
 run by one person, Anita. This page describes what it stores about you.</p>
@@ -84,12 +84,21 @@ world leaderboard and on the leaderboard of each city where you have points. You
 and email are never shown to anyone. Nothing is public if you do not join.</p>
 <p>Your games are private. Only you can open them, when signed in; no one else's account can
 list or read them. Anita runs the server, so she can read the files on it.</p>
+<p>Your feedback is private. Only you and Anita can see it.</p>
 
 <h2>Feedback</h2>
-<p>The feedback form in Settings sends the message you type, and the name and email if you fill
+<p>The feedback form in Settings sends the message you type, the tag if you pick one, and the name and email if you fill
 them in. If you are signed in, your account id and name go with it. The server also keeps the
-IP address the report came from, to spot spam; it is left out of the email. The report is
+IP address the report came from, to spot spam; it is left out of the email. Each report also
+carries the game version, your browser's name and version, the language the game is set to, whether your device reports its
+memory and how much, and the text of the last error from loading the game's data, if there was one. The report is
 stored on the server and emailed to Anita through <a href="https://resend.com/legal/privacy-policy">Resend</a>.</p>
+<p>So you can see your earlier feedback and Anita's replies, the game makes a random key the
+first time you send feedback without an account and keeps it in this browser's storage. The
+server keeps only a hash of it. The key is not connected to your play counts or your games.
+Anyone using this browser can read that feedback. If you clear your browser's site data the key
+is gone and you can't see that feedback again, but it stays on the server. If you sign in,
+feedback sent with the key moves to your account and the key is removed.</p>
 
 <h2>Other things</h2>
 <p>There are no ads, and trainsworld does not use tracking cookies or sell or share your data.
@@ -104,8 +113,9 @@ you across other sites.</p>
 <h2>How long things are kept</h2>
 <p>Games, scores and account details stay until you delete them. Play count totals stay; the
 ids behind them go at the end of each day. A browser's play totals go 13 months after it was
-last seen. Feedback reports stay until Anita deletes them; write
-to her if you want yours removed. The server's whole disk is backed up once per day and each
+last seen. Feedback stays until you delete it in the feedback form or Anita deletes it. If you can't
+reach it any more, write to her. The email Anita got about it stays in her mailbox unless you
+ask her to delete that too. The server's whole disk is backed up once per day and each
 backup is kept for 7 days, so a deleted game or account can stay in the backups for up to 7
 days after you delete it.</p>
 
@@ -114,7 +124,7 @@ days after you delete it.</p>
 older copies and its scores. Your other browsers delete their copy the next time they open
 trainsworld, unless the game was changed there.</p>
 <p>You can delete your account from the account panel in the game or on noritetsu. That
-removes your login details, email address, games, scores and leaderboard entries, and your
+removes your login details, email address, games, scores, feedback and leaderboard entries, and your
 noritetsu rides, from the server straight away. The games in your browser stay there.</p>
 
 <h2>Contact</h2>
