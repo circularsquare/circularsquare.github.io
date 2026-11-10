@@ -1,20 +1,20 @@
 # thumbnail strip at the top of the projects page, rendered by _includes/featured.html.
 # the ones marked pinned always come first in this order; the rest are shuffled on each load.
+- name: "trains world"
+  url: "/trainsworld/"
+  image: "/assets/thumbs/trainsworld.png"
+  pinned: true
 - name: "language dot map"
   url: "/languagedots/"
   image: "/assets/thumbs/languagedots.png"
   pinned: true
-- name: "japan rail"
-  url: "/japanrail/"
-  image: "/assets/thumbs/japanrail.png"
+- name: "asia in regions of 1 million"
+  url: "/asia1mloc/"
+  image: "/assets/thumbs/maps/asia1mloc.jpg"
   pinned: true
 - name: "nyc riders"
   url: "/nycriders/"
   image: "/assets/thumbs/nycriders.png"
-  pinned: true
-- name: "asia in regions of 1 million"
-  url: "/asia1mloc/"
-  image: "/assets/thumbs/maps/asia1mloc.jpg"
   pinned: true
 - name: "ancestry dot map"
   url: "/ancestrydotsna/"

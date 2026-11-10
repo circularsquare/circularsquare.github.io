@@ -43,7 +43,7 @@ permalink: /projects/
 - [donate](https://ko-fi.com/anitamaps)<br>
 
 #### games
-- [trains world](/trainsworld/) (new!)
+- <a href="/trainsworld/" data-thumb="/assets/thumbs/trainsworld.png">trains world</a>
 - <a href="/circles/" data-thumb="/assets/thumbs/citycircles.png">city circles quiz</a>
 - <a href="/assets/guessthecity.html" data-thumb="/assets/thumbs/guessthecity.png">guess the city</a>
 - [bluebs](https://circularsquare.github.io/bluebs/) (old)
