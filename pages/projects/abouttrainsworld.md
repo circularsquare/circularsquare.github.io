@@ -94,7 +94,7 @@ people travel differently on different days.
 
 weekday mornings and afternoons are dominated by work trips, while weekends and holidays are dominated by leisure and errands. 
 
-one-day holidays mostly behave like weekends, with less travel overall, with social leisure travel relatievly more important. for large multi-day holidays, like the Chinese Golden Week, intercity travel spikes at the beginning and end, but falls a lot in cities in the middle of the holiday.
+one-day holidays mostly behave like weekends, with less travel overall, with social leisure travel relatively more important. for large multi-day holidays, like the Chinese Golden Week, intercity travel spikes at the beginning and end, but falls a lot in cities in the middle of the holiday.
 
 
 ### pathfinding
@@ -128,6 +128,22 @@ this game is easier than real life. when trainsworld costs are compared to a che
 
 also, money runs at 100x speed. in one in game day, you make what you would make in 100 days.
 
+### common issues
+- train turning is too full
+    - build a terminal improvement at the end station, or split the route and have trains terminate at different stations
+- track is too full
+    - there is no quick solution, you must build more parallel track (consider selecting the track and doubling it up)
+- merge is too full
+    - there is no quick solution, build more track so you can eliminate the merge 
+- want to delete lots of stuff at once
+    - use the select tool, hotkey (4)
+- want to manually set stop order
+    - drag stops around in the stops list
+- want a loop line
+    - by clicking all the stops going around in order, then clicking the first stop again, it should make a loop line
+
+  
+
 ### acknowledgement
 
 trains world is inspired by games like [nimby rails](https://store.steampowered.com/app/1134710/NIMBY_Rails/), [subway builder](https://www.subwaybuilder.com/), and [metrodreamin'](https://metrodreamin.com/edit/MGdSOE9DT1Rhd2I4ZTJrTmZRWlBSMEhnYXVzMnw0). 
@@ -150,7 +166,9 @@ Boundaries from geoBoundaries (Spain's from the Instituto Geográfico Nacional, 
 
 Contains public sector information licensed under the Open Government Licence v3.0 (ONS, Nomis, Department for Education, National Records of Scotland, NISRA) and the Open Government Licence (Ontario).
 
-Powered by TfL Open Data. Contains Network Rail Infrastructure Limited data, used under the Open Government Licence v3.0.
+Contains information licensed under the Open Government Licence – Toronto. Toronto timetables from the Toronto Transit Commission, GO Transit and UP Express (Metrolinx).
+
+Powered by TfL Open Data. Contains Network Rail Infrastructure Limited data, used under the Open Government Licence v3.0. Great Britain National Rail timetables via aubin.app.
 
 Adapted from Statistics Canada, 2021 Census. This does not constitute an endorsement by Statistics Canada of this product.
 
@@ -158,7 +176,7 @@ Australian Bureau of Statistics, 2021 Census and statistical areas (CC BY 4.0).
 
 US Census Bureau, NCES, FAA and the Bureau of Transportation Statistics.
 
-New York subway, LIRR and Metro-North timetables from MTA open data, and PATH timetables from the Port Authority of New York and New Jersey. The game is not affiliated with or endorsed by the MTA or the Port Authority.
+New York subway, LIRR and Metro-North timetables from MTA open data, NJ Transit rail timetables, and PATH timetables from the Port Authority of New York and New Jersey. The game is not affiliated with or endorsed by the MTA, NJ Transit or the Port Authority.
 
 Paris timetables © Île-de-France Mobilités, under the Open Database License.
 
@@ -174,7 +192,7 @@ World Bank (CC BY 4.0), Maddison Project Database 2023 (CC BY 4.0), Eurostat, Wi
 
 Large lakes from Natural Earth. Terrain classes from GEDTM30 (OpenGeoHub, CC BY 4.0). Hill shading from Terrain Tiles on AWS Open Data.
 
-Fonts Zen Maru Gothic, Noto Sans and Nunito, under the SIL Open Font License 1.1.
+Fonts Zen Maru Gothic, Huninn, Noto Sans and Nunito, under the SIL Open Font License 1.1.
 
 Finger snap recording by freesound_community, cork pop by Universfield, wood knock by rohhsadotcom and magazine insert by freesounds-4u, all from Pixabay.
 

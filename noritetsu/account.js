@@ -333,7 +333,8 @@
   let FORM = 'login';       // signed out: 'login', 'register' or 'forgot'
   let MSG = '';             // a line under the forms: what happened
   let ASK = null;           // {q, yes, no, done}: a question in the box
-  let PANEL = null;         // signed in: null (the account) or 'password'
+  let PANEL = null;         // signed in: null (the account), 'password' or 'delete'
+  let EMAIL_DRAFT = null;   // a recovery email the server refused, kept for the retry
   let GIS = null, GIS_INIT = false;
 
   function boxEl() {
@@ -397,11 +398,11 @@
       return;
     }
     const title = BOX === 'share' ? 'Share link' : PANEL === 'password' ? 'Change password'
-      : signedIn() ? 'Account' : 'Sign in';
+      : PANEL === 'delete' ? 'Delete account' : signedIn() ? 'Account' : 'Sign in';
     h = `<div class="ahead"><span>${title}</span>`
       + `<button class="aclose" title="Close" onclick="NT.close()">&#10005;</button></div>`;
     if (BOX === 'share') h += shareHtml();
-    else if (signedIn()) h += PANEL === 'password' ? passwordHtml() : accountHtml();
+    else if (signedIn()) h += PANEL === 'password' ? passwordHtml() : PANEL === 'delete' ? deleteHtml() : accountHtml();
     else h += signInHtml();
     h += MSG ? `<p class="msg">${esc(MSG)}</p>` : '';
     b.innerHTML = h;
@@ -454,15 +455,31 @@
     if (statusShown()) h += `<p class="muted">${esc(statusText())}</p>`;
     if (isPassword()) {
       h += `<div class="sec"><input class="fld" id="nt-email" type="email" autocomplete="email" `
-        + `placeholder="recovery email" value="${esc(a.pendingEmail || a.email || '')}" />`;
+        + `placeholder="recovery email" value="${esc(EMAIL_DRAFT ?? (a.pendingEmail || a.email || ''))}" />`
+        + `<input class="fld" id="nt-email-pw" type="password" placeholder="current password" autocomplete="current-password" />`;
       if (a.pendingEmail) h += `<p class="muted">Confirm your email at ${esc(a.pendingEmail)}.</p>`;
       h += `<div class="btnrow"><button class="act" onclick="NT.setEmail()">save email</button>`
         + (a.email || a.pendingEmail ? `<button class="act" onclick="NT.setEmail('')">remove</button>` : '')
         + `<button class="act" onclick="NT.panel('password')">change password</button></div></div>`;
     }
     h += `<div class="sec btnrow"><button class="act" onclick="NT.signOut()">sign out</button>`
-      + `<button class="act del" onclick="NT.deleteAccount()">delete account</button></div>`;
+      + `<button class="act del" onclick="NT.panel('delete')">delete account</button></div>`;
     return h;
+  }
+
+  // Deleting asks for the password, or for a Google account a fresh check with Google's button
+  // (drawGoogle draws it in #gsi; gisCredential sends what it gives).
+  function deleteHtml() {
+    const google = (acct().logins || []).includes('google');
+    let h = `<p>Delete your account? Local saves will stay.</p>`;
+    if (google) h += `<p>Confirm with Google to delete it.</p><div id="gsi" class="gsi"></div>`;
+    else if (isPassword()) {
+      h += `<input class="fld" id="nt-delete-pw" type="password" placeholder="current password" autocomplete="current-password" `
+        + `onkeydown="if(event.key==='Enter')NT.deleteAccount()" />`;
+    }
+    h += `<div class="btnrow">`;
+    if (!google) h += `<button class="act del" onclick="NT.deleteAccount()">delete account</button>`;
+    return h + `<button class="act" onclick="NT.panel(null)">keep it</button></div>`;
   }
 
   function passwordHtml() {
@@ -505,13 +522,17 @@
     }
     return GIS;
   }
+  function gisCredential(credential) {
+    if (PANEL === 'delete') NT.deleteAccount(credential);
+    else signIn('signin', { provider: 'google', credential });
+  }
   async function drawGoogle(el) {
+    if (!CFG || !CFG.googleClientId) { el.textContent = 'Google sign-in could not load.'; return; }
     try { await loadGis(); } catch (e) { el.textContent = 'Google sign-in could not load.'; return; }
     if (!window.google || !google.accounts || !el.isConnected) return;
     if (!GIS_INIT) {
       // The credential goes straight to the server: it holds the person's email and name.
-      google.accounts.id.initialize({ client_id: CFG.googleClientId,
-                                      callback: r => signIn('signin', { provider: 'google', credential: r.credential }) });
+      google.accounts.id.initialize({ client_id: CFG.googleClientId, callback: r => gisCredential(r.credential) });
       GIS_INIT = true;
     }
     /* NOT SHOWN UNTIL IT IS GOOGLE'S OWN BUTTON (Anita, 2026-10-19: it drew in a plain
@@ -529,7 +550,7 @@
     });
     mo.observe(el, { childList: true, subtree: true });
     setTimeout(show, 4000);
-    google.accounts.id.renderButton(el, { type: 'standard', size: 'medium', text: 'signin_with',
+    google.accounts.id.renderButton(el, { type: 'standard', size: 'medium', text: PANEL === 'delete' ? 'continue_with' : 'signin_with',
                                           theme: THEME_NAME === 'dark' ? 'filled_black' : 'outline' });
   }
 
@@ -616,11 +637,12 @@
     async setEmail(v) {
       const email = v === undefined ? val('nt-email') : v;
       try {
-        const j = await api('PUT', 'email', { email });
+        const j = await api('PUT', 'email', { email, password: pass('nt-email-pw') });
         AUTH.account = j.account;
         lsSet(AUTH_KEY, AUTH);
         MSG = '';
-      } catch (e) { MSG = e.message; }
+        EMAIL_DRAFT = null;
+      } catch (e) { MSG = e.message; EMAIL_DRAFT = v === undefined ? email : null; } // what they typed stays for the retry
       drawBox();
     },
     async setPassword() {
@@ -632,16 +654,15 @@
       } catch (e) { MSG = e.message; }
       drawBox();
     },
-    panel(p) { PANEL = p; MSG = ''; drawBox(); },
+    panel(p) { PANEL = p; MSG = ''; EMAIL_DRAFT = null; drawBox(); },
     toggle: toggleAccount,
     newShare,
     stopShare,
     async copyShare() { await copy(shortLink(acct().share)); drawBox(); },
     signOut,
-    async deleteAccount() {
-      if (!confirm('Delete your account? Local saves will stay.')) return;
+    async deleteAccount(credential) {
       try {
-        await api('DELETE', 'account');
+        await api('DELETE', 'account', credential ? { credential } : { password: pass('nt-delete-pw') });
         tokenGone();
         closeBox();
       } catch (e) { MSG = e.message; drawBox(); }
