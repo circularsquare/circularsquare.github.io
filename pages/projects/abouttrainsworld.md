@@ -145,6 +145,8 @@ also, money runs at 100x speed. in one in game day, you make what you would make
     - build more feeder lines (local lines that can transfer with the long distance line)
 - line losing a lot of money
     - try running fewer or shorter trains
+- want to run time faster or slower
+    - double click the 16x speed button
 
   
 
