@@ -36,9 +36,10 @@ are signed in (below), and says nothing about your computer.</p>
 <h2>Play counts</h2>
 <p>While a game is open and its tab is showing, the page sends a short note to the server once a
 minute. It holds a random id made when the page loads (kept in memory only, so a reload makes a
-new one), the city the game started in, whether it is a sandbox game, and the version of the
-game. The server adds this up into totals per day: how many games were played, for how many
-minutes, from which starting city and on which version. It does not keep your IP address. The id
+new one), the city the game started in (or that you started on the map), whether it is a sandbox
+game, the version of the game and the language your browser is set to. The server adds this up
+into totals per day: how many games were played, for how many minutes, from which starting city,
+in which browser language and on which version. It does not keep your IP address. The id
 is kept as a hash until the end of that day (UTC) and then dropped, so only the totals stay.</p>
 <p>The note also holds a second random id, kept in this browser's storage so it stays the same
 between visits. Anita uses it to count how many different people play and how long each one

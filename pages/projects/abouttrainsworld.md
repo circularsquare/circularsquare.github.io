@@ -192,7 +192,7 @@ World Bank (CC BY 4.0), Maddison Project Database 2023 (CC BY 4.0), Eurostat, Wi
 
 Large lakes from Natural Earth. Terrain classes from GEDTM30 (OpenGeoHub, CC BY 4.0). Hill shading from Terrain Tiles on AWS Open Data.
 
-Fonts Zen Maru Gothic, Huninn, Noto Sans and Nunito, under the SIL Open Font License 1.1.
+Fonts Zen Maru Gothic, Huninn, Hanzi Round (cut from Chill Round M by ChillType), Noto Sans and Nunito, under the SIL Open Font License 1.1.
 
 Finger snap recording by freesound_community, cork pop by Universfield, wood knock by rohhsadotcom and magazine insert by freesounds-4u, all from Pixabay.
 
