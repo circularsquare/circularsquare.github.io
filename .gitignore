@@ -12,6 +12,9 @@ _config_dev.yml
 # Large files served from R2
 *.pmtiles
 londonriders/trains.json
+nycriders/trains.json
+nycriders/trains-saturday.json
+nycriders/trains-sunday.json
 
 # Anita's own notes, not for the site
 seo-checklist.md

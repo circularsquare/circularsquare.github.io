@@ -899,8 +899,13 @@ function updateDayText() {
 }
 updateDayText();
 
+// The trains files are 27-41 MB each, too big to keep on GitHub Pages.
+// Served from Cloudflare R2 in production; loaded locally during dev.
+const isLocalhost = location.hostname === 'localhost' || location.hostname === '127.0.0.1' || location.protocol === 'file:';
+const trainsUrl = day => (isLocalhost ? '' : 'https://data.anita.garden/nycriders/') + `trains${DAYS[day].suffix}.json`;
+
 map.on('load', () => {
-    fetchWithProgress(`trains${DAYS[currentDay].suffix}.json`)
+    fetchWithProgress(trainsUrl(currentDay))
         .then(d => {
             data = d;
             preprocessData();
@@ -927,7 +932,7 @@ async function setDay(day) {
     loading.style.display = '';
     let d;
     try {
-        d = await fetchWithProgress(`trains${DAYS[day].suffix}.json`);
+        d = await fetchWithProgress(trainsUrl(day));
     } catch (e) {
         if (token === dayLoadToken) loading.style.display = 'none';
         console.error(`trains for ${day} failed:`, e);

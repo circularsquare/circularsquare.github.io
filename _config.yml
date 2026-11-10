@@ -91,6 +91,11 @@ exclude:
   - package-lock.json
   - scripts/
   - cooking/
+  # Served from R2 (data.anita.garden), kept on disk for local serving.
+  - londonriders/trains.json
+  - nycriders/trains.json
+  - nycriders/trains-saturday.json
+  - nycriders/trains-sunday.json
 
 # exclude:
 #   - .sass-cache/
