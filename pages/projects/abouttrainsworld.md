@@ -20,7 +20,7 @@ you can [try it here](/trainsworld/).
 <!-- ![lines and stations around herald square in manhattan](/assets/trainsworld/midtown-map.png){: .narrow} -->
 below is some more information about trainsworld, for those who are curious.
 
-[construction](#construction) · [scheduling](#scheduling) · [demand](#demand) · [pathfinding](#pathfinding) · [money](#money) · [sources](#sources)
+[construction](#construction) · [scheduling](#scheduling) · [demand](#demand) · [pathfinding](#pathfinding) · [money](#money) · [common issues](#common-issues) · [sources](#sources)
 
 ### construction
 
@@ -141,6 +141,10 @@ also, money runs at 100x speed. in one in game day, you make what you would make
     - drag stops around in the stops list
 - want a loop line
     - by clicking all the stops going around in order, then clicking the first stop again, it should make a loop line
+- long distance line has few riders 
+    - build more feeder lines (local lines that can transfer with the long distance line)
+- line losing a lot of money
+    - try running fewer or shorter trains
 
   
 
