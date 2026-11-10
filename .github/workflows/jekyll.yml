@@ -63,13 +63,29 @@ jobs:
   deploy:
     environment:
       name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
+      url: ${{ steps.deploy3.outputs.page_url || steps.deploy2.outputs.page_url || steps.deploy1.outputs.page_url }}
     runs-on: ubuntu-latest
     needs: build
     steps:
+      # GitHub's file sync sometimes hangs (status stays syncing_files) and a rerun of the
+      # same artifact then takes seconds; the action caps its own timeout at 10 min, so
+      # cancel early and try again (T-2958).
       - name: Deploy to GitHub Pages
-        id: deployment
+        id: deploy1
+        uses: actions/deploy-pages@v4
+        continue-on-error: true
+        with:
+          timeout: 180000
+      - name: Deploy to GitHub Pages (retry 1)
+        id: deploy2
+        if: steps.deploy1.outcome == 'failure'
+        uses: actions/deploy-pages@v4
+        continue-on-error: true
+        with:
+          timeout: 180000
+      - name: Deploy to GitHub Pages (retry 2)
+        id: deploy3
+        if: steps.deploy1.outcome == 'failure' && steps.deploy2.outcome == 'failure'
         uses: actions/deploy-pages@v4
         with:
-          # 30 min (default 10): syncing timed out three times on 2026-11-07
-          timeout: 1800000
+          timeout: 300000
