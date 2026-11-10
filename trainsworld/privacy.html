@@ -46,7 +46,12 @@ between visits. Anita uses it to count how many different people play and how lo
 plays in total. The server keeps it as a hash, with the first and last day it was seen and the
 number of days, games and minutes. It is never linked to your account. If it is not seen for 13
 months, the server forgets it.</p>
-<p>To send no play counts at all from this browser, open the game once with <code>?notrack</code>
+<p>When a game earns an achievement, the page also sends its name (such as "orient") with that same
+browser id, once per achievement. The server keeps a count for each achievement, and a hash of the id
+(made differently from the one above) so that a browser counts once. Nothing else is sent, and it is
+never linked to your account. The game shows the counts as the share of players who have each
+achievement. If the id is not seen for 13 months, the server forgets it; the counts stay.</p>
+<p>To send no play counts or achievement counts at all from this browser, open the game once with <code>?notrack</code>
 at the end of its address.</p>
 <p>If you are signed in, your minutes are also added up per day under your account. Deleting
 your account removes them.</p>
