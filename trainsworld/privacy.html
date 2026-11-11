@@ -22,7 +22,7 @@
 <body>
 <main>
 <h1>trainsworld privacy</h1>
-<p class="muted">Last updated 9 November 2026</p>
+<p class="muted">Last updated 11 November 2026</p>
 
 <p>trainsworld is a railway building game that runs in your browser. It is a hobby project
 run by one person, Anita. This page describes what it stores about you.</p>
@@ -77,6 +77,10 @@ you in on the other. If you sign in, the server keeps:</p>
   <li>For each game you play while signed in: its points in total and per city, and its game
     day. Sandbox games send nothing but the fact that they are sandboxes.</li>
   <li>If you join the leaderboards, the display name you choose.</li>
+  <li>If you share a network to Community: a drawing of that network (its lines, colors, stops and
+    station names), its points, cities, game day, line and station counts, and the time you shared
+    it. Unless you untick Let others open a copy, the game itself goes up too, with its name. Who
+    liked or reported it is stored too.</li>
 </ul>
 <p>Everything travels to the server over an encrypted connection (HTTPS). On the server it is
 stored without encryption, on a computer Anita rents from Hetzner in Ashburn, Virginia, in the
@@ -87,9 +91,11 @@ Those emails are sent through <a href="https://resend.com/legal/privacy-policy">
 <h2>What other people can see</h2>
 <p>If you join the leaderboards, your display name and your best points are public, on the
 world leaderboard and on the leaderboard of each city where you have points. Your username
-and email are never shown to anyone. Nothing is public if you do not join.</p>
-<p>Your games are private. Only you can open them, when signed in; no one else's account can
-list or read them. Anita runs the server, so she can read the files on it.</p>
+and email are never shown to anyone. Nothing is public if you do not join or share.</p>
+<p>Your games are private unless you share one. Sharing makes a drawing of the network public,
+with your display name, station names, points and cities. Unless you untick Let others open a
+copy, anyone can also open a copy of the game and play it, with its name, line names, money and
+history. Anita runs the server, so she can read the files on it.</p>
 <p>Your feedback is private. Only you and Anita can see it.</p>
 
 <h2>Feedback</h2>
@@ -129,6 +135,9 @@ days after you delete it.</p>
 <p>Deleting a saved game while signed in removes it from the server straight away, with its
 older copies and its scores. Your other browsers delete their copy the next time they open
 trainsworld, unless the game was changed there.</p>
+<p>Stopping sharing, or deleting the game, removes the shared network and its game from the
+server straight away. A copy someone already opened stays in their own games. Deleting your
+account removes your shares and your likes.</p>
 <p>You can delete your account from the account panel in the game or on noritetsu. That
 removes your login details, email address, games, scores, feedback and leaderboard entries, and your
 noritetsu rides, from the server straight away. The games in your browser stay there.</p>
