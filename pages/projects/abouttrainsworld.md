@@ -198,7 +198,11 @@ World Bank (CC BY 4.0), Maddison Project Database 2023 (CC BY 4.0), Eurostat, Wi
 
 Large lakes from Natural Earth. Terrain classes from GEDTM30 (OpenGeoHub, CC BY 4.0). Hill shading from Terrain Tiles on AWS Open Data.
 
+Satellite imagery: Sentinel-2 cloudless by EOX IT Services GmbH (contains modified Copernicus Sentinel data 2024, CC BY-NC-SA 4.0), GSI Japan (Geospatial Information Authority of Japan) and the USGS National Map.
+
 Fonts Zen Maru Gothic, Huninn, Hanzi Round (cut from Chill Round M by ChillType), Noto Sans and Nunito, under the SIL Open Font License 1.1.
+
+Flags beside player names: flag-icons by Panayiotis Lipiridis and circle-flags by HatScripts (MIT licence); Japanese prefecture flags and flags of Spanish regions, the Azores and Paris from Wikimedia Commons (public domain or CC0).
 
 Finger snap recording by freesound_community, cork pop by Universfield, wood knock by rohhsadotcom and magazine insert by freesounds-4u, all from Pixabay.
 
