@@ -35,7 +35,24 @@ track has one of 7 levels, ranging from -3 to +3.
 
 track intersecting at the same level will cause delays. a ramp to change level is 200 meters long. when placing track, the game will try to *auto-ramp* to avoid same-level intersections. it will also auto-ramp over water, if needed. 
 
+to avoid same-level intersections at merges, the game will also try to automatically insert a flyover if there is enough room.
+
+#### track count
+you can place single-track. there are two types of single-track.
+
+two-way single-track can be used for low capacity infrequent lines. trains will pass each other at stations, which are default two-track stations and thus allow passing. 
+
+one-way single track is mostly useful for interchanges and flyovers. 
+
+currently, quad-track is simply two parallel double-tracks. station placement on quad track needs to be done as if it were two double-tracks. quad tracks are planned to be reworked to allow AA/BB running, and single stations that span all four tracks.
+
+#### track type
+
 there is normal track and high speed track. there are also normal trains and high speed trains. any trains can run on any track, but you'll only get high speeds if you have high speed trains on high speed track. i might add maglev later.
+
+there are also trams, which only run on their own type of track. to build a tram, you must build track and select "tram". they snap to streets by default, because if they run over streets they are cheaper. you can stop snapping to streets by holding "ctrl".
+
+buses and ferries do not run on track. bus stops are default automatically placed spaced apart (and at transfer points), and can be manually placed if desired. ferries simply run between their ports/stations.
 
 #### snapping
 two helpful construction features are *snap to real world network* and *snap beside track*. 
@@ -46,6 +63,8 @@ with snap beside track, it's easy to create express routes. instead of a specifi
 
 ### scheduling
 to add stops for a line, you can click a desired start point, end point, and then quick-fill all passed stations.
+
+to make a loop line, you can generally *right-click* a station that you want to loop back to.
 
 trains can be added to a line for one of three demand segments (times of day, low/med/high demand). or you can set certain target headways, for instance, saying that a line should have trains spaced apart every 4 minutes.
 
@@ -128,19 +147,25 @@ this game is easier than real life. when trainsworld costs are compared to a che
 
 also, money runs at 100x speed. in one in game day, you make what you would make in 100 days.
 
+### community
+you can browse other peoples worlds in community!     
+
+if you upload a save, you can send a link for other people to load it and explore. currently, saves are not automatically re-uploaded as you add to your maps.
+
+
 ### common issues
 - train turning is too full
     - build a terminal improvement at the end station, or split the route and have trains terminate at different stations
 - track is too full
     - there is no quick solution, you must build more parallel track (consider selecting the track and doubling it up)
 - merge is too full
-    - there is no quick solution, build more track so you can eliminate the merge 
+    - rebuild it as a crossover
 - want to delete lots of stuff at once
     - use the select tool, hotkey (4)
 - want to manually set stop order
     - drag stops around in the stops list
 - want a loop line
-    - by clicking all the stops going around in order, then clicking the first stop again, it should make a loop line
+    - by clicking all the stops going around in order, then right clicking the first stop again, it should make a loop line
 - long distance line has few riders 
     - build more feeder lines (local lines that can transfer with the long distance line)
 - line losing a lot of money
@@ -148,15 +173,14 @@ also, money runs at 100x speed. in one in game day, you make what you would make
 - want to run time faster or slower
     - double click the 16x speed button
 
-  
+consider joining the [discord](https://discord.com/invite/RemhwVcZFw) if you have questions or suggestions!
+
 
 ### acknowledgement
 
 trains world is inspired by games like [nimby rails](https://store.steampowered.com/app/1134710/NIMBY_Rails/), [subway builder](https://www.subwaybuilder.com/), and [metrodreamin'](https://metrodreamin.com/edit/MGdSOE9DT1Rhd2I4ZTJrTmZRWlBSMEhnYXVzMnw0). 
 
 this game is made by claudes and anita.
-
-
 
 ### sources
 
