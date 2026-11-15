@@ -115,6 +115,20 @@ weekday mornings and afternoons are dominated by work trips, while weekends and 
 
 one-day holidays mostly behave like weekends, with less travel overall, with social leisure travel relatively more important. for large multi-day holidays, like the Chinese Golden Week, intercity travel spikes at the beginning and end, but falls a lot in cities in the middle of the holiday.
 
+#### intercity demand
+city borders are drawn to minimize inter-city trips, which are aggregated at a coarser level.
+
+in general, trips between cities in the same country are at the same level as if they were in one city, at 100% scale.
+
+trips that cross international borders are generally set to 5-25% of what they would otherwise be, depending on average income in the area. this tends to fit real travel patterns.
+
+trips between connected countries with no customs (such as the Schengen Area) are usually set to 50%.
+
+trips between countries at war are set to 0%. 
+
+some countries have light damping at the province/state level as well, to better match real world travel patterns. 
+
+all these numbers are subject to change.
 
 ### pathfinding
 
