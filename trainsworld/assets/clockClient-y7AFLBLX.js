@@ -1,0 +1,1 @@
+export{c as exportForShare}from"./clockClient-CbmfGj9p.js";
